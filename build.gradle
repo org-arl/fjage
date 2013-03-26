@@ -1,0 +1,30 @@
+apply plugin: 'groovy'
+apply plugin: 'eclipse'
+
+defaultTasks 'jars'
+
+archivesBaseName = 'fjage'
+version = '1.0'
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile 'org.codehaus.groovy:groovy-all:2.0.5'
+  compile 'jline:jline:2.10'
+  compile 'org.apache.commons:commons-lang3:3.1'
+  compile 'uk.com.robust-it:cloning:1.7.4'
+  testCompile 'junit:junit:4.11'
+}
+
+jar {
+  manifest {
+    attributes 'Build-Owner': System.getenv().USER, 'Build-Timestamp': new Date().format('d-MM-yyyy_HH:mm:ss'), 'Build-Version': version
+  }
+}
+
+task jars(dependsOn: jar, type: Copy) {
+  into "$buildDir/libs"
+  from configurations.runtime
+}
