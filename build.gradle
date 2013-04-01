@@ -18,6 +18,10 @@ dependencies {
   testCompile 'junit:junit:4.11'
 }
 
+compileJava {
+  sourceCompatibility = 1.6
+}
+
 jar {
   manifest {
     attributes 'Build-Owner': System.getenv().USER, 'Build-Timestamp': new Date().format('d-MM-yyyy_HH:mm:ss'), 'Build-Version': version
