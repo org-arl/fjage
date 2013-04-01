@@ -14,7 +14,7 @@ package org.arl.fjage
  * Groovy agent extensions to mixin into Agent class.  This provides Groovy
  * agents with neater syntax.  To enable:
  * <pre>
- * GroovyAgentExtensions.enable()
+ * Agent.mixin(GroovyAgentExtensions);
  * </pre>
  */
 class GroovyAgentExtensions {
