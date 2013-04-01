@@ -26,4 +26,4 @@ License
 -------
 
 fjåge is licensed under the Simplified (3-clause) BSD license.  
-See [LICENSE.txt](https://github.com/org-arl/fjage/blob/master/LICENSE.txt) for more details.
+See [LICENSE.txt](http://github.com/org-arl/fjage/blob/master/LICENSE.txt) for more details.
