@@ -12,7 +12,7 @@ fjåge provides a framework for [agent-oriented software development](http://en.
 Documentation
 -------------
 
-* [API documentation](http://arl.nus.edu.sg/docs/fjage/)
+* [API documentation](http://org-arl.github.com/fjage/javadoc/)
 * User Guide -- coming soon
 * Quickstart Guide -- coming soon
 
