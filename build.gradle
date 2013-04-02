@@ -1,10 +1,13 @@
 apply plugin: 'groovy'
 apply plugin: 'eclipse'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
 defaultTasks 'jars'
 
 archivesBaseName = 'fjage'
-version = '1.0'
+group = 'com.github.org-arl'
+version = '1.0.1'
 
 repositories {
   mavenCentral()
@@ -31,4 +34,63 @@ jar {
 task jars(dependsOn: jar, type: Copy) {
   into "$buildDir/libs"
   from configurations.runtime
+}
+
+////// tasks for MavenCentral deployment
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  classifier = 'javadoc'
+  from javadoc.destinationDir
+}
+ 
+task sourcesJar(type: Jar) {
+  classifier = 'sources'
+  from sourceSets.main.allSource
+}
+
+artifacts {
+  archives jar
+  archives javadocJar
+  archives sourcesJar
+}
+
+signing {
+  sign configurations.archives
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      beforeDeployment {
+        MavenDeployment deployment -> signing.signPom(deployment)
+      }
+      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        authentication(userName: sonatypeUsername, password: sonatypePassword)
+      }
+      pom.project {
+        name archivesBaseName
+        packaging 'jar'
+        description 'Framework for Java and Groovy Agents'
+        url 'http://github.com/org-arl/fjage'
+        scm {
+          url 'http://github.com/org-arl/fjage'
+          connection 'scm:git:git://github.com/org-arl/fjage.git'
+          developerConnection 'scm:git:git@github.com:org-arl/fjage.git'
+        }
+        licenses {
+          license {
+            name '3-clause BSD License'
+            url 'http://github.com/org-arl/fjage/blob/master/LICENSE.txt'
+            distribution 'repo'
+          }
+        }
+        developers {
+          developer {
+            id 'mchitre'
+            name 'Mandar Chitre'
+          }
+        }
+      }
+    }
+  }
 }

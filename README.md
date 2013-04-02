@@ -2,7 +2,6 @@ fjåge
 =====
 **Framework for Java and Groovy Agents**
 
-version 1.0  
 developed by [Mandar Chitre](http://www.chitre.net), [Acoustic Research Laboratory](http://www.arl.nus.edu.sg)
 
 Introduction
@@ -20,7 +19,16 @@ Documentation
 Binary Releases
 ---------------
 
-* [fjage-1.0.jar](http://arl.nus.edu.sg/artifacts/fjage-1.0.jar), released March 26, 2013
+### Maven Central
+
+* GroupId: com.github.org-arl
+* ArtifactId: fjage
+* Latest version: 1.0.1
+
+### JARs
+
+* [fjage-1.0.1.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.0.1/fjage-1.0.1.jar), released April 2, 2013
+* [fjage-1.0.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.0/fjage-1.0.jar), released March 26, 2013
 
 License
 -------

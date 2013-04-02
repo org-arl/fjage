@@ -79,7 +79,6 @@ public class Message implements Serializable {
    * Creates a response message.
    *
    * @param inReplyTo message to which this response corresponds to.
-   * @param perf performative.
    */
   public Message(Message inReplyTo) {
     perf = null;
