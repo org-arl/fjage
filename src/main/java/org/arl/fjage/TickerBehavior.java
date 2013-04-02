@@ -15,7 +15,6 @@ package org.arl.fjage;
  * method of this behavior is called at intervals defined by the period.
  *
  * @author  Mandar Chitre
- * @version $Revision: 9682 $, $Date: 2012-10-04 21:06:18 +0800 (Thu, 04 Oct 2012) $
  */
 public abstract class TickerBehavior extends Behavior {
 

@@ -18,7 +18,6 @@ import java.util.Random;
  * interarrival time.
  *
  * @author  Mandar Chitre
- * @version $Revision: 8915 $, $Date: 2012-04-21 18:00:49 +0800 (Sat, 21 Apr 2012) $
  */
 public abstract class PoissonBehavior extends Behavior {
 

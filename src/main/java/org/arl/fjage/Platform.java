@@ -18,7 +18,6 @@ import java.util.*;
  * basic system functionality such as timing, network, etc.
  *
  * @author  Mandar Chitre
- * @version $Revision: 10619 $, $Date: 2013-03-13 01:10:58 +0800 (Wed, 13 Mar 2013) $
  */
 public abstract class Platform implements TimestampProvider {
 

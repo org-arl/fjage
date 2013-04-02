@@ -16,7 +16,6 @@ import java.io.Serializable;
  * An identifier for an agent or a topic.
  *
  * @author  Mandar Chitre
- * @version $Revision: 10650 $, $Date: 2013-03-15 13:16:27 +0800 (Fri, 15 Mar 2013) $
  */
 public class AgentID implements Serializable {
 

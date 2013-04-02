@@ -15,7 +15,6 @@ package org.arl.fjage;
  * delay expires, the {@link #onWake()} method of this behavior is called.
  *
  * @author  Mandar Chitre
- * @version $Revision: 9174 $, $Date: 2012-07-11 10:44:10 +0800 (Wed, 11 Jul 2012) $
  */
 public abstract class WakerBehavior extends Behavior {
 

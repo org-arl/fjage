@@ -18,7 +18,6 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
  * Methods and attributes available to Groovy scripts.
  *
  * @author Mandar Chitre
- * @version $Revision: 9059 $ $Date: 2012-06-06 22:30:43 +0800 (Wed, 06 Jun 2012) $
  */
 abstract class BaseGroovyScript extends Script {
 

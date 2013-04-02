@@ -27,7 +27,6 @@ import java.util.logging.Logger;
  * of its subclasses.
  *
  * @author  Mandar Chitre
- * @version $Revision: 10648 $, $Date: 2013-03-15 12:59:38 +0800 (Fri, 15 Mar 2013) $
  */
 public abstract class Behavior {
 

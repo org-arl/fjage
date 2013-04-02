@@ -17,7 +17,6 @@ import java.util.List;
  * An interface representing a scripting engine.
  *
  * @author Mandar Chitre
- * @version $Revision: 9802 $ $Date: 2012-10-22 02:47:41 +0800 (Mon, 22 Oct 2012) $
  */
 public interface ScriptEngine {
 

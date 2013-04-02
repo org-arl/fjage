@@ -18,7 +18,6 @@ import java.util.logging.*;
  * with a line per log entry with pipe-separated fields.
  *
  * @author  Mandar Chitre
- * @version $Revision: 9899 $, $Date: 2012-11-03 01:59:58 +0800 (Sat, 03 Nov 2012) $
  */
 public class LogFormatter extends Formatter {
 

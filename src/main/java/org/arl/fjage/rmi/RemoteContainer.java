@@ -17,7 +17,6 @@ import org.arl.fjage.*;
  * RMI interface for remote containers.
  *
  * @author Mandar Chitre
- * @version $Revision: 8886 $ $Date: 2012-04-18 22:13:29 +0800 (Wed, 18 Apr 2012) $
  */
 public interface RemoteContainer extends Remote {
 

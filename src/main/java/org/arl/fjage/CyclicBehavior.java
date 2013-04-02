@@ -15,7 +15,6 @@ package org.arl.fjage;
  * is repeatedly called.
  *
  * @author Mandar Chitre
- * @version $Revision: 8878 $ $Date: 2012-04-17 22:39:10 +0800 (Tue, 17 Apr 2012) $
  */
 public abstract class CyclicBehavior extends Behavior {
 

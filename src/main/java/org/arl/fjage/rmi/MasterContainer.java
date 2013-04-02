@@ -26,7 +26,6 @@ import org.arl.fjage.*;
  * directory services.
  *
  * @author Mandar Chitre
- * @version $Revision: 10619 $ $Date: 2013-03-13 01:10:58 +0800 (Wed, 13 Mar 2013) $
  */
 public class MasterContainer extends Container implements RemoteContainer {
   

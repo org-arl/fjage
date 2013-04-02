@@ -39,7 +39,6 @@ package org.arl.fjage;
  * </pre></code>
  *
  * @author  Mandar Chitre
- * @version $Revision: 9801 $, $Date: 2012-10-21 02:02:31 +0800 (Sun, 21 Oct 2012) $
  */
 public abstract class TestBehavior extends OneShotBehavior {
 

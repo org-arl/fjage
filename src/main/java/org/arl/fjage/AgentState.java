@@ -14,7 +14,6 @@ package org.arl.fjage;
  * State of the agent.
  *
  * @author  Mandar Chitre
- * @version $Revision: 8856 $, $Date: 2012-04-13 03:11:02 +0800 (Fri, 13 Apr 2012) $
  */
 public enum AgentState {
 

@@ -42,7 +42,6 @@ import java.util.logging.*;
  * </pre></code>
  *
  * @author  Mandar Chitre
- * @version $Revision: 10648 $, $Date: 2013-03-15 12:59:38 +0800 (Fri, 15 Mar 2013) $
  */
 public class Agent implements Runnable, TimestampProvider {
 

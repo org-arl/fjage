@@ -34,7 +34,6 @@ import java.util.logging.Logger;
  * </pre></code>
  *
  * @author  Mandar Chitre
- * @version $Revision: 8930 $, $Date: 2012-04-24 11:46:27 +0800 (Tue, 24 Apr 2012) $
  */
 public class FSMBehavior extends Behavior {
 
@@ -159,7 +158,6 @@ public class FSMBehavior extends Behavior {
    * FSM state behavior.
    *
    * @author  Mandar Chitre
-   * @version $Revision: 8930 $, $Date: 2012-04-24 11:46:27 +0800 (Tue, 24 Apr 2012) $
    */
   public static class State {
 

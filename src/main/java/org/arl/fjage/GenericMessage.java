@@ -16,7 +16,6 @@ import java.util.*;
  * A message class that can convey generic messages represented by key-value pairs.
  *
  * @author  Mandar Chitre
- * @version $Revision: 8966 $, $Date: 2012-04-30 02:57:57 +0800 (Mon, 30 Apr 2012) $
  */
 public class GenericMessage extends Message implements Map<Object,Object> {
 
@@ -38,11 +37,38 @@ public class GenericMessage extends Message implements Map<Object,Object> {
   /**
    * Creates a generic new message.
    *
+   * @param perf performative.
+   */
+  public GenericMessage(Performative perf) {
+    super(perf);
+  }
+
+  /**
+   * Creates a generic new message.
+   *
+   * @param recepient agent id of recipient agent or topic.
+   */
+  public GenericMessage(AgentID recepient) {
+    super(recepient);
+  }
+
+  /**
+   * Creates a generic new message.
+   *
    * @param recepient agent id of recipient agent or topic.
    * @param perf performative.
    */
   public GenericMessage(AgentID recepient, Performative perf) {
     super(recepient, perf);
+  }
+
+  /**
+   * Creates a generic response message.
+   *
+   * @param inReplyTo message to which this response corresponds to.
+   */
+  public GenericMessage(Message inReplyTo) {
+    super(inReplyTo);
   }
 
   /**
@@ -89,11 +115,27 @@ public class GenericMessage extends Message implements Map<Object,Object> {
 
   @Override
   public Object put(Object key, Object value) {
+    if (key.equals("performative")) {
+      setPerformative((Performative)value);
+      return value;
+    }
+    if (key.equals("recipient")) {
+      setRecipient((AgentID)value);
+      return value;
+    }
+    if (key.equals("sender")) return getSender();
+    if (key.equals("messageID")) return getMessageID();
+    if (key.equals("inReplyTo")) return getInReplyTo();
     return map.put(key, value);
   }
 
   @Override
   public Object get(Object key) {
+    if (key.equals("performative")) return getPerformative();
+    if (key.equals("recipient")) return getRecipient();
+    if (key.equals("sender")) return getSender();
+    if (key.equals("messageID")) return getMessageID();
+    if (key.equals("inReplyTo")) return getInReplyTo();
     return map.get(key);
   }
 
@@ -127,7 +169,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
    * @return the string value associated with the key, or defVal if not found.
    */
   public String get(Object key, String defVal) {
-    Object obj = map.get(key);
+    Object obj = get(key);
     if (obj == null) return defVal;
     return obj.toString();
   }
@@ -141,7 +183,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
    * @throws java.lang.NumberFormatException if the value is not numeric.
    */
   public int get(Object key, int defVal) {
-    Object obj = map.get(key);
+    Object obj = get(key);
     if (obj == null) return defVal;
     return ((Number)obj).intValue();
   }
@@ -155,7 +197,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
    * @throws java.lang.NumberFormatException if the value is not numeric.
    */
   public long get(Object key, long defVal) {
-    Object obj = map.get(key);
+    Object obj = get(key);
     if (obj == null) return defVal;
     return ((Number)obj).longValue();
   }
@@ -169,7 +211,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
    * @throws java.lang.NumberFormatException if the value is not numeric.
    */
   public double get(Object key, double defVal) {
-    Object obj = map.get(key);
+    Object obj = get(key);
     if (obj == null) return defVal;
     return ((Number)obj).doubleValue();
   }

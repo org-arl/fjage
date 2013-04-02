@@ -28,7 +28,6 @@ import java.util.*;
  * </pre></code>
  *
  * @author  Mandar Chitre
- * @version $Revision: 9941 $, $Date: 2012-11-06 01:12:45 +0800 (Tue, 06 Nov 2012) $
  */
 public final class RealTimePlatform extends Platform {
 

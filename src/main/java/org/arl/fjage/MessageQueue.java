@@ -16,7 +16,6 @@ import java.util.*;
  * Internal class representing a message queue.
  *
  * @author  Mandar Chitre
- * @version $Revision: 8878 $, $Date: 2012-04-17 22:39:10 +0800 (Tue, 17 Apr 2012) $
  */
 class MessageQueue {
 

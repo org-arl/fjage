@@ -16,7 +16,6 @@ package org.arl.fjage;
  * FIPA ACL recommendations for interagent communication.
  *
  * @author  Mandar Chitre
- * @version $Revision: 9110 $, $Date: 2012-06-15 22:50:14 +0800 (Fri, 15 Jun 2012) $
  */
 public enum Performative {
 

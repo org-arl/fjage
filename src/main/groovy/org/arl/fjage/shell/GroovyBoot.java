@@ -27,7 +27,6 @@ import java.util.jar.Manifest;
  * </code>
  *
  * @author Mandar Chitre
- * @version $Id: Boot.java 9802 2012-10-21 18:47:41Z MandarChitre $
  */
 public class GroovyBoot {
 

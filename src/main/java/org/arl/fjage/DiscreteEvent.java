@@ -16,7 +16,6 @@ import java.util.TimerTask;
  * Internal class representing a discrete event for simulation.
  *
  * @author  Mandar Chitre
- * @version $Revision: 8931 $, $Date: 2012-04-24 18:24:53 +0800 (Tue, 24 Apr 2012) $
  */
 class DiscreteEvent {
 

@@ -19,7 +19,6 @@ import org.arl.fjage.*;
  * or slave container can be accessed using this gateway.
  *
  * @author  Mandar Chitre
- * @version $Revision: 9801 $, $Date: 2012-10-21 02:02:31 +0800 (Sun, 21 Oct 2012) $
  */
 public class Gateway {
 

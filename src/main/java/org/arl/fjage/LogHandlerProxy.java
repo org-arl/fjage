@@ -17,7 +17,6 @@ import java.util.logging.*;
  * event platform is used.
  *
  * @author  Mandar Chitre
- * @version $Revision: 8897 $, $Date: 2012-04-20 00:50:43 +0800 (Fri, 20 Apr 2012) $
  */
 public class LogHandlerProxy extends Handler {
 

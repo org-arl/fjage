@@ -21,7 +21,6 @@ import org.arl.fjage.*;
  * @see org.arl.fjage.Container
  *
  * @author Mandar Chitre
- * @version $Revision: 8889 $ $Date: 2012-04-19 00:12:01 +0800 (Thu, 19 Apr 2012) $
  */
 public class RemoteContainerProxy extends UnicastRemoteObject implements RemoteContainer {
 

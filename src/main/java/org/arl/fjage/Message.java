@@ -19,7 +19,6 @@ import java.io.Serializable;
  * on remote containers, all attributes of a message must be serializable.
  *
  * @author  Mandar Chitre
- * @version $Revision: 9127 $, $Date: 2012-06-17 16:34:15 +0800 (Sun, 17 Jun 2012) $
  */
 public class Message implements Serializable {
 
@@ -48,12 +47,44 @@ public class Message implements Serializable {
   /**
    * Creates a new message.
    *
+   * @param perf performative.
+   */
+  public Message(Performative perf) {
+    this.perf = perf;
+    recepient = null;
+  }
+
+  /**
+   * Creates a new message.
+   *
+   * @param recepient agent id of recipient agent or topic.
+   */
+  public Message(AgentID recepient) {
+    perf = null;
+    this.recepient = recepient;
+  }
+
+  /**
+   * Creates a new message.
+   *
    * @param recepient agent id of recipient agent or topic.
    * @param perf performative.
    */
   public Message(AgentID recepient, Performative perf) {
     this.perf = perf;
     this.recepient = recepient;
+  }
+
+  /**
+   * Creates a response message.
+   *
+   * @param inReplyTo message to which this response corresponds to.
+   * @param perf performative.
+   */
+  public Message(Message inReplyTo) {
+    perf = null;
+    this.recepient = inReplyTo.sender;
+    this.inReplyTo = inReplyTo.msgID;
   }
 
   /**
@@ -141,9 +172,10 @@ public class Message implements Serializable {
    */
   @Override
   public String toString() {
+    String p = perf != null ? perf.toString() : "MESSAGE";
     Class<?> cls = getClass();
-    if (cls.equals(Message.class)) return perf.toString();
-    return perf.toString() + ": " + cls.getSimpleName();
+    if (cls.equals(Message.class)) return p;
+    return p + ": " + cls.getSimpleName();
   }
 
   //////////// Package private methods
@@ -153,4 +185,3 @@ public class Message implements Serializable {
   }
 
 }
-
