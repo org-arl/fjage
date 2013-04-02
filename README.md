@@ -16,19 +16,26 @@ Documentation
 * User Guide -- coming soon
 * Quickstart Guide -- coming soon
 
+Support
+-------
+
+* [Project Home](http://github.com/org-arl/fjage)
+* [Discussion Forum](http://groups.google.com/forum/#!forum/fjage-users)
+* [Issue Tracking](http://github.com/org-arl/fjage/issues)
+
 Binary Releases
 ---------------
 
-### Maven Central
-
-* GroupId: com.github.org-arl
-* ArtifactId: fjage
-* Latest version: 1.0.1
-
-### JARs
-
 * [fjage-1.0.1.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.0.1/fjage-1.0.1.jar), released April 2, 2013
 * [fjage-1.0.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.0/fjage-1.0.jar), released March 26, 2013
+
+**Maven dependency:**
+
+    <dependency>
+      <groupId>com.github.org-arl</groupId>
+      <artifactId>fjage</artifactId>
+      <version>1.0.1</version>
+    </dependency>
 
 License
 -------
