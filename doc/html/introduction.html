@@ -1,0 +1,156 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Introduction &mdash; fjåge 1.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="fjåge 1.0.1 documentation" href="index.html" />
+    <link rel="next" title="Getting Started" href="quickstart.html" />
+    <link rel="prev" title="Fjåge Developer’s Guide" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="quickstart.html" title="Getting Started"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Fjåge Developer’s Guide"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">fjåge 1.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Introduction</a><ul>
+<li><a class="reference internal" href="#why-fjage">Why fjåge?</a></li>
+<li><a class="reference internal" href="#java-and-groovy-support">Java and Groovy support</a></li>
+<li><a class="reference internal" href="#key-concepts">Key Concepts</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Fjåge Developer&#8217;s Guide</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="quickstart.html"
+                        title="next chapter">Getting Started</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>Fjåge provides a <strong>lightweight</strong> and <strong>easy-to-learn</strong> platform for <a class="reference external" href="http://en.wikipedia.org/wiki/Agent-oriented_programming">agent-oriented software development</a> in Java and <a class="reference external" href="http://groovy.codehaus.org/">Groovy</a>.</p>
+<div class="section" id="why-fjage">
+<h2>Why fjåge?<a class="headerlink" href="#why-fjage" title="Permalink to this headline">¶</a></h2>
+<p>Several frameworks exist for agent-oriented software development. For Java programmers, <a class="reference external" href="http://jade.tilab.com/">JADE</a> provides a <a class="reference external" href="http://www.fipa.org/">FIPA</a>-compliant framework for multi-agent systems. The <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/">API</a> for fjåge is largely based on the API available in JADE, and so any developer familiar with JADE should have very little difficulty learning to develop using fjåge. However, there are some significant differences between the philosophy between the two projects. The key advantages of fjåge are:</p>
+<ul class="simple">
+<li>Fjåge is designed to be very <strong>lightweight and fast</strong>, and is suitable for Java-capable embedded systems.</li>
+<li>The API for fjåge is kept very simple with a view to making it <strong>easy to learn</strong>, and having very little scaffolding code. This enables a <strong>quick agent development cycle</strong>.</li>
+<li>Fjåge can be run in realtime mode, or in a <strong>discrete event simulation mode</strong>. This makes it ideally suited for development of simulators, and allows rapid testing of production code in simulated environments.</li>
+<li>Fjåge has excellent <strong>Groovy support</strong> that makes agent development easy to learn and enjoyable, and the resulting code very readable.</li>
+<li>Fjåge provides an <strong>interactive shell and scripting support</strong>, making development, debugging and remote management easy.</li>
+</ul>
+<p>On the flip side, although fjåge follows many of the ideas from FIPA, it is not fully FIPA-compliant and cannot directly interact with other FIPA-compliant multiagent systems.</p>
+</div>
+<div class="section" id="java-and-groovy-support">
+<h2>Java and Groovy support<a class="headerlink" href="#java-and-groovy-support" title="Permalink to this headline">¶</a></h2>
+<p>Although most of the functionality of the framework can be used in pure-Java projects, the adoption of Groovy in the project simplifies development immensely. In this guide, most of the code examples are in Groovy. Writing equivalent Java code is mostly trivial, though there are cases where the mapping may not be obvious. Developers wishing to develop Java agents are advised to read the chapter &#8220;<a class="reference internal" href="java.html#java"><em>Groovy vs Java Agents</em></a>&#8221;.</p>
+</div>
+<div class="section" id="key-concepts">
+<h2>Key Concepts<a class="headerlink" href="#key-concepts" title="Permalink to this headline">¶</a></h2>
+<p>A multi-agent system developed in fjåge consists of several software <em>agents</em> that communicate with each other using <em>messages</em>. Each instance of an agent is identified by a unique <em>AgentID</em> that can be used to send messages to that agent. Agents have <em>behaviors</em> that are invoked on events, and allow the agents to take actions. The behaviors may be invoked at a specified time, at a specified rate, on reception of a message, occurance of some event, or even continously. The agents reside in one or more <em>containers</em> that provide agent management, directory and messaging services. Various containers may run on the same node, or on different nodes in a network. Each container runs on a <em>platform</em> that provides container management, timing and scheduling services.</p>
+<p>There are two kinds of platforms available:</p>
+<ul class="simple">
+<li><strong>RealTimePlatform</strong> &#8211; This platform provides timing and scheduling services such that the timing requirements of an application are met on a best-effort basis. For example, if an agent asks to have a behavior be activated every 500 ms, the platform tries its best (within the limits of what the operating system and hardware allows) to invoke the behavior every 500 ms. The time returned by the time-related functions is based on the operating system&#8217;s real-time clock.</li>
+<li><strong>DiscreteEventSimulator</strong> &#8211; This platform allows agents to be tested in a <a class="reference external" href="http://en.wikipedia.org/wiki/Discrete_event_simulation">discrete event simulation</a> mode. Essentially, all the time-related functions and scheduling uses a <em>virtual time</em>. The passage of virtual time is simulated such that computation and processing does not take any virtual time, while scheduling requests are met accurately in virtual time. The virtual time advances in discrete steps such that the time when no agent is active is effectively skipped. This potentially allows for simulation of hours of virtual time within seconds.</li>
+</ul>
+<p>To switch between the two platforms, the agent code does not require any changes as long as a couple of simple rules are followed while developing the agents:</p>
+<ul class="simple">
+<li>Agents must not use any system timing functions directly. Rather than use <cite>System.currentTimeMillis()</cite> or <cite>System.nanoTime()</cite>, the agents should use <cite>Agent.currentTimeMillis()</cite> and <cite>Agent.nanoTime()</cite>.</li>
+<li>Agents must not use any system scheduling functions directly. Rather than use <cite>Thread.sleep()</cite>, the agent should use <cite>Agent.sleep()</cite>.</li>
+</ul>
+<p>Following these rules guarantees that the agents transparently switch between the real-time or virtual time that the platform provides.</p>
+<p>Agents may choose to provide one or more <em>services</em>. Rather than having to know the AgentID of an agent in advance, agents requiring the services of another agent may look for agents providing specific services via the <em>directory service</em>. Agents may choose to subscribe to and send messages to <em>topics</em>. All agents subscribing to a topic receive each message sent to that topic.</p>
+<p>That&#8217;s pretty much it for the concepts that you need to understand to get started. If all of this seems a bit abstract at the moment, don&#8217;t worry about it &#8211; things will become clear shortly as we go through some examples.</p>
+</div>
+<div class="section" id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<p>Fjåge is released under the open source <a class="reference external" href="http://github.com/org-arl/fjage/blob/master/LICENSE.txt">simplified (3-clause) BSD license</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="quickstart.html" title="Getting Started"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Fjåge Developer’s Guide"
+             >previous</a> |</li>
+        <li><a href="index.html">fjåge 1.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Mandar Chitre.
+      Last updated on Apr 04, 2013.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,189 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Getting Started &mdash; fjåge 1.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="fjåge 1.0.1 documentation" href="index.html" />
+    <link rel="next" title="Adding Behaviors" href="behaviors.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="behaviors.html" title="Adding Behaviors"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="introduction.html" title="Introduction"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">fjåge 1.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Getting Started</a><ul>
+<li><a class="reference internal" href="#quick-start">Quick start</a></li>
+<li><a class="reference internal" href="#hello-world-agent">Hello world agent</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="introduction.html"
+                        title="previous chapter">Introduction</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="behaviors.html"
+                        title="next chapter">Adding Behaviors</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="quick-start">
+<h2>Quick start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
+<p>We assume that you are working on a UNIX (Linux or Mac OS X) system with network access. If you are working on a Windows platform, you may need <a class="reference external" href="http://www.cygwin.com/">Cygwin</a> installed.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Although one would expect Java to work across platforms, fjåge has not been fully tested under Windows. If you encounter any problems, please report them via the <a class="reference external" href="http://github.com/org-arl/fjage/issues">issue tracking system</a>.</p>
+</div>
+<p>Create a new folder for your first fjåge project. Lets call it <cite>MyFjageProject</cite>. Open a terminal window in this folder and download the <a class="reference external" href="https://raw.github.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.sh">fjage_quickstart.sh</a> script in that folder:</p>
+<div class="highlight-python"><pre>curl -O https://raw.github.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.sh</pre>
+</div>
+<p>To get your project ready, just run the script:</p>
+<div class="highlight-python"><pre>sh fjage_quickstart.sh</pre>
+</div>
+<p>The script downloads all necessary libraries (JAR files) and some template startup scripts to get you going. You may now delete off the <cite>fjage_quickstart.sh</cite> file, if you like:</p>
+<div class="highlight-python"><pre>rm fjage_quickstart.sh</pre>
+</div>
+<p>Your directory structure should now look something like this:</p>
+<div class="highlight-python"><pre>fjage.sh
+logs/
+build/libs
+  cloning-1.9.0.jar
+  commons-lang3-3.1.jar
+  fjage-1.0.1.jar
+  groovy-all-2.1.2.jar
+  jline-2.10.jar
+  objenesis-1.2.jar
+etc/
+  initrc.groovy
+  logging.properties
+  fjageshrc.groovy</pre>
+</div>
+<p>The <cite>build/libs</cite> folder contains all the necessary libraries. The <cite>etc</cite> folder contains startup files. <cite>initrc.groovy</cite> in the initialization script where you create your agents and configure them. <cite>logging.properties</cite> is a standard <a class="reference external" href="http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html">Java logging</a> configuration file that controls the logs from your project. <cite>fjageshrc.groovy</cite> is an initialization script for the interactive shell. <cite>fjage.sh</cite> is your startup shell script that simply sets up the CLASSPATH and boots up fjåge with the <cite>initrc.groovy</cite> script. The organization of the directory structure and names of the files are all customizable by editing <cite>fjage.sh</cite> and <cite>initrc.groovy</cite>.</p>
+<p>To check that your fjåge installation is correctly working, type <cite>./fjage.sh</cite>. That should simply give you an interactive fjåge Groovy shell with a <cite>$</cite> prompt. Type <cite>ps</cite> to see a list of running agents. There should be only one <cite>shell</cite> agent created by the default <cite>initrc.groovy</cite> script. Type <cite>shutdown</cite> or press control-D to terminate fjåge.</p>
+<div class="highlight-python"><pre>bash$ ./fjage.sh
+$ ps
+shell: org.arl.fjage.shell.ShellAgent - IDLE
+$ shutdown
+
+bash$</pre>
+</div>
+</div>
+<div class="section" id="hello-world-agent">
+<h2>Hello world agent<a class="headerlink" href="#hello-world-agent" title="Permalink to this headline">¶</a></h2>
+<p>As any good tutorial does, we start with the proverbial <em>hello world</em> agent. The agent isn&#8217;t going to do much, other than print the words &#8220;Hello world!!!&#8221; in the logs.</p>
+<p>Create a file called <cite>hello.groovy</cite> in your project folder and put the following contents in it:</p>
+<div class="highlight-python"><pre>import org.arl.fjage.*
+
+class HelloWorldAgent extends Agent {
+  void init() {
+    add oneShotBehavior {
+      println 'Hello world!!!'
+    }
+  }
+}
+
+container.add 'hello', new HelloWorldAgent()</pre>
+</div>
+<p>This Groovy script creates an agent with AgentID <cite>hello</cite> of class <cite>HelloWorldAgent</cite>. The <cite>init()</cite> method of the agent is called once the agent is loaded. In this method, a one-shot behavior is added to the agent. One-shot behaviors are fired only once, as soon as possible; in our case, this is as soon as the agent is running. The one-shot behavior prints &#8220;Hello world!!!&#8221;. The output of the agent is not directly displayed on the console, but instead sent to the log file, as we will see shortly.</p>
+<p>To run the agent, start fjåge and run the script by typing <cite>run &#8216;hello&#8217;</cite> or simply <cite>&lt;hello</cite>. This will return you to the interactive shell prompt. To check that your agent is indeed running, type <cite>ps</cite>. You may then shutdown fjåge as before and check the log file for your output:</p>
+<div class="highlight-python"><pre>bash$ ./fjage.sh
+$ &lt;hello
+$ ps
+hello: HelloWorldAgent - IDLE
+shell: org.arl.fjage.shell.ShellAgent - IDLE
+$ shutdown
+
+bash$ cat logs/log-0.txt | grep HelloWorldAgent@
+1365092640082|INFO|HelloWorldAgent@18|Hello world!!!
+bash$</pre>
+</div>
+<p>The default fjåge log file format is pipe-separated, where the first column is the timestamp in milliseconds, the second column is the log level, the third column is the agent class name and threadID, and the last column is the log message. You may change the format if you like by editing the <cite>logging.properties</cite> file in the <cite>etc</cite> folder.</p>
+<p>Congratulations!!! You have just developed your first Groovy fjåge agent!</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="behaviors.html" title="Adding Behaviors"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="introduction.html" title="Introduction"
+             >previous</a> |</li>
+        <li><a href="index.html">fjåge 1.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Mandar Chitre.
+      Last updated on Apr 05, 2013.
+    </div>
+  </body>
+</html>
