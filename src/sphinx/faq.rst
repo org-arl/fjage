@@ -1,2 +1,2 @@
-Frequestly Asked Questions
+Frequently Asked Questions
 ==========================

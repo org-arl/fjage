@@ -11,6 +11,7 @@ Table of Contents
    quickstart
    behaviors
    messages
+   services
    shell
    simulation
    rmi
