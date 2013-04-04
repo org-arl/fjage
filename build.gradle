@@ -37,6 +37,12 @@ task jars(dependsOn: jar, type: Copy) {
   from configurations.runtime
 }
 
+task doc << {
+  ant.exec(executable: 'make', dir: '.', failonerror: true) {
+    arg(line: 'html')
+  }
+}
+
 ////// tasks for MavenCentral deployment
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
