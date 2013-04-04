@@ -1,5 +1,5 @@
-Fjåge User Guide
-================
+Fjåge Developer's Guide
+=======================
 
 Table of Contents
 -----------------
@@ -16,3 +16,11 @@ Table of Contents
    rmi
    java
    faq
+
+Useful Links
+------------
+
+* `Fjåge GitHub home <http://github.com/org-arl/fjage>`_
+* `Fjåge API documentation <http://org-arl.github.com/fjage/javadoc/>`_
+* `Fjåge discussion forum <http://groups.google.com/forum/#!forum/fjage-users>`_
+* `Fjåge issue tracking <http://github.com/org-arl/fjage/issues>`_
