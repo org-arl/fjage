@@ -7,7 +7,7 @@ defaultTasks 'jars'
 
 archivesBaseName = 'fjage'
 group = 'com.github.org-arl'
-version = '1.0.1'
+version = new File('VERSION').text.trim()
 docsDirName = '../htdocs'
 
 repositories {
@@ -25,6 +25,10 @@ dependencies {
 compileJava {
   sourceCompatibility = 1.6
 }
+
+//tasks.withType(Compile) { 
+//  options.compilerArgs << "-Xlint:unchecked" 
+//}
 
 jar {
   manifest {
