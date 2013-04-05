@@ -50,7 +50,7 @@
 <li><a class="reference internal" href="#">Introduction</a><ul>
 <li><a class="reference internal" href="#why-fjage">Why fjåge?</a></li>
 <li><a class="reference internal" href="#java-and-groovy-support">Java and Groovy support</a></li>
-<li><a class="reference internal" href="#key-concepts">Key Concepts</a></li>
+<li><a class="reference internal" href="#key-concepts">Key concepts</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
 </ul>
 </li>
@@ -103,7 +103,7 @@
 <p>Although most of the functionality of the framework can be used in pure-Java projects, the adoption of Groovy in the project simplifies development immensely. In this guide, most of the code examples are in Groovy. Writing equivalent Java code is mostly trivial, though there are cases where the mapping may not be obvious. Developers wishing to develop Java agents are advised to read the chapter &#8220;<a class="reference internal" href="java.html#java"><em>Groovy vs Java Agents</em></a>&#8221;.</p>
 </div>
 <div class="section" id="key-concepts">
-<h2>Key Concepts<a class="headerlink" href="#key-concepts" title="Permalink to this headline">¶</a></h2>
+<h2>Key concepts<a class="headerlink" href="#key-concepts" title="Permalink to this headline">¶</a></h2>
 <p>A multi-agent system developed in fjåge consists of several software <em>agents</em> that communicate with each other using <em>messages</em>. Each instance of an agent is identified by a unique <em>AgentID</em> that can be used to send messages to that agent. Agents have <em>behaviors</em> that are invoked on events, and allow the agents to take actions. The behaviors may be invoked at a specified time, at a specified rate, on reception of a message, occurance of some event, or even continously. The agents reside in one or more <em>containers</em> that provide agent management, directory and messaging services. Various containers may run on the same node, or on different nodes in a network. Each container runs on a <em>platform</em> that provides container management, timing and scheduling services.</p>
 <p>There are two kinds of platforms available:</p>
 <ul class="simple">

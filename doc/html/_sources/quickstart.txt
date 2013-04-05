@@ -87,6 +87,8 @@ The default fjåge log file format is pipe-separated, where the first column is 
 
 Congratulations!!! You have just developed your first Groovy fjåge agent!
 
+.. note:: Stack traces for any exceptions caused by any agent will be dumped to the log file. This can be invaluable during debugging.
+
 Packaging agents
 ----------------
 

@@ -162,6 +162,10 @@ bash$</pre>
 </div>
 <p>The default fjåge log file format is pipe-separated, where the first column is the timestamp in milliseconds, the second column is the log level, the third column is the agent class name and threadID, and the last column is the log message. You may change the format if you like by editing the <cite>logging.properties</cite> file in the <cite>etc</cite> folder.</p>
 <p>Congratulations!!! You have just developed your first Groovy fjåge agent!</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Stack traces for any exceptions caused by any agent will be dumped to the log file. This can be invaluable during debugging.</p>
+</div>
 </div>
 <div class="section" id="packaging-agents">
 <h2>Packaging agents<a class="headerlink" href="#packaging-agents" title="Permalink to this headline">¶</a></h2>
