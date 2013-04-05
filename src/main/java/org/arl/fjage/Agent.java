@@ -643,8 +643,8 @@ public class Agent implements Runnable, TimestampProvider {
    * 
    * @param msg message to log.
    */
-  public void println(String msg) {
-    log.info(msg);
+  public void println(Object msg) {
+    log.info(msg.toString());
   }
 
   /**
