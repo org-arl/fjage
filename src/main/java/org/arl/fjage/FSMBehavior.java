@@ -24,11 +24,13 @@ import java.util.logging.Logger;
  *   public void action() {
  *     log.info("In State #1");
  *     setNextState("state2");
+ *   }
  * });
  * fsm.add(new FSMBehavior.State("state2") {
  *   public void action() {
  *     log.info("In State #2");
  *     terminate();
+ *   }
  * });
  * agent.add(fsm);
  * </pre></code>

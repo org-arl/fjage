@@ -20,21 +20,24 @@ The script downloads all necessary libraries (jar files) and some template start
 
     rm fjage_quickstart.sh
 
-Your directory structure should now look something like this::
+Your directory structure should now look something like this:
+
+.. parsed-literal::
 
     fjage.sh
     logs/
     build/libs/
-      cloning-1.9.0.jar
-      commons-lang3-3.1.jar
-      fjage-1.0.1.jar
+      fjage-|version|.jar
       groovy-all-2.1.2.jar
+      commons-lang3-3.1.jar
       jline-2.10.jar
-      objenesis-1.2.jar
     etc/
       initrc.groovy
       logging.properties
       fjageshrc.groovy
+
+..    cloning-1.9.0.jar
+..    objenesis-1.2.jar
 
 .. note:: The `build/libs` folder contains all the necessary libraries. The `etc` folder contains startup files. `initrc.groovy` in the initialization script where you create your agents and configure them. `logging.properties` is a standard `Java logging <http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html>`_ configuration file that controls the logs from your project. `fjageshrc.groovy` is an initialization script for the interactive shell. `fjage.sh` is your startup shell script that simply sets up the classpath and boots up fjåge with the `initrc.groovy` script. The organization of the directory structure and names of the files are all customizable by editing `fjage.sh` and `initrc.groovy`.
 
@@ -166,7 +169,7 @@ This code sequentially executes every initialization Groovy script given on the 
     import org.arl.fjage.*
     import org.arl.fjage.shell.*
 
-    Agent.mixin GroovyAgentExtensions
+    GroovyAgentExtensions.enable()
 
     platform = new RealTimePlatform()
     container = new Container(platform)
@@ -176,7 +179,7 @@ This code sequentially executes every initialization Groovy script given on the 
     // add other agents to the container here
     platform.start()
 
-The script imports the fjage packages. It then enables Groovy extensions in fjåge to add syntactic sugar for ease of writing Groovy agents (see chapter ":ref:`java`" for more details). A real-time platform and a container is created, and a `shell` agent is configured and added to the container. The `shell` agent is set to provide the interactive shell on the console, use Groovy for scripting and to execute `etc/fjageshrc.groovy` as the startup script when a user interacts with the shell. Finally, the platform is started. Now we have a fjåge container running with a single `shell` agent that provides an interactive shell on the console.
+The script imports the fjage packages. It then enables Groovy extensions in fjåge to add syntactic sugar for ease of writing Groovy agents. A real-time platform and a container is created, and a `shell` agent is configured and added to the container. The `shell` agent is set to provide the interactive shell on the console, use Groovy for scripting and to execute `etc/fjageshrc.groovy` as the startup script when a user interacts with the shell. Finally, the platform is started. Now we have a fjåge container running with a single `shell` agent that provides an interactive shell on the console.
 
 Any other agents that we may wish to start can be included in the `etc/initrc.groovy` script, just before starting the platform.
 

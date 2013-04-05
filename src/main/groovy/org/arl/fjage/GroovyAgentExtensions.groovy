@@ -19,6 +19,10 @@ package org.arl.fjage
  */
 class GroovyAgentExtensions {
 
+  static void enable() {
+    Agent.mixin GroovyAgentExtensions
+  }
+
   OneShotBehavior oneShotBehavior(Closure<?> c) {
     return new OneShotBehavior() {
       @Override
@@ -96,9 +100,28 @@ class GroovyAgentExtensions {
     }
   }
 
+  MessageFilter messageFilter(Closure<?> c) {
+    return new MessageFilter() {
+      @Override
+      boolean matches(Message msg) {
+        return c.call(msg)
+      }
+    }
+  }
+
+  FSMBehavior.State fsmBehaviorState(def state, Closure<?> c) {
+    return new FSMBehavior.State(state) {
+      @Override
+      void action() {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+      }
+    }
+  }
+
   String toString() {
     return this as String
   }
 
 }
-

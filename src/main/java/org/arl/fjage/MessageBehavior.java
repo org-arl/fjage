@@ -42,7 +42,7 @@ public abstract class MessageBehavior extends Behavior {
     filter = new MessageFilter() {
       @Override
       public boolean matches(Message m) {
-        return m.getClass().equals(cls);
+        return cls.isInstance(m);
       }
     };
   }

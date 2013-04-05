@@ -11,7 +11,6 @@ for full license details.
 package org.arl.fjage.shell;
 
 import org.arl.fjage.*;
-
 import java.io.File;
 
 /**

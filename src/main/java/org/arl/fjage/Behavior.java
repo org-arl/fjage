@@ -20,8 +20,10 @@ import java.util.logging.Logger;
  * <li>{@link OneShotBehavior} for one time behaviors
  * <li>{@link WakerBehavior} for behaviors to be executed once after a specified period
  * <li>{@link TickerBehavior} for behaviors to be executed periodically
+ * <li>{@link PoissonBehavior} for simulating Poisson arrival processes
  * <li>{@link MessageBehavior} for behaviors to process incoming messages
  * <li>{@link TestBehavior} for unit testing
+ * <li>{@link FSMBehavior} for implementing finite state machines
  * </ul>
  * Additionally, developers may create their own behaviors by extending this class or one
  * of its subclasses.

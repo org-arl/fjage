@@ -19,7 +19,9 @@ On the flip side, although fjåge follows many of the ideas from FIPA, it is not
 Java and Groovy support
 -----------------------
 
-Although most of the functionality of the framework can be used in pure-Java projects, the adoption of Groovy in the project simplifies development immensely. In this guide, most of the code examples are in Groovy. Writing equivalent Java code is mostly trivial, though there are cases where the mapping may not be obvious. Developers wishing to develop Java agents are advised to read the chapter ":ref:`java`".
+Although most of the functionality of the framework can be used in pure-Java projects, the adoption of Groovy in the project simplifies development immensely. In this guide, most of the code examples are in Groovy. Writing equivalent Java code is mostly trivial, though there are cases where the mapping may not be obvious. In such cases, we provide Java examples alongside the Groovy ones.
+
+.. Developers wishing to develop Java agents are advised to read the chapter ":ref:`java`".
 
 Key concepts
 ------------
