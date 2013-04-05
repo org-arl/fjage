@@ -48,3 +48,20 @@ License
 -------
 
 Fjåge is released under the open source `simplified (3-clause) BSD license <http://github.com/org-arl/fjage/blob/master/LICENSE.txt>`_.
+
+Availability
+------------
+
+Fjåge is available as a binary release via Maven central:
+
+.. parsed-literal::
+
+    <dependency>
+      <groupId> com.github.org-arl </groupId>
+      <artifactId> fjage </artifactId>
+      <version> |version| </version>
+    </dependency>
+
+Its source code is available via `GitHub <http://github.com/org-arl/fjage>`_::
+
+    git clone git@github.com:org-arl/fjage.git

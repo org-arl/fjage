@@ -13,8 +13,7 @@ Documentation
 -------------
 
 * [API documentation](http://org-arl.github.com/fjage/javadoc/)
-* User Guide -- coming soon
-* Quickstart Guide -- coming soon
+* [Developer's Guide](http://org-arl.github.com/fjage/doc/html/) -- work in progress
 
 Support
 -------
@@ -26,6 +25,7 @@ Support
 Binary Releases
 ---------------
 
+* [fjage-1.0.2.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.0.2/fjage-1.0.2.jar), released April 6, 2013
 * [fjage-1.0.1.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.0.1/fjage-1.0.1.jar), released April 2, 2013
 * [fjage-1.0.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.0/fjage-1.0.jar), released March 26, 2013
 
@@ -34,7 +34,7 @@ Binary Releases
     <dependency>
       <groupId>com.github.org-arl</groupId>
       <artifactId>fjage</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.2</version>
     </dependency>
 
 License
