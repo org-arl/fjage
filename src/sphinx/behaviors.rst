@@ -2,3 +2,106 @@ Adding Behaviors
 ================
 
 .. note:: Work in progress
+.. highlight:: groovy
+
+Agent lifecycle
+---------------
+
+When an agent is added to a container, it starts in the INIT state. When the platform is running, agents in the INIT state are initialized by calling their `init()` method. An typical agent overrides this method and adds new behaviors to itself.
+
+After initialization, the agent moves to a RUNNING state. In this state, active behaviors of the agent are scheduled to run. A typical agent is associated with one agent thread, and various behaviors are cooperatively scheduled on this thread. Due to the cooperative nature of the behaviors, a poorly written behavior may block execution of all other behaviors of that agent. Developers should avoid long-running or blocking code in behaviors; if such code is needed, it is best to create a separate thread to run that code.
+
+A behavior that is not ready to run may be in a blocked state (e.g. a behavior that is to be executed at a specified later time). An agent may make a behavior as blocked, by explicitly calling the `block()` method on that behavior. If there are no active behaviors for an agent, the agent goes into an IDLE state. Behaviors may be activated due to timer events, message delivery events or by explicit `restart()` method calls. When one or more behaviors become active, the agent goes back into a RUNNING state.
+
+When an agent is killed or the platform is shutdown, the agent is placed in a FINISHING state. Agents in this state are given a chance to cleanup via a call to their `shutdown()` method. An agent may override this method if a cleanup is required. After the cleanup, the agent is terminated and placed in a FINISHED state, and removed from the container.
+
+An example skeleton agent is shown below:: 
+
+    class MyAgent extends Agent {
+      
+      void init() {
+        // agent is in INIT state
+        log.info 'Agent init'
+        add oneShotBehavior {
+          // behavior will be executed after all agents are initialized
+          // agent is in RUNNING state
+          log.info 'Agent ready'
+        }
+      }
+
+      void shutdown() {
+        log.info 'Agent shutdown'
+      }
+
+    }
+
+.. tip:: `println()` from an agent is mapped to `log.info()`, and can be used interchangably. However, the `log` object provides more flexibility (e.g. `log.warning()`, `log.fine()`, etc).
+
+The *traditional* behavior creation style may be used by Java and Groovy agents::
+
+    agent.add(new OneShotBehavior() {
+      public void action() {
+        // do something
+      }
+    });
+
+The method to override depends on the behavior (e.g. `action()` for most behaviors, but `onTick()` for `TickerBehavior`, and `onWake()` for `WakerBehavior`).
+
+Groovy agents support a simpler alternative syntax if the `GroovyAgentExtensions` are enabled (see chapter ":ref:`java`" for more details)::
+
+    agent.add oneShotBehavior {
+      // do something
+    }
+
+With this syntax, the appropriate method is automatically overridden to call the defined closure. For the examples in the rest of this chapter, we will adopt the simpler Groovy syntax.
+
+One-shot behavior
+-----------------
+
+A one-shot behavior is run only once at the earliest opportunity. After execution, the behavior is automatically removed. We have seen an example of the one-shot behavior above.
+
+Cyclic behavior
+---------------
+
+A cyclic behavior is run repeatedly as long as it is active. The behavior may be blocked and restarted as necessary. ::
+
+    class MyAgent extends Agent {
+      int n = 0
+      void init() {
+        // a cyclic behavior that runs 5 times and then marks itself as blocked
+        add cyclicBehavior {
+          agent.n++
+          println "n = ${agent.n}"
+          if (agent.n >= 5) block()
+        }
+      }
+    }
+
+.. tip:: Although it may be possible in some cases to access agent methods and fields directly from a behavior method or closure, it is safer to always use an `agent.` qualifier to access them. Without the qualifier, the closure's delegation strategy causes the behavior methods and fields to be checked first; this can lead to bugs that are difficult to track.
+
+.. note:: Since behaviors are cooperatively scheduled, they should not block.  Hence `Behavior.block()` is not a blocking call; it simply marks the behavior as blocked and removes it from the list of active behaviors to be scheduled, and continues.
+
+Waker behavior
+--------------
+
+A waker behavior is run after a specified delay in milliseconds. ::
+
+
+
+Ticker behavior
+---------------
+
+Poisson behavior
+----------------
+
+Message behavior
+----------------
+
+Finite state machine behavior
+-----------------------------
+
+Test behavior
+-------------
+
+Custom behaviors
+----------------
