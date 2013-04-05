@@ -15,12 +15,12 @@ Table of Contents
    shell
    simulation
    rmi
-   java
 
-.. The FAQ page is currently blank, so we hide it...
+.. These pages are currently blank, so we hide them...
 .. toctree::
    :hidden:
 
+   java
    faq
 
 Useful Links

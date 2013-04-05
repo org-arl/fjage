@@ -1,6 +1,0 @@
-.. _fjage-quickstart:
-
-fjage_quickstart.sh
--------------------
-
-.. literalinclude:: fjage_quickstart.sh
