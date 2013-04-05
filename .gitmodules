@@ -1,3 +1,0 @@
-[submodule "htdocs"]
-	path = htdocs
-	url = git@github.com:org-arl/fjage.git
