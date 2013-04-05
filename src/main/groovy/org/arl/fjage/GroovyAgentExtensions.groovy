@@ -23,6 +23,8 @@ class GroovyAgentExtensions {
     return new OneShotBehavior() {
       @Override
       void action() {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
       }
     }
@@ -32,6 +34,8 @@ class GroovyAgentExtensions {
     return new CyclicBehavior() {
       @Override
       void action() {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
       }
     }
@@ -41,6 +45,8 @@ class GroovyAgentExtensions {
     return new WakerBehavior(millis) {
       @Override
       void onWake() {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
       }
     }
@@ -50,6 +56,8 @@ class GroovyAgentExtensions {
     return new TickerBehavior(millis) {
       @Override
       void onTick() {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
       }
     }
@@ -59,6 +67,8 @@ class GroovyAgentExtensions {
     return new PoissonBehavior(millis) {
       @Override
       void onTick() {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
       }
     }
@@ -68,6 +78,8 @@ class GroovyAgentExtensions {
     return new MessageBehavior() {
       @Override
       void onReceive(Message msg) {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call(msg)
       }
     }
@@ -77,6 +89,8 @@ class GroovyAgentExtensions {
     return new MessageBehavior(filter) {
       @Override
       void onReceive(Message msg) {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call(msg)
       }
     }
