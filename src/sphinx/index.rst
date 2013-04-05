@@ -16,6 +16,11 @@ Table of Contents
    simulation
    rmi
    java
+
+.. The FAQ page is currently blank, so we hide it...
+.. toctree::
+   :hidden:
+
    faq
 
 Useful Links
