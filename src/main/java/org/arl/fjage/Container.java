@@ -13,8 +13,7 @@ package org.arl.fjage;
 import java.io.Serializable;
 import java.util.*;
 import java.util.logging.Logger;
-import org.apache.commons.lang3.SerializationUtils;
-import com.rits.cloning.Cloner;
+import java.lang.reflect.*;
 
 /**
  * Container to manage agent lifecycle. Agents in a container are able to
@@ -45,7 +44,8 @@ public class Container {
   protected Map<String,Set<AgentID>> services = new HashMap<String,Set<AgentID>>();
   protected Logger log = Logger.getLogger(getClass().getName());
   protected boolean running = false;
-  protected Cloner cloner = null;
+  protected Object cloner;
+  protected Method doClone;
   protected boolean autoclone = false;
 
   //////////// Interface methods
@@ -59,6 +59,7 @@ public class Container {
     name = Integer.toHexString(hashCode());
     this.platform = platform;
     LogHandlerProxy.install(platform, log);
+    setCloner(SERIAL_CLONER);
     platform.addContainer(this);
   }
 
@@ -72,6 +73,7 @@ public class Container {
     this.name = name;
     this.platform = platform;
     LogHandlerProxy.install(platform, log);
+    setCloner(SERIAL_CLONER);
     platform.addContainer(this);
   }
 
@@ -114,9 +116,25 @@ public class Container {
    * @param name name of the cloner to use.
    */
   public void setCloner(String name) {
-    if (name.equals(SERIAL_CLONER)) cloner = null;
-    else if (name.equals(FAST_CLONER)) cloner = new Cloner();
-    else throw new FjageError("Unknown cloner name");
+    try {
+      if (name.equals(SERIAL_CLONER)) {
+        cloner = null;
+        doClone = Class.forName(SERIAL_CLONER).getDeclaredMethod("clone", Serializable.class);
+      } else if (name.equals(FAST_CLONER)) {
+        Class<?> cls = Class.forName(FAST_CLONER);
+        cloner = cls.newInstance();
+        doClone = cls.getMethod("deepClone", Object.class);
+      } else {
+        cloner = null;
+        doClone = null;
+        throw new FjageError("Unknown cloner name, cloning disabled");
+      }
+    } catch (Exception ex) {
+      log.warning("Cloner creation failed: "+ex.toString());
+      cloner = null;
+      doClone = null;
+      throw new FjageError("Cloner creation failed, cloning disabled");
+    }
   }
 
   /**
@@ -126,9 +144,15 @@ public class Container {
    * @param obj object to clone.
    * @return cloned object.
    */
+  @SuppressWarnings("unchecked")
   public <T extends Serializable> T clone(T obj) {
-    if (cloner == null) return SerializationUtils.clone(obj);
-    return cloner.deepClone(obj);
+    if (doClone == null) throw new FjageError("Cloner unavailable");
+    try {
+      return (T)doClone.invoke(cloner, obj);
+    } catch (Exception ex) {
+      log.warning("Cloning failed: "+ex.toString());
+      throw new FjageError("Cloning failed");
+    }
   }
 
   /**

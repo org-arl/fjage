@@ -187,7 +187,7 @@ public class BasicTests {
   }
 
   @Test
-  public void TestTickers() {
+  public void testTickers() {
     final int nAgents = 10;
     final int tickDelay = 100;
     final int ticks = 6000;
@@ -216,6 +216,30 @@ public class BasicTests {
     platform.shutdown();
     for (int i = 0; i < nAgents; i++)
       assertTrue(tb[i].getTickCount() == ticks);
+  }
+
+  @Test
+  public void testSerialCloner() {
+    Platform platform = new DiscreteEventSimulator();
+    Container container = new Container(platform);
+    container.setCloner(Container.SERIAL_CLONER);
+    RequestMessage s1 = new RequestMessage(null);
+    s1.x = 77;
+    RequestMessage s2 = container.clone(s1);
+    assertTrue(s1 != s2);
+    assertTrue(s1.x == s2.x);
+  }
+
+  @Test
+  public void testFastCloner() {
+    Platform platform = new DiscreteEventSimulator();
+    Container container = new Container(platform);
+    container.setCloner(Container.FAST_CLONER);
+    RequestMessage s1 = new RequestMessage(null);
+    s1.x = 77;
+    RequestMessage s2 = container.clone(s1);
+    assertTrue(s1 != s2);
+    assertTrue(s1.x == s2.x);
   }
 
   private static class RequestMessage extends Message {
