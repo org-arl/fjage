@@ -57,3 +57,8 @@ Examples:
   msg = receive req                 // get a response message for request req
   msg = receive { it instanceof A } // get message that of class A
 '''
+
+/// load common and local fjageshrc
+
+if (new File('etc/fjageshrc-local.groovy').exists())
+  run 'etc/fjageshrc-local'
