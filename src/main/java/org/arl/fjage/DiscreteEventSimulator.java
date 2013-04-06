@@ -11,7 +11,7 @@ for full license details.
 package org.arl.fjage;
 
 import java.util.*;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
 /**
  * Discrete event simulation platform.  This platform is useful to run high-speed
@@ -112,7 +112,9 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   @Override
   public void shutdown() {
     super.shutdown();
-    events.clear();
+    synchronized (this) {
+      events.clear();
+    }
   }
 
   /**
@@ -150,10 +152,16 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
             }
           }
         }
-        time = events.getFirst().time;
+        try {
+          time = events.getFirst().time;
+        } catch (NoSuchElementException ex) {
+          log.info("No more events pending, initiating shutdown");
+          shutdown();
+          return;
+        }
       }
     } catch (Exception ex) {
-      log.severe(ex.toString());
+      log.log(Level.SEVERE, "Exception: ", ex);
     }
   }
 
