@@ -9,6 +9,15 @@ Introduction
 
 fjåge provides a **lightweight** and **easy-to-learn** framework for [agent-oriented software development](http://en.wikipedia.org/wiki/Agent-oriented_programming) in Java and Groovy. Although most of the functionality of the framework can be used in pure-Java projects, the adoption of Groovy in the project simplifies development immensely. Typically, initialization scripts, shell interaction and command scripts are written in Groovy. Agents and support classes may be written in Java or Groovy.
 
+Key Features
+------------
+
+* Lightweight and fast
+* Easy to learn, and rapid agent development cycle
+* Agent development in Java or Groovy
+* Interactive Groovy shell and scripting
+* Easy switching between realtime operation and discrete event simulation
+
 Documentation
 -------------
 
