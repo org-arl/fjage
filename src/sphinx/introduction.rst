@@ -1,3 +1,5 @@
+.. _intro:
+
 Introduction
 ============
 
@@ -31,7 +33,7 @@ A multi-agent system developed in fjåge consists of several software *agents* t
 There are two kinds of platforms available:
 
 * **RealTimePlatform** -- This platform provides timing and scheduling services such that the timing requirements of an application are met on a best-effort basis. For example, if an agent asks to have a behavior be activated every 500 ms, the platform tries its best (within the limits of what the operating system and hardware allows) to invoke the behavior every 500 ms. The time returned by the time-related functions is based on the operating system's real-time clock.
-* **DiscreteEventSimulator** -- This platform allows agents to be tested in a `discrete event simulation <http://en.wikipedia.org/wiki/Discrete_event_simulation>`_ mode. Essentially, all the time-related functions and scheduling uses a *virtual time*. The passage of virtual time is simulated such that computation and processing does not take any virtual time, while scheduling requests are met accurately in virtual time. The virtual time advances in discrete steps such that the time when no agent is active is effectively skipped. This potentially allows for simulation of hours of virtual time within seconds.
+* **DiscreteEventSimulator** -- This platform allows agents to be tested in a `discrete event simulation <http://en.wikipedia.org/wiki/Discrete_event_simulation>`_ mode. Essentially, all the time-related functions and scheduling use a *virtual time*. The passage of virtual time is simulated such that computation and processing does not take any virtual time, while scheduling requests are met accurately in virtual time. The virtual time advances in discrete steps such that the time when no agent is active is effectively skipped. This potentially allows for simulation of hours of virtual time within seconds.
 
 To switch between the two platforms, the agent code does not require any changes as long as a couple of simple rules are followed while developing the agents:
 
