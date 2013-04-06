@@ -12,9 +12,9 @@ Table of Contents
    behaviors
    messages
    services
+   rmi
    shell
    simulation
-   rmi
 
 .. These pages are currently blank, so we hide them...
 .. toctree::

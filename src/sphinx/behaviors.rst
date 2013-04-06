@@ -1,5 +1,5 @@
-Adding Behaviors
-================
+Agents and Behaviors
+====================
 
 .. highlight:: groovy
 
@@ -38,7 +38,7 @@ An example skeleton agent is shown below::
 
 The *traditional* behavior creation style may be used by Java and Groovy agents::
 
-    agent.add(new OneShotBehavior() {
+    add(new OneShotBehavior() {
       public void action() {
         // do something
       }
@@ -48,7 +48,7 @@ The method to override depends on the behavior (e.g. `action()` for most behavio
 
 Groovy agents support a simpler alternative syntax if the `GroovyAgentExtensions` are enabled::
 
-    agent.add oneShotBehavior {
+    add oneShotBehavior {
       // do something
     }
 
@@ -85,7 +85,7 @@ Waker behavior
 
 A `WakerBehavior`_ is run after a specified delay in milliseconds. ::
 
-    agent.add wakerBehavior(1000) {
+    add wakerBehavior(1000) {
       // invoked 1 second later
       println '1000 ms have elapsed!'
     }
@@ -95,7 +95,7 @@ Ticker behavior
 
 A `TickerBehavior`_ is run repeated with a specified delay between invocations. The ticker behavior may be terminated by calling `stop()` at any time. ::
 
-    agent.add tickerBehavior(5000) {
+    add tickerBehavior(5000) {
       // called at intervals of 5 seconds
       println 'tick!'
     }
@@ -105,7 +105,7 @@ Poisson behavior
 
 A `PoissonBehavior`_ is similar to a ticker behavior, but the interval between invocations is an exponentially distributed random variable. This simulates a Poisson arrival process. ::
 
-    agent.add poissonBehavior(5000) {
+    add poissonBehavior(5000) {
       // called at an average rate of once every 5 seconds
       println 'arrival!'
     }
@@ -119,20 +119,20 @@ A `MessageBehavior`_ is invoked when a message is received by the agent. A messa
 
 A message behavior that accepts any message can be added as follows::
 
-    agent.add messageBehavior { msg ->
+    add messageBehavior { msg ->
       println "Incoming message from ${msg.sender}"
     }
 
 If we were only interested in messages of class `MyMessage`, we could set up a behavior accordingly::
 
-    agent.add messageBehavior(MyMessage) { msg ->
+    add messageBehavior(MyMessage) { msg ->
       println "Incoming message of class ${msg.class} from ${msg.sender}"
     }
 
 Let us next consider a more complex case where we are interested in message of a specific class and from a specific sender::
 
     def filter = messageFilter { it instanceof MyMessage && it.sender.name == 'myFriend' }
-    agent.add messageBehavior(filter) { msg ->
+    add messageBehavior(filter) { msg ->
       println "Incoming message of class ${msg.class} from ${msg.sender}"
     }
 
@@ -154,7 +154,7 @@ For example, we can create a grandfather clock using a `FSMBehavior`::
       nextState = 'tick'
       fsm.block 1000
     }
-    agent.add b
+    add b
 
 In Java, the states are created using a slightly different syntax::
 
@@ -173,7 +173,7 @@ In Java, the states are created using a slightly different syntax::
         fsm.block(1000);
       }
     });
-    agent.add(b);
+    add(b);
 
 Test behavior
 -------------
