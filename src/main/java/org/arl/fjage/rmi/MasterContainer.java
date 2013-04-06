@@ -188,7 +188,7 @@ public class MasterContainer extends Container implements RemoteContainer {
     int port = platform.getPort();
     String hostname = platform.getHostname();
     System.setProperty("java.rmi.server.hostname", hostname);
-    myurl = "//"+hostname+":"+port+"/jaf/"+name;
+    myurl = "//"+hostname+":"+port+"/fjage/"+name;
     log.info("Container URL: "+myurl);
     try {
       // test if a registry is already running
