@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using Directory Services &mdash; fjåge 1.0.2 documentation</title>
+    <title>Directory Services &mdash; fjåge 1.0.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -26,33 +26,40 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="fjåge 1.0.2 documentation" href="index.html" />
-    <link rel="next" title="Interacting via a Shell" href="shell.html" />
-    <link rel="prev" title="Passing Messages" href="messages.html" /> 
+    <link rel="next" title="Distributed Agents" href="rmi.html" />
+    <link rel="prev" title="Messaging" href="messages.html" /> 
   </head>
   <body>
     <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
+          <a href="rmi.html" title="Distributed Agents"
+             accesskey="N">next</a></li>
         <li class="right" >
-          <a href="shell.html" title="Interacting via a Shell"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="messages.html" title="Passing Messages"
+          <a href="messages.html" title="Messaging"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Directory Services</a><ul>
+<li><a class="reference internal" href="#advertising-services">Advertising services</a></li>
+<li><a class="reference internal" href="#looking-up-service-providers">Looking up service providers</a></li>
+<li><a class="reference internal" href="#caching-service-providers">Caching service providers</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="messages.html"
-                        title="previous chapter">Passing Messages</a></p>
+                        title="previous chapter">Messaging</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="shell.html"
-                        title="next chapter">Interacting via a Shell</a></p>
+  <p class="topless"><a href="rmi.html"
+                        title="next chapter">Distributed Agents</a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -74,11 +81,69 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="using-directory-services">
-<h1>Using Directory Services<a class="headerlink" href="#using-directory-services" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="directory-services">
+<h1>Directory Services<a class="headerlink" href="#directory-services" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="advertising-services">
+<h2>Advertising services<a class="headerlink" href="#advertising-services" title="Permalink to this headline">¶</a></h2>
+<p>It is often undesirable to hardcode names of agents that we need to interact with. Directory services provide a simple mechanism to advertise services provided by an agent, and to find agents that provide specific services. A <em>service</em> is a contract between two agents, and usually defined by a set of messages and possibly behaviors.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Tip</p>
+<p class="last">A <em>service</em> is a logical concept, and not enforced by the framework. The messages and behaviors represented by a service are not described in the code. However, it is recommended that the documentation associated with the service clearly spell out the messages and behaviors that are expected of any agent claiming to provide the service.</p>
+</div>
+<p>An agent providing a service usually advertises the service during <cite>init()</cite>:</p>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">MyServer</span> <span class="kd">extends</span> <span class="n">org</span><span class="o">.</span><span class="na">arl</span><span class="o">.</span><span class="na">fjage</span><span class="o">.</span><span class="na">Agent</span> <span class="o">{</span>
+  <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">register</span> <span class="s1">&#39;WeatherForecastService&#39;</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+<p>Rather than use a <cite>String</cite>, we may (and usually should) use an Enum to define the service:</p>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">enum</span> <span class="n">Services</span> <span class="o">{</span>
+  <span class="n">WEATHER_FORECAST_SERVICE</span><span class="o">,</span>
+  <span class="n">CLEANING_SERVICE</span><span class="o">,</span>
+  <span class="n">FOOD_DELIVERY_SERVICE</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+<p>and then use it to advertise our services:</p>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">MyServer</span> <span class="kd">extends</span> <span class="n">org</span><span class="o">.</span><span class="na">arl</span><span class="o">.</span><span class="na">fjage</span><span class="o">.</span><span class="na">Agent</span> <span class="o">{</span>
+  <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">register</span> <span class="n">Services</span><span class="o">.</span><span class="na">WEATHER_FORECAST_SERVICE</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="looking-up-service-providers">
+<h2>Looking up service providers<a class="headerlink" href="#looking-up-service-providers" title="Permalink to this headline">¶</a></h2>
+<p>A client interested in availing a specific service can look for an agent that provides the service:</p>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">weatherStation</span> <span class="o">=</span> <span class="n">agentForService</span> <span class="n">Services</span><span class="o">.</span><span class="na">WEATHER_FORECAST_SERVICE</span>
+<span class="kt">def</span> <span class="n">rsp</span> <span class="o">=</span> <span class="n">weatherStation</span> <span class="o">&lt;&lt;</span> <span class="k">new</span> <span class="n">WeatherForecastReq</span><span class="o">(</span><span class="nl">city:</span> <span class="s1">&#39;London&#39;</span><span class="o">,</span> <span class="nl">country:</span> <span class="s1">&#39;UK&#39;</span><span class="o">)</span>
+</pre></div>
+</div>
+<p>If there are more than one agents providing the service, the <cite>agentForService()</cite> method returns any one of the service providers. If we wish to get a list of all service providers, we can use the <cite>agentsForService()</cite> method instead:</p>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">providerList</span> <span class="o">=</span> <span class="n">agentsForService</span> <span class="n">Services</span><span class="o">.</span><span class="na">WEATHER_FORECAST_SERVICE</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="caching-service-providers">
+<h2>Caching service providers<a class="headerlink" href="#caching-service-providers" title="Permalink to this headline">¶</a></h2>
+<p>If your application uses a set of agents that are instantiated in the <cite>initrc.groovy</cite> and not terminated until the application terminates, it may be reasonable to lookup the service providers once and cache them once and for all. However, since the services are only advertised during agent initialization and the order of agent intialization may be indeterminate, the service lookups should be done after all agents are initialized (and not during <cite>init()</cite>). This can easily be accomplished using a one-shot behavior:</p>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">MyClient</span> <span class="kd">extends</span> <span class="n">org</span><span class="o">.</span><span class="na">arl</span><span class="o">.</span><span class="na">fjage</span><span class="o">.</span><span class="na">Agent</span> <span class="o">{</span>
+  <span class="kt">def</span> <span class="n">weatherStation</span>
+  <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">add</span> <span class="n">oneShotBehavior</span> <span class="o">{</span>
+      <span class="n">weatherStation</span> <span class="o">=</span> <span class="n">agentForService</span> <span class="n">Services</span><span class="o">.</span><span class="na">WEATHER_FORECAST_SERVICE</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Work in progress</p>
+<p class="last">As long as the agents are added to the container before starting the platform, fjåge guarantees that all agents are initialized before any agent behaviors are called.</p>
+</div>
 </div>
 </div>
 
@@ -92,13 +157,10 @@
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
+          <a href="rmi.html" title="Distributed Agents"
+             >next</a></li>
         <li class="right" >
-          <a href="shell.html" title="Interacting via a Shell"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="messages.html" title="Passing Messages"
+          <a href="messages.html" title="Messaging"
              >previous</a> |</li>
         <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
       </ul>

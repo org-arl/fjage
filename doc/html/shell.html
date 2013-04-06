@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Interacting via a Shell &mdash; fjåge 1.0.2 documentation</title>
+    <title>The Shell Agent &mdash; fjåge 1.0.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -27,29 +27,35 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="fjåge 1.0.2 documentation" href="index.html" />
     <link rel="next" title="Discrete Event Simulation" href="simulation.html" />
-    <link rel="prev" title="Using Directory Services" href="services.html" /> 
+    <link rel="prev" title="Distributed Agents" href="rmi.html" /> 
   </head>
   <body>
     <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
           <a href="simulation.html" title="Discrete Event Simulation"
-             accesskey="N">next</a> |</li>
+             accesskey="N">next</a></li>
         <li class="right" >
-          <a href="services.html" title="Using Directory Services"
+          <a href="rmi.html" title="Distributed Agents"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">The Shell Agent</a><ul>
+<li><a class="reference internal" href="#shell-commands">Shell commands</a></li>
+<li><a class="reference internal" href="#remote-shell-over-tcp-ip">Remote shell over TCP/IP</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
-  <p class="topless"><a href="services.html"
-                        title="previous chapter">Using Directory Services</a></p>
+  <p class="topless"><a href="rmi.html"
+                        title="previous chapter">Distributed Agents</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="simulation.html"
                         title="next chapter">Discrete Event Simulation</a></p>
@@ -74,13 +80,68 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="interacting-via-a-shell">
-<h1>Interacting via a Shell<a class="headerlink" href="#interacting-via-a-shell" title="Permalink to this headline">¶</a></h1>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Work in progress</p>
+  <div class="section" id="the-shell-agent">
+<h1>The Shell Agent<a class="headerlink" href="#the-shell-agent" title="Permalink to this headline">¶</a></h1>
+<p>We have already used the console shell provided by fjåge many times. This shell is implemented by the <cite>ShellAgent</cite> class as we have seen before in the <cite>initrc.groovy</cite> scripts. Let&#8217;s take a slightly deeper look at the shell agent in this chapter.</p>
+<div class="section" id="shell-commands">
+<h2>Shell commands<a class="headerlink" href="#shell-commands" title="Permalink to this headline">¶</a></h2>
+<p>The default shell provided by fjåge is a Groovy shell, and can execute any valid Groovy code. A few standard commands, variables and closures are made available. Many of these are defined in the <cite>etc/fjageshrc.groovy</cite> script that is set as the initialization script when the <cite>ShellAgent</cite> is created. Just typing <cite>help</cite> will provide a list of commands that are available:</p>
+<div class="highlight-console"><div class="highlight"><pre><span class="go">bash$ ./fjage.sh</span>
+<span class="gp">$</span> <span class="nb">help</span>
+<span class="go">help [topic] - provide help on a specified topic</span>
+<span class="go">ps - list all the agents running on the local container</span>
+<span class="go">who - display list of variables in workspace</span>
+<span class="go">run script - run a Groovy script</span>
+<span class="go">println message - display message on console</span>
+<span class="go">sleep millis - delay execution by the specified number of milliseconds</span>
+<span class="go">shutdown - shutdown the local platform</span>
+<span class="go">logLevel [name],level - set loglevel (optionally for a named logger)</span>
+<span class="go">subscribe topic(name) - subscribe to notifications from a named topic</span>
+<span class="go">unsubscribe topic(name) - unsubscribe from notifications for a named topic</span>
+<span class="go">include spec - add specified package/classes to list of imports</span>
+<span class="go">agent(name) - return an agent id for the named agent</span>
+<span class="go">agentForService(service) - find an agent id providing the specified service</span>
+<span class="go">agentsForService(service) - get a list of agent ids providing the specified service</span>
+<span class="go">send msg - send the given message</span>
+<span class="go">request req,[timeout] - send the given request and wait for a response</span>
+<span class="go">receive [filter],[timeout] - wait for a message</span>
+<span class="gp">$</span>
+</pre></div>
 </div>
-<p>If we wanted to provide a remote shell that users could <cite>telnet</cite> into, rather than the console shell, we would replace <cite>new ConsoleShell()</cite> with <cite>new TcpShell(8001)</cite> where 8001 is the TCP/IP port number that is to provide the interactive shell. We could then access the shell by <cite>telnet localhost 8001</cite>.</p>
+<p>Further help on an individual topic can be obtained by typing <cite>help</cite> followed by the topic name. You are encouraged to explore the help.</p>
+<p>The commands in the shell are executed in the context of the <cite>ShellAgent</cite> (e.g. messages send are send using this agent). Any messages received by the <cite>ShellAgent</cite> are simply displayed.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Tip</p>
+<p class="last">If you wish to add your own closures or variables, you can do so by customizing the initialization script. The default <cite>etc/fjageshrc.groovy</cite> script executes a <cite>etc/fjageshrc-local.groovy</cite> script if available. This is a good place to put your customizations.</p>
+</div>
+</div>
+<div class="section" id="remote-shell-over-tcp-ip">
+<h2>Remote shell over TCP/IP<a class="headerlink" href="#remote-shell-over-tcp-ip" title="Permalink to this headline">¶</a></h2>
+<p>If we wanted to provide a remote shell that users could <cite>telnet</cite> into, rather than a console shell, we would replace <cite>ConsoleShell</cite> with a <cite>TcpShell</cite> and specify a TCP/IP port number that is to provide the interactive shell. Here&#8217;s what the resulting <cite>initrc.groovy</cite> would look like:</p>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.arl.fjage.*</span>
+<span class="kn">import</span> <span class="nn">org.arl.fjage.shell.*</span>
+
+<span class="n">GroovyAgentExtensions</span><span class="o">.</span><span class="na">enable</span><span class="o">()</span>
+<span class="n">platform</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimePlatform</span><span class="o">()</span>
+<span class="n">container</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Container</span><span class="o">(</span><span class="n">platform</span><span class="o">)</span>
+<span class="n">shell</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ShellAgent</span><span class="o">(</span><span class="k">new</span> <span class="n">TcpShell</span><span class="o">(</span><span class="mi">8001</span><span class="o">),</span> <span class="k">new</span> <span class="n">GroovyScriptEngine</span><span class="o">())</span>
+<span class="n">shell</span><span class="o">.</span><span class="na">setInitrc</span> <span class="s1">&#39;etc/fjageshrc.groovy&#39;</span>
+<span class="n">container</span><span class="o">.</span><span class="na">add</span> <span class="s1">&#39;shell&#39;</span><span class="o">,</span> <span class="n">shell</span>
+<span class="c1">// add other agents to the container here</span>
+<span class="n">platform</span><span class="o">.</span><span class="na">start</span><span class="o">()</span>
+</pre></div>
+</div>
+<p>We could then access the shell using <cite>telnet</cite>:</p>
+<div class="highlight-console"><div class="highlight"><pre><span class="go">bash$ telnet localhost 8001</span>
+<span class="go">Trying localhost...</span>
+<span class="go">Connected to localhost</span>
+<span class="go">Escape character is &#39;^]&#39;.</span>
+<span class="gp">$</span> ps
+<span class="go">shell: org.arl.fjage.shell.ShellAgent - IDLE</span>
+<span class="gp">$</span>
+</pre></div>
+</div>
+</div>
 </div>
 
 
@@ -93,13 +154,10 @@
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
           <a href="simulation.html" title="Discrete Event Simulation"
-             >next</a> |</li>
+             >next</a></li>
         <li class="right" >
-          <a href="services.html" title="Using Directory Services"
+          <a href="rmi.html" title="Distributed Agents"
              >previous</a> |</li>
         <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
       </ul>

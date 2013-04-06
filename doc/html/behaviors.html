@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Adding Behaviors &mdash; fjåge 1.0.2 documentation</title>
+    <title>Agents and Behaviors &mdash; fjåge 1.0.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="fjåge 1.0.2 documentation" href="index.html" />
-    <link rel="next" title="Passing Messages" href="messages.html" />
+    <link rel="next" title="Messaging" href="messages.html" />
     <link rel="prev" title="Getting Started" href="quickstart.html" /> 
   </head>
   <body>
@@ -34,11 +34,8 @@
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="messages.html" title="Passing Messages"
-             accesskey="N">next</a> |</li>
+          <a href="messages.html" title="Messaging"
+             accesskey="N">next</a></li>
         <li class="right" >
           <a href="quickstart.html" title="Getting Started"
              accesskey="P">previous</a> |</li>
@@ -49,7 +46,7 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Adding Behaviors</a><ul>
+<li><a class="reference internal" href="#">Agents and Behaviors</a><ul>
 <li><a class="reference internal" href="#agent-lifecycle">Agent lifecycle</a></li>
 <li><a class="reference internal" href="#one-shot-behavior">One-shot behavior</a></li>
 <li><a class="reference internal" href="#cyclic-behavior">Cyclic behavior</a></li>
@@ -69,7 +66,7 @@
                         title="previous chapter">Getting Started</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="messages.html"
-                        title="next chapter">Passing Messages</a></p>
+                        title="next chapter">Messaging</a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -91,8 +88,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="adding-behaviors">
-<h1>Adding Behaviors<a class="headerlink" href="#adding-behaviors" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="agents-and-behaviors">
+<h1>Agents and Behaviors<a class="headerlink" href="#agents-and-behaviors" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="agent-lifecycle">
 <h2>Agent lifecycle<a class="headerlink" href="#agent-lifecycle" title="Permalink to this headline">¶</a></h2>
 <p>When an <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/Agent.html">Agent</a> is added to a container, it starts in the INIT state. When the platform is running, agents in the INIT state are initialized by calling their <cite>init()</cite> method. An typical agent overrides this method and adds new behaviors to itself.</p>
@@ -124,7 +121,7 @@
 <p class="last"><cite>println()</cite> from an agent is mapped to <cite>log.info()</cite>, and can be used interchangably. However, the <cite>log</cite> object provides more flexibility (e.g. <cite>log.warning()</cite>, <cite>log.fine()</cite>, etc).</p>
 </div>
 <p>The <em>traditional</em> behavior creation style may be used by Java and Groovy agents:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">agent</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">OneShotBehavior</span><span class="o">()</span> <span class="o">{</span>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span><span class="o">(</span><span class="k">new</span> <span class="n">OneShotBehavior</span><span class="o">()</span> <span class="o">{</span>
   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">action</span><span class="o">()</span> <span class="o">{</span>
     <span class="c1">// do something</span>
   <span class="o">}</span>
@@ -133,7 +130,7 @@
 </div>
 <p>The method to override depends on the behavior (e.g. <cite>action()</cite> for most behaviors, but <cite>onTick()</cite> for <cite>TickerBehavior</cite>, and <cite>onWake()</cite> for <cite>WakerBehavior</cite>).</p>
 <p>Groovy agents support a simpler alternative syntax if the <cite>GroovyAgentExtensions</cite> are enabled:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">agent</span><span class="o">.</span><span class="na">add</span> <span class="n">oneShotBehavior</span> <span class="o">{</span>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="n">oneShotBehavior</span> <span class="o">{</span>
   <span class="c1">// do something</span>
 <span class="o">}</span>
 </pre></div>
@@ -172,7 +169,7 @@
 <div class="section" id="waker-behavior">
 <h2>Waker behavior<a class="headerlink" href="#waker-behavior" title="Permalink to this headline">¶</a></h2>
 <p>A <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/WakerBehavior.html">WakerBehavior</a> is run after a specified delay in milliseconds.</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">agent</span><span class="o">.</span><span class="na">add</span> <span class="nf">wakerBehavior</span><span class="o">(</span><span class="mi">1000</span><span class="o">)</span> <span class="o">{</span>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="nf">wakerBehavior</span><span class="o">(</span><span class="mi">1000</span><span class="o">)</span> <span class="o">{</span>
   <span class="c1">// invoked 1 second later</span>
   <span class="n">println</span> <span class="s1">&#39;1000 ms have elapsed!&#39;</span>
 <span class="o">}</span>
@@ -182,7 +179,7 @@
 <div class="section" id="ticker-behavior">
 <h2>Ticker behavior<a class="headerlink" href="#ticker-behavior" title="Permalink to this headline">¶</a></h2>
 <p>A <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/TickerBehavior.html">TickerBehavior</a> is run repeated with a specified delay between invocations. The ticker behavior may be terminated by calling <cite>stop()</cite> at any time.</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">agent</span><span class="o">.</span><span class="na">add</span> <span class="nf">tickerBehavior</span><span class="o">(</span><span class="mi">5000</span><span class="o">)</span> <span class="o">{</span>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="nf">tickerBehavior</span><span class="o">(</span><span class="mi">5000</span><span class="o">)</span> <span class="o">{</span>
   <span class="c1">// called at intervals of 5 seconds</span>
   <span class="n">println</span> <span class="s1">&#39;tick!&#39;</span>
 <span class="o">}</span>
@@ -192,7 +189,7 @@
 <div class="section" id="poisson-behavior">
 <h2>Poisson behavior<a class="headerlink" href="#poisson-behavior" title="Permalink to this headline">¶</a></h2>
 <p>A <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/PoissonBehavior.html">PoissonBehavior</a> is similar to a ticker behavior, but the interval between invocations is an exponentially distributed random variable. This simulates a Poisson arrival process.</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">agent</span><span class="o">.</span><span class="na">add</span> <span class="nf">poissonBehavior</span><span class="o">(</span><span class="mi">5000</span><span class="o">)</span> <span class="o">{</span>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="nf">poissonBehavior</span><span class="o">(</span><span class="mi">5000</span><span class="o">)</span> <span class="o">{</span>
   <span class="c1">// called at an average rate of once every 5 seconds</span>
   <span class="n">println</span> <span class="s1">&#39;arrival!&#39;</span>
 <span class="o">}</span>
@@ -203,20 +200,20 @@
 <span id="msgbehavior"></span><h2>Message behavior<a class="headerlink" href="#message-behavior" title="Permalink to this headline">¶</a></h2>
 <p>A <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/MessageBehavior.html">MessageBehavior</a> is invoked when a message is received by the agent. A message behavior may specify what kind of message it is interested in. If multiple message behaviors admit a received message, any one of the behaviors may be invoked for that message.</p>
 <p>A message behavior that accepts any message can be added as follows:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">agent</span><span class="o">.</span><span class="na">add</span> <span class="n">messageBehavior</span> <span class="o">{</span> <span class="n">msg</span> <span class="o">-&gt;</span>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="n">messageBehavior</span> <span class="o">{</span> <span class="n">msg</span> <span class="o">-&gt;</span>
   <span class="n">println</span> <span class="s2">&quot;Incoming message from ${msg.sender}&quot;</span>
 <span class="o">}</span>
 </pre></div>
 </div>
 <p>If we were only interested in messages of class <cite>MyMessage</cite>, we could set up a behavior accordingly:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">agent</span><span class="o">.</span><span class="na">add</span> <span class="nf">messageBehavior</span><span class="o">(</span><span class="n">MyMessage</span><span class="o">)</span> <span class="o">{</span> <span class="n">msg</span> <span class="o">-&gt;</span>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="nf">messageBehavior</span><span class="o">(</span><span class="n">MyMessage</span><span class="o">)</span> <span class="o">{</span> <span class="n">msg</span> <span class="o">-&gt;</span>
   <span class="n">println</span> <span class="s2">&quot;Incoming message of class ${msg.class} from ${msg.sender}&quot;</span>
 <span class="o">}</span>
 </pre></div>
 </div>
 <p>Let us next consider a more complex case where we are interested in message of a specific class and from a specific sender:</p>
 <div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">filter</span> <span class="o">=</span> <span class="n">messageFilter</span> <span class="o">{</span> <span class="n">it</span> <span class="k">instanceof</span> <span class="n">MyMessage</span> <span class="o">&amp;&amp;</span> <span class="n">it</span><span class="o">.</span><span class="na">sender</span><span class="o">.</span><span class="na">name</span> <span class="o">==</span> <span class="s1">&#39;myFriend&#39;</span> <span class="o">}</span>
-<span class="n">agent</span><span class="o">.</span><span class="na">add</span> <span class="nf">messageBehavior</span><span class="o">(</span><span class="n">filter</span><span class="o">)</span> <span class="o">{</span> <span class="n">msg</span> <span class="o">-&gt;</span>
+<span class="n">add</span> <span class="nf">messageBehavior</span><span class="o">(</span><span class="n">filter</span><span class="o">)</span> <span class="o">{</span> <span class="n">msg</span> <span class="o">-&gt;</span>
   <span class="n">println</span> <span class="s2">&quot;Incoming message of class ${msg.class} from ${msg.sender}&quot;</span>
 <span class="o">}</span>
 </pre></div>
@@ -237,7 +234,7 @@
   <span class="n">nextState</span> <span class="o">=</span> <span class="s1">&#39;tick&#39;</span>
   <span class="n">fsm</span><span class="o">.</span><span class="na">block</span> <span class="mi">1000</span>
 <span class="o">}</span>
-<span class="n">agent</span><span class="o">.</span><span class="na">add</span> <span class="n">b</span>
+<span class="n">add</span> <span class="n">b</span>
 </pre></div>
 </div>
 <p>In Java, the states are created using a slightly different syntax:</p>
@@ -256,7 +253,7 @@
     <span class="n">fsm</span><span class="o">.</span><span class="na">block</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
   <span class="o">}</span>
 <span class="o">});</span>
-<span class="n">agent</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">b</span><span class="o">);</span>
+<span class="n">add</span><span class="o">(</span><span class="n">b</span><span class="o">);</span>
 </pre></div>
 </div>
 </div>
@@ -320,11 +317,8 @@
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="messages.html" title="Passing Messages"
-             >next</a> |</li>
+          <a href="messages.html" title="Messaging"
+             >next</a></li>
         <li class="right" >
           <a href="quickstart.html" title="Getting Started"
              >previous</a> |</li>

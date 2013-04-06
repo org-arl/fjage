@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="fjåge 1.0.2 documentation" href="index.html" />
-    <link rel="next" title="Adding Behaviors" href="behaviors.html" />
+    <link rel="next" title="Agents and Behaviors" href="behaviors.html" />
     <link rel="prev" title="Introduction" href="introduction.html" /> 
   </head>
   <body>
@@ -34,11 +34,8 @@
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="behaviors.html" title="Adding Behaviors"
-             accesskey="N">next</a> |</li>
+          <a href="behaviors.html" title="Agents and Behaviors"
+             accesskey="N">next</a></li>
         <li class="right" >
           <a href="introduction.html" title="Introduction"
              accesskey="P">previous</a> |</li>
@@ -64,7 +61,7 @@
                         title="previous chapter">Introduction</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="behaviors.html"
-                        title="next chapter">Adding Behaviors</a></p>
+                        title="next chapter">Agents and Behaviors</a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -96,13 +93,16 @@
 <p class="last">Although one would expect Java to work across platforms, fjåge has not been fully tested under Windows. If you encounter any problems, please report them via the <a class="reference external" href="http://github.com/org-arl/fjage/issues">issue tracking system</a>.</p>
 </div>
 <p>Create a new folder for your first fjåge project. Lets call it <cite>MyFjageProject</cite>. Open a terminal window in this folder and download the <a class="reference external" href="https://raw.github.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.sh">fjage_quickstart.sh</a> script in that folder:</p>
-<div class="highlight-python"><pre>curl -O https://raw.github.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.sh</pre>
+<div class="highlight-sh"><div class="highlight"><pre>curl -O https://raw.github.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.sh
+</pre></div>
 </div>
 <p>To get your project ready, just run the script:</p>
-<div class="highlight-python"><pre>sh fjage_quickstart.sh</pre>
+<div class="highlight-sh"><div class="highlight"><pre>sh fjage_quickstart.sh
+</pre></div>
 </div>
 <p>The script downloads all necessary libraries (jar files) and some template startup scripts to get you going. You may now delete off the <cite>fjage_quickstart.sh</cite> file, if you like:</p>
-<div class="highlight-python"><pre>rm fjage_quickstart.sh</pre>
+<div class="highlight-sh"><div class="highlight"><pre>rm fjage_quickstart.sh
+</pre></div>
 </div>
 <p>Your directory structure should now look something like this:</p>
 <pre class="literal-block">
@@ -123,12 +123,13 @@ etc/
 <p class="last">The <cite>build/libs</cite> folder contains all the necessary libraries. The <cite>etc</cite> folder contains startup files. <cite>initrc.groovy</cite> in the initialization script where you create your agents and configure them. <cite>logging.properties</cite> is a standard <a class="reference external" href="http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html">Java logging</a> configuration file that controls the logs from your project. <cite>fjageshrc.groovy</cite> is an initialization script for the interactive shell. <cite>fjage.sh</cite> is your startup shell script that simply sets up the classpath and boots up fjåge with the <cite>initrc.groovy</cite> script. The organization of the directory structure and names of the files are all customizable by editing <cite>fjage.sh</cite> and <cite>initrc.groovy</cite>.</p>
 </div>
 <p>To check that your fjåge installation is correctly working, type <cite>./fjage.sh</cite>. That should simply give you an interactive fjåge Groovy shell with a <cite>$</cite> prompt. Type <cite>ps</cite> to see a list of running agents. There should be only one <cite>shell</cite> agent created by the default <cite>initrc.groovy</cite> script. Type <cite>shutdown</cite> or press control-D to terminate fjåge.</p>
-<div class="highlight-python"><pre>bash$ ./fjage.sh
-$ ps
-shell: org.arl.fjage.shell.ShellAgent - IDLE
-$ shutdown
+<div class="highlight-console"><div class="highlight"><pre><span class="go">bash$ ./fjage.sh</span>
+<span class="gp">$</span> ps
+<span class="go">shell: org.arl.fjage.shell.ShellAgent - IDLE</span>
+<span class="gp">$</span> shutdown
 
-bash$</pre>
+<span class="go">bash$</span>
+</pre></div>
 </div>
 </div>
 <div class="section" id="hello-world-agent">
@@ -148,18 +149,19 @@ bash$</pre>
 <span class="n">container</span><span class="o">.</span><span class="na">add</span> <span class="s1">&#39;hello&#39;</span><span class="o">,</span> <span class="k">new</span> <span class="n">HelloWorldAgent</span><span class="o">()</span>
 </pre></div>
 </div>
-<p>This Groovy script creates an agent with AgentID <cite>hello</cite> of class <cite>HelloWorldAgent</cite>. The <cite>init()</cite> method of the agent is called once the agent is loaded. In this method, a one-shot behavior is added to the agent. One-shot behaviors are fired only once, as soon as possible; in our case, this is as soon as the agent is running. The one-shot behavior prints &#8220;Hello world!!!&#8221;. The output of the agent is not directly displayed on the console, but instead sent to the log file, as we will see shortly.</p>
+<p>This Groovy script creates an agent with <cite>AgentID</cite> <cite>hello</cite> of class <cite>HelloWorldAgent</cite>. The <cite>init()</cite> method of the agent is called once the agent is loaded. In this method, a one-shot behavior is added to the agent. One-shot behaviors are fired only once, as soon as possible; in our case, this is as soon as the agent is running. The one-shot behavior prints &#8220;Hello world!!!&#8221;. The output of the agent is not directly displayed on the console, but instead sent to the log file, as we will see shortly.</p>
 <p>To run the agent, start fjåge and run the script by typing <cite>run &#8216;hello&#8217;</cite> or simply <cite>&lt;hello</cite>. This will return you to the interactive shell prompt. To check that your agent is indeed running, type <cite>ps</cite>. You may then shutdown fjåge as before and check the log file for your output:</p>
-<div class="highlight-python"><pre>bash$ ./fjage.sh
-$ &lt;hello
-$ ps
-hello: HelloWorldAgent - IDLE
-shell: org.arl.fjage.shell.ShellAgent - IDLE
-$ shutdown
+<div class="highlight-console"><div class="highlight"><pre><span class="go">bash$ ./fjage.sh</span>
+<span class="gp">$</span> &lt;hello
+<span class="gp">$</span> ps
+<span class="go">hello: HelloWorldAgent - IDLE</span>
+<span class="go">shell: org.arl.fjage.shell.ShellAgent - IDLE</span>
+<span class="gp">$</span> shutdown
 
-bash$ cat logs/log-0.txt | grep HelloWorldAgent@
-1365092640082|INFO|HelloWorldAgent@18|Hello world!!!
-bash$</pre>
+<span class="go">bash$ cat logs/log-0.txt | grep HelloWorldAgent@</span>
+<span class="go">1365092640082|INFO|HelloWorldAgent@18|Hello world!!!</span>
+<span class="go">bash$</span>
+</pre></div>
 </div>
 <p>The default fjåge log file format is pipe-separated, where the first column is the timestamp in milliseconds, the second column is the log level, the third column is the agent class name and threadID, and the last column is the log message. You may change the format if you like by editing the <cite>logging.properties</cite> file in the <cite>etc</cite> folder.</p>
 <p>Congratulations!!! You have just developed your first Groovy fjåge agent!</p>
@@ -171,19 +173,20 @@ bash$</pre>
 <div class="section" id="packaging-agents">
 <h2>Packaging agents<a class="headerlink" href="#packaging-agents" title="Permalink to this headline">¶</a></h2>
 <p>The method shown above defined the agent class in a Groovy script that was executed from the interactive shell. If the Groovy script is modified, the agent can be reloaded by killing it and running the script again:</p>
-<div class="highlight-python"><pre>bash$ ./fjage.sh
-$ &lt;hello
-$ ps
-hello: HelloWorldAgent - IDLE
-shell: org.arl.fjage.shell.ShellAgent - IDLE
-$ container.kill agent('hello');
-$ ps
-shell: org.arl.fjage.shell.ShellAgent - IDLE
-$ &lt;hello
-$ ps
-hello: HelloWorldAgent - IDLE
-shell: org.arl.fjage.shell.ShellAgent - IDLE
-$</pre>
+<div class="highlight-console"><div class="highlight"><pre><span class="go">bash$ ./fjage.sh</span>
+<span class="gp">$</span> &lt;hello
+<span class="gp">$</span> ps
+<span class="go">hello: HelloWorldAgent - IDLE</span>
+<span class="go">shell: org.arl.fjage.shell.ShellAgent - IDLE</span>
+<span class="gp">$</span> container.kill agent<span class="o">(</span><span class="s1">&#39;hello&#39;</span><span class="o">)</span>;
+<span class="gp">$</span> ps
+<span class="go">shell: org.arl.fjage.shell.ShellAgent - IDLE</span>
+<span class="gp">$</span> &lt;hello
+<span class="gp">$</span> ps
+<span class="go">hello: HelloWorldAgent - IDLE</span>
+<span class="go">shell: org.arl.fjage.shell.ShellAgent - IDLE</span>
+<span class="gp">$</span>
+</pre></div>
 </div>
 <p>This is useful for testing. However, in a production system, you usually want to define agents in their own files, compile them and package them into a jar on the classpath. To do this, you would create a source file <cite>HelloWorldAgent.java</cite> with the class definition:</p>
 <div class="highlight-groovy"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.arl.fjage.*</span>
@@ -199,21 +202,23 @@ $</pre>
 </div>
 <p>You would then compile it into a <cite>HelloWorldAgent.class</cite> file using the <cite>groovyc</cite> compiler (or <cite>javac</cite> compiler, if your source was in Java) and perhaps package it into a jar file. You would then put this jar file or the class file on the classpath.</p>
 <p>The <cite>fjage.sh</cite> startup script includes all jar files from the <cite>build/libs</cite> folder into the classpath. So you could simply copy your jar file into the <cite>build/libs</cite> folder and then run <cite>fjage.sh</cite>. You can then load the agent on the interactive shell:</p>
-<div class="highlight-python"><pre>bash$ ./fjage.sh
-$ ps
-shell: org.arl.fjage.shell.ShellAgent - IDLE
-$ container.add 'hello', new HelloWorldAgent();
-$ ps
-hello: HelloWorldAgent - IDLE
-shell: org.arl.fjage.shell.ShellAgent - IDLE
-$</pre>
+<div class="highlight-console"><div class="highlight"><pre><span class="go">bash$ ./fjage.sh</span>
+<span class="gp">$</span> ps
+<span class="go">shell: org.arl.fjage.shell.ShellAgent - IDLE</span>
+<span class="gp">$</span> container.add <span class="s1">&#39;hello&#39;</span>, new HelloWorldAgent<span class="o">()</span>;
+<span class="gp">$</span> ps
+<span class="go">hello: HelloWorldAgent - IDLE</span>
+<span class="go">shell: org.arl.fjage.shell.ShellAgent - IDLE</span>
+<span class="gp">$</span>
+</pre></div>
 </div>
 <p>If you wanted the agent to be automatically loaded, you can put the <cite>container.add &#8216;hello&#8217;, new HelloWorldAgent()</cite> statement in the <cite>initrc.groovy</cite> startup script.</p>
 </div>
 <div class="section" id="typical-bootup-for-groovy-applications">
 <h2>Typical bootup for Groovy applications<a class="headerlink" href="#typical-bootup-for-groovy-applications" title="Permalink to this headline">¶</a></h2>
 <p>In order to fully understand how fjåge works, it is useful to look at the bootup sequence of our hello world fjåge application. When we run <cite>fjage.sh</cite>, the shell script creates a CLASSPATH to include all jar files in the <cite>build/libs</cite> folder and then starts the JVM:</p>
-<div class="highlight-python"><pre>java -cp "$CLASSPATH" -Djava.util.logging.config.file=etc/logging.properties org.arl.fjage.shell.GroovyBoot etc/initrc.groovy</pre>
+<div class="highlight-sh"><div class="highlight"><pre>java -cp <span class="s2">&quot;$CLASSPATH&quot;</span> -Djava.util.logging.config.file<span class="o">=</span>etc/logging.properties org.arl.fjage.shell.GroovyBoot etc/initrc.groovy
+</pre></div>
 </div>
 <p>This command uses the <cite>etc/logging.properties</cite> to set up Java logging and invokes the <cite>main()</cite> static method on the <cite>org.arl.fjage.shell.GroovyBoot</cite> class. The initialization script <cite>etc/initrc.groovy</cite> is passed as a command line argument to the <cite>main()</cite>.</p>
 <p>Let us next take a look at a simplified code extract from the <cite>org.arl.fjage.shell.GroovyBoot.main()</cite> method:</p>
@@ -232,7 +237,6 @@ $</pre>
 <span class="kn">import</span> <span class="nn">org.arl.fjage.shell.*</span>
 
 <span class="n">GroovyAgentExtensions</span><span class="o">.</span><span class="na">enable</span><span class="o">()</span>
-
 <span class="n">platform</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimePlatform</span><span class="o">()</span>
 <span class="n">container</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Container</span><span class="o">(</span><span class="n">platform</span><span class="o">)</span>
 <span class="n">shell</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ShellAgent</span><span class="o">(</span><span class="k">new</span> <span class="n">ConsoleShell</span><span class="o">(),</span> <span class="k">new</span> <span class="n">GroovyScriptEngine</span><span class="o">())</span>
@@ -275,11 +279,8 @@ $</pre>
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="behaviors.html" title="Adding Behaviors"
-             >next</a> |</li>
+          <a href="behaviors.html" title="Agents and Behaviors"
+             >next</a></li>
         <li class="right" >
           <a href="introduction.html" title="Introduction"
              >previous</a> |</li>

@@ -26,21 +26,18 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="fjåge 1.0.2 documentation" href="index.html" />
-    <link rel="next" title="Distributed Agents" href="rmi.html" />
-    <link rel="prev" title="Interacting via a Shell" href="shell.html" /> 
+    <link rel="next" title="Groovy vs Java Agents" href="java.html" />
+    <link rel="prev" title="The Shell Agent" href="shell.html" /> 
   </head>
   <body>
     <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
+          <a href="java.html" title="Groovy vs Java Agents"
+             accesskey="N">next</a></li>
         <li class="right" >
-          <a href="rmi.html" title="Distributed Agents"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="shell.html" title="Interacting via a Shell"
+          <a href="shell.html" title="The Shell Agent"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
       </ul>
@@ -49,10 +46,10 @@
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
   <p class="topless"><a href="shell.html"
-                        title="previous chapter">Interacting via a Shell</a></p>
+                        title="previous chapter">The Shell Agent</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="rmi.html"
-                        title="next chapter">Distributed Agents</a></p>
+  <p class="topless"><a href="java.html"
+                        title="next chapter">Groovy vs Java Agents</a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -76,9 +73,27 @@
             
   <div class="section" id="discrete-event-simulation">
 <h1>Discrete Event Simulation<a class="headerlink" href="#discrete-event-simulation" title="Permalink to this headline">¶</a></h1>
+<p>When used in the <a class="reference external" href="http://en.wikipedia.org/wiki/Discrete_event_simulation">Discrete event simulation</a> mode, fjåge allows agents to be tested rapidly through the notion of <em>virtual time</em>. The passage of virtual time is simulated such that computation and processing does not take any virtual time, while scheduling requests are met accurately in virtual time. The virtual time advances in discrete steps such that the time when no agent is active is effectively skipped. This potentially allows for simulation of hours of virtual time within seconds.</p>
+<p>In order to use the discrete event simulation mode, a few conditions have to be met. The first two of these conditions are related to timing functions and were introduced in the &#8220;<a class="reference internal" href="introduction.html#intro"><em>Introduction</em></a>&#8221; chapter. The last condition is related to agents deployed in slave containers.</p>
+<ol class="arabic simple">
+<li>Agents must not use any system timing functions directly. Rather than use <cite>System.currentTimeMillis()</cite> or <cite>System.nanoTime()</cite>, the agents should use <cite>Agent.currentTimeMillis()</cite> and <cite>Agent.nanoTime()</cite>.</li>
+<li>Agents must not use any system scheduling functions directly. Rather than use <cite>Thread.sleep()</cite>, the agent should use <cite>Agent.sleep()</cite>.</li>
+<li>All agents must be deployed in a single container for testing. Distributed containers (master or slave) are currently not supported by the discrete event simulator.</li>
+</ol>
+<p>To run the agents in the discrete event simulation mode, the use of the <cite>RealTimePlatform</cite> in <cite>etc/initrc.groovy</cite> is replaced by <cite>DiscreteEventSimulator</cite>:</p>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.arl.fjage.*</span>
+
+<span class="n">GroovyAgentExtensions</span><span class="o">.</span><span class="na">enable</span><span class="o">()</span>
+<span class="n">platform</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DiscreteEventSimulator</span><span class="o">()</span>
+<span class="n">container</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Container</span><span class="o">(</span><span class="n">platform</span><span class="o">)</span>
+<span class="c1">// add agents to the container here</span>
+<span class="n">platform</span><span class="o">.</span><span class="na">start</span><span class="o">()</span>
+</pre></div>
+</div>
+<p>Now running <cite>fjage.sh</cite> should run the agents in the discrete event simulation mode. You can verify this by looking at the <cite>logs/log-0.txt</cite> file; the time entries in this file will start at 0, since all simulations start at time 0. When all agents become idle with no further events in the system, the discrete event simulator automatically terminates.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Work in progress</p>
+<p class="last">It is recommended that you do not run interactive agents such as <cite>ShellAgent</cite> in this mode, as the interaction with the real world is not compatible with virtual time.</p>
 </div>
 </div>
 
@@ -92,13 +107,10 @@
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
+          <a href="java.html" title="Groovy vs Java Agents"
+             >next</a></li>
         <li class="right" >
-          <a href="rmi.html" title="Distributed Agents"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="shell.html" title="Interacting via a Shell"
+          <a href="shell.html" title="The Shell Agent"
              >previous</a> |</li>
         <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
       </ul>

@@ -1,6 +1,8 @@
 Getting Started
 ===============
 
+.. highlight:: sh
+
 Quick start
 -----------
 
@@ -41,7 +43,9 @@ Your directory structure should now look something like this:
 
 .. note:: The `build/libs` folder contains all the necessary libraries. The `etc` folder contains startup files. `initrc.groovy` in the initialization script where you create your agents and configure them. `logging.properties` is a standard `Java logging <http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html>`_ configuration file that controls the logs from your project. `fjageshrc.groovy` is an initialization script for the interactive shell. `fjage.sh` is your startup shell script that simply sets up the classpath and boots up fjåge with the `initrc.groovy` script. The organization of the directory structure and names of the files are all customizable by editing `fjage.sh` and `initrc.groovy`.
 
-To check that your fjåge installation is correctly working, type `./fjage.sh`. That should simply give you an interactive fjåge Groovy shell with a `$` prompt. Type `ps` to see a list of running agents. There should be only one `shell` agent created by the default `initrc.groovy` script. Type `shutdown` or press control-D to terminate fjåge. ::
+To check that your fjåge installation is correctly working, type `./fjage.sh`. That should simply give you an interactive fjåge Groovy shell with a `$` prompt. Type `ps` to see a list of running agents. There should be only one `shell` agent created by the default `initrc.groovy` script. Type `shutdown` or press control-D to terminate fjåge.
+
+.. code-block:: console
 
     bash$ ./fjage.sh
     $ ps
@@ -71,9 +75,11 @@ Create a file called `hello.groovy` in your project folder and put the following
 
     container.add 'hello', new HelloWorldAgent()
 
-This Groovy script creates an agent with AgentID `hello` of class `HelloWorldAgent`. The `init()` method of the agent is called once the agent is loaded. In this method, a one-shot behavior is added to the agent. One-shot behaviors are fired only once, as soon as possible; in our case, this is as soon as the agent is running. The one-shot behavior prints "Hello world!!!". The output of the agent is not directly displayed on the console, but instead sent to the log file, as we will see shortly.
+This Groovy script creates an agent with `AgentID` `hello` of class `HelloWorldAgent`. The `init()` method of the agent is called once the agent is loaded. In this method, a one-shot behavior is added to the agent. One-shot behaviors are fired only once, as soon as possible; in our case, this is as soon as the agent is running. The one-shot behavior prints "Hello world!!!". The output of the agent is not directly displayed on the console, but instead sent to the log file, as we will see shortly.
 
-To run the agent, start fjåge and run the script by typing `run 'hello'` or simply `<hello`. This will return you to the interactive shell prompt. To check that your agent is indeed running, type `ps`. You may then shutdown fjåge as before and check the log file for your output::
+To run the agent, start fjåge and run the script by typing `run 'hello'` or simply `<hello`. This will return you to the interactive shell prompt. To check that your agent is indeed running, type `ps`. You may then shutdown fjåge as before and check the log file for your output:
+
+.. code-block:: console
 
     bash$ ./fjage.sh 
     $ <hello
@@ -95,7 +101,9 @@ Congratulations!!! You have just developed your first Groovy fjåge agent!
 Packaging agents
 ----------------
 
-The method shown above defined the agent class in a Groovy script that was executed from the interactive shell. If the Groovy script is modified, the agent can be reloaded by killing it and running the script again::
+The method shown above defined the agent class in a Groovy script that was executed from the interactive shell. If the Groovy script is modified, the agent can be reloaded by killing it and running the script again:
+
+.. code-block:: console
 
     bash$ ./fjage.sh
     $ <hello
@@ -127,7 +135,9 @@ This is useful for testing. However, in a production system, you usually want to
 
 You would then compile it into a `HelloWorldAgent.class` file using the `groovyc` compiler (or `javac` compiler, if your source was in Java) and perhaps package it into a jar file. You would then put this jar file or the class file on the classpath.
 
-The `fjage.sh` startup script includes all jar files from the `build/libs` folder into the classpath. So you could simply copy your jar file into the `build/libs` folder and then run `fjage.sh`. You can then load the agent on the interactive shell::
+The `fjage.sh` startup script includes all jar files from the `build/libs` folder into the classpath. So you could simply copy your jar file into the `build/libs` folder and then run `fjage.sh`. You can then load the agent on the interactive shell:
+
+.. code-block:: console
 
     bash$ ./fjage.sh
     $ ps
@@ -170,7 +180,6 @@ This code sequentially executes every initialization Groovy script given on the 
     import org.arl.fjage.shell.*
 
     GroovyAgentExtensions.enable()
-
     platform = new RealTimePlatform()
     container = new Container(platform)
     shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
