@@ -119,7 +119,7 @@ The method shown above defined the agent class in a Groovy script that was execu
     shell: org.arl.fjage.shell.ShellAgent - IDLE
     $
 
-This is useful for testing. However, in a production system, you usually want to define agents in their own files, compile them and package them into a jar on the classpath. To do this, you would create a source file `HelloWorldAgent.java` with the class definition:
+This is useful for testing. However, in a production system, you usually want to define agents in their own files, compile them and package them into a jar on the classpath. To do this, you would create a source file `HelloWorldAgent.groovy` with the class definition:
 
 .. code-block:: groovy
 
@@ -133,7 +133,23 @@ This is useful for testing. However, in a production system, you usually want to
       }
     }
 
-You would then compile it into a `HelloWorldAgent.class` file using the `groovyc` compiler (or `javac` compiler, if your source was in Java) and perhaps package it into a jar file. You would then put this jar file or the class file on the classpath.
+or `HelloWorldAgent.java` with the class definition:
+
+.. code-block:: java
+
+    import org.arl.fjage.*;
+
+    public class HelloWorldAgent extends Agent {
+      public void init() {
+        add(new OneShotBehavior() {
+          public void action() {
+            println("Hello world!!!");
+          }
+        });
+      }
+    }
+
+You would then compile it into a `HelloWorldAgent.class` file using the `groovyc` compiler (or `javac` compiler) and perhaps package it into a jar file. You would then put this jar file or the class file on the classpath.
 
 The `fjage.sh` startup script includes all jar files from the `build/libs` folder into the classpath. So you could simply copy your jar file into the `build/libs` folder and then run `fjage.sh`. You can then load the agent on the interactive shell:
 
