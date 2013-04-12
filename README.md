@@ -21,8 +21,9 @@ Key Features
 Documentation
 -------------
 
-* [API documentation](http://org-arl.github.com/fjage/javadoc/)
+* [Getting Started](http://org-arl.github.io/fjage/doc/html/quickstart.html)
 * [Developer's Guide](http://org-arl.github.com/fjage/doc/html/)
+* [API documentation](http://org-arl.github.com/fjage/javadoc/)
 
 Support
 -------
@@ -38,7 +39,7 @@ Binary Releases
 * [fjage-1.0.1.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.0.1/fjage-1.0.1.jar), released April 2, 2013
 * [fjage-1.0.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.0/fjage-1.0.jar), released March 26, 2013
 
-**Maven dependency:**
+**Maven Central dependency:**
 
     <dependency>
       <groupId>com.github.org-arl</groupId>
