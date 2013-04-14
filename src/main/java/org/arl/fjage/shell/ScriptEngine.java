@@ -52,6 +52,29 @@ public interface ScriptEngine {
   public boolean exec(File script, List<String> args, ScriptOutputStream out);
   
   /**
+   * Execute a script from a reader. The method does not wait for execution to be completed
+   * but returns immediately.
+   *
+   * @param reader reader to read script from.
+   * @param name reader name for logging.
+   * @param out output stream (null to suppress output).
+   * @return true if accepted for execution, false if busy.
+   */
+  public boolean exec(Reader reader, String name, ScriptOutputStream out);
+
+  /**
+   * Execute a script from a reader. The method does not wait for execution to be completed
+   * but returns immediately.
+   *
+   * @param reader reader to read script from.
+   * @param name reader name for logging.
+   * @param args arguments to pass to script.
+   * @param out output stream (null to suppress output).
+   * @return true if accepted for execution, false if busy.
+   */
+  public boolean exec(Reader reader, String name, List<String> args, ScriptOutputStream out);
+
+  /**
    * Check if script is currently being executed.
    */
   public boolean isBusy();

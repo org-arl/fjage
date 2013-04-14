@@ -10,8 +10,9 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import java.io.*;
+import java.util.*;
 import org.arl.fjage.*;
-import java.io.File;
 
 /**
  * Shell agent runs in a container and allows execution of shell commands and scripts.
@@ -24,7 +25,7 @@ public class ShellAgent extends Agent {
   
   private ScriptEngine engine;
   private Shell shell;
-  private File initScript = null;
+  private List<Object> initScripts = new ArrayList<Object>();
   private Message rsp;
   private Object sync = new Object();
   private MessageBehavior msgBehavior;
@@ -35,6 +36,9 @@ public class ShellAgent extends Agent {
     this.shell = shell;
     this.engine = engine;
     engine.setVariable("agent", this);
+    InputStream inp = getClass().getResourceAsStream("/etc/fjageshrc.groovy");
+    if (inp == null) log.warning("jar:/etc/fjageshrc.groovy not found");
+    else initScripts.add(new InputStreamReader(inp));
   }
 
   @Override
@@ -56,7 +60,11 @@ public class ShellAgent extends Agent {
     add(new OneShotBehavior() {
       @Override
       public void action() {
-        if (initScript != null) engine.exec(initScript, null);
+        for (Object script: initScripts) {
+          if (script instanceof File) engine.exec((File)script, null);
+          else if (script instanceof Reader) engine.exec((Reader)script, "<reader>", null);
+          else log.warning("Unknown init script type ignored!");
+        }
       }
     });
   }
@@ -75,7 +83,8 @@ public class ShellAgent extends Agent {
    * @param script script name.
    */
   public void setInitrc(String script) {
-    initScript = new File(script);
+    initScripts.clear();
+    addInitrc(script);
   }
 
   /**
@@ -85,7 +94,49 @@ public class ShellAgent extends Agent {
    * @param script script file.
    */
   public void setInitrc(File script) {
-    initScript = script;
+    initScripts.clear();
+    addInitrc(script);
+  }
+  
+  /**
+   * Sets the initialization script from a reader to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   * 
+   * @param reader script reader.
+   */
+  public void setInitrc(Reader reader) {
+    initScripts.clear();
+    addInitrc(reader);
+  }
+  
+  /**
+   * Adds a name of the initialization script to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   * 
+   * @param script script name.
+   */
+  public void addInitrc(String script) {
+    initScripts.add(new File(script));
+  }
+
+  /**
+   * Adds a initialization script file to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   * 
+   * @param script script file.
+   */
+  public void addInitrc(File script) {
+    initScripts.add(script);
+  }
+  
+  /**
+   * Adds a initialization script from a reader to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   * 
+   * @param reader script reader.
+   */
+  public void addInitrc(Reader reader) {
+    initScripts.add(reader);
   }
   
   ////// overriden methods to allow external threads to call receive/request directly

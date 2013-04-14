@@ -30,6 +30,8 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   private ScriptOutputStream out = null;
   private String cmd = null;
   private File script = null;
+  private Reader reader = null;
+  private String readerName = null;
   private List<String> args = null;
   private Object result = null;
   private boolean busy = false;
@@ -96,13 +98,22 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           log.info("RUN: "+script.getAbsolutePath());
           groovy.getClassLoader().clearCache();
           result = groovy.run(script, args);
-          //if (result != null) println(result.toString());
+        } else if (reader != null) {
+          if (args == null) args = new ArrayList<String>();
+          log.info("RUN: "+readerName);
+          groovy.getClassLoader().clearCache();
+          String[] argsArr = new String[args.size()];
+          int i = 0;
+          for (String s: args) argsArr[i++] = s;
+          result = groovy.run(reader, readerName, argsArr);
         }
       } catch (Exception ex) {
         error(ex);
       }
       cmd = null;
       script = null;
+      reader = null;
+      readerName = null;
       args = null;
       busy = false;
       if (out != null) out.eos();
@@ -144,6 +155,34 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   public synchronized boolean exec(File script, List<String> args, ScriptOutputStream out) {
     if (busy) return false;
     this.script = script;
+    this.args = args;
+    result = null;
+    binding.setVariable("out", out);
+    this.out = out;
+    busy = true;
+    notify();
+    return true;
+  }
+
+  @Override
+  public synchronized boolean exec(Reader reader, String name, ScriptOutputStream out) {
+    if (busy) return false;
+    this.reader = reader;
+    readerName = name;
+    args = null;
+    result = null;
+    binding.setVariable("out", out);
+    this.out = out;
+    busy = true;
+    notify();
+    return true;
+  }
+
+  @Override
+  public synchronized boolean exec(Reader reader, String name, List<String> args, ScriptOutputStream out) {
+    if (busy) return false;
+    this.reader = reader;
+    readerName = name;
     this.args = args;
     result = null;
     binding.setVariable("out", out);
