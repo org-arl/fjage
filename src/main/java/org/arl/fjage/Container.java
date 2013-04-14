@@ -227,7 +227,7 @@ public class Container {
    * container, any available remote containers are checked too.
    *
    * @param aid agent id to locate.
-   * @param true if the agent can be located, false otherwise.
+   * @return true if the agent can be located, false otherwise.
    */
   public boolean canLocateAgent(AgentID aid) {
     return isDuplicate(aid);
