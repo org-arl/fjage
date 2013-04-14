@@ -10,13 +10,9 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import org.arl.fjage.Platform;
 import java.io.File;
 import java.util.logging.Logger;
-import java.net.JarURLConnection;
-import java.net.URL;
-import java.util.List;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 
 /**
  * fjage bootloader.
@@ -41,7 +37,7 @@ public class GroovyBoot {
    * Application entry point.
    */
   public static void main(String[] args) {
-    log.info("fjage Build: "+getBuildInfo());
+    log.info("fjage Build: "+Platform.getBuildVersion());
     try {
       engine = new GroovyScriptEngine();
       for (String a: args) {
@@ -55,22 +51,6 @@ public class GroovyBoot {
       engine.shutdown();
     } catch (Exception ex) {
       log.severe(ex.toString());
-    }
-  }
-
-  /**
-   * Get build information from JAR.
-   */
-  public static String getBuildInfo() {
-    try {
-      Class<?> cls = GroovyBoot.class;
-      URL res = cls.getResource(cls.getSimpleName() + ".class");
-      JarURLConnection conn = (JarURLConnection) res.openConnection();
-      Manifest mf = conn.getManifest();
-      Attributes a = mf.getMainAttributes();
-      return "fjage-"+a.getValue("Build-Version")+"/"+a.getValue("Build-Timestamp");
-    } catch (Exception ex) {
-      return "(unknown)";
     }
   }
 

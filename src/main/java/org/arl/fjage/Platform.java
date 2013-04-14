@@ -12,6 +12,7 @@ package org.arl.fjage;
 
 import java.net.*;
 import java.util.*;
+import java.util.jar.*;
 
 /**
  * Base class for platforms on which agent containers run. The platform provides
@@ -204,5 +205,22 @@ public abstract class Platform implements TimestampProvider {
     return false;
   }
 
-}
+  /**
+   * Get build version information from JAR.
+   *
+   * @return build version information string.
+   */
+  public static String getBuildVersion() {
+    try {
+      Class<?> cls = Platform.class;
+      URL res = cls.getResource(cls.getSimpleName() + ".class");
+      JarURLConnection conn = (JarURLConnection) res.openConnection();
+      Manifest mf = conn.getManifest();
+      Attributes a = mf.getMainAttributes();
+      return "fjage-"+a.getValue("Build-Version")+"/"+a.getValue("Build-Timestamp");
+    } catch (Exception ex) {
+      return "(unknown)";
+    }
+  }
 
+}
