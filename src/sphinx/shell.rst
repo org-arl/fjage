@@ -8,7 +8,7 @@ We have already used the console shell provided by fjåge many times. This shell
 Shell commands
 --------------
 
-The default shell provided by fjåge is a Groovy shell, and can execute any valid Groovy code. A few standard commands, variables and closures are made available. Many of these are defined in the `etc/fjageshrc.groovy` script that is set as the initialization script when the `ShellAgent` is created. Just typing `help` will provide a list of commands that are available:
+The default shell provided by fjåge is a Groovy shell, and can execute any valid Groovy code. A few standard commands, variables and closures are made available. Just typing `help` will provide a list of commands that are available:
 
 .. code-block:: console
 
@@ -37,7 +37,7 @@ Further help on an individual topic can be obtained by typing `help` followed by
 
 The commands in the shell are executed in the context of the `ShellAgent` (e.g. messages send are send using this agent). Any messages received by the `ShellAgent` are simply displayed.
 
-.. tip:: If you wish to add your own closures or variables, you can do so by customizing the initialization script. The default `etc/fjageshrc.groovy` script executes a `etc/fjageshrc-local.groovy` script if available. This is a good place to put your customizations.
+.. tip:: If you wish to add your own closures or variables, you can do so by customizing initialization script. Initialization scripts can be added to the `ShellAgent` using the `addInitrc` method.
 
 Remote shell over TCP/IP
 ------------------------
@@ -51,7 +51,6 @@ If we wanted to provide a remote shell that users could `telnet` into, rather th
     platform = new RealTimePlatform()
     container = new Container(platform)
     shell = new ShellAgent(new TcpShell(8001), new GroovyScriptEngine())
-    shell.setInitrc 'etc/fjageshrc.groovy'
     container.add 'shell', shell
     // add other agents to the container here
     platform.start()

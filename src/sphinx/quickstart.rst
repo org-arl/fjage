@@ -36,12 +36,11 @@ Your directory structure should now look something like this:
     etc/
       initrc.groovy
       logging.properties
-      fjageshrc.groovy
 
 ..    cloning-1.9.0.jar
 ..    objenesis-1.2.jar
 
-.. note:: The `build/libs` folder contains all the necessary libraries. The `etc` folder contains startup files. `initrc.groovy` in the initialization script where you create your agents and configure them. `logging.properties` is a standard `Java logging <http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html>`_ configuration file that controls the logs from your project. `fjageshrc.groovy` is an initialization script for the interactive shell. `fjage.sh` is your startup shell script that simply sets up the classpath and boots up fjåge with the `initrc.groovy` script. The organization of the directory structure and names of the files are all customizable by editing `fjage.sh` and `initrc.groovy`.
+.. note:: The `build/libs` folder contains all the necessary libraries. The `etc` folder contains startup files. `initrc.groovy` in the initialization script where you create your agents and configure them. `logging.properties` is a standard `Java logging <http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html>`_ configuration file that controls the logs from your project. `fjage.sh` is your startup shell script that simply sets up the classpath and boots up fjåge with the `initrc.groovy` script. The organization of the directory structure and names of the files are all customizable by editing `fjage.sh` and `initrc.groovy`.
 
 To check that your fjåge installation is correctly working, type `./fjage.sh`. That should simply give you an interactive fjåge Groovy shell with a `$` prompt. Type `ps` to see a list of running agents. There should be only one `shell` agent created by the default `initrc.groovy` script. Type `shutdown` or press control-D to terminate fjåge.
 
@@ -199,12 +198,11 @@ This code sequentially executes every initialization Groovy script given on the 
     platform = new RealTimePlatform()
     container = new Container(platform)
     shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
-    shell.setInitrc 'etc/fjageshrc.groovy'
     container.add 'shell', shell
     // add other agents to the container here
     platform.start()
 
-The script imports the fjage packages. It then enables Groovy extensions in fjåge to add syntactic sugar for ease of writing Groovy agents. A real-time platform and a container is created, and a `shell` agent is configured and added to the container. The `shell` agent is set to provide the interactive shell on the console, use Groovy for scripting and to execute `etc/fjageshrc.groovy` as the startup script when a user interacts with the shell. Finally, the platform is started. Now we have a fjåge container running with a single `shell` agent that provides an interactive shell on the console.
+The script imports the fjage packages. It then enables Groovy extensions in fjåge to add syntactic sugar for ease of writing Groovy agents. A real-time platform and a container is created, and a `shell` agent is configured and added to the container. The `shell` agent is set to provide the interactive shell on the console, and use Groovy for scripting. Finally, the platform is started. Now we have a fjåge container running with a single `shell` agent that provides an interactive shell on the console.
 
 Any other agents that we may wish to start can be included in the `etc/initrc.groovy` script, just before starting the platform.
 

@@ -20,7 +20,6 @@ cd ../..
 cd etc
 curl -O https://raw.github.com/org-arl/fjage/master/etc/initrc.groovy
 curl -O https://raw.github.com/org-arl/fjage/master/etc/logging.properties
-curl -O https://raw.github.com/org-arl/fjage/master/etc/fjageshrc.groovy
 cd ..
 
 # download startup script

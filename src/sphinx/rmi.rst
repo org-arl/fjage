@@ -61,7 +61,6 @@ and `etc/initrc-rconsole.groovy`::
     platform = new RealTimePlatform()
     container = new SlaveContainer(platform, url)
     shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
-    shell.setInitrc 'etc/fjageshrc.groovy'
     container.add 'rshell', shell
     platform.start()
 
