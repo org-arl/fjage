@@ -76,6 +76,14 @@ public class BasicTests {
     master.add("S", server);
     master.start();
     slave.start();
+    AgentID c = new AgentID("C");
+    AgentID s = new AgentID("S");
+    assertTrue(master.containsAgent(s));
+    assertTrue(!master.containsAgent(c));
+    assertTrue(master.canLocateAgent(c));
+    assertTrue(slave.containsAgent(c));
+    assertTrue(!slave.containsAgent(s));
+    assertTrue(slave.canLocateAgent(s));
     platform.sleep(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
