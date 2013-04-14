@@ -68,7 +68,7 @@ public class GroovyBoot {
       JarURLConnection conn = (JarURLConnection) res.openConnection();
       Manifest mf = conn.getManifest();
       Attributes a = mf.getMainAttributes();
-      return "jaf-"+a.getValue("Build-Version")+"/"+a.getValue("Build-Timestamp");
+      return "fjage-"+a.getValue("Build-Version")+"/"+a.getValue("Build-Timestamp");
     } catch (Exception ex) {
       return "(unknown)";
     }
