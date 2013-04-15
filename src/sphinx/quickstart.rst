@@ -76,7 +76,7 @@ Create a file called `hello.groovy` in your project folder and put the following
 
 This Groovy script creates an agent with `AgentID` `hello` of class `HelloWorldAgent`. The `init()` method of the agent is called once the agent is loaded. In this method, a one-shot behavior is added to the agent. One-shot behaviors are fired only once, as soon as possible; in our case, this is as soon as the agent is running. The one-shot behavior prints "Hello world!!!". The output of the agent is not directly displayed on the console, but instead sent to the log file, as we will see shortly.
 
-To run the agent, start fjåge and run the script by typing `run 'hello'` or simply `<hello`. This will return you to the interactive shell prompt. To check that your agent is indeed running, type `ps`. You may then shutdown fjåge as before and check the log file for your output:
+To run the agent, start fjåge and run the script by typing `run 'hello'` or simply `<hello` (the *less than* sign '<' is a shortcut for `run '...'`). This will return you to the interactive shell prompt. To check that your agent is indeed running, type `ps`. You may then shutdown fjåge as before and check the log file for your output:
 
 .. code-block:: console
 
