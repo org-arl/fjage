@@ -6,7 +6,7 @@ Getting Started
 Quick start
 -----------
 
-We assume that you are working on a UNIX (Linux or Mac OS X) system with network access. If you are working on a Windows platform, you may need `Cygwin <http://www.cygwin.com/>`_ installed.
+We assume that you are working on a UNIX (Linux or Mac OS X) system with network access. If you are working on a Windows platform, you may need `Cygwin <http://www.cygwin.com/>`_ installed. We also assume that you have Java Development Kit (JDK) 1.6 or higher installed. If you don't have one, you'll need to `install <http://www.oracle.com/technetwork/java/javase/downloads/index.html>`_ one.
 
 .. caution:: Although one would expect Java to work across platforms, fjåge has not been fully tested under Windows. If you encounter any problems, please report them via the `issue tracking system <http://github.com/org-arl/fjage/issues>`_.
 
