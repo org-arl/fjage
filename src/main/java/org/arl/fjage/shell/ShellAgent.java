@@ -54,7 +54,7 @@ public class ShellAgent extends Agent {
     this.shell = shell;
     this.engine = engine;
     engine.setVariable("agent", this);
-    addInitrc(getClass(), "/etc/fjageshrc.groovy");
+    addInitrc(getClass(), "/etc/fshrc.groovy");
   }
 
   @Override
