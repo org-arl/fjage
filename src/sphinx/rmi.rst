@@ -45,7 +45,7 @@ It is often useful to connect a console shell to a running fjåge application to
     #!/bin/sh
 
     CLASSPATH=`find build/libs -name *.jar -exec /bin/echo -n :'{}' \;`
-    java -cp "$CLASSPATH" -Djava.util.logging.config.file=etc/logging.properties org.arl.fjage.shell.GroovyBoot -Durl="$1" etc/initrc-rconsole.groovy
+    java -cp "$CLASSPATH" org.arl.fjage.shell.GroovyBoot -Durl="$1" etc/initrc-rconsole.groovy
 
 and `etc/initrc-rconsole.groovy`::
 

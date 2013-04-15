@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # fjage version
-VERSION=1.1
+VERSION=1.1.1
 
 # create the folder structure
 mkdir -p build/libs etc logs
@@ -19,7 +19,6 @@ cd ../..
 # download init scripts and logging configuration
 cd etc
 curl -O https://raw.github.com/org-arl/fjage/master/etc/initrc.groovy
-curl -O https://raw.github.com/org-arl/fjage/master/etc/logging.properties
 cd ..
 
 # download startup script

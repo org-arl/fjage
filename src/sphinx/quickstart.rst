@@ -35,12 +35,8 @@ Your directory structure should now look something like this:
       jline-2.10.jar
     etc/
       initrc.groovy
-      logging.properties
 
-..    cloning-1.9.0.jar
-..    objenesis-1.2.jar
-
-.. note:: The `build/libs` folder contains all the necessary libraries. The `etc` folder contains startup files. `initrc.groovy` in the initialization script where you create your agents and configure them. `logging.properties` is a standard `Java logging <http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html>`_ configuration file that controls the logs from your project. `fjage.sh` is your startup shell script that simply sets up the classpath and boots up fjåge with the `initrc.groovy` script. The organization of the directory structure and names of the files are all customizable by editing `fjage.sh` and `initrc.groovy`.
+.. note:: The `build/libs` folder contains all the necessary libraries. The `etc` folder contains startup files. `initrc.groovy` in the initialization script where you create your agents and configure them. `fjage.sh` is your startup shell script that simply sets up the classpath and boots up fjåge with the `initrc.groovy` script. The organization of the directory structure and names of the files are all customizable by editing `fjage.sh` and `initrc.groovy`.
 
 To check that your fjåge installation is correctly working, type `./fjage.sh`. That should simply give you an interactive fjåge Groovy shell with a `$` prompt. Type `ps` to see a list of running agents. There should be only one `shell` agent created by the default `initrc.groovy` script. Type `shutdown` or press control-D to terminate fjåge.
 
@@ -91,7 +87,7 @@ To run the agent, start fjåge and run the script by typing `run 'hello'` or sim
     1365092640082|INFO|HelloWorldAgent@18|Hello world!!!
     bash$ 
 
-The default fjåge log file format is pipe-separated, where the first column is the timestamp in milliseconds, the second column is the log level, the third column is the agent class name and threadID, and the last column is the log message. You may change the format if you like by editing the `logging.properties` file in the `etc` folder.
+The default fjåge log file format is pipe-separated, where the first column is the timestamp in milliseconds, the second column is the log level, the third column is the agent class name and threadID, and the last column is the log message. You may change the format if you like by loading a custom logging configuration by specifying a `java.util.logging.config.file` system property while starting the JVM (see `Java logging <http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html>`_).
 
 Congratulations!!! You have just developed your first Groovy fjåge agent!
 
@@ -170,9 +166,9 @@ Typical bootup for Groovy applications
 
 In order to fully understand how fjåge works, it is useful to look at the bootup sequence of our hello world fjåge application. When we run `fjage.sh`, the shell script creates a CLASSPATH to include all jar files in the `build/libs` folder and then starts the JVM::
 
-    java -cp "$CLASSPATH" -Djava.util.logging.config.file=etc/logging.properties org.arl.fjage.shell.GroovyBoot etc/initrc.groovy
+    java -cp "$CLASSPATH" org.arl.fjage.shell.GroovyBoot etc/initrc.groovy
 
-This command uses the `etc/logging.properties` to set up Java logging and invokes the `main()` static method on the `org.arl.fjage.shell.GroovyBoot` class. The initialization script `etc/initrc.groovy` is passed as a command line argument to the `main()`.
+This command invokes the `main()` static method on the `org.arl.fjage.shell.GroovyBoot` class. The initialization script `etc/initrc.groovy` is passed as a command line argument to the `main()`.
 
 Let us next take a look at a simplified code extract from the `org.arl.fjage.shell.GroovyBoot.main()` method:
 

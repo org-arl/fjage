@@ -8,4 +8,4 @@ if [ $(expr "$(uname -s)" : 'CYGWIN.*') -gt 0 ];then
 fi
 
 mkdir -p logs
-java -cp "$CLASSPATH" -Djava.util.logging.config.file=etc/logging.properties org.arl.fjage.shell.GroovyBoot etc/initrc.groovy
+java -cp "$CLASSPATH" org.arl.fjage.shell.GroovyBoot etc/initrc.groovy
