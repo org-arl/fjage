@@ -21,11 +21,29 @@ import org.arl.fjage.*;
  */
 public class ShellAgent extends Agent {
   
+  ////// private classes
+
+  private class Script {
+    String name;
+    File file;
+    Reader reader;
+    Script(File file) {
+      this.name = null;
+      this.file = file;
+      this.reader = null;
+    }
+    Script(String name, Reader reader) {
+      this.name = name;
+      this.file = null;
+      this.reader = reader;
+    }
+  }
+  
   ////// private attributes
   
   private ScriptEngine engine;
   private Shell shell;
-  private List<Object> initScripts = new ArrayList<Object>();
+  private List<Script> initScripts = new ArrayList<Script>();
   private Message rsp;
   private Object sync = new Object();
   private MessageBehavior msgBehavior;
@@ -36,9 +54,7 @@ public class ShellAgent extends Agent {
     this.shell = shell;
     this.engine = engine;
     engine.setVariable("agent", this);
-    InputStream inp = getClass().getResourceAsStream("/etc/fjageshrc.groovy");
-    if (inp == null) log.warning("jar:/etc/fjageshrc.groovy not found");
-    else initScripts.add(new InputStreamReader(inp));
+    addInitrc(getClass(), "/etc/fjageshrc.groovy");
   }
 
   @Override
@@ -60,10 +76,10 @@ public class ShellAgent extends Agent {
     add(new OneShotBehavior() {
       @Override
       public void action() {
-        for (Object script: initScripts) {
-          if (script instanceof File) engine.exec((File)script, null);
-          else if (script instanceof Reader) engine.exec((Reader)script, "<reader>", null);
-          else log.warning("Unknown init script type ignored!");
+        for (Script script: initScripts) {
+          if (engine.isBusy()) engine.waitUntilCompletion();
+          if (script.file != null) engine.exec(script.file, null);
+          else engine.exec(script.reader, script.name, null);
         }
       }
     });
@@ -102,13 +118,26 @@ public class ShellAgent extends Agent {
    * Sets the initialization script from a reader to setup the console environment. This
    * method should only be called before the agent is added to a running container.
    * 
+   * @param name name of the reader.
    * @param reader script reader.
    */
-  public void setInitrc(Reader reader) {
+  public void setInitrc(String name, Reader reader) {
     initScripts.clear();
-    addInitrc(reader);
+    addInitrc(name, reader);
   }
   
+  /**
+   * Set the initialization script to be a class resource to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   * 
+   * @param cls class used for getting resource.
+   * @param res name of the resource.
+   */
+  public void setInitrc(Class cls, String res) {
+    initScripts.clear();
+    addInitrc(cls, res);
+  }
+
   /**
    * Adds a name of the initialization script to setup the console environment. This
    * method should only be called before the agent is added to a running container.
@@ -116,7 +145,7 @@ public class ShellAgent extends Agent {
    * @param script script name.
    */
   public void addInitrc(String script) {
-    initScripts.add(new File(script));
+    initScripts.add(new Script(new File(script)));
   }
 
   /**
@@ -126,17 +155,34 @@ public class ShellAgent extends Agent {
    * @param script script file.
    */
   public void addInitrc(File script) {
-    initScripts.add(script);
+    initScripts.add(new Script(script));
   }
   
   /**
    * Adds a initialization script from a reader to setup the console environment. This
    * method should only be called before the agent is added to a running container.
    * 
+   * @param name name of the reader.
    * @param reader script reader.
    */
-  public void addInitrc(Reader reader) {
-    initScripts.add(reader);
+  public void addInitrc(String name, Reader reader) {
+    initScripts.add(new Script(name, reader));
+  }
+  
+  /**
+   * Adds a initialization script from a class resource to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   * 
+   * @param cls class used for getting resource.
+   * @param res name of the resource.
+   */
+  public void addInitrc(Class cls, String res) {
+    InputStream inp = cls.getResourceAsStream(res);
+    if (inp == null) {
+      log.warning("res://"+cls.getName()+res+" not found");
+      return;
+    }
+    addInitrc("res://"+cls.getName()+res, new InputStreamReader(inp));
   }
   
   ////// overriden methods to allow external threads to call receive/request directly
