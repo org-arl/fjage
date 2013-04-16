@@ -183,6 +183,8 @@ Let us next take a look at a simplified code extract from the `org.arl.fjage.she
       engine.shutdown();
     }
 
+.. note:: `GroovyBoot` also supports resource URLs of the form `res://path/to/package/script.groovy` to execute initialization Groovy scripts loaded from Java resources (potentially inside jar files).
+
 This code sequentially executes every initialization Groovy script given on the command line. In our case, this causes the `etc/initrc.groovy` to be executed:
 
 .. code-block:: groovy
