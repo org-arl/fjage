@@ -26,6 +26,22 @@ public class ScriptOutputStream {
   ////// public methods
 
   /**
+   * Create an unbound script output stream.
+   */
+  ScriptOutputStream() {
+    // do nothing
+  }
+
+  /**
+   * Create a script output stream bound to an output stream.
+   *
+   * @param out output stream to bind to.
+   */
+  ScriptOutputStream(OutputStream out) {
+    setOutputStream(out);
+  }
+
+  /**
    * Set the output stream to use for displaying script output.
    * 
    * @param out output stream, or null if no display is desired.
