@@ -55,6 +55,7 @@ public class GroovyBoot {
           String lname = a.substring(7);
           Logger.getLogger(lname).setLevel(Level.ALL);
         } else {
+          if (!a.endsWith(".groovy")) a += ".groovy";
           log.info("Running "+a);
           if (a.startsWith("res:/")) {
             // execute script from resource file
