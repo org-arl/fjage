@@ -32,10 +32,11 @@ Support
 * [Discussion Forum](http://groups.google.com/forum/#!forum/fjage-users)
 * [Issue Tracking](http://github.com/org-arl/fjage/issues)
 
-Binary Release
---------------
+Binary Releases
+---------------
 
-* [fjage-1.1.1.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.1.1/fjage-1.1.1.jar), released April 16, 2013
+* [fjage-1.1.1.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.1.1/fjage-1.1.1.jar), released April 16, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/7l2WBhaWruU))
+* [fjage-1.1.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.1/fjage-1.1.jar), released April 15, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/Zb57tak9-M0))
 
 **Maven Central dependency:**
 
