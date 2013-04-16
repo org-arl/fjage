@@ -49,6 +49,7 @@ public class GroovyBoot {
 
       // parse command line and execute scripts
       ScriptEngine engine = new GroovyScriptEngine();
+      ScriptOutputStream out = new ScriptOutputStream(System.out);
       for (String a: args) {
         if (a.equals("-nocolor")) Term.setDefaultState(false);
         else if (a.startsWith("-debug:")) {
@@ -61,10 +62,10 @@ public class GroovyBoot {
             // execute script from resource file
             InputStream inp = GroovyBoot.class.getResourceAsStream(a.substring(5));
             if (inp == null) throw new FileNotFoundException(a+" not found");
-            engine.exec(new InputStreamReader(inp), a, null);
+            engine.exec(new InputStreamReader(inp), a, out);
           } else {
             // execute script from file
-            engine.exec(new File(a), null);
+            engine.exec(new File(a), out);
           }
           engine.waitUntilCompletion();
         }
