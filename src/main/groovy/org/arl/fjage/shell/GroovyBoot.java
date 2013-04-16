@@ -26,7 +26,7 @@ import org.arl.fjage.Platform;
  */
 public class GroovyBoot {
 
-  private static final String loggingProperties = "/etc/logging.properties";
+  private static final String loggingProperties = "logging.properties";
 
   /**
    * Application entry point.
@@ -39,7 +39,7 @@ public class GroovyBoot {
       if (System.getProperty("java.util.logging.config.file") == null
        && System.getProperty("java.util.logging.config.class") == null) {
         InputStream logprop = GroovyBoot.class.getResourceAsStream(loggingProperties);
-        if (logprop == null) throw new FileNotFoundException("res://"+loggingProperties+" not found");
+        if (logprop == null) throw new FileNotFoundException("res://org/arl/fjage/shell/"+loggingProperties+" not found");
         LogManager.getLogManager().readConfiguration(logprop);
       }
       log = Logger.getLogger(GroovyBoot.class.getName());
@@ -48,7 +48,6 @@ public class GroovyBoot {
       log.info("fjage Build: "+Platform.getBuildVersion());
 
       // parse command line and execute scripts
-      String pat = "^res://([^/]*)(/.*)$";
       ScriptEngine engine = new GroovyScriptEngine();
       for (String a: args) {
         if (a.equals("-nocolor")) Term.setDefaultState(false);
@@ -57,13 +56,9 @@ public class GroovyBoot {
           Logger.getLogger(lname).setLevel(Level.ALL);
         } else {
           log.info("Running "+a);
-          if (a.matches(pat)) {
+          if (a.startsWith("res:/")) {
             // execute script from resource file
-            String clsname = a.replaceAll(pat, "$1");
-            String res = a.replaceAll(pat, "$2");
-            Class cls = GroovyBoot.class;
-            if (clsname.length() > 0) cls = Class.forName(clsname);
-            InputStream inp = cls.getResourceAsStream(res);
+            InputStream inp = GroovyBoot.class.getResourceAsStream(a.substring(5));
             if (inp == null) throw new FileNotFoundException(a+" not found");
             engine.exec(new InputStreamReader(inp), a, null);
           } else {
@@ -82,4 +77,3 @@ public class GroovyBoot {
   }
 
 }
-

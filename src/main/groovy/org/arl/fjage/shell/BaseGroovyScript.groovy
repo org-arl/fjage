@@ -285,16 +285,22 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding();
     if (binding.hasVariable('groovy')) {
       GroovyShell groovy = binding.getVariable('groovy');
-      List<?> arglist = new ArrayList<?>();
-      if (args != null && args.length > 0)
-        for (a in args)
-          arglist.add(a.toString());
       groovy.getClassLoader().clearCache();
-      String folder = null;
-      if (!name.startsWith(File.pathSeparator) && binding.hasVariable('scripts'))
-        folder = binding.getVariable('scripts');
       if (!name.endsWith('.groovy')) name += '.groovy';
-      groovy.run(new File((String)folder, name), arglist);
+      if (name.startsWith('res:/')) {
+        InputStream inp = groovy.class.getResourceAsStream(name.substring(5));
+        if (inp == null) throw new FileNotFoundException(name+" not found");
+        groovy.run(new InputStreamReader(inp), name, args as String[]);
+      } else {
+        List<?> arglist = new ArrayList<?>();
+        if (args != null && args.length > 0)
+          for (a in args)
+            arglist.add(a.toString());
+        String folder = null;
+        if (!name.startsWith(File.pathSeparator) && binding.hasVariable('scripts'))
+          folder = binding.getVariable('scripts');
+        groovy.run(new File((String)folder, name), arglist);
+      }
     }
   }
   
@@ -311,24 +317,6 @@ abstract class BaseGroovyScript extends Script {
       GroovyShell groovy = binding.getVariable('groovy');
       groovy.getClassLoader().clearCache();
       groovy.run(reader, name, args as String[]);
-    }
-  }
-  
-  /**
-   * Run a nested Groovy script.
-   * 
-   * @param cls class to obtain script resource to run.
-   * @param res name of script resource.
-   * @param args arguments to pass to the script.
-   */
-  void run(Class cls, String res, Object... args) {
-    Binding binding = getBinding();
-    if (binding.hasVariable('groovy')) {
-      GroovyShell groovy = binding.getVariable('groovy');
-      InputStream inp = cls.getResourceAsStream(res);
-      if (inp == null) throw new FileNotFoundException("res://"+cls.getName()+res+" not found");
-      groovy.getClassLoader().clearCache();
-      groovy.run(new InputStreamReader(inp), "res://"+cls.getName()+res, args as String[]);
     }
   }
   

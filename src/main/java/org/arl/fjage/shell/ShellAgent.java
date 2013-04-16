@@ -54,7 +54,7 @@ public class ShellAgent extends Agent {
     this.shell = shell;
     this.engine = engine;
     engine.setVariable("agent", this);
-    addInitrc(getClass(), "/etc/fshrc.groovy");
+    addInitrc("res://org/arl/fjage/shell/fshrc.groovy");
   }
 
   @Override
@@ -127,25 +127,22 @@ public class ShellAgent extends Agent {
   }
   
   /**
-   * Set the initialization script to be a class resource to setup the console environment. This
-   * method should only be called before the agent is added to a running container.
-   * 
-   * @param cls class used for getting resource.
-   * @param res name of the resource.
-   */
-  public void setInitrc(Class cls, String res) {
-    initScripts.clear();
-    addInitrc(cls, res);
-  }
-
-  /**
    * Adds a name of the initialization script to setup the console environment. This
    * method should only be called before the agent is added to a running container.
    * 
    * @param script script name.
    */
   public void addInitrc(String script) {
-    initScripts.add(new Script(new File(script)));
+    if (script.startsWith("res:/")) {
+      InputStream inp = getClass().getResourceAsStream(script.substring(5));
+      if (inp == null) {
+        log.warning(script+" not found");
+        return;
+      }
+      addInitrc(script, new InputStreamReader(inp));
+    } else {
+      initScripts.add(new Script(new File(script)));
+    }
   }
 
   /**
@@ -167,22 +164,6 @@ public class ShellAgent extends Agent {
    */
   public void addInitrc(String name, Reader reader) {
     initScripts.add(new Script(name, reader));
-  }
-  
-  /**
-   * Adds a initialization script from a class resource to setup the console environment. This
-   * method should only be called before the agent is added to a running container.
-   * 
-   * @param cls class used for getting resource.
-   * @param res name of the resource.
-   */
-  public void addInitrc(Class cls, String res) {
-    InputStream inp = cls.getResourceAsStream(res);
-    if (inp == null) {
-      log.warning("res://"+cls.getName()+res+" not found");
-      return;
-    }
-    addInitrc("res://"+cls.getName()+res, new InputStreamReader(inp));
   }
   
   ////// overriden methods to allow external threads to call receive/request directly
