@@ -10,8 +10,6 @@ for full license details.
 
 package org.arl.fjage;
 
-import java.util.Random;
-
 /**
  * A behavior that simulates a Poisson arrival process. The {@link #onTick()}
  * method of this behavior is called with exponentially distributed random
@@ -27,7 +25,6 @@ public abstract class PoissonBehavior extends Behavior {
   private long expDelay;
   private long wakeupTime;
   private boolean quit;
-  private Random rnd = new Random();
 
   //////////// Interface methods
 
@@ -78,7 +75,7 @@ public abstract class PoissonBehavior extends Behavior {
    */
   @Override
   public void onStart() {
-    long delayToNext = Math.round(-Math.log(rnd.nextDouble())*expDelay);
+    long delayToNext = Math.round(RandomNumberGenerator.nextExp(expDelay));
     wakeupTime = agent.currentTimeMillis() + delayToNext;
     block(delayToNext);
   }
@@ -95,7 +92,7 @@ public abstract class PoissonBehavior extends Behavior {
     else {
       ticks++;
       onTick();
-      long delayToNext = Math.round(-Math.log(rnd.nextDouble())*expDelay);
+      long delayToNext = Math.round(RandomNumberGenerator.nextExp(expDelay));
       wakeupTime = agent.currentTimeMillis() + delayToNext;
     }
   }
@@ -124,4 +121,3 @@ public abstract class PoissonBehavior extends Behavior {
   }
 
 }
-
