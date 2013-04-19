@@ -39,7 +39,7 @@ public class BasicTests {
     ServerAgent server = new ServerAgent();
     container.add("C", client);
     container.add("S", server);
-    container.start();
+    platform.start();
     platform.sleep(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
@@ -56,7 +56,7 @@ public class BasicTests {
     ServerAgent server = new ServerAgent();
     container.add("C", client);
     container.add("S", server);
-    container.start();
+    platform.start();
     platform.sleep(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
@@ -74,8 +74,7 @@ public class BasicTests {
     ServerAgent server = new ServerAgent();
     slave.add("C", client);
     master.add("S", server);
-    master.start();
-    slave.start();
+    platform.start();
     AgentID c = new AgentID("C");
     AgentID s = new AgentID("S");
     assertTrue(master.containsAgent(s));
@@ -101,8 +100,7 @@ public class BasicTests {
     ServerAgent server = new ServerAgent();
     master.add("C", client);
     slave.add("S", server);
-    slave.start();
-    master.start();
+    platform.start();
     platform.sleep(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
@@ -120,8 +118,7 @@ public class BasicTests {
     ServerAgent server = new ServerAgent();
     slave.add("C", client);
     slave.add("S", server);
-    master.start();
-    slave.start();
+    platform.start();
     platform.sleep(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
@@ -136,8 +133,8 @@ public class BasicTests {
     MasterContainer master = new MasterContainer(platform);
     ServerAgent server = new ServerAgent();
     master.add("S", server);
-    master.start();
     Gateway gw = new Gateway(platform, master.getURL());
+    platform.start();
     Message rsp = gw.receive(100);
     assertTrue(rsp == null);
     AgentID s = gw.agentForService("server");
@@ -188,7 +185,7 @@ public class BasicTests {
       }
     });
     agent.add(fsm);
-    container.start();
+    platform.start();
     platform.sleep(DELAY);
     assertTrue(fsm.done());
     platform.shutdown();

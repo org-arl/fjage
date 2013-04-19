@@ -449,9 +449,10 @@ public class Container {
   }
 
   /**
-   * Starts the container and all agents in it.
+   * Initialize the container and all agents in it.
+   * This should be called before start().
    */
-  public void start() {
+  public void init() {
     if (!running) {
       log.info("Initializing agents...");
       synchronized (agents) {
@@ -470,11 +471,24 @@ public class Container {
           // do nothing
         }
       } while (!isIdle());
-      log.info("Agents ready, starting container...");
+      log.info("Agents ready...");
+    }
+  }
+
+  /**
+   * Starts the container and all agents in it.
+   * This should be called after init().
+   */
+  public void start() {
+    if (!running) {
+      log.info("Starting container...");
       running = true;
       synchronized (agents) {
-        for (Agent a: agents.values())
+        for (Agent a: agents.values()) {
+          if (a.getState() != AgentState.IDLE)
+            throw new FjageError("Container start() called without init()");
           a.wake();
+        }
       }
     }
   }

@@ -180,11 +180,5 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
     }
   }
   
-  private boolean isIdle() {
-    for (Container c: containers)
-      if (!c.isIdle()) return false;
-    return true;
-  }
-
 }
 

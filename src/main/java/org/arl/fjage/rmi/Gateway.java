@@ -78,7 +78,6 @@ public class Gateway {
       }
     };
     container.add("GatewayAgent@"+hashCode(), agent);
-    container.start();
   }
 
   /**

@@ -28,6 +28,7 @@ public abstract class Platform implements TimestampProvider {
   private String hostname = null;
   private int port = 1099;
   private NetworkInterface nif = null;
+  private boolean running = false;
 
   ////////// Interface methods for platforms to implement
 
@@ -80,6 +81,7 @@ public abstract class Platform implements TimestampProvider {
    * @param container the container.
    */
   public void addContainer(Container container) {
+    if (running) throw new FjageError("Cannot add container to running platform");
     containers.add(container);
   }
 
@@ -97,7 +99,10 @@ public abstract class Platform implements TimestampProvider {
    */
   public void start() {
     for (Container c: containers)
+      c.init();
+    for (Container c: containers)
       c.start();
+    running = true;
   }
 
   /**
@@ -107,6 +112,7 @@ public abstract class Platform implements TimestampProvider {
     for (Container c: containers) {
       if (c != null) c.shutdown();
     }
+    running = false;
   }
 
   /**
@@ -203,6 +209,18 @@ public abstract class Platform implements TimestampProvider {
       if (c != null && c.isRunning()) return true;
     }
     return false;
+  }
+
+  /**
+   * Check if all containers on the platform are idle.
+   *
+   * @return true if all containers are idle, false otherwise.
+   */
+  public boolean isIdle() {
+    for (Container c: containers) {
+      if (c != null && !c.isIdle()) return false;
+    }
+    return true;
   }
 
   /**
