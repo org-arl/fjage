@@ -149,6 +149,48 @@ public abstract class Behavior {
   }
   
   /**
+   * Convenience method to find an agent that provides a named service. If multiple agents are registered
+   * to provide a given service, any of the agents' id may be returned.
+   *
+   * @param service the named service of interest.
+   * @return an agent id for an agent that provides the service.
+   */
+  public AgentID agentForService(String service) {
+    return agent.agentForService(service);
+  }
+  
+  /**
+   * Convenience method to find an agent that provides a named service. If multiple agents are registered
+   * to provide a given service, any of the agents' id may be returned.
+   *
+   * @param service the named service of interest.
+   * @return an agent id for an agent that provides the service.
+   */
+  public AgentID agentForService(Enum<?> service) {
+    return agent.agentForService(service);
+  }
+  
+  /**
+   * Convenience method to find all agents that provides a named service.
+   *
+   * @param service the named service of interest.
+   * @return an array of agent ids representing all agent that provide the service.
+   */
+  public AgentID[] agentsForService(String service) {
+    return agent.agentsForService(service);
+  }
+
+  /**
+   * Convenience method to find all agents that provides a named service.
+   *
+   * @param service the named service of interest.
+   * @return an array of agent ids representing all agent that provide the service.
+   */
+  public AgentID[] agentsForService(Enum<?> service) {
+    return agent.agentsForService(service);
+  }
+
+  /**
    * Log a message at an INFO level.
    * 
    * @param msg message to log.

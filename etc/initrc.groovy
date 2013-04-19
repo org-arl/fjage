@@ -1,7 +1,7 @@
 import org.arl.fjage.*
 import org.arl.fjage.shell.*
 
-GroovyAgentExtensions.enable()
+GroovyExtensions.enable()
 
 platform = new RealTimePlatform()
 container = new Container(platform)
