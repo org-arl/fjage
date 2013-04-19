@@ -503,7 +503,7 @@ public class Agent implements Runnable, TimestampProvider {
    */
   public Message request(Message msg, long timeout) {
     if (Thread.currentThread().getId() != tid)
-      throw new FjageError("request() should only be called from agent thread");
+      throw new FjageError("request() should only be called from agent thread "+tid+", but called from "+Thread.currentThread().getId());
     if (!send(msg)) return null;
     return receive(msg, timeout);
   }
