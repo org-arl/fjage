@@ -80,6 +80,18 @@ public class AgentID implements Serializable {
   }
 
   /**
+   * Constructor to create an owned agent id from another agent id.
+   *
+   * @param aid agent id to inherit.
+   * @param owner owner agent.
+   */
+  public AgentID(AgentID aid, Agent owner) {
+    this.name = aid.name;
+    this.isTopic = aid.isTopic;
+    this.owner = owner;
+  }
+
+  /**
    * Returns true if the agent id represents a topic.
    *
    * @return true if the agent id represents a topic,
@@ -96,17 +108,6 @@ public class AgentID implements Serializable {
    */
   public String getName() {
     return name;
-  }
-  
-  /**
-   * Sets the owner of the agent id. This is usually the agent that
-   * created the agent id, and will be used to send messages to this
-   * agent id.
-   * 
-   * @param owner owner agent.
-   */
-  public void setOwner(Agent owner) {
-    this.owner = owner;
   }
 
   /**

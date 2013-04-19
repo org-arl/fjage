@@ -591,7 +591,7 @@ public class Agent implements Runnable, TimestampProvider {
    */
   public AgentID agentForService(String service) {
     AgentID a = container.agentForService(service);
-    if (a != null) a.setOwner(this);
+    if (a != null) a = new AgentID(a, this);
     return a;
   }
 
@@ -604,7 +604,7 @@ public class Agent implements Runnable, TimestampProvider {
    */
   public AgentID agentForService(Enum<?> service) {
     AgentID a = container.agentForService(service.toString());
-    if (a != null) a.setOwner(this);
+    if (a != null) a = new AgentID(a, this);
     return a;
   }
 
@@ -617,8 +617,8 @@ public class Agent implements Runnable, TimestampProvider {
   public AgentID[] agentsForService(String service) {
     AgentID[] a = container.agentsForService(service);
     if (a != null) {
-      for (AgentID a1: a)
-        a1.setOwner(this);
+      for (int i = 0; i < a.length; i++)
+        a[i] = new AgentID(a[i], this);
     }
     return a;
   }
@@ -632,8 +632,8 @@ public class Agent implements Runnable, TimestampProvider {
   public AgentID[] agentsForService(Enum<?> service) {
     AgentID[] a = container.agentsForService(service.toString());
     if (a != null) {
-      for (AgentID a1: a)
-        a1.setOwner(this);
+      for (int i = 0; i < a.length; i++)
+        a[i] = new AgentID(a[i], this);
     }
     return a;
   }
