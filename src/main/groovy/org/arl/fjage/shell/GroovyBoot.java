@@ -12,7 +12,8 @@ package org.arl.fjage.shell;
 
 import java.io.*;
 import java.util.logging.*;
-import org.arl.fjage.Platform;
+import groovy.lang.ExpandoMetaClass;
+import org.arl.fjage.*  ;
 
 /**
  * fjage bootloader.
@@ -34,6 +35,10 @@ public class GroovyBoot {
   public static void main(String[] args) {
     Logger log = null;
     try {
+
+      // setup Groovy extensions
+      ExpandoMetaClass.enableGlobally();
+      GroovyExtensions.enable();
 
       // load logging configuration from fjage defaults, if not specified
       if (System.getProperty("java.util.logging.config.file") == null
