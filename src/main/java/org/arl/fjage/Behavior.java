@@ -118,7 +118,7 @@ public abstract class Behavior {
    *
    * @see #block()
    */
-  public void restart() {
+  public synchronized void restart() {
     blocked = false;
     if (agent != null) agent.wake();
   }
@@ -204,7 +204,7 @@ public abstract class Behavior {
   /**
    * Sets the owner of the agent. Called by the agent when the behavior is added.
    */
-  void setOwner(Agent agent) {
+  synchronized void setOwner(Agent agent) {
     this.agent = agent;
     this.log = (agent == null) ? null : agent.log;
   }
