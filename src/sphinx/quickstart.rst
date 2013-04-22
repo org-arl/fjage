@@ -62,7 +62,7 @@ Create a file called `hello.groovy` in your project folder and put the following
 
     class HelloWorldAgent extends Agent {
       void init() {
-        add oneShotBehavior {
+        addOneShotBehavior {
           println 'Hello world!!!'
         }
       }
@@ -122,7 +122,7 @@ This is useful for testing. However, in a production system, you usually want to
 
     class HelloWorldAgent extends Agent {
       void init() {
-        add oneShotBehavior {
+        addOneShotBehavior {
           println 'Hello world!!!'
         }
       }
@@ -175,6 +175,7 @@ Let us next take a look at a simplified code extract from the `org.arl.fjage.she
 .. code-block:: java
 
     public static void main(String[] args) throws Exception {
+      GroovyExtensions.enable();
       engine = new GroovyScriptEngine();
       for (String a: args) {
         engine.exec(new File(a), null);
@@ -185,14 +186,13 @@ Let us next take a look at a simplified code extract from the `org.arl.fjage.she
 
 .. note:: `GroovyBoot` also supports resource URLs of the form `res://path/to/package/script.groovy` to execute initialization Groovy scripts loaded from Java resources (potentially inside jar files).
 
-This code sequentially executes every initialization Groovy script given on the command line. In our case, this causes the `etc/initrc.groovy` to be executed:
+This code enables Groovy extensions in fjåge to add syntactic sugar for ease of writing Groovy agents, and then sequentially executes every initialization Groovy script given on the command line. In our case, this causes the `etc/initrc.groovy` to be executed:
 
 .. code-block:: groovy
 
     import org.arl.fjage.*
     import org.arl.fjage.shell.*
 
-    GroovyAgentExtensions.enable()
     platform = new RealTimePlatform()
     container = new Container(platform)
     shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
@@ -200,7 +200,7 @@ This code sequentially executes every initialization Groovy script given on the 
     // add other agents to the container here
     platform.start()
 
-The script imports the fjage packages. It then enables Groovy extensions in fjåge to add syntactic sugar for ease of writing Groovy agents. A real-time platform and a container is created, and a `shell` agent is configured and added to the container. The `shell` agent is set to provide the interactive shell on the console, and use Groovy for scripting. Finally, the platform is started. Now we have a fjåge container running with a single `shell` agent that provides an interactive shell on the console.
+The script imports the fjage packages. A real-time platform and a container is created, and a `shell` agent is configured and added to the container. The `shell` agent is set to provide the interactive shell on the console, and use Groovy for scripting. Finally, the platform is started. Now we have a fjåge container running with a single `shell` agent that provides an interactive shell on the console.
 
 Any other agents that we may wish to start can be included in the `etc/initrc.groovy` script, just before starting the platform.
 

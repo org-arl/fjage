@@ -21,7 +21,7 @@ An example skeleton agent is shown below::
       void init() {
         // agent is in INIT state
         log.info 'Agent init'
-        add oneShotBehavior {
+        addOneShotBehavior {
           // behavior will be executed after all agents are initialized
           // agent is in RUNNING state
           log.info 'Agent ready'
@@ -46,13 +46,19 @@ The *traditional* behavior creation style may be used by Java and Groovy agents:
 
 The method to override depends on the behavior (e.g. `action()` for most behaviors, but `onTick()` for `TickerBehavior`, and `onWake()` for `WakerBehavior`).
 
-Groovy agents support a simpler alternative syntax if the `GroovyAgentExtensions` are enabled::
+Groovy agents support a simpler alternative syntax if the `GroovyExtensions` are enabled::
 
     add oneShotBehavior {
       // do something
     }
 
-With this syntax, the appropriate method is automatically overridden to call the defined closure. For the examples in the rest of this chapter, we will adopt the simpler Groovy syntax.
+or::
+
+    addOneShotBehavior {
+      // do something
+    }
+
+Both variants are identical in function. With this syntax, the appropriate method is automatically overridden to call the defined closure. For the examples in the rest of this chapter, we will adopt the simpler Groovy syntax.
 
 One-shot behavior
 -----------------
@@ -68,7 +74,7 @@ A `CyclicBehavior`_ is run repeatedly as long as it is active. The behavior may 
       int n = 0
       void init() {
         // a cyclic behavior that runs 5 times and then marks itself as blocked
-        add cyclicBehavior {
+        addCyclicBehavior {
           agent.n++
           println "n = ${agent.n}"
           if (agent.n >= 5) block()
@@ -85,7 +91,7 @@ Waker behavior
 
 A `WakerBehavior`_ is run after a specified delay in milliseconds. ::
 
-    add wakerBehavior(1000) {
+    addWakerBehavior(1000) {
       // invoked 1 second later
       println '1000 ms have elapsed!'
     }
@@ -95,7 +101,7 @@ Ticker behavior
 
 A `TickerBehavior`_ is run repeated with a specified delay between invocations. The ticker behavior may be terminated by calling `stop()` at any time. ::
 
-    add tickerBehavior(5000) {
+    addTickerBehavior(5000) {
       // called at intervals of 5 seconds
       println 'tick!'
     }
@@ -105,7 +111,7 @@ Poisson behavior
 
 A `PoissonBehavior`_ is similar to a ticker behavior, but the interval between invocations is an exponentially distributed random variable. This simulates a Poisson arrival process. ::
 
-    add poissonBehavior(5000) {
+    addPoissonBehavior(5000) {
       // called at an average rate of once every 5 seconds
       println 'arrival!'
     }
@@ -119,20 +125,20 @@ A `MessageBehavior`_ is invoked when a message is received by the agent. A messa
 
 A message behavior that accepts any message can be added as follows::
 
-    add messageBehavior { msg ->
+    addMessageBehavior { msg ->
       println "Incoming message from ${msg.sender}"
     }
 
 If we were only interested in messages of class `MyMessage`, we could set up a behavior accordingly::
 
-    add messageBehavior(MyMessage) { msg ->
+    addMessageBehavior(MyMessage) { msg ->
       println "Incoming message of class ${msg.class} from ${msg.sender}"
     }
 
 Let us next consider a more complex case where we are interested in message of a specific class and from a specific sender::
 
     def filter = messageFilter { it instanceof MyMessage && it.sender.name == 'myFriend' }
-    add messageBehavior(filter) { msg ->
+    addMessageBehavior(filter) { msg ->
       println "Incoming message of class ${msg.class} from ${msg.sender}"
     }
 

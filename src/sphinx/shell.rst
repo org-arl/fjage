@@ -47,7 +47,6 @@ If we wanted to provide a remote shell that users could `telnet` into, rather th
     import org.arl.fjage.*
     import org.arl.fjage.shell.*
 
-    GroovyAgentExtensions.enable()
     platform = new RealTimePlatform()
     container = new Container(platform)
     shell = new ShellAgent(new TcpShell(8001), new GroovyScriptEngine())

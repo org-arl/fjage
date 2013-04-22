@@ -13,7 +13,6 @@ To start a master container, we simply replace `Container` with `MasterContainer
     import org.arl.fjage.*
     import org.arl.fjage.rmi.*
 
-    GroovyAgentExtensions.enable()
     platform = new RealTimePlatform()
     container = new MasterContainer(platform, name)
     println "Master container started at ${container.getURL()}"
@@ -27,7 +26,6 @@ To start slave containers, we need to specify the Java RMI URL of the master con
     import org.arl.fjage.*
     import org.arl.fjage.rmi.*
 
-    GroovyAgentExtensions.enable()
     platform = new RealTimePlatform()
     container = new SlaveContainer(platform, masterURL)
     // add agents to the container here
