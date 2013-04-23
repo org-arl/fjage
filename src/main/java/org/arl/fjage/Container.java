@@ -192,10 +192,12 @@ public class Container {
     }
     agent.bind(aid, this);
     agents.put(aid, agent);
+    AgentLocalRandom.bind(agent);
     if (running) {
       Thread t = new Thread(agent);
-      t.setName(agent.getName());
+      t.setName(name);
       t.setDaemon(false);
+      AgentLocalRandom.bind(agent, t);
       t.start();
     }
     return aid;
@@ -460,6 +462,7 @@ public class Container {
           Thread t = new Thread(a);
           t.setName(a.getName());
           t.setDaemon(false);
+          AgentLocalRandom.bind(a, t);
           t.start();
         }
       }

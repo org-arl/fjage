@@ -75,7 +75,7 @@ public abstract class PoissonBehavior extends Behavior {
    */
   @Override
   public void onStart() {
-    long delayToNext = Math.round(RandomNumberGenerator.nextExp(expDelay));
+    long delayToNext = Math.round(AgentLocalRandom.current().nextExp()*expDelay);
     wakeupTime = agent.currentTimeMillis() + delayToNext;
     block(delayToNext);
   }
@@ -92,7 +92,7 @@ public abstract class PoissonBehavior extends Behavior {
     else {
       ticks++;
       onTick();
-      long delayToNext = Math.round(RandomNumberGenerator.nextExp(expDelay));
+      long delayToNext = Math.round(AgentLocalRandom.current().nextExp()*expDelay);
       wakeupTime = agent.currentTimeMillis() + delayToNext;
     }
   }

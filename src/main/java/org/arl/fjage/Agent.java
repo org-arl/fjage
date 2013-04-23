@@ -757,6 +757,7 @@ public class Agent implements Runnable, TimestampProvider {
     state = AgentState.FINISHED;
     container.reportIdle(this);
     container.kill(aid);
+    AgentLocalRandom.unbind();
     container = null;
     platform = null;
   }
