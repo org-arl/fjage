@@ -409,7 +409,7 @@ abstract class BaseGroovyScript extends Script {
      Binding binding = getBinding();
      if (binding.hasVariable('agent')) {
        ShellAgent a = binding.getVariable('agent');
-       return a.doRequest(msg, timeout);
+       return a.request(msg, timeout);
      }
      return null;
    }
@@ -424,7 +424,7 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding();
     if (binding.hasVariable('agent')) {
       ShellAgent a = binding.getVariable('agent');
-      return a.doReceive(timeout);
+      return a.receive(timeout);
     }
     return null;
   }
@@ -445,7 +445,7 @@ abstract class BaseGroovyScript extends Script {
           return filter(m);
         }
       };
-      return a.doReceive(f, timeout);
+      return a.receive(f, timeout);
     }
     return null;
   }

@@ -20,6 +20,10 @@ import org.arl.fjage.*;
  * made using the ShellExecReq message, or through a TCP/IP socket-based console.
  */
 public class ShellAgent extends Agent {
+
+  ////// public constants
+
+  public static final String ABORT = ".abort";
   
   ////// private classes
 
@@ -232,7 +236,7 @@ public class ShellAgent extends Agent {
       else rsp = new Message(req, Performative.REFUSE);
     } else {
       String cmd = req.getCommand();
-      if (cmd.equals(".abort")) {
+      if (cmd.equals(ABORT)) {
         engine.abort();
         rsp = new Message(req, Performative.AGREE);
       } else {
