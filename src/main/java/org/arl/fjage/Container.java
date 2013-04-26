@@ -47,6 +47,7 @@ public class Container {
   protected Object cloner;
   protected Method doClone;
   protected boolean autoclone = false;
+  protected Set<AgentID> idle = new HashSet<AgentID>();
 
   //////////// Interface methods
 
@@ -267,6 +268,7 @@ public class Container {
       if (agent == null) return false;
       agent.stop();
       agents.remove(aid);
+      idle.remove(aid);
       unsubscribe(aid);
       deregister(aid);
       notify();   // if we are waiting for shutdown
@@ -466,7 +468,7 @@ public class Container {
           t.start();
         }
       }
-      log.info("Waiting for agents...");
+      log.fine("Waiting for agents...");
       do {
         try {
           Thread.sleep(100);
@@ -503,8 +505,10 @@ public class Container {
     if (!running) return;
     while (true) {
       try {
+        log.info("Initiating shutdown...");
         for (Agent a: agents.values())
           a.stop();
+        log.fine("Waiting for agents to shutdown...");
         synchronized (this) {
           while (!agents.isEmpty()) {
             try {
@@ -514,6 +518,7 @@ public class Container {
             }
           }
         }
+        log.info("All agents have shutdown");
         running = false;
         return;
       } catch (ConcurrentModificationException ex) {
@@ -537,7 +542,9 @@ public class Container {
    * @return true if all agents are idle, false otherwise.
    */
   public boolean isIdle() {
-    return active() == 0;
+    synchronized (idle) {
+      return agents.size() == idle.size();
+    }
   }
 
   /////////////// Standard Java methods to customize
@@ -585,32 +592,22 @@ public class Container {
    *
    * @param agent agent that is idle.
    */
-  void reportIdle(Agent agent) {
-    if (!running) return;
-    if (isIdle()) platform.idle();
+  void reportIdle(AgentID aid) {
+    synchronized (idle) {
+      idle.add(aid);
+    }
+    if (running && isIdle()) platform.idle();
   }
 
   /**
-   * Counts the number of active agents. Agents that are not idle and not finished
-   * are considered active.
+   * Called by agent to report when its busy.
    *
-   * @return number of active agents.
+   * @param agent agent that is busy.
    */
-  private int active() {
-    while (true) {
-      try {
-        int n = 0;
-        for (Agent a: agents.values()) {
-          //log.fine(a.getName()+" is "+a.getState());
-          if (a.getState() != AgentState.IDLE && a.getState() != AgentState.FINISHED) n++;
-        }
-        //log.fine(n+" agent(s) active");
-        return n;
-      } catch (ConcurrentModificationException ex) {
-        // do nothing, just try again
-      }
+  void reportBusy(AgentID aid) {
+    synchronized (idle) {
+      idle.remove(aid);
     }
   }
 
 }
-

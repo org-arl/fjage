@@ -75,9 +75,10 @@ public class Agent implements Runnable, TimestampProvider {
   private AgentID aid = null;
   private volatile AgentState state = AgentState.INIT;
   private volatile AgentState oldState = AgentState.NONE;
-  private List<Behavior> behaviors = new ArrayList<Behavior>();
-  private List<Behavior> addedBehaviors = new ArrayList<Behavior>();
-  private List<Behavior> endedBehaviors = new ArrayList<Behavior>();
+  private Queue<Behavior> newBehaviors = new ArrayDeque<Behavior>();
+  private Queue<Behavior> activeBehaviors = new ArrayDeque<Behavior>();
+  private Set<Behavior> blockedBehaviors = new HashSet<Behavior>();
+  private volatile boolean restartBehaviors = false;
   private Platform platform = null;
   private Container container = null;
   private MessageQueue queue = new MessageQueue();
@@ -155,9 +156,10 @@ public class Agent implements Runnable, TimestampProvider {
    * {@link #wake()} method.
    */
   protected synchronized void block() {
+    if (restartBehaviors) return;
     oldState = state;
     state = AgentState.IDLE;
-    container.reportIdle(this);
+    container.reportIdle(aid);
     try {
       wait();
     } catch (InterruptedException ex) {
@@ -165,8 +167,11 @@ public class Agent implements Runnable, TimestampProvider {
     }
     if (state == AgentState.IDLE) {
       log.warning("Spurious wakeup detected, evasive action taken");
-      if (oldState != AgentState.NONE) state = oldState;
-      oldState = AgentState.NONE;
+      if (oldState != AgentState.NONE) {
+        state = oldState;
+        container.reportBusy(aid);
+        oldState = AgentState.NONE;
+      }
     }
   }
 
@@ -209,6 +214,7 @@ public class Agent implements Runnable, TimestampProvider {
   public synchronized void wake() {
     if (oldState != AgentState.NONE) {
       state = oldState;
+      container.reportBusy(aid);
       oldState = AgentState.NONE;
     }
     notify();
@@ -220,6 +226,7 @@ public class Agent implements Runnable, TimestampProvider {
   public void stop() {
     if (state == AgentState.FINISHED  || state == AgentState.FINISHING) return;
     state = oldState = AgentState.FINISHING;
+    container.reportBusy(aid);
     wake();
   }
 
@@ -230,8 +237,8 @@ public class Agent implements Runnable, TimestampProvider {
    * @param b behavior to be added.
    */
   public void add(Behavior b) {
-    addedBehaviors.add(b);
     b.setOwner(this);
+    newBehaviors.add(b);
     wake();
   }
 
@@ -505,7 +512,8 @@ public class Agent implements Runnable, TimestampProvider {
     if (Thread.currentThread().getId() != tid)
       throw new FjageError("request() should only be called from agent thread "+tid+", but called from "+Thread.currentThread().getId());
     if (!send(msg)) return null;
-    return receive(msg, timeout);
+    Message rsp = receive(msg, timeout);
+    return rsp;
   }
 
   /**
@@ -692,9 +700,8 @@ public class Agent implements Runnable, TimestampProvider {
   final void deliver(Message m) {
     if (container == null) return;
     queue.add(container.autoclone(m));
-    synchronized (behaviors) {
-      for (Behavior b: behaviors)
-        b.restart();
+    synchronized (this) {
+      restartBehaviors = true;
     }
     wake();
   }
@@ -708,54 +715,64 @@ public class Agent implements Runnable, TimestampProvider {
   public final void run() {
     tid = Thread.currentThread().getId();
     state = AgentState.RUNNING;
+    container.reportBusy(aid);
     try {
       init();
       if (!container.isRunning()) block();
       while (state != AgentState.FINISHING) {
-        // assimilate any behaviors added recently
-        if (!addedBehaviors.isEmpty()) {
-          for (Behavior b: addedBehaviors)
-            b.onStart();
-          synchronized (behaviors) {
-            behaviors.addAll(addedBehaviors);
+        // restart necessary blocked behaviors
+        if (restartBehaviors) {
+          synchronized (this) {
+            restartBehaviors = false;
+            activeBehaviors.addAll(blockedBehaviors);
+            blockedBehaviors.clear();
           }
-          addedBehaviors.clear();
+        } else {
+          Iterator<Behavior> iterator = blockedBehaviors.iterator();
+          while (iterator.hasNext()) {
+            Behavior b = iterator.next();
+            if (!b.isBlocked()) {
+              iterator.remove();
+              activeBehaviors.add(b);
+            }
+          }
         }
-        // go through all behaviors and execute all unblocked ones
-        boolean idle = true;
-        for (Behavior b: behaviors) {
-          if (!b.isBlocked()) {
-            idle = false;
-            b.action();
-          }
+        // assimilate any new behaviors
+        Behavior b = newBehaviors.poll();
+        if (b != null) {
+          activeBehaviors.add(b);
+          b.onStart();
+          continue;
+        }
+        // execute an active behavior
+        b = activeBehaviors.poll();
+        if (b != null) {
+          b.unblock();
+          b.action();
           if (b.done()) {
             b.onEnd();
             b.setOwner(null);
-            endedBehaviors.add(b);
+          } else {
+            if (b.isBlocked()) blockedBehaviors.add(b);
+            else activeBehaviors.add(b);
           }
+          continue;
         }
-        // remove any ended behaviors
-        if (!endedBehaviors.isEmpty()) {
-          synchronized (behaviors) {
-            behaviors.removeAll(endedBehaviors);
-          }
-          endedBehaviors.clear();
-        }
-        // if nothing was done, put the thread to sleep
-        if (idle) block();
+        block();
       }
     } catch (Exception ex) {
       log.log(Level.SEVERE, "Agent: "+aid, ex);
       die(ex);
     }
     state = AgentState.RUNNING;
+    container.reportBusy(aid);
     try {
       shutdown();
     } catch (Exception ex) {
       log.log(Level.SEVERE, "Agent: "+aid, ex);
     }
     state = AgentState.FINISHED;
-    container.reportIdle(this);
+    container.reportIdle(aid);
     container.kill(aid);
     AgentLocalRandom.unbind();
     container = null;

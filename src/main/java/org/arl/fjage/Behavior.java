@@ -48,7 +48,7 @@ public abstract class Behavior {
 
   ////////////// Private attributes
 
-  private boolean blocked = false;
+  private volatile boolean blocked = false;
 
   ////////////// Methods for behaviors to override
 
@@ -121,6 +121,14 @@ public abstract class Behavior {
   public synchronized void restart() {
     blocked = false;
     if (agent != null) agent.wake();
+  }
+
+  /**
+   * Unblocks the behavior. Called by agent only, so this method does not need to wake
+   * agent.
+   */
+  void unblock() {
+    blocked = false;
   }
 
   /**
