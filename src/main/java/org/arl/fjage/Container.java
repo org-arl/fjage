@@ -519,6 +519,8 @@ public class Container {
           }
         }
         log.info("All agents have shutdown");
+        agents.clear();
+        idle.clear();
         running = false;
         return;
       } catch (ConcurrentModificationException ex) {

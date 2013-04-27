@@ -25,10 +25,10 @@ public abstract class Platform implements TimestampProvider {
   /////////// Private attributes
 
   protected List<Container> containers = new ArrayList<Container>();
+  protected boolean running = false;
   private String hostname = null;
   private int port = 1099;
   private NetworkInterface nif = null;
-  private boolean running = false;
 
   ////////// Interface methods for platforms to implement
 

@@ -43,10 +43,6 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
 
   public DiscreteEventSimulator() {
     LogHandlerProxy.install(this, log);
-    Thread t = new Thread(this);
-    t.setName(getClass().getSimpleName());
-    t.setDaemon(true);
-    t.start();
   }
 
   @Override
@@ -110,10 +106,20 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   }
 
   @Override
+  public void start() {
+    super.start();
+    Thread t = new Thread(this);
+    t.setName(getClass().getSimpleName());
+    t.setDaemon(true);
+    t.start();
+  }
+
+  @Override
   public void shutdown() {
     super.shutdown();
     synchronized (this) {
       events.clear();
+      notify();
     }
   }
 
@@ -126,7 +132,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   public void run() {
     List<DiscreteEvent> ready = new ArrayList<DiscreteEvent>();
     try {
-      while (true) {
+      while (running) {
         synchronized (this) {
           Iterator<DiscreteEvent> it = events.iterator();
           while (it.hasNext()) {
@@ -143,7 +149,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
         ready.clear();
         Thread.yield();
         synchronized (this) {
-          while (events.isEmpty() || !isIdle()) {
+          while (running && events.isEmpty() || !isIdle()) {
             try {
               log.fine("Waiting for agents");
               wait();
@@ -157,12 +163,12 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
         } catch (NoSuchElementException ex) {
           log.info("No more events pending, initiating shutdown");
           shutdown();
-          return;
         }
       }
     } catch (Exception ex) {
       log.log(Level.SEVERE, "Exception: ", ex);
     }
+    log.info("Simulator shutdown");
   }
 
   /////////// Private methods
