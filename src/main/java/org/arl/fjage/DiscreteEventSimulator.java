@@ -141,7 +141,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
         }
         Thread.yield();
         synchronized (this) {
-          while (running && events.isEmpty() || !isIdle()) {
+          while (running && !isIdle()) {
             try {
               log.fine("Waiting for agents");
               wait();
@@ -153,7 +153,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
         e = events.peek();
         if (e != null) time = e.time;
         else {
-          log.info("No more events pending, initiating shutdown");
+          log.fine("No more events pending, initiating shutdown");
           shutdown();
         }
       }
