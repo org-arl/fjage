@@ -77,7 +77,7 @@ public class Agent implements Runnable, TimestampProvider {
   private volatile AgentState oldState = AgentState.NONE;
   private Queue<Behavior> newBehaviors = new ArrayDeque<Behavior>();
   private Queue<Behavior> activeBehaviors = new ArrayDeque<Behavior>();
-  private Set<Behavior> blockedBehaviors = new HashSet<Behavior>();
+  private Queue<Behavior> blockedBehaviors = new ArrayDeque<Behavior>();
   private volatile boolean restartBehaviors = false;
   private Platform platform = null;
   private Container container = null;
@@ -166,7 +166,7 @@ public class Agent implements Runnable, TimestampProvider {
       Thread.currentThread().interrupt();
     }
     if (state == AgentState.IDLE) {
-      log.warning("Spurious wakeup detected, evasive action taken");
+      log.info("Spurious wakeup detected, evasive action taken");
       if (oldState != AgentState.NONE) {
         state = oldState;
         container.reportBusy(aid);

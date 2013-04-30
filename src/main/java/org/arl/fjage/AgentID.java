@@ -17,7 +17,7 @@ import java.io.Serializable;
  *
  * @author  Mandar Chitre
  */
-public class AgentID implements Serializable {
+public class AgentID implements Serializable, Comparable<AgentID> {
 
   private static final long serialVersionUID = 1L;
 
@@ -216,6 +216,21 @@ public class AgentID implements Serializable {
     if (!name.equals(a.name)) return false;
     if (isTopic != a.isTopic) return false;
     return true;
+  }
+
+  /**
+   * Compares two agent ids to determine an ordering. If the agent ids are identical,
+   * this method returns 0. If they are not identical, the ordering is deterministic,
+   * but arbitrary.
+   *
+   * @param aid agent id to compare to.
+   * @return 0 if equal, +1 if larger and -1 if smaller.
+   */
+  @Override
+  public int compareTo(AgentID aid) {
+    if (equals(aid)) return 0;
+    if (hashCode() < aid.hashCode()) return -1;
+    return 1;
   }
 
 }

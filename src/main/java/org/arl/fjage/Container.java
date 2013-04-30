@@ -460,7 +460,9 @@ public class Container {
     if (!running) {
       log.info("Initializing agents...");
       synchronized (agents) {
-        for (Agent a: agents.values()) {
+        SortedSet<AgentID> keys = new TreeSet<AgentID>(agents.keySet());
+        for (AgentID aid: keys) {
+          Agent a = agents.get(aid);
           Thread t = new Thread(a);
           t.setName(a.getName());
           t.setDaemon(false);

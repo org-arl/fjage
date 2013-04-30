@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage;
 
 import java.util.*;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.logging.*;
 
 /**
@@ -36,7 +37,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   /////////// Private attributes
 
   private volatile long time = 0;
-  private LinkedList<DiscreteEvent> events = new LinkedList<DiscreteEvent>();
+  private Queue<DiscreteEvent> events = new PriorityBlockingQueue<DiscreteEvent>();
   private Logger log = Logger.getLogger(getClass().getName());
 
   /////////// Implementation methods
@@ -72,7 +73,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
     long t = time + millis;
     long dt = millis;
     while (dt > 0) {
-      addEvent(new DiscreteEvent(t, new TimerTask() {
+      addEvent(new DiscreteEvent(time, t, new TimerTask() {
         @Override
         public void run() {
           synchronized (sync) {
@@ -94,7 +95,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   @Override
   public void schedule(TimerTask task, long millis) {
     if (millis <= 0) task.run();
-    else addEvent(new DiscreteEvent(time+millis, task));
+    else addEvent(new DiscreteEvent(time, time+millis, task));
   }
 
   @Override
@@ -117,8 +118,8 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   @Override
   public void shutdown() {
     super.shutdown();
+    events.clear();
     synchronized (this) {
-      events.clear();
       notify();
     }
   }
@@ -130,37 +131,28 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
    */
   @Override
   public void run() {
-    List<DiscreteEvent> ready = new ArrayList<DiscreteEvent>();
     try {
+      DiscreteEvent e = events.peek();
       while (running) {
-        synchronized (this) {
-          Iterator<DiscreteEvent> it = events.iterator();
-          while (it.hasNext()) {
-            DiscreteEvent e = it.next();
-            if (e.time > time) break;
-            it.remove();
-            ready.add(e);
-          }
-        }
-        for (DiscreteEvent e: ready) {
+        while (e != null && e.time <= time) {
           log.fine("Fire "+e);
-          e.task.run();
+          events.poll().task.run();
+          e = events.peek();
         }
-        ready.clear();
         Thread.yield();
         synchronized (this) {
           while (running && events.isEmpty() || !isIdle()) {
             try {
               log.fine("Waiting for agents");
               wait();
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ex) {
               Thread.currentThread().interrupt();
             }
           }
         }
-        try {
-          time = events.getFirst().time;
-        } catch (NoSuchElementException ex) {
+        e = events.peek();
+        if (e != null) time = e.time;
+        else {
           log.info("No more events pending, initiating shutdown");
           shutdown();
         }
@@ -173,18 +165,12 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
 
   /////////// Private methods
 
-  private synchronized void addEvent(DiscreteEvent event) {
-    int i = 0;
-    for (DiscreteEvent e: events) {
-      if (e.time >= event.time) break;
-      i++;
-    }
+  private void addEvent(DiscreteEvent event) {
     log.fine("Adding "+event);
-    events.add(i, event);
+    events.add(event);
     synchronized (this) {
       notify();
     }
   }
   
 }
-

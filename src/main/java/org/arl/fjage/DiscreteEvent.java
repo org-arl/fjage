@@ -17,23 +17,38 @@ import java.util.TimerTask;
  *
  * @author  Mandar Chitre
  */
-class DiscreteEvent {
+class DiscreteEvent implements Comparable<DiscreteEvent> {
 
   /////////// Attributes
 
+  static volatile long count = 0;
+
+  long id;               // event count, for resolving ordering ties
+  long tid;              // thread id of creator
+  long created;          // time when the event was created
   long time;             // time of the event
   TimerTask task;        // task to be executed when time is reached
   boolean passive;       // passive tasks are ones which do not wake up any agent
 
   /////////// Constructors for convenience
 
-  DiscreteEvent(long time, TimerTask task) {
+  DiscreteEvent(long created, long time, TimerTask task) {
+    synchronized (DiscreteEvent.class) {
+      this.id = count++;
+    }
+    this.tid = Thread.currentThread().getId();
+    this.created = created;
     this.time = time;
     this.task = task;
     passive = false;
   }
 
-  DiscreteEvent(long time, TimerTask task, boolean passive) {
+  DiscreteEvent(long created, long time, TimerTask task, boolean passive) {
+    synchronized (DiscreteEvent.class) {
+      this.id = count++;
+    }
+    this.tid = Thread.currentThread().getId();
+    this.created = created;
     this.time = time;
     this.task = task;
     this.passive = passive;
@@ -42,8 +57,21 @@ class DiscreteEvent {
   //////////// For display
   
   public String toString() {
-    return (passive?"PEvent #":"Event #")+hashCode()+" @"+time;
+    return (passive?"PEvent #":"Event #")+hashCode()+" @"+time+" created:"+created+" id:"+tid+"/"+id;
+  }
+
+  /////////// Comparison operator
+
+  public int compareTo(DiscreteEvent e) {
+    if (time < e.time) return -1;
+    if (time > e.time) return 1;
+    if (created < e.created) return -1;
+    if (created > e.created) return 1;
+    if (tid < e.tid) return -1;
+    if (tid > e.tid) return 1;
+    if (id < e.id) return -1;
+    if (id > e.id) return 1;
+    return 0;
   }
 
 }
-
