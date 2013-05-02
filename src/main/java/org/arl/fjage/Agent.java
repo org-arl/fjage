@@ -702,8 +702,8 @@ public class Agent implements Runnable, TimestampProvider {
     queue.add(container.autoclone(m));
     synchronized (this) {
       restartBehaviors = true;
+      wake();
     }
-    wake();
   }
 
   /**

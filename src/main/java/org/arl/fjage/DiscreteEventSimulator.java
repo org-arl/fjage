@@ -39,6 +39,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   private volatile long time = 0;
   private Queue<DiscreteEvent> events = new PriorityBlockingQueue<DiscreteEvent>();
   private Logger log = Logger.getLogger(getClass().getName());
+  private Thread thread = null;
 
   /////////// Implementation methods
 
@@ -109,10 +110,10 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   @Override
   public void start() {
     super.start();
-    Thread t = new Thread(this);
-    t.setName(getClass().getSimpleName());
-    t.setDaemon(true);
-    t.start();
+    thread = new Thread(this);
+    thread.setName(getClass().getSimpleName());
+    thread.setDaemon(true);
+    thread.start();
   }
 
   @Override
@@ -168,8 +169,10 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   private void addEvent(DiscreteEvent event) {
     log.fine("Adding "+event);
     events.add(event);
-    synchronized (this) {
-      notify();
+    if (thread != null && thread.getState() == Thread.State.WAITING) {
+      synchronized (this) {
+        notify();
+      }
     }
   }
   
