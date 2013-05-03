@@ -62,6 +62,7 @@ public class ConsoleShell extends Thread implements Shell {
       OutputStream out = System.out;
       InputStream in = System.in;
       console = new ConsoleReader(in, out);
+      console.setExpandEvents(false);
       console.addTriggeredAction((char)27, new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent arg0) {
