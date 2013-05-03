@@ -40,12 +40,28 @@ package org.arl.fjage;
  *
  * @author  Mandar Chitre
  */
-public abstract class TestBehavior extends OneShotBehavior {
+public class TestBehavior extends OneShotBehavior {
 
   /////////// Private attributes
 
   private AssertionError error = null;
   private boolean completed = false;
+
+  ////////// Constructors
+
+  public TestBehavior() {
+    // default constructor
+  }
+
+  /**
+   * Constructor which creates a behavior with an action defined using a closure.
+   * Usually applicable to Groovy agents.
+   *
+   * @param closure closure to use for the test.
+   */
+  public TestBehavior(Runnable closure) {
+    setActionClosure(closure);
+  }
 
   ////////// Overridden methods
 
@@ -108,7 +124,8 @@ public abstract class TestBehavior extends OneShotBehavior {
    * This method should be overridden by sub-classes. AssertionErrors may be
    * thrown if the test fails.
    */
-  public abstract void test();
+  public void test() {
+    super.action();
+  }
 
 }
-

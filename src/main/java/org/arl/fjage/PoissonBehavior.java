@@ -17,7 +17,7 @@ package org.arl.fjage;
  *
  * @author  Mandar Chitre
  */
-public abstract class PoissonBehavior extends Behavior {
+public class PoissonBehavior extends Behavior {
 
   //////////// Private attributes
 
@@ -42,6 +42,21 @@ public abstract class PoissonBehavior extends Behavior {
   }
 
   /**
+   * Creates a behavior from a closure to simulate a Poisson arrival process with a
+   * specified average interarrival time. The equivalent arrival rate is given
+   * by the reciprocal of the average interarrival time.
+   *
+   * @param millis average interarrival time in milliseconds.
+   * @param closure closure to create behavior from.
+   */
+  public PoissonBehavior(long millis, Runnable closure) {
+    expDelay = millis;
+    ticks = 0;
+    quit = false;
+    setActionClosure(closure);
+  }
+
+  /**
    * Terminates the behavior.
    */
   public final void stop() {
@@ -61,10 +76,12 @@ public abstract class PoissonBehavior extends Behavior {
   //////////// Method to be overridden by subclass
 
   /**
-   * This method is called for each arrival. The method must be overridden by a
+   * This method is called for each arrival. The method is usually overridden by a
    * behavior.
    */
-  public abstract void onTick();
+  public void onTick() {
+    super.action();
+  }
 
   //////////// Overridden methods
 

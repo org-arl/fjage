@@ -12,6 +12,7 @@ package org.arl.fjage;
 
 import java.util.TimerTask;
 import java.util.logging.Logger;
+import java.lang.reflect.Method;
 
 /**
  * Base class for agent behaviors. Commonly used behaviors are provided by subclasses:
@@ -49,6 +50,7 @@ public abstract class Behavior {
   ////////////// Private attributes
 
   private volatile boolean blocked = false;
+  private Runnable action = null;
 
   ////////////// Methods for behaviors to override
 
@@ -70,9 +72,12 @@ public abstract class Behavior {
 
   /**
    * This method is repeatedly called during the life of a behavior. A behavior
-   * must override this to provide appropriate functionality.
+   * may override this to provide appropriate functionality.
    */
-  public abstract void action();
+  public void action() {
+    if (action == null) throw new FjageError("Undefined behavior action");
+    action.run();
+  }
 
   /**
    * This method should return true if the behavior is completed, false otherwise.
@@ -205,6 +210,23 @@ public abstract class Behavior {
    */
   public void println(String msg) {
     log.info(msg);
+  }
+
+  /**
+   * Specifies the closure to use to define the action. Usually this is called by a Groovy
+   * sub-class to construct a behavior from a closure.
+   *
+   * @param closure closure to use for action.
+   */
+  protected void setActionClosure(Runnable closure) {
+    action = closure;
+    // set delegate to be the behavior, if the closure supports delegation (Groovy)
+    try {
+      Method m = closure.getClass().getMethod("setDelegate", new Class[] { Object.class });
+      m.invoke(action, this);
+    } catch (Exception ex) {
+      // do nothing
+    }
   }
 
   ////////////// Private methods

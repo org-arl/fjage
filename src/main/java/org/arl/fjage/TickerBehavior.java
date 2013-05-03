@@ -16,7 +16,7 @@ package org.arl.fjage;
  *
  * @author  Mandar Chitre
  */
-public abstract class TickerBehavior extends Behavior {
+public class TickerBehavior extends Behavior {
 
   ////////// Private attributes
 
@@ -39,6 +39,19 @@ public abstract class TickerBehavior extends Behavior {
   }
 
   /**
+   * Creates a behavior that executes a closure every specified period.
+   * Usually applicable to Groovy agents.
+   *
+   * @param millis period in milliseconds.
+   */
+  public TickerBehavior(long millis, Runnable closure) {
+    period = millis;
+    ticks = 0;
+    quit = false;
+    setActionClosure(closure);
+  }
+
+  /**
    * Terminates the behavior.
    */
   public final void stop() {
@@ -58,10 +71,12 @@ public abstract class TickerBehavior extends Behavior {
   ////////// Method to be overridden by subclass
 
   /**
-   * This method is called once every specified period. The method must be
+   * This method is called once every specified period. The method is usually
    * overridden by a behavior.
    */
-  public abstract void onTick();
+  public void onTick() {
+    super.action();
+  }
 
   ////////// Overridden methods
 
