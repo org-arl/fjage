@@ -33,8 +33,8 @@ class GroovyExtensions {
     TestBehavior.metaClass.constructor << bcon0.curry(TestBehavior)
     MessageBehavior.metaClass.constructor << bcon0.curry(MessageBehavior)
 
-    def bcon1 = { Class<Behavior> cls, long param, Closure c ->
-      def b = cls.getDeclaredConstructor(long).newInstance(param)
+    def bcon1 = { Class<Behavior> cls, Number param, Closure c ->
+      def b = cls.getDeclaredConstructor(long).newInstance((long)param)
       b.action = c as Callback
       c.delegate = b
       c.resolveStrategy = Closure.DELEGATE_FIRST
