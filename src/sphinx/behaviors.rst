@@ -100,6 +100,17 @@ A `TickerBehavior`_ is run repeated with a specified delay between invocations. 
       println 'tick!'
     })
 
+Backoff behavior
+----------------
+
+A `BackoffBehavior`_ is similar to a waker behavior, but allows the wakeup time to be extended dynamically. This is typically useful to implement backoff or retry timeouts. ::
+
+    add new BackoffBehavior(5000, {     // first attempt after 5 seconds
+      // make some request, and if it fails, try again after 3 seconds
+      def rsp = request(req)
+      if (rsp == null || rsp.performative == Performative.FAILURE) backoff(3000)
+    })
+
 Poisson behavior
 ----------------
 
@@ -216,6 +227,7 @@ An example two-shot behavior is shown below::
 .. _CyclicBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/CyclicBehavior.html
 .. _WakerBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/WakerBehavior.html
 .. _TickerBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/TickerBehavior.html
+.. _BackoffBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/BackoffBehavior.html
 .. _PoissonBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/PoissonBehavior.html
 .. _MessageBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/MessageBehavior.html
 .. _FSMBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/FSMBehavior.html

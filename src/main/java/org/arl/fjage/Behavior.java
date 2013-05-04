@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
  * <li>{@link OneShotBehavior} for one time behaviors
  * <li>{@link WakerBehavior} for behaviors to be executed once after a specified period
  * <li>{@link TickerBehavior} for behaviors to be executed periodically
+ * <li>{@link BackoffBehavior} for retry or backoff timeouts
  * <li>{@link PoissonBehavior} for simulating Poisson arrival processes
  * <li>{@link MessageBehavior} for behaviors to process incoming messages
  * <li>{@link TestBehavior} for unit testing

@@ -44,6 +44,7 @@ class GroovyExtensions {
     WakerBehavior.metaClass.constructor << bcon1.curry(WakerBehavior)
     TickerBehavior.metaClass.constructor << bcon1.curry(TickerBehavior)
     PoissonBehavior.metaClass.constructor << bcon1.curry(PoissonBehavior)
+    BackoffBehavior.metaClass.constructor << bcon1.curry(BackoffBehavior)
 
     MessageBehavior.metaClass.constructor << { Class<?> msg, Closure c ->
       def b = new MessageBehavior(msg)
