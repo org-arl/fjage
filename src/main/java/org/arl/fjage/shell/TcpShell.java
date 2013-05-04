@@ -100,6 +100,7 @@ public class TcpShell extends Thread implements Shell {
     return sos.getTerm();
   }
   
+  @Override
   public void println(String s) {
     if (sos != null) sos.println(s);
   }
