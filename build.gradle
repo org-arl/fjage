@@ -40,6 +40,8 @@ task jars(dependsOn: jar, type: Copy) {
   from configurations.runtime
 }
 
+jars.outputs.upToDateWhen { false }
+
 task doc << {
   ant.exec(executable: 'make', dir: '.', failonerror: true) {
     arg(line: 'html')
