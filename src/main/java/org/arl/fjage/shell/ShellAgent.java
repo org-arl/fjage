@@ -16,7 +16,7 @@ import org.arl.fjage.*;
 
 /**
  * Shell agent runs in a container and allows execution of shell commands and scripts.
- * The current version supports Groovy commands or scripts only. The requets can be
+ * The current version supports Groovy commands or scripts only. The requests can be
  * made using the ShellExecReq message, or through a TCP/IP socket-based console.
  */
 public class ShellAgent extends Agent {

@@ -18,24 +18,6 @@ package org.arl.fjage;
  */
 public class OneShotBehavior extends Behavior {
 
-  private Runnable action;
-
-  //////////// Constructors
-
-  public OneShotBehavior() {
-    // default constructor
-  }
-
-  /**
-   * Constructor which creates a behavior with an action defined using a closure.
-   * Usually applicable to Groovy agents.
-   *
-   * @param closure closure to use for action.
-   */
-  public OneShotBehavior(Runnable closure) {
-    setActionClosure(closure);
-  }
-
   //////////// Overridden methods
 
   /**

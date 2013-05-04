@@ -158,21 +158,6 @@ public class AgentID implements Serializable, Comparable<AgentID> {
     return owner.request(msg, timeout);
   }
 
-  /**
-   * Sends a request to the agent represented by this id and waits for
-   * a return message for 1 second. This method is used in Groovy agents
-   * for a simpler notation of the form:
-   * <pre>
-   * aid << request
-   * </pre>
-   * 
-   * @param msg request to send.
-   * @return response.
-   */
-  public Message leftShift(Message msg) {
-    return request(msg);
-  }
-
   /////////////// Standard Java methods to customize
 
   /**

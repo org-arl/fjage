@@ -18,22 +18,6 @@ package org.arl.fjage;
  */
 public class CyclicBehavior extends Behavior {
 
-  //////////// Constructors
-
-  public CyclicBehavior() {
-    // default constructor
-  }
-
-  /**
-   * Constructor which creates a behavior with an action defined using a closure.
-   * Usually applicable to Groovy agents.
-   *
-   * @param closure closure to use for action.
-   */
-  public CyclicBehavior(Runnable closure) {
-    setActionClosure(closure);
-  }
-
   //////////// Overridden methods
 
   /**

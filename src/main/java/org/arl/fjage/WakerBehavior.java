@@ -37,19 +37,6 @@ public class WakerBehavior extends Behavior {
   }
 
   /**
-   * Creates a behavior which executes a closure once after a specified delay.
-   * Usually applicable to Groovy agents.
-   *
-   * @param millis delay in milliseconds.
-   * @param closure closure to use for action.
-   */
-  public WakerBehavior(long millis, Runnable closure) {
-    timeout = millis;
-    quit = false;
-    setActionClosure(closure);
-  }
-
-  /**
    * Returns the wakeup time for this behavior. On a real-time platform, the
    * time is the epoch time, while a discrete event simulator gives the wakeup
    * time in simulated time.

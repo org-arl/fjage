@@ -47,22 +47,6 @@ public class TestBehavior extends OneShotBehavior {
   private AssertionError error = null;
   private boolean completed = false;
 
-  ////////// Constructors
-
-  public TestBehavior() {
-    // default constructor
-  }
-
-  /**
-   * Constructor which creates a behavior with an action defined using a closure.
-   * Usually applicable to Groovy agents.
-   *
-   * @param closure closure to use for the test.
-   */
-  public TestBehavior(Runnable closure) {
-    setActionClosure(closure);
-  }
-
   ////////// Overridden methods
 
   @Override

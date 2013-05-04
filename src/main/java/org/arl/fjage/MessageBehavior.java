@@ -17,7 +17,7 @@ package org.arl.fjage;
  *
  * @author  Mandar Chitre
  */
-public abstract class MessageBehavior extends Behavior {
+public class MessageBehavior extends Behavior {
 
   ///////////// Private attributes
 
@@ -65,7 +65,9 @@ public abstract class MessageBehavior extends Behavior {
    *
    * @param msg received message.
    */
-  public abstract void onReceive(Message msg);
+  public void onReceive(Message msg) {
+    if (action != null) action.call(msg);
+  }
 
   //////////// Overridden methods
 

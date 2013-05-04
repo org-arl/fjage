@@ -39,19 +39,6 @@ public class TickerBehavior extends Behavior {
   }
 
   /**
-   * Creates a behavior that executes a closure every specified period.
-   * Usually applicable to Groovy agents.
-   *
-   * @param millis period in milliseconds.
-   */
-  public TickerBehavior(long millis, Runnable closure) {
-    period = millis;
-    ticks = 0;
-    quit = false;
-    setActionClosure(closure);
-  }
-
-  /**
    * Terminates the behavior.
    */
   public final void stop() {

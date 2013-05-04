@@ -31,7 +31,7 @@ import java.lang.reflect.Method;
  *
  * @author  Mandar Chitre
  */
-public abstract class Behavior {
+public class Behavior {
 
   ////////////// Attributes accessible to all behaviors
 
@@ -47,10 +47,14 @@ public abstract class Behavior {
    */
   protected Logger log;
 
+  /**
+   * If this field is not null, the default action() method calls it.
+   */
+  protected Callback action = null;
+
   ////////////// Private attributes
 
   private volatile boolean blocked = false;
-  private Runnable action = null;
 
   ////////////// Methods for behaviors to override
 
@@ -75,17 +79,18 @@ public abstract class Behavior {
    * may override this to provide appropriate functionality.
    */
   public void action() {
-    if (action == null) throw new FjageError("Undefined behavior action");
-    action.run();
+    if (action != null) action.call(null);
   }
 
   /**
    * This method should return true if the behavior is completed, false otherwise.
-   * A behavior must override this.
+   * A behavior should override this.
    *
    * @return true if behavior is completed, false otherwise.
    */
-  public abstract boolean done();
+  public boolean done() {
+    return true;
+  }
 
   ////////////// Interface methods
 
@@ -210,23 +215,6 @@ public abstract class Behavior {
    */
   public void println(String msg) {
     log.info(msg);
-  }
-
-  /**
-   * Specifies the closure to use to define the action. Usually this is called by a Groovy
-   * sub-class to construct a behavior from a closure.
-   *
-   * @param closure closure to use for action.
-   */
-  protected void setActionClosure(Runnable closure) {
-    action = closure;
-    // set delegate to be the behavior, if the closure supports delegation (Groovy)
-    try {
-      Method m = closure.getClass().getMethod("setDelegate", new Class[] { Object.class });
-      m.invoke(action, this);
-    } catch (Exception ex) {
-      // do nothing
-    }
   }
 
   ////////////// Private methods

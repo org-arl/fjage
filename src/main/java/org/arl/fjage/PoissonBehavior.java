@@ -42,21 +42,6 @@ public class PoissonBehavior extends Behavior {
   }
 
   /**
-   * Creates a behavior from a closure to simulate a Poisson arrival process with a
-   * specified average interarrival time. The equivalent arrival rate is given
-   * by the reciprocal of the average interarrival time.
-   *
-   * @param millis average interarrival time in milliseconds.
-   * @param closure closure to create behavior from.
-   */
-  public PoissonBehavior(long millis, Runnable closure) {
-    expDelay = millis;
-    ticks = 0;
-    quit = false;
-    setActionClosure(closure);
-  }
-
-  /**
    * Terminates the behavior.
    */
   public final void stop() {
