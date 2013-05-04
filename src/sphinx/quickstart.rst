@@ -62,9 +62,9 @@ Create a file called `hello.groovy` in your project folder and put the following
 
     class HelloWorldAgent extends Agent {
       void init() {
-        addOneShotBehavior {
+        add new OneShotBehavior({
           println 'Hello world!!!'
-        }
+        })
       }
     }
 
@@ -122,9 +122,9 @@ This is useful for testing. However, in a production system, you usually want to
 
     class HelloWorldAgent extends Agent {
       void init() {
-        addOneShotBehavior {
+        add new OneShotBehavior({
           println 'Hello world!!!'
-        }
+        })
       }
     }
 

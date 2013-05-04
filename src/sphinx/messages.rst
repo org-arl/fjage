@@ -42,14 +42,14 @@ The "WeatherStation" agent would receive the request and send back a reply. Alth
 
     class MyWeatherStation extends org.arl.fjage.Agent {
       void init() {
-        addMessageBehavior(WeatherForecastReq) { req ->
+        add new MessageBehavior(WeatherForecastReq, { req ->
           log.info "Weather forecast request for ${req.city}, ${req.country}"
           def rsp = new WeatherForecast(req)
           rsp.minTemp = 10
           rsp.maxTemp = 25
           rsp.probRain = 0.25
           send rsp
-        }
+        })
       }
     }
 
@@ -70,7 +70,7 @@ Server code::
 
     class MyWeatherStation extends Agent {
       void init() {
-        addMessageBehavior { msg ->
+        add new MessageBehavior({ msg ->
           if (msg.performative == Performative.REQUEST && msg.type == 'WeatherForecast') {
             log.info "Weather forecast request for ${msg.city}, ${msg.country}"
             def rsp = new GenericMessage(msg, Performative.INFORM)
@@ -79,7 +79,7 @@ Server code::
             rsp.probRain = 0.25
             send rsp
           }
-        }
+        })
       }
     }
 

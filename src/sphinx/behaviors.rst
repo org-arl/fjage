@@ -21,11 +21,11 @@ An example skeleton agent is shown below::
       void init() {
         // agent is in INIT state
         log.info 'Agent init'
-        addOneShotBehavior {
+        add new OneShotBehavior({
           // behavior will be executed after all agents are initialized
           // agent is in RUNNING state
           log.info 'Agent ready'
-        }
+        })
       }
 
       void shutdown() {
@@ -48,15 +48,9 @@ The method to override depends on the behavior (e.g. `action()` for most behavio
 
 Groovy agents support a simpler alternative syntax if the `GroovyExtensions` are enabled::
 
-    add oneShotBehavior {
+    add new OneShotBehavior({
       // do something
-    }
-
-or::
-
-    addOneShotBehavior {
-      // do something
-    }
+    })
 
 Both variants are identical in function. With this syntax, the appropriate method is automatically overridden to call the defined closure. For the examples in the rest of this chapter, we will adopt the simpler Groovy syntax.
 
@@ -74,11 +68,11 @@ A `CyclicBehavior`_ is run repeatedly as long as it is active. The behavior may 
       int n = 0
       void init() {
         // a cyclic behavior that runs 5 times and then marks itself as blocked
-        addCyclicBehavior {
+        add new CyclicBehavior({
           agent.n++
           println "n = ${agent.n}"
           if (agent.n >= 5) block()
-        }
+        })
       }
     }
 
@@ -91,30 +85,30 @@ Waker behavior
 
 A `WakerBehavior`_ is run after a specified delay in milliseconds. ::
 
-    addWakerBehavior(1000) {
+    add new WakerBehavior(1000, {
       // invoked 1 second later
       println '1000 ms have elapsed!'
-    }
+    })
 
 Ticker behavior
 ---------------
 
 A `TickerBehavior`_ is run repeated with a specified delay between invocations. The ticker behavior may be terminated by calling `stop()` at any time. ::
 
-    addTickerBehavior(5000) {
+    add new TickerBehavior(5000, {
       // called at intervals of 5 seconds
       println 'tick!'
-    }
+    })
 
 Poisson behavior
 ----------------
 
 A `PoissonBehavior`_ is similar to a ticker behavior, but the interval between invocations is an exponentially distributed random variable. This simulates a Poisson arrival process. ::
 
-    addPoissonBehavior(5000) {
+    add new PoissonBehavior(5000, {
       // called at an average rate of once every 5 seconds
       println 'arrival!'
-    }
+    })
 
 .. _msgbehavior:
 
@@ -125,22 +119,22 @@ A `MessageBehavior`_ is invoked when a message is received by the agent. A messa
 
 A message behavior that accepts any message can be added as follows::
 
-    addMessageBehavior { msg ->
+    add new MessageBehavior({ msg ->
       println "Incoming message from ${msg.sender}"
-    }
+    })
 
 If we were only interested in messages of class `MyMessage`, we could set up a behavior accordingly::
 
-    addMessageBehavior(MyMessage) { msg ->
+    add new MessageBehavior(MyMessage, { msg ->
       println "Incoming message of class ${msg.class} from ${msg.sender}"
-    }
+    })
 
 Let us next consider a more complex case where we are interested in message of a specific class and from a specific sender::
 
-    def filter = messageFilter { it instanceof MyMessage && it.sender.name == 'myFriend' }
-    addMessageBehavior(filter) { msg ->
+    def filter = { it instanceof MyMessage && it.sender.name == 'myFriend' } as MessageFilter
+    add new MessageBehavior(filter, { msg ->
       println "Incoming message of class ${msg.class} from ${msg.sender}"
-    }
+    })
 
 Finite state machine behavior
 -----------------------------
@@ -150,36 +144,21 @@ Finite state machines can easily be implemented using the `FSMBehavior`_ class. 
 For example, we can create a grandfather clock using a `FSMBehavior`::
 
     def b = new FSMBehavior()
-    b.add fsmBehaviorState('tick') {
-      println 'tick!'
-      nextState = 'tock'
-      fsm.block 1000
+    b.add new FSMBehavior.State('tick') {
+      void action() {
+        println 'tick!'
+        nextState = 'tock'
+        fsm.block 1000
+      }
     }
-    b.add fsmBehaviorState('tock') {
-      println 'tock!'
-      nextState = 'tick'
-      fsm.block 1000
+    b.add new FSMBehavior.State('tock') {
+      void action() {
+        println 'tock!'
+        nextState = 'tick'
+        fsm.block 1000
+      }
     }
     add b
-
-In Java, the states are created using a slightly different syntax::
-
-    Behavior b = new FSMBehavior();
-    b.add(new FSMBehavior.State("tick") {
-      public void action() {
-        println("tick!");
-        setNextState("tock");
-        fsm.block(1000);
-      }
-    });
-    b.add(new FSMBehavior.State("tock") {
-      public void action() {
-        println("tock!");
-        setNextState("tick");
-        fsm.block(1000);
-      }
-    });
-    add(b);
 
 Test behavior
 -------------
@@ -192,16 +171,14 @@ The `TestBehavior`_ is a special behavior that helps with development of unit te
     def container = new Container(platform)
     def agent = new Agent()
     container.add agent
-    container.start()
+    platform.start()
 
-    TestBehavior test = new TestBehavior() {
-      public void test() {
-        assert 1+1 == 2 : 'Simple math failed'
-        def aid = agent.getAgentID()
-        assert aid != null : 'AgentID undefined'
-        assert agent.send(new Message(aid)) : 'Message could not be sent'
-      }
-    }
+    TestBehavior test = new TestBehavior({
+      assert 1+1 == 2 : 'Simple math failed'
+      def aid = agent.getAgentID()
+      assert aid != null : 'AgentID undefined'
+      assert agent.send(new Message(aid)) : 'Message could not be sent'
+    })
     test.runOn(agent)
 
     platform.shutdown()

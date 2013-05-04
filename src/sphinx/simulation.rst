@@ -29,22 +29,22 @@ Now running `fjage.sh` should run the agents in the discrete event simulation mo
 
 .. note:: It is recommended that you do not run interactive agents such as `ShellAgent` in this mode, as the interaction with the real world is not compatible with virtual time.
 
-Random Number Generation
-------------------------
+.. Random Number Generation
+.. ------------------------
 
-Repeatable generation of random numbers is a common requirement in discrete event simulation. To ensure repeatability, it is important to guarantee deterministic ordering of calls to random number generators used in different threads, or to use individual random number generators for each thread. In the later case, one has to manage the seeds of all random number generators used in the simulation.
+.. Repeatable generation of random numbers is a common requirement in discrete event simulation. To ensure repeatability, it is important to guarantee deterministic ordering of calls to random number generators used in different threads, or to use individual random number generators for each thread. In the later case, one has to manage the seeds of all random number generators used in the simulation.
 
-To help with this task, fjåge provides support for inbuilt random number generation using the `RandomNumberGenerator`_ class. This class maintains a set of random number generators for each thread. Once the root random number generator seed is initialized, the thread-bound random number generator seeds are derived from it. One has to ensure deterministic ordering of first call from each thread to the random number generator. For this, it is recommended that each agent requiring the services of the random number generator initialize it by simply generating one random number in the constructor::
+.. To help with this task, fjåge provides support for inbuilt random number generation using the `RandomNumberGenerator`_ class. This class maintains a set of random number generators for each thread. Once the root random number generator seed is initialized, the thread-bound random number generator seeds are derived from it. One has to ensure deterministic ordering of first call from each thread to the random number generator. For this, it is recommended that each agent requiring the services of the random number generator initialize it by simply generating one random number in the constructor::
 
-    import org.arl.fjage.*
+..    import org.arl.fjage.*
 
-    class MyAgent {
-      MyAgent() {
-        RandomNumberGenerator.nextDouble()
-      }
-    }
+..    class MyAgent {
+..      MyAgent() {
+..        RandomNumberGenerator.nextDouble()
+..      }
+..    }
 
-Subsequent calls to the static methods of the `RandomNumberGenerator` use the thread-bound random number generator automatically.
+.. Subsequent calls to the static methods of the `RandomNumberGenerator` use the thread-bound random number generator automatically.
 
 .. Javadoc links
 .. -------------

@@ -23,7 +23,7 @@ package org.arl.fjage;
  * Container container = new Container(platform);
  * Agent agent = new Agent();
  * container.add(agent);
- * container.start();
+ * platform.start();
  *
  * // test
  * TestBehavior test = new TestBehavior() {
