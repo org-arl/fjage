@@ -11,25 +11,35 @@ for full license details.
 package org.arl.fjage;
 
 /**
- * A behavior that never ends. The {@link #action()} method of this behavior
+ * A behavior that is called cyclically. The {@link #action()} method of this behavior
  * is repeatedly called.
  *
  * @author Mandar Chitre
  */
 public class CyclicBehavior extends Behavior {
 
+  //////////// Private attributes
+
+  private boolean quit = false;
+
   //////////// Overridden methods
 
   /**
-   * This method always returns false, since this behavior never terminates.
+   * This method returns false until stop() is called.
    *
    * @return false.
    * @see org.arl.fjage.Behavior#done()
    */
   @Override
   public final boolean done() {
-    return false;
+    return quit;
+  }
+
+  /**
+   * Terminates the behavior.
+   */
+  public final void stop() {
+    quit = true;
   }
 
 }
-
