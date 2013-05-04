@@ -37,7 +37,6 @@ public class GroovyBoot {
     try {
 
       // setup Groovy extensions
-      ExpandoMetaClass.enableGlobally();
       GroovyExtensions.enable();
 
       // load logging configuration from fjage defaults, if not specified
