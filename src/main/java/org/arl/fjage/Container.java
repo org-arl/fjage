@@ -490,12 +490,10 @@ public class Container {
     if (!running) {
       log.info("Starting container...");
       running = true;
-      synchronized (agents) {
-        for (Agent a: agents.values()) {
-          if (a.getState() != AgentState.IDLE)
-            throw new FjageError("Container start() called without init()");
-          a.wake();
-        }
+      for (Agent a: agents.values()) {
+        if (a.getState() != AgentState.IDLE)
+          throw new FjageError("Container start() called without init()");
+        a.wake();
       }
     }
   }
@@ -546,8 +544,9 @@ public class Container {
    * @return true if all agents are idle, false otherwise.
    */
   public boolean isIdle() {
+    int nAgents = agents.size();
     synchronized (idle) {
-      return agents.size() == idle.size();
+      return nAgents == idle.size();
     }
   }
 
