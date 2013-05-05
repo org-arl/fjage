@@ -15,6 +15,7 @@ import java.net.*;
 import java.awt.event.*;
 import java.util.logging.Logger;
 import jline.console.ConsoleReader;
+import jline.console.completer.*;
 
 /**
  * TCP socket command shell.
@@ -130,19 +131,40 @@ public class TcpShell extends Thread implements Shell {
         for (int b: charmode)
           out.write(b);
         out.flush();
+        try {
+          sleep(100);
+        } catch (InterruptedException ex) {
+          // do nothing
+        }
         console = new ConsoleReader(in, out);
         console.setExpandEvents(false);
         sos.setOutputStream(out);
+        sos.setTelnet(true);
         Term term = sos.getTerm();
         sos.setPrompt(term.prompt("$ "));
         StringBuffer sb = new StringBuffer();
         boolean nest = false;
         while (true) {
           int esc = 0;
+          while (engine.isBusy()) {
+            if (in.available() > 0) {
+              int c = in.read();
+              if (c == 3) engine.abort();
+              else if (c == 27) esc += 10;
+              if (esc > 20) engine.abort();
+            } else if (esc > 0) esc--;
+            try {
+              sleep(100);
+            } catch (InterruptedException ex) {
+              interrupt();
+            }
+          }
           if (sb.length() > 0) console.setPrompt(term.prompt("- "));
           else console.setPrompt(term.prompt("$ "));
           sos.print("\r");
+          while (in.available() > 0) in.read();
           String s1 = console.readLine();
+          sos.print("\r");
           if (s1 == null) break;
           sb.append(s1);
           String s = sb.toString();
@@ -154,7 +176,6 @@ public class TcpShell extends Thread implements Shell {
             if (!ok) sos.println(term.error("BUSY"));
           }
         }
-
 
       } catch (Exception ex) {
         log.warning(ex.toString());

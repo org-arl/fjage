@@ -22,6 +22,7 @@ public class ScriptOutputStream {
   private PrintStream ps = null;
   private Term term = new Term();
   private String prompt = null;
+  private boolean telnet = false;
   
   ////// public methods
 
@@ -52,13 +53,22 @@ public class ScriptOutputStream {
   }
 
   /**
+   * Enable/disable translation of CR/LF for telnet connections.
+   * 
+   * @param enable enable telnet mode if true, disable if false.
+   */
+  public void setTelnet(boolean enable) {
+    telnet = enable;
+  }
+
+  /**
    * Output a string followed by a newline.
    * 
    * @param s string to output.
    */
   public synchronized void println(String s) {
     if (ps == null) return;
-    s = s.replace("\n","\r\n");
+    if (telnet) s = s.replace("\n","\r\n");
     ps.println(s);
     ps.flush();
   }
@@ -70,7 +80,7 @@ public class ScriptOutputStream {
    */
   public synchronized void print(String s) {
     if (ps == null) return;
-    s = s.replace("\n","\r\n");
+    if (telnet) s = s.replace("\n","\r\n");
     ps.print(s);
     ps.flush();
   }
@@ -89,7 +99,10 @@ public class ScriptOutputStream {
    */
   public synchronized void eos() {
     if (ps == null) return;
-    if (prompt != null) ps.print(prompt);
+    if (prompt != null) {
+      if (telnet) ps.print("\r");
+      ps.print(prompt);
+    }
     ps.flush();
   }
 
