@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.shell;
 
 import java.io.*;
+import java.util.*;
 import java.util.logging.*;
 import groovy.lang.ExpandoMetaClass;
 import org.arl.fjage.*  ;
@@ -34,6 +35,7 @@ public class GroovyBoot {
    */
   public static void main(String[] args) {
     Logger log = null;
+    List<Logger> loggers = new ArrayList<Logger>();
     try {
 
       // setup Groovy extensions
@@ -56,9 +58,17 @@ public class GroovyBoot {
       ScriptOutputStream out = new ScriptOutputStream(System.out);
       for (String a: args) {
         if (a.equals("-nocolor")) Term.setDefaultState(false);
-        else if (a.startsWith("-debug:")) {
+        else if (a.equals("-debug")) {
+          log.info("Setting root logger level to ALL");
+          Logger logger = Logger.getLogger("");
+          logger.setLevel(Level.ALL);
+          loggers.add(logger);  // keep reference to avoid the level setting being garbage collected
+        } else if (a.startsWith("-debug:")) {
           String lname = a.substring(7);
-          Logger.getLogger(lname).setLevel(Level.ALL);
+          log.info("Setting logger "+lname+" level to ALL");
+          Logger logger = Logger.getLogger(lname);
+          logger.setLevel(Level.ALL);
+          loggers.add(logger);  // keep reference to avoid the level setting being garbage collected
         } else {
           if (!a.endsWith(".groovy")) a += ".groovy";
           log.info("Running "+a);
