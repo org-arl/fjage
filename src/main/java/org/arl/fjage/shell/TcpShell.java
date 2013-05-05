@@ -12,7 +12,9 @@ package org.arl.fjage.shell;
 
 import java.io.*;
 import java.net.*;
+import java.awt.event.*;
 import java.util.logging.Logger;
+import jline.console.ConsoleReader;
 
 /**
  * TCP socket command shell.
@@ -110,6 +112,7 @@ public class TcpShell extends Thread implements Shell {
   private class ClientThread extends Thread {
 
     private Socket client;
+    private ConsoleReader console = null;
 
     public ClientThread(Socket client) {
       this.client = client;
@@ -123,65 +126,36 @@ public class TcpShell extends Thread implements Shell {
         log.info("New connection from " + client.getInetAddress().toString());
         in = client.getInputStream();
         out = new BufferedOutputStream(client.getOutputStream());
+        int[] charmode = new int[] { 255, 251, 1, 255, 251, 3, 255, 252, 34 };
+        for (int b: charmode)
+          out.write(b);
+        out.flush();
+        console = new ConsoleReader(in, out);
+        console.setExpandEvents(false);
         sos.setOutputStream(out);
         Term term = sos.getTerm();
         sos.setPrompt(term.prompt("$ "));
         StringBuffer sb = new StringBuffer();
         boolean nest = false;
-        boolean newline = true;
-        int state = 0;
-        int last = 0;
         while (true) {
-          try {
-            if (!engine.isBusy() && newline) {
-              out.write(term.prompt(sb.length() == 0 ? "$ " : "- ").getBytes());
-              out.flush();
-            }
-            int c = in.read();
-            if (c < 0) break;
-            if (state == 0 && c == 4) break;
-            newline = false;
-            if (state == 1) {
-              if (c == 253) state++;
-              else {
-                // BRK, OA, IP, EOR
-                if (c == 243 || c == 244 || c == 238 || c == 239) engine.abort();
-                state = 0;
-              }
-              continue;
-            } else if (state > 1) {
-              out.write(255);   // IAC
-              out.write(251);   // WILL
-              out.write(6);     // timing mark
-              newline = true;
-              sb = new StringBuffer();
-              out.write('\n');
-              state = 0;
-              continue;
-            }
-            if (last == 13 && c == 10) continue;
-            last = c;
-            if (c == 10 || c == 13) {
-              newline = true;
-              String s = sb.toString();
-              nest = nested(s);
-              if (nest) sb.append('\n');
-              else if (s.length() > 0) {
-                sb = new StringBuffer();
-                boolean ok = engine.exec(s, sos);
-                if (!ok) sos.println(term.error("BUSY"));
-              }
-              continue;
-            }
-            if (c > 127) {
-              if (c == 255) state = 1;
-              continue;
-            }
-            sb.append((char)c);
-          } catch (IOException ex) {
-            // do nothing
+          int esc = 0;
+          if (sb.length() > 0) console.setPrompt(term.prompt("- "));
+          else console.setPrompt(term.prompt("$ "));
+          sos.print("\r");
+          String s1 = console.readLine();
+          if (s1 == null) break;
+          sb.append(s1);
+          String s = sb.toString();
+          nest = nested(s);
+          if (nest) sb.append('\n');
+          else if (s.length() > 0) {
+            sb = new StringBuffer();
+            boolean ok = engine.exec(s, sos);
+            if (!ok) sos.println(term.error("BUSY"));
           }
         }
+
+
       } catch (Exception ex) {
         log.warning(ex.toString());
       }
@@ -252,4 +226,3 @@ public class TcpShell extends Thread implements Shell {
   }
 
 }
-

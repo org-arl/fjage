@@ -58,6 +58,7 @@ public class ScriptOutputStream {
    */
   public synchronized void println(String s) {
     if (ps == null) return;
+    s = s.replace("\n","\r\n");
     ps.println(s);
     ps.flush();
   }
@@ -69,6 +70,7 @@ public class ScriptOutputStream {
    */
   public synchronized void print(String s) {
     if (ps == null) return;
+    s = s.replace("\n","\r\n");
     ps.print(s);
     ps.flush();
   }
