@@ -116,6 +116,7 @@ public class TcpShell extends Thread implements Shell {
     private ConsoleReader console = null;
 
     public ClientThread(Socket client) {
+      setName(getClass().getSimpleName());
       this.client = client;
     }
 
