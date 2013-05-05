@@ -68,8 +68,8 @@ public class ScriptOutputStream {
    */
   public synchronized void println(String s) {
     if (ps == null) return;
-    if (telnet) s = s.replace("\n","\r\n");
-    ps.println(s);
+    if (telnet) ps.print(s.replace("\n","\r\n")+"\r\n");
+    else ps.println(s);
     ps.flush();
   }
 
@@ -80,8 +80,8 @@ public class ScriptOutputStream {
    */
   public synchronized void print(String s) {
     if (ps == null) return;
-    if (telnet) s = s.replace("\n","\r\n");
-    ps.print(s);
+    if (telnet) ps.print(s.replace("\n","\r\n"));
+    else ps.print(s);
     ps.flush();
   }
 
