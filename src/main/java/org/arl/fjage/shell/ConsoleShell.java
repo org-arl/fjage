@@ -122,7 +122,15 @@ public class ConsoleShell extends Thread implements Shell {
   public void println(String s) {
     if (sos != null) sos.println(s);
     try {
-      if (console != null) console.redrawLine();
+      if (console != null) {
+        // for some strange reason, works well with a short delay!
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException e) {
+          interrupt();
+        }
+        console.redrawLine();
+      }
     } catch (IOException ex) {
       // do nothing
     }
