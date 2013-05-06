@@ -157,6 +157,8 @@ public class Agent implements Runnable, TimestampProvider {
    */
   protected synchronized void block() {
     if (restartBehaviors) return;
+    for (Behavior b: blockedBehaviors)
+      if (!b.isBlocked()) return;
     oldState = state;
     state = AgentState.IDLE;
     container.reportIdle(aid);
