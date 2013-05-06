@@ -13,7 +13,6 @@ To start a master container, we simply replace `Container` with `MasterContainer
     import org.arl.fjage.*
     import org.arl.fjage.rmi.*
 
-    GroovyAgentExtensions.enable()
     platform = new RealTimePlatform()
     container = new MasterContainer(platform, name)
     println "Master container started at ${container.getURL()}"
@@ -27,7 +26,6 @@ To start slave containers, we need to specify the Java RMI URL of the master con
     import org.arl.fjage.*
     import org.arl.fjage.rmi.*
 
-    GroovyAgentExtensions.enable()
     platform = new RealTimePlatform()
     container = new SlaveContainer(platform, masterURL)
     // add agents to the container here
@@ -45,7 +43,7 @@ It is often useful to connect a console shell to a running fjåge application to
     #!/bin/sh
 
     CLASSPATH=`find build/libs -name *.jar -exec /bin/echo -n :'{}' \;`
-    java -cp "$CLASSPATH" -Djava.util.logging.config.file=etc/logging.properties org.arl.fjage.shell.GroovyBoot -Durl="$1" etc/initrc-rconsole.groovy
+    java -cp "$CLASSPATH" org.arl.fjage.shell.GroovyBoot -Durl="$1" etc/initrc-rconsole.groovy
 
 and `etc/initrc-rconsole.groovy`::
 
@@ -61,7 +59,6 @@ and `etc/initrc-rconsole.groovy`::
     platform = new RealTimePlatform()
     container = new SlaveContainer(platform, url)
     shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
-    shell.setInitrc 'etc/fjageshrc.groovy'
     container.add 'rshell', shell
     platform.start()
 

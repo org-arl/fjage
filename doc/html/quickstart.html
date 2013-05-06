@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Getting Started &mdash; fjåge 1.0.2 documentation</title>
+    <title>Getting Started &mdash; fjåge 1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.0.2',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="fjåge 1.0.2 documentation" href="index.html" />
+    <link rel="top" title="fjåge 1.2 documentation" href="index.html" />
     <link rel="next" title="Agents and Behaviors" href="behaviors.html" />
     <link rel="prev" title="Introduction" href="introduction.html" /> 
   </head>
@@ -37,7 +37,7 @@
         <li class="right" >
           <a href="introduction.html" title="Introduction"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -85,7 +85,7 @@
 <h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="quick-start">
 <h2>Quick start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
-<p>We assume that you are working on a UNIX (Linux or Mac OS X) system with network access. If you are working on a Windows platform, you may need <a class="reference external" href="http://www.cygwin.com/">Cygwin</a> installed.</p>
+<p>We assume that you are working on a UNIX (Linux or Mac OS X) system with network access. If you are working on a Windows platform, you may need <a class="reference external" href="http://www.cygwin.com/">Cygwin</a> installed. We also assume that you have Java Development Kit (JDK) 1.6 or higher installed. If you don&#8217;t have one, you&#8217;ll need to <a class="reference external" href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">install</a> one.</p>
 <div class="admonition caution">
 <p class="first admonition-title">Caution</p>
 <p class="last">Although one would expect Java to work across platforms, fjåge has not been fully tested under Windows. If you encounter any problems, please report them via the <a class="reference external" href="http://github.com/org-arl/fjage/issues">issue tracking system</a>.</p>
@@ -107,18 +107,16 @@
 fjage.sh
 logs/
 build/libs/
-  fjage-1.0.2.jar
+  fjage-1.2.jar
   groovy-all-2.1.2.jar
   commons-lang3-3.1.jar
   jline-2.10.jar
 etc/
   initrc.groovy
-  logging.properties
-  fjageshrc.groovy
 </pre>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The <cite>build/libs</cite> folder contains all the necessary libraries. The <cite>etc</cite> folder contains startup files. <cite>initrc.groovy</cite> in the initialization script where you create your agents and configure them. <cite>logging.properties</cite> is a standard <a class="reference external" href="http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html">Java logging</a> configuration file that controls the logs from your project. <cite>fjageshrc.groovy</cite> is an initialization script for the interactive shell. <cite>fjage.sh</cite> is your startup shell script that simply sets up the classpath and boots up fjåge with the <cite>initrc.groovy</cite> script. The organization of the directory structure and names of the files are all customizable by editing <cite>fjage.sh</cite> and <cite>initrc.groovy</cite>.</p>
+<p class="last">The <cite>build/libs</cite> folder contains all the necessary libraries. The <cite>etc</cite> folder contains startup files. <cite>initrc.groovy</cite> in the initialization script where you create your agents and configure them. <cite>fjage.sh</cite> is your startup shell script that simply sets up the classpath and boots up fjåge with the <cite>initrc.groovy</cite> script. The organization of the directory structure and names of the files are all customizable by editing <cite>fjage.sh</cite> and <cite>initrc.groovy</cite>.</p>
 </div>
 <p>To check that your fjåge installation is correctly working, type <cite>./fjage.sh</cite>. That should simply give you an interactive fjåge Groovy shell with a <cite>$</cite> prompt. Type <cite>ps</cite> to see a list of running agents. There should be only one <cite>shell</cite> agent created by the default <cite>initrc.groovy</cite> script. Type <cite>shutdown</cite> or press control-D to terminate fjåge.</p>
 <div class="highlight-console"><div class="highlight"><pre><span class="go">bash$ ./fjage.sh</span>
@@ -138,9 +136,9 @@ etc/
 
 <span class="kd">class</span> <span class="nc">HelloWorldAgent</span> <span class="kd">extends</span> <span class="n">Agent</span> <span class="o">{</span>
   <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">add</span> <span class="n">oneShotBehavior</span> <span class="o">{</span>
+    <span class="n">add</span> <span class="k">new</span> <span class="nf">OneShotBehavior</span><span class="o">({</span>
       <span class="n">println</span> <span class="s1">&#39;Hello world!!!&#39;</span>
-    <span class="o">}</span>
+    <span class="o">})</span>
   <span class="o">}</span>
 <span class="o">}</span>
 
@@ -148,7 +146,7 @@ etc/
 </pre></div>
 </div>
 <p>This Groovy script creates an agent with <cite>AgentID</cite> <cite>hello</cite> of class <cite>HelloWorldAgent</cite>. The <cite>init()</cite> method of the agent is called once the agent is loaded. In this method, a one-shot behavior is added to the agent. One-shot behaviors are fired only once, as soon as possible; in our case, this is as soon as the agent is running. The one-shot behavior prints &#8220;Hello world!!!&#8221;. The output of the agent is not directly displayed on the console, but instead sent to the log file, as we will see shortly.</p>
-<p>To run the agent, start fjåge and run the script by typing <cite>run &#8216;hello&#8217;</cite> or simply <cite>&lt;hello</cite>. This will return you to the interactive shell prompt. To check that your agent is indeed running, type <cite>ps</cite>. You may then shutdown fjåge as before and check the log file for your output:</p>
+<p>To run the agent, start fjåge and run the script by typing <cite>run &#8216;hello&#8217;</cite> or simply <cite>&lt;hello</cite> (the <em>less than</em> sign &#8216;&lt;&#8217; is a shortcut for <cite>run &#8216;...&#8217;</cite>). This will return you to the interactive shell prompt. To check that your agent is indeed running, type <cite>ps</cite>. You may then shutdown fjåge as before and check the log file for your output:</p>
 <div class="highlight-console"><div class="highlight"><pre><span class="go">bash$ ./fjage.sh</span>
 <span class="gp">$</span> &lt;hello
 <span class="gp">$</span> ps
@@ -161,7 +159,7 @@ etc/
 <span class="go">bash$</span>
 </pre></div>
 </div>
-<p>The default fjåge log file format is pipe-separated, where the first column is the timestamp in milliseconds, the second column is the log level, the third column is the agent class name and threadID, and the last column is the log message. You may change the format if you like by editing the <cite>logging.properties</cite> file in the <cite>etc</cite> folder.</p>
+<p>The default fjåge log file format is pipe-separated, where the first column is the timestamp in milliseconds, the second column is the log level, the third column is the agent class name and threadID, and the last column is the log message. You may change the format if you like by loading a custom logging configuration by specifying a <cite>java.util.logging.config.file</cite> system property while starting the JVM (see <a class="reference external" href="http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html">Java logging</a>).</p>
 <p>Congratulations!!! You have just developed your first Groovy fjåge agent!</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -191,9 +189,9 @@ etc/
 
 <span class="kd">class</span> <span class="nc">HelloWorldAgent</span> <span class="kd">extends</span> <span class="n">Agent</span> <span class="o">{</span>
   <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">add</span> <span class="n">oneShotBehavior</span> <span class="o">{</span>
+    <span class="n">add</span> <span class="k">new</span> <span class="nf">OneShotBehavior</span><span class="o">({</span>
       <span class="n">println</span> <span class="s1">&#39;Hello world!!!&#39;</span>
-    <span class="o">}</span>
+    <span class="o">})</span>
   <span class="o">}</span>
 <span class="o">}</span>
 </pre></div>
@@ -229,12 +227,13 @@ etc/
 <div class="section" id="typical-bootup-for-groovy-applications">
 <h2>Typical bootup for Groovy applications<a class="headerlink" href="#typical-bootup-for-groovy-applications" title="Permalink to this headline">¶</a></h2>
 <p>In order to fully understand how fjåge works, it is useful to look at the bootup sequence of our hello world fjåge application. When we run <cite>fjage.sh</cite>, the shell script creates a CLASSPATH to include all jar files in the <cite>build/libs</cite> folder and then starts the JVM:</p>
-<div class="highlight-sh"><div class="highlight"><pre>java -cp <span class="s2">&quot;$CLASSPATH&quot;</span> -Djava.util.logging.config.file<span class="o">=</span>etc/logging.properties org.arl.fjage.shell.GroovyBoot etc/initrc.groovy
+<div class="highlight-sh"><div class="highlight"><pre>java -cp <span class="s2">&quot;$CLASSPATH&quot;</span> org.arl.fjage.shell.GroovyBoot etc/initrc.groovy
 </pre></div>
 </div>
-<p>This command uses the <cite>etc/logging.properties</cite> to set up Java logging and invokes the <cite>main()</cite> static method on the <cite>org.arl.fjage.shell.GroovyBoot</cite> class. The initialization script <cite>etc/initrc.groovy</cite> is passed as a command line argument to the <cite>main()</cite>.</p>
+<p>This command invokes the <cite>main()</cite> static method on the <cite>org.arl.fjage.shell.GroovyBoot</cite> class. The initialization script <cite>etc/initrc.groovy</cite> is passed as a command line argument to the <cite>main()</cite>.</p>
 <p>Let us next take a look at a simplified code extract from the <cite>org.arl.fjage.shell.GroovyBoot.main()</cite> method:</p>
 <div class="highlight-java"><div class="highlight"><pre><span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+  <span class="n">GroovyExtensions</span><span class="o">.</span><span class="na">enable</span><span class="o">();</span>
   <span class="n">engine</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GroovyScriptEngine</span><span class="o">();</span>
   <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="nl">a:</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
     <span class="n">engine</span><span class="o">.</span><span class="na">exec</span><span class="o">(</span><span class="k">new</span> <span class="n">File</span><span class="o">(</span><span class="n">a</span><span class="o">),</span> <span class="kc">null</span><span class="o">);</span>
@@ -244,21 +243,23 @@ etc/
 <span class="o">}</span>
 </pre></div>
 </div>
-<p>This code sequentially executes every initialization Groovy script given on the command line. In our case, this causes the <cite>etc/initrc.groovy</cite> to be executed:</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><cite>GroovyBoot</cite> also supports resource URLs of the form <cite>res://path/to/package/script.groovy</cite> to execute initialization Groovy scripts loaded from Java resources (potentially inside jar files).</p>
+</div>
+<p>This code enables Groovy extensions in fjåge to add syntactic sugar for ease of writing Groovy agents, and then sequentially executes every initialization Groovy script given on the command line. In our case, this causes the <cite>etc/initrc.groovy</cite> to be executed:</p>
 <div class="highlight-groovy"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.arl.fjage.*</span>
 <span class="kn">import</span> <span class="nn">org.arl.fjage.shell.*</span>
 
-<span class="n">GroovyAgentExtensions</span><span class="o">.</span><span class="na">enable</span><span class="o">()</span>
 <span class="n">platform</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimePlatform</span><span class="o">()</span>
 <span class="n">container</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Container</span><span class="o">(</span><span class="n">platform</span><span class="o">)</span>
 <span class="n">shell</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ShellAgent</span><span class="o">(</span><span class="k">new</span> <span class="n">ConsoleShell</span><span class="o">(),</span> <span class="k">new</span> <span class="n">GroovyScriptEngine</span><span class="o">())</span>
-<span class="n">shell</span><span class="o">.</span><span class="na">setInitrc</span> <span class="s1">&#39;etc/fjageshrc.groovy&#39;</span>
 <span class="n">container</span><span class="o">.</span><span class="na">add</span> <span class="s1">&#39;shell&#39;</span><span class="o">,</span> <span class="n">shell</span>
 <span class="c1">// add other agents to the container here</span>
 <span class="n">platform</span><span class="o">.</span><span class="na">start</span><span class="o">()</span>
 </pre></div>
 </div>
-<p>The script imports the fjage packages. It then enables Groovy extensions in fjåge to add syntactic sugar for ease of writing Groovy agents. A real-time platform and a container is created, and a <cite>shell</cite> agent is configured and added to the container. The <cite>shell</cite> agent is set to provide the interactive shell on the console, use Groovy for scripting and to execute <cite>etc/fjageshrc.groovy</cite> as the startup script when a user interacts with the shell. Finally, the platform is started. Now we have a fjåge container running with a single <cite>shell</cite> agent that provides an interactive shell on the console.</p>
+<p>The script imports the fjage packages. A real-time platform and a container is created, and a <cite>shell</cite> agent is configured and added to the container. The <cite>shell</cite> agent is set to provide the interactive shell on the console, and use Groovy for scripting. Finally, the platform is started. Now we have a fjåge container running with a single <cite>shell</cite> agent that provides an interactive shell on the console.</p>
 <p>Any other agents that we may wish to start can be included in the <cite>etc/initrc.groovy</cite> script, just before starting the platform.</p>
 </div>
 <div class="section" id="bootup-for-java-applications">
@@ -296,7 +297,7 @@ etc/
         <li class="right" >
           <a href="introduction.html" title="Introduction"
              >previous</a> |</li>
-        <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The Shell Agent &mdash; fjåge 1.0.2 documentation</title>
+    <title>The Shell Agent &mdash; fjåge 1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.0.2',
+        URL_ROOT:    './',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,8 +23,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="fjåge 1.0.2 documentation" href="index.html" />
-    <link rel="next" title="Discrete Event Simulation" href="simulation.html" />
+    <link rel="top" title="fjåge 1.2 documentation" href="index.html" />
+    <link rel="next" title="Simulation" href="simulation.html" />
     <link rel="prev" title="Distributed Agents" href="rmi.html" /> 
   </head>
   <body>
@@ -34,12 +32,12 @@
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="simulation.html" title="Discrete Event Simulation"
+          <a href="simulation.html" title="Simulation"
              accesskey="N">next</a></li>
         <li class="right" >
           <a href="rmi.html" title="Distributed Agents"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -58,7 +56,7 @@
                         title="previous chapter">Distributed Agents</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="simulation.html"
-                        title="next chapter">Discrete Event Simulation</a></p>
+                        title="next chapter">Simulation</a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -85,7 +83,7 @@
 <p>We have already used the console shell provided by fjåge many times. This shell is implemented by the <cite>ShellAgent</cite> class as we have seen before in the <cite>initrc.groovy</cite> scripts. Let&#8217;s take a slightly deeper look at the shell agent in this chapter.</p>
 <div class="section" id="shell-commands">
 <h2>Shell commands<a class="headerlink" href="#shell-commands" title="Permalink to this headline">¶</a></h2>
-<p>The default shell provided by fjåge is a Groovy shell, and can execute any valid Groovy code. A few standard commands, variables and closures are made available. Many of these are defined in the <cite>etc/fjageshrc.groovy</cite> script that is set as the initialization script when the <cite>ShellAgent</cite> is created. Just typing <cite>help</cite> will provide a list of commands that are available:</p>
+<p>The default shell provided by fjåge is a Groovy shell, and can execute any valid Groovy code. A few standard commands, variables and closures are made available. Just typing <cite>help</cite> will provide a list of commands that are available:</p>
 <div class="highlight-console"><div class="highlight"><pre><span class="go">bash$ ./fjage.sh</span>
 <span class="gp">$</span> <span class="nb">help</span>
 <span class="go">help [topic] - provide help on a specified topic</span>
@@ -112,7 +110,7 @@
 <p>The commands in the shell are executed in the context of the <cite>ShellAgent</cite> (e.g. messages send are send using this agent). Any messages received by the <cite>ShellAgent</cite> are simply displayed.</p>
 <div class="admonition tip">
 <p class="first admonition-title">Tip</p>
-<p class="last">If you wish to add your own closures or variables, you can do so by customizing the initialization script. The default <cite>etc/fjageshrc.groovy</cite> script executes a <cite>etc/fjageshrc-local.groovy</cite> script if available. This is a good place to put your customizations.</p>
+<p class="last">If you wish to add your own closures or variables, you can do so by customizing initialization script. Initialization scripts can be added to the <cite>ShellAgent</cite> using the <cite>addInitrc</cite> method.</p>
 </div>
 </div>
 <div class="section" id="remote-shell-over-tcp-ip">
@@ -121,11 +119,9 @@
 <div class="highlight-groovy"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.arl.fjage.*</span>
 <span class="kn">import</span> <span class="nn">org.arl.fjage.shell.*</span>
 
-<span class="n">GroovyAgentExtensions</span><span class="o">.</span><span class="na">enable</span><span class="o">()</span>
 <span class="n">platform</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimePlatform</span><span class="o">()</span>
 <span class="n">container</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Container</span><span class="o">(</span><span class="n">platform</span><span class="o">)</span>
 <span class="n">shell</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ShellAgent</span><span class="o">(</span><span class="k">new</span> <span class="n">TcpShell</span><span class="o">(</span><span class="mi">8001</span><span class="o">),</span> <span class="k">new</span> <span class="n">GroovyScriptEngine</span><span class="o">())</span>
-<span class="n">shell</span><span class="o">.</span><span class="na">setInitrc</span> <span class="s1">&#39;etc/fjageshrc.groovy&#39;</span>
 <span class="n">container</span><span class="o">.</span><span class="na">add</span> <span class="s1">&#39;shell&#39;</span><span class="o">,</span> <span class="n">shell</span>
 <span class="c1">// add other agents to the container here</span>
 <span class="n">platform</span><span class="o">.</span><span class="na">start</span><span class="o">()</span>
@@ -154,12 +150,12 @@
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="simulation.html" title="Discrete Event Simulation"
+          <a href="simulation.html" title="Simulation"
              >next</a></li>
         <li class="right" >
           <a href="rmi.html" title="Distributed Agents"
              >previous</a> |</li>
-        <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

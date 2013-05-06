@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Directory Services &mdash; fjåge 1.0.2 documentation</title>
+    <title>Directory Services &mdash; fjåge 1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.0.2',
+        URL_ROOT:    './',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="fjåge 1.0.2 documentation" href="index.html" />
+    <link rel="top" title="fjåge 1.2 documentation" href="index.html" />
     <link rel="next" title="Distributed Agents" href="rmi.html" />
     <link rel="prev" title="Messaging" href="messages.html" /> 
   </head>
@@ -39,7 +37,7 @@
         <li class="right" >
           <a href="messages.html" title="Messaging"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -133,9 +131,9 @@
 <div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">MyClient</span> <span class="kd">extends</span> <span class="n">org</span><span class="o">.</span><span class="na">arl</span><span class="o">.</span><span class="na">fjage</span><span class="o">.</span><span class="na">Agent</span> <span class="o">{</span>
   <span class="kt">def</span> <span class="n">weatherStation</span>
   <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">add</span> <span class="n">oneShotBehavior</span> <span class="o">{</span>
+    <span class="n">add</span> <span class="k">new</span> <span class="nf">OneShotBehavior</span><span class="o">({</span>
       <span class="n">weatherStation</span> <span class="o">=</span> <span class="n">agentForService</span> <span class="n">Services</span><span class="o">.</span><span class="na">WEATHER_FORECAST_SERVICE</span>
-    <span class="o">}</span>
+    <span class="o">})</span>
   <span class="o">}</span>
 <span class="o">}</span>
 </pre></div>
@@ -162,7 +160,7 @@
         <li class="right" >
           <a href="messages.html" title="Messaging"
              >previous</a> |</li>
-        <li><a href="index.html">fjåge 1.0.2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

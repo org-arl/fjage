@@ -16,13 +16,6 @@ Table of Contents
    shell
    simulation
 
-.. These pages are currently blank, so we hide them...
-.. toctree::
-   :hidden:
-
-   java
-   faq
-
 Useful Links
 ------------
 

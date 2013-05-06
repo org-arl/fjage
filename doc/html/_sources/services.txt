@@ -54,9 +54,9 @@ If your application uses a set of agents that are instantiated in the `initrc.gr
     class MyClient extends org.arl.fjage.Agent {
       def weatherStation
       void init() {
-        add oneShotBehavior {
+        add new OneShotBehavior({
           weatherStation = agentForService Services.WEATHER_FORECAST_SERVICE
-        }
+        })
       }
     }
 
