@@ -27,8 +27,6 @@ To run the agents in the discrete event simulation mode, the use of the `RealTim
 
 Now running `fjage.sh` should run the agents in the discrete event simulation mode. You can verify this by looking at the `logs/log-0.txt` file; the time entries in this file will start at 0, since all simulations start at time 0. When all agents become idle with no further events in the system, the discrete event simulator automatically terminates.
 
-.. note:: It is recommended that you do not run interactive agents such as `ShellAgent` in this mode, as the interaction with the real world is not compatible with virtual time.
-
 .. Random Number Generation
 .. ------------------------
 
