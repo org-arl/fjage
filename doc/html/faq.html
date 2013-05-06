@@ -23,17 +23,33 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="fjåge 1.2 documentation" href="index.html" /> 
+    <link rel="top" title="fjåge 1.2 documentation" href="index.html" />
+    <link rel="prev" title="Simulation" href="simulation.html" /> 
   </head>
   <body>
     <div class="related">
       <h3>Navigation</h3>
       <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="simulation.html" title="Simulation"
+             accesskey="P">previous</a></li>
         <li><a href="index.html">fjåge 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Frequently Asked Questions</a><ul>
+<li><a class="reference internal" href="#groovy-syntax">Groovy syntax</a></li>
+<li><a class="reference internal" href="#logging">Logging</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="simulation.html"
+                        title="previous chapter">Simulation</a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -57,9 +73,31 @@
             
   <div class="section" id="frequently-asked-questions">
 <h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Work in progress</p>
+<div class="section" id="groovy-syntax">
+<h2>Groovy syntax<a class="headerlink" href="#groovy-syntax" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Q:</th><td class="field-body">Why does <cite>add oneShotBehavior { ... }</cite> or <cite>addOneShotBehavior { ... }</cite> (or other behaviors) not work even though I have <cite>GroovyExtensions</cite> enabled?</td>
+</tr>
+<tr class="field-even field"><th class="field-name">A:</th><td class="field-body">These two synaxes supported by <cite>GroovyExtensions</cite> have been removed since fjåge v1.2. Instead use the new Groovy syntax <cite>add new OneShotBehavior({ ... })</cite>. The similarity with the Java syntax avoids confusions caused due to previous Groovy syntax.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Q:</th><td class="field-body">How do I temporarily enable debug logging for fjåge applications without writing my own <cite>logging.properties</cite>?</td>
+</tr>
+<tr class="field-even field"><th class="field-name">A:</th><td class="field-body">Debug logging (log level <cite>ALL</cite>) can be enabled by simply passing a <cite>-debug</cite> flag on the command line to <cite>GroovyBoot</cite>. To enable debug logging for only certain loggers, you can use a flag of the form <cite>-debug:loggername</cite>. Startup scripts (such as <cite>fjage.sh</cite>) pass all arguments to <cite>GroovyBoot</cite>, allowing this flag to be simply included on the command line while starting the application.</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 
@@ -72,6 +110,9 @@
     <div class="related">
       <h3>Navigation</h3>
       <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="simulation.html" title="Simulation"
+             >previous</a></li>
         <li><a href="index.html">fjåge 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>

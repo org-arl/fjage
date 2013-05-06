@@ -15,6 +15,7 @@ Table of Contents
    rmi
    shell
    simulation
+   faq
 
 Useful Links
 ------------
