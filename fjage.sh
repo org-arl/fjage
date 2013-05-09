@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CLASSPATH=`find build/libs -name *.jar -exec /bin/echo -n :'{}' \;`
+CLASSPATH=.`find build/libs -name *.jar -exec /bin/echo -n :'{}' \;`
 
 # Cygwin/Windows uses a ";" classpath separator
 if [ $(expr "$(uname -s)" : 'CYGWIN.*') -gt 0 ];then
