@@ -113,10 +113,13 @@ public class Agent implements Runnable, TimestampProvider {
   /**
    * Called by the container if the agent terminates abnormally. This method may
    * be optionally overridden to provide special handling of malfunctioning agents.
+   * This method is called before the shutdown() method is called to terminate
+   * the agent. The behaviors of the agent are no longer active once this method
+   * is called.
    * 
    * @param ex exception that caused the agent to die.
    */
-  protected void die(Exception ex) {
+  protected void die(Throwable ex) {
     // do nothing
   }
 
@@ -762,16 +765,16 @@ public class Agent implements Runnable, TimestampProvider {
         }
         block();
       }
-    } catch (Exception ex) {
-      log.log(Level.SEVERE, "Agent: "+aid, ex);
+    } catch (Throwable ex) {
+      log.log(Level.SEVERE, "Exception in agent: "+aid, ex);
       die(ex);
     }
     state = AgentState.RUNNING;
     container.reportBusy(aid);
     try {
       shutdown();
-    } catch (Exception ex) {
-      log.log(Level.SEVERE, "Agent: "+aid, ex);
+    } catch (Throwable ex) {
+      log.log(Level.SEVERE, "Exception in agent: "+aid, ex);
     }
     state = AgentState.FINISHED;
     container.reportIdle(aid);

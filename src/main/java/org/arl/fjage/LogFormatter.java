@@ -21,6 +21,14 @@ import java.util.logging.*;
  */
 public class LogFormatter extends Formatter {
 
+  // list of packages to ignore in stack trace display
+  private static String[] ignorePkgList = {
+    "org.codehaus.groovy.",
+    "java.",
+    "groovy.",
+    "sun."
+  };
+
   /**
    * Formats the logs.
    *
@@ -40,14 +48,29 @@ public class LogFormatter extends Formatter {
     s.append(indent(record.getMessage()));
     s.append('\n');
     Throwable t = record.getThrown();
-    if (t != null) {
-      StringWriter sw = new StringWriter();
-      t.printStackTrace(new PrintWriter(sw));
-      s.append('\t');
-      s.append(indent(sw.toString()));
-      s.append('\n');
-    }
+    if (t != null) printStackTrace(t, s);
     return s.toString();
+  }
+
+  private void printStackTrace(Throwable t, StringBuffer s) {
+    s.append('\n');
+    s.append(t.getMessage());
+    s.append("\nStack trace:");
+    boolean ignoring = false;
+    for (StackTraceElement st: t.getStackTrace()) {
+      boolean disp = true;
+      for (String p: ignorePkgList)
+        if (st.getClassName().startsWith(p)) disp = false;
+      if (disp) {
+        s.append("\n   ");
+        s.append(st.toString());
+        ignoring = false;
+      } else {
+        if (!ignoring) s.append(" ...");
+        ignoring = true;
+      }
+    }
+    s.append("\n\n");
   }
 
   /**

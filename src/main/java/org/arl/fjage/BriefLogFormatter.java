@@ -26,19 +26,19 @@ public class BriefLogFormatter extends Formatter {
   @Override
   public String format(LogRecord record) {
     StringBuffer s = new StringBuffer();
-    s.append(Term.YELLOW);
+    s.append(Term.RED);
     s.append(record.getLevel());
     s.append(": ");
     s.append(record.getLoggerName());
     s.append(" > ");
     s.append(record.getMessage());
-    Throwable t = record.getThrown();
-    if (t != null) {
-      s.append("\n  ");
-      s.append(t.getClass().getName());
-      s.append(": ");
-      s.append(t.getMessage());
-    }
+    //Throwable t = record.getThrown();
+    //if (t != null) {
+    //  s.append("\n  ");
+    //  s.append(t.getClass().getName());
+    //  s.append(": ");
+    //  s.append(t.getMessage());
+    //}
     s.append(Term.RESET);
     s.append('\n');
     return s.toString();

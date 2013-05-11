@@ -86,7 +86,7 @@ public class GroovyBoot {
       }
       engine.shutdown();
 
-    } catch (Exception ex) {
+    } catch (Throwable ex) {
       if (log == null) ex.printStackTrace(System.err);
       else log.severe(ex.toString());
     }

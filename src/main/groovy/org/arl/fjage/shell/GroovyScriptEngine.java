@@ -112,7 +112,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           Term t = out.getTerm();
           out.println(t.error("Aborted!"));
         }
-      } catch (Exception ex) {
+      } catch (Throwable ex) {
         error(ex);
       }
       cmd = null;
