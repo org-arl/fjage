@@ -57,8 +57,10 @@ public class GroovyBoot {
       ScriptEngine engine = new GroovyScriptEngine();
       ScriptOutputStream out = new ScriptOutputStream(System.out);
       for (String a: args) {
-        if (a.equals("-nocolor")) Term.setDefaultState(false);
-        else if (a.equals("-debug")) {
+        if (a.equals("-nocolor")) {
+          Term.setDefaultState(false);
+          out.getTerm().disable();
+        } else if (a.equals("-debug")) {
           log.info("Setting root logger level to ALL");
           Logger logger = Logger.getLogger("");
           logger.setLevel(Level.ALL);

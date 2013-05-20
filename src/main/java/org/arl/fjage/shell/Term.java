@@ -57,6 +57,10 @@ public class Term {
     enabled = false;
   }
 
+  public boolean isEnabled() {
+    return enabled;
+  }
+
   public String error(String msg) {
     if (!enabled) return msg;
     return HOME+CLREOL+RED+msg+RESET;
