@@ -79,6 +79,7 @@ public class Agent implements Runnable, TimestampProvider {
   private Queue<Behavior> activeBehaviors = new ArrayDeque<Behavior>();
   private Queue<Behavior> blockedBehaviors = new ArrayDeque<Behavior>();
   private volatile boolean restartBehaviors = false;
+  private boolean unblocked = false;
   private Platform platform = null;
   private Container container = null;
   private MessageQueue queue = new MessageQueue();
@@ -159,9 +160,13 @@ public class Agent implements Runnable, TimestampProvider {
    * {@link #wake()} method.
    */
   protected synchronized void block() {
-    if (restartBehaviors) return;
-    for (Behavior b: blockedBehaviors)
-      if (!b.isBlocked()) return;
+    if (!unblocked) {
+      unblocked = true;
+      if (restartBehaviors) return;
+      for (Behavior b: blockedBehaviors)
+        if (!b.isBlocked()) return;
+    }
+    unblocked = false;
     oldState = state;
     state = AgentState.IDLE;
     container.reportIdle(aid);
@@ -708,6 +713,7 @@ public class Agent implements Runnable, TimestampProvider {
     queue.add(container.autoclone(m));
     synchronized (this) {
       restartBehaviors = true;
+      unblocked = false;
       wake();
     }
   }
