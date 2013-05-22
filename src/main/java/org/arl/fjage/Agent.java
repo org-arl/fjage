@@ -387,6 +387,7 @@ public class Agent implements Runnable, TimestampProvider {
    * @return true if message accepted for delivery, false on failure.
    */
   public boolean send(Message m) {
+    if (container == null) return false;
     m.setSender(aid);
     return container.send(m);
   }

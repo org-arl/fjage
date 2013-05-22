@@ -54,7 +54,9 @@ public class LogFormatter extends Formatter {
 
   private void printStackTrace(Throwable t, StringBuffer s) {
     s.append('\n');
-    s.append(t.getMessage());
+    String msg = t.getMessage();
+    if (msg == null) msg = t.getClass().getName();
+    s.append(msg);
     s.append("\nStack trace:");
     boolean ignoring = false;
     for (StackTraceElement st: t.getStackTrace()) {
