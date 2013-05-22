@@ -66,5 +66,14 @@ class GroovyExtensions {
       request(msg);
     }
 
+    Agent.metaClass.receive = { Closure filter, long timeout = 1000 ->
+      MessageFilter f = new MessageFilter() {
+        boolean matches(Message m) {
+          return filter(m);
+        }
+      };
+      receive(f, timeout)
+    }
+
   }
 }

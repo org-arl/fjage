@@ -417,6 +417,22 @@ abstract class BaseGroovyScript extends Script {
   /**
    * Receives an agent message.
    *
+   * @param cls class of message.
+   * @param timeout timeout in milliseconds.
+   * @return received message, if available, null otherwise.
+   */
+  Message receive(Class cls, long timeout = 1000) {
+    Binding binding = getBinding();
+    if (binding.hasVariable('agent')) {
+      ShellAgent a = binding.getVariable('agent');
+      return a.receive(cls, timeout);
+    }
+    return null;
+  }
+
+  /**
+   * Receives an agent message.
+   *
    * @param timeout timeout in milliseconds.
    * @return received message, if available, null otherwise.
    */
@@ -451,4 +467,3 @@ abstract class BaseGroovyScript extends Script {
   }
 
 }
-

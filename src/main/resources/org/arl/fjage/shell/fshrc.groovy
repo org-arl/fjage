@@ -55,5 +55,6 @@ Examples:
   msg = receive                     // get any message with default timeout
   msg = receive 100                 // get any message within 100 ms
   msg = receive req                 // get a response message for request req
+  msg = receive A                   // get message that of class A
   msg = receive { it instanceof A } // get message that of class A
 '''
