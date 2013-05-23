@@ -456,7 +456,7 @@ public class Container {
    * Initialize the container and all agents in it.
    * This should be called before start().
    */
-  public void init() {
+  void init() {
     if (!running) {
       log.info("Initializing agents...");
       synchronized (agents) {
@@ -486,7 +486,7 @@ public class Container {
    * Starts the container and all agents in it.
    * This should be called after init().
    */
-  public void start() {
+  void start() {
     if (!running) {
       log.info("Starting container...");
       running = true;
