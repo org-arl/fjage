@@ -21,7 +21,7 @@ import org.arl.fjage.*  ;
  * <p>
  * Usage:
  * <code>
- * java [-Djava.util.logging.config.file=logging.properties] org.arl.fjage.shell.Boot [-nocolor] [-debug:package-name] [script-file]...
+ * java [-Djava.util.logging.config.file=logging.properties] org.arl.fjage.shell.Boot [-nocolor] [-debug:package-name] [[-arg:arg]... script-file]...
  * </code>
  *
  * @author Mandar Chitre
@@ -56,6 +56,7 @@ public class GroovyBoot {
       // parse command line and execute scripts
       ScriptEngine engine = new GroovyScriptEngine();
       ScriptOutputStream out = new ScriptOutputStream(System.out);
+      List<String> arglist = new ArrayList<String>();
       for (String a: args) {
         if (a.equals("-nocolor")) {
           Term.setDefaultState(false);
@@ -71,6 +72,8 @@ public class GroovyBoot {
           Logger logger = Logger.getLogger(lname);
           logger.setLevel(Level.ALL);
           loggers.add(logger);  // keep reference to avoid the level setting being garbage collected
+        } else if (a.startsWith("-arg:")) {
+          arglist.add(a.substring(5));
         } else {
           if (!a.endsWith(".groovy")) a += ".groovy";
           log.info("Running "+a);
@@ -78,10 +81,12 @@ public class GroovyBoot {
             // execute script from resource file
             InputStream inp = GroovyBoot.class.getResourceAsStream(a.substring(5));
             if (inp == null) throw new FileNotFoundException(a+" not found");
-            engine.exec(new InputStreamReader(inp), a, out);
+            engine.exec(new InputStreamReader(inp), a, arglist, out);
+            if (arglist.size() > 0) arglist = new ArrayList<String>();
           } else {
             // execute script from file
-            engine.exec(new File(a), out);
+            engine.exec(new File(a), arglist, out);
+            if (arglist.size() > 0) arglist = new ArrayList<String>();
           }
           engine.waitUntilCompletion();
         }
