@@ -97,6 +97,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           if (args == null) args = new ArrayList<String>();
           log.info("RUN: "+script.getAbsolutePath());
           groovy.getClassLoader().clearCache();
+          binding.setVariable("script", script.getAbsoluteFile());
           result = groovy.run(script, args);
         } else if (reader != null) {
           if (args == null) args = new ArrayList<String>();
@@ -105,6 +106,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           String[] argsArr = new String[args.size()];
           int i = 0;
           for (String s: args) argsArr[i++] = s;
+          binding.setVariable("script", readerName);
           result = groovy.run(reader, readerName, argsArr);
         }
       } catch (InterruptedException ex) {
@@ -114,6 +116,8 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
         }
       } catch (Throwable ex) {
         error(ex);
+      } finally {
+        binding.setVariable("script", null);
       }
       cmd = null;
       script = null;
@@ -134,6 +138,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   @Override
   public synchronized boolean exec(String cmd, ScriptOutputStream out) {
     if (busy) return false;
+    binding.setVariable("script", null);
     this.cmd = cmd;
     result = null;
     binding.setVariable("out", out);
