@@ -188,7 +188,7 @@ public class Container {
     }
     AgentID aid = new AgentID(name);
     if (isDuplicate(aid)) {
-      log.warning("Duplicate agent name");
+      log.warning("Duplicate agent name: "+aid);
       return null;
     }
     agent.bind(aid, this);
