@@ -68,6 +68,7 @@ public class BackoffBehavior extends Behavior {
    */
   @Override
   public final void action() {
+    if (quit) return;
     long t = agent.currentTimeMillis();
     long dt = wakeupTime - t;
     if (dt > 0) block(dt);

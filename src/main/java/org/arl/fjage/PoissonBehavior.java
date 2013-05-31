@@ -89,6 +89,7 @@ public class PoissonBehavior extends Behavior {
    */
   @Override
   public final void action() {
+    if (quit) return;
     long dt = wakeupTime - agent.currentTimeMillis();
     if (dt > 0) block(dt);
     else {
