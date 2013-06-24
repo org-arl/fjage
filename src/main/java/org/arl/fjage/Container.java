@@ -491,7 +491,7 @@ public class Container {
       log.info("Starting container...");
       running = true;
       for (Agent a: agents.values()) {
-        if (a.getState() != AgentState.IDLE)
+        if (a.getState() == AgentState.INIT)
           throw new FjageError("Container start() called without init()");
         a.wake();
       }
