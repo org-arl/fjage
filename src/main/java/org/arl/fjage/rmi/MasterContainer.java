@@ -205,8 +205,8 @@ public class MasterContainer extends Container implements RemoteContainer {
   }
 
   private void logRemoteException(Exception ex) {
-    log.log(Level.WARNING, "Call to slave container failed", ex);
+    //log.log(Level.WARNING, "Call to slave container failed", ex);
+    log.info("Lost connection to slave container: "+ex.getMessage());
   }
 
 }
-
