@@ -159,7 +159,7 @@ public class Gateway {
     return receive(new MessageFilter() {
       @Override
       public boolean matches(Message m) {
-        return m.getClass().equals(cls);
+        return cls.isInstance(m);
       }
     }, timeout);
   }
