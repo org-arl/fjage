@@ -234,21 +234,25 @@ public class ShellAgent extends Agent {
       boolean ok = engine.exec(req.getScriptFile(), req.getScriptArgs(), null);
       if (ok) rsp = new Message(req, Performative.AGREE);
       else rsp = new Message(req, Performative.REFUSE);
+      log.fine(">> EXEC "+req.getScriptFile()+" :: "+rsp.getPerformative());
     } else {
       String cmd = req.getCommand();
       if (cmd.equals(ABORT)) {
         engine.abort();
         rsp = new Message(req, Performative.AGREE);
+        log.fine(">> ABORT");
       } else {
         boolean ok = engine.exec(req.getCommand(), null);
         if (ok) rsp = new Message(req, Performative.AGREE);
         else rsp = new Message(req, Performative.REFUSE);
+        log.fine(">> CMD "+req.getCommand()+" :: "+rsp.getPerformative());
       }
     }
     if (rsp != null) send(rsp);
   }
   
   private void handleRsp(Message rsp) {
+    log.fine("<< "+rsp.toString());
     engine.setVariable("rsp", rsp);
     if (shell != null) {
       Term term = shell.getTerm();
@@ -257,6 +261,7 @@ public class ShellAgent extends Agent {
   }
   
   private void handleNtf(Message ntf) {
+    log.fine("<! "+ntf.toString());
     engine.setVariable("ntf", ntf);
     if (shell != null) {
       Term term = shell.getTerm();

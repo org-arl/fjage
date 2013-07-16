@@ -209,7 +209,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
 
   @Override
   public void abort() {
-    log.info("ABORT");
+    log.info("ABORT: "+busy);
     if (busy) interrupt();
   }
 
