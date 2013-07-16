@@ -84,7 +84,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
             if (cmd.contains(" ")) cmd = "run('"+cmd.substring(1).replaceFirst(" ","',")+");";
             else cmd = "run('"+cmd.substring(1)+"');";
           }
-          log.info("EVAL: "+cmd);
+          log.fine("EVAL: "+cmd);
           result = groovy.evaluate(cmd);
           if (result != null && result instanceof Closure && !cmd.endsWith("}") && !cmd.endsWith("};")) {
             // try calling returned closures with no arguments if they take a single argument
@@ -95,13 +95,13 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           if (result != null && !cmd.endsWith(";")) println(groovy.evaluate("ans.toString()").toString());
         } else if (script != null) {
           if (args == null) args = new ArrayList<String>();
-          log.info("RUN: "+script.getAbsolutePath());
+          log.fine("RUN: "+script.getAbsolutePath());
           groovy.getClassLoader().clearCache();
           binding.setVariable("script", script.getAbsoluteFile());
           result = groovy.run(script, args);
         } else if (reader != null) {
           if (args == null) args = new ArrayList<String>();
-          log.info("RUN: "+readerName);
+          log.fine("RUN: "+readerName);
           groovy.getClassLoader().clearCache();
           String[] argsArr = new String[args.size()];
           int i = 0;
@@ -209,7 +209,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
 
   @Override
   public void abort() {
-    log.info("ABORT: "+busy);
+    log.fine("ABORT: "+busy);
     if (busy) interrupt();
   }
 
@@ -250,7 +250,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   ////// private methods
   
   private void println(String s) {
-    log.info("RESULT: "+s);
+    log.fine("RESULT: "+s);
     if (out != null) {
       Term t = out.getTerm();
       out.println(t.response(s));

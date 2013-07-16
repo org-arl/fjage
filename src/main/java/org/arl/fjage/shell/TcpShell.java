@@ -153,7 +153,10 @@ public class TcpShell extends Thread implements Shell {
               int c = in.read();
               if (c == 3) engine.abort();
               else if (c == 27) esc += 10;
-              if (esc > 20) engine.abort();
+              if (esc > 20) {
+                engine.abort();
+                log.info("ABORT");
+              }
             } else if (esc > 0) esc--;
             try {
               sleep(100);
@@ -174,8 +177,12 @@ public class TcpShell extends Thread implements Shell {
           if (nest) sb.append('\n');
           else if (s.length() > 0) {
             sb = new StringBuffer();
+            log.info("> "+s);
             boolean ok = engine.exec(s, sos);
-            if (!ok) sos.println(term.error("BUSY"));
+            if (!ok) {
+              sos.println(term.error("BUSY"));
+              log.info("BUSY");
+            }
           }
         }
 

@@ -12,6 +12,7 @@ package org.arl.fjage.shell;
 
 import java.awt.event.*;
 import java.io.*;
+import java.util.logging.Logger;
 import jline.console.ConsoleReader;
 
 /**
@@ -25,6 +26,7 @@ public class ConsoleShell extends Thread implements Shell {
   private ScriptEngine engine = null;
   private ScriptOutputStream sos = new ScriptOutputStream();
   private ConsoleReader console = null;
+  private Logger log = Logger.getLogger(getClass().getName());
 
   ////////// Methods
 
@@ -83,7 +85,10 @@ public class ConsoleShell extends Thread implements Shell {
           if (in.available() > 0) {
             int c = in.read();
             if (c == 27) esc += 10;
-            if (esc > 20) engine.abort();
+            if (esc > 20) {
+              log.info("ABORT");
+              engine.abort();
+            }
           } else if (esc > 0) esc--;
           try {
             sleep(100);
@@ -101,8 +106,12 @@ public class ConsoleShell extends Thread implements Shell {
         if (nest) sb.append('\n');
         else if (s.length() > 0) {
           sb = new StringBuffer();
+          log.info("> "+s);
           boolean ok = engine.exec(s, sos);
-          if (!ok) sos.println(term.error("BUSY"));
+          if (!ok) {
+            sos.println(term.error("BUSY"));
+            log.info("BUSY");
+          }
         }
       }
       sos.println("");
@@ -174,4 +183,3 @@ public class ConsoleShell extends Thread implements Shell {
   }
 
 }
-
