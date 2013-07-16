@@ -260,7 +260,8 @@ abstract class BaseGroovyScript extends Script {
   }
   
   /**
-   * Display on console.
+   * Display on console. This method clears the current line
+   * and displays output on it, followed by a newline.
    * 
    * @param s object to display.
    */
@@ -271,6 +272,24 @@ abstract class BaseGroovyScript extends Script {
       if (out != null) {
         Term t = out.getTerm();
         out.println(t.response(x.toString()));
+      }
+    }
+  }
+
+  /**
+   * Display on console. This method displays output from the
+   * current cursor position, and does not automatically generate
+   * any newline.
+   * 
+   * @param s object to display.
+   */
+  void print(def x) {
+    Binding binding = getBinding();
+    if (binding.hasVariable('out')) {
+      ScriptOutputStream out = binding.getVariable('out');
+      if (out != null) {
+        Term t = out.getTerm();
+        out.print(x.toString());
       }
     }
   }
