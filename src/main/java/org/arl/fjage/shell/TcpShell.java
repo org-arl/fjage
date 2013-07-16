@@ -143,7 +143,7 @@ public class TcpShell extends Thread implements Shell {
         sos.setOutputStream(out);
         sos.setTelnet(true);
         Term term = sos.getTerm();
-        sos.setPrompt(term.prompt("$ "));
+        sos.setPrompt(term.prompt("> "));
         StringBuffer sb = new StringBuffer();
         boolean nest = false;
         while (true) {
@@ -162,7 +162,7 @@ public class TcpShell extends Thread implements Shell {
             }
           }
           if (sb.length() > 0) console.setPrompt(term.prompt("- "));
-          else console.setPrompt(term.prompt("$ "));
+          else console.setPrompt(term.prompt("> "));
           sos.print("\r");
           while (in.available() > 0) in.read();
           String s1 = console.readLine();

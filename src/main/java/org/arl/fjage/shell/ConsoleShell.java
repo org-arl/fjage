@@ -92,7 +92,7 @@ public class ConsoleShell extends Thread implements Shell {
           }
         }
         if (sb.length() > 0) console.setPrompt(term.prompt("- "));
-        else console.setPrompt(term.prompt("$ "));
+        else console.setPrompt(term.prompt("> "));
         String s1 = console.readLine();
         if (s1 == null) break;
         sb.append(s1);

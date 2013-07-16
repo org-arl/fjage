@@ -13,7 +13,7 @@ The default shell provided by fjåge is a Groovy shell, and can execute any vali
 .. code-block:: console
 
     bash$ ./fjage.sh 
-    $ help
+    > help
     help [topic] - provide help on a specified topic
     ps - list all the agents running on the local container
     who - display list of variables in workspace
@@ -31,7 +31,7 @@ The default shell provided by fjåge is a Groovy shell, and can execute any vali
     send msg - send the given message
     request req,[timeout] - send the given request and wait for a response
     receive [filter],[timeout] - wait for a message
-    $ 
+    > 
 
 Further help on an individual topic can be obtained by typing `help` followed by the topic name. You are encouraged to explore the help.
 
@@ -62,6 +62,6 @@ We could then access the shell using `telnet`:
     Trying localhost...
     Connected to localhost
     Escape character is '^]'.
-    $ ps
+    > ps
     shell: org.arl.fjage.shell.ShellAgent - IDLE
-    $
+    >

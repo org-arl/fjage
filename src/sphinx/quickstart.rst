@@ -38,14 +38,14 @@ Your directory structure should now look something like this:
 
 .. note:: The `build/libs` folder contains all the necessary libraries. The `etc` folder contains startup files. `initrc.groovy` in the initialization script where you create your agents and configure them. `fjage.sh` is your startup shell script that simply sets up the classpath and boots up fjåge with the `initrc.groovy` script. The organization of the directory structure and names of the files are all customizable by editing `fjage.sh` and `initrc.groovy`.
 
-To check that your fjåge installation is correctly working, type `./fjage.sh`. That should simply give you an interactive fjåge Groovy shell with a `$` prompt. Type `ps` to see a list of running agents. There should be only one `shell` agent created by the default `initrc.groovy` script. Type `shutdown` or press control-D to terminate fjåge.
+To check that your fjåge installation is correctly working, type `./fjage.sh`. That should simply give you an interactive fjåge Groovy shell with a `>` prompt. Type `ps` to see a list of running agents. There should be only one `shell` agent created by the default `initrc.groovy` script. Type `shutdown` or press control-D to terminate fjåge.
 
 .. code-block:: console
 
     bash$ ./fjage.sh
-    $ ps
+    > ps
     shell: org.arl.fjage.shell.ShellAgent - IDLE
-    $ shutdown
+    > shutdown
 
     bash$
 
@@ -77,11 +77,11 @@ To run the agent, start fjåge and run the script by typing `run 'hello'` or sim
 .. code-block:: console
 
     bash$ ./fjage.sh 
-    $ <hello
-    $ ps
+    > <hello
+    > ps
     hello: HelloWorldAgent - IDLE
     shell: org.arl.fjage.shell.ShellAgent - IDLE
-    $ shutdown
+    > shutdown
 
     bash$ cat logs/log-0.txt | grep HelloWorldAgent@
     1365092640082|INFO|HelloWorldAgent@18|Hello world!!!
@@ -101,18 +101,18 @@ The method shown above defined the agent class in a Groovy script that was execu
 .. code-block:: console
 
     bash$ ./fjage.sh
-    $ <hello
-    $ ps
+    > <hello
+    > ps
     hello: HelloWorldAgent - IDLE
     shell: org.arl.fjage.shell.ShellAgent - IDLE
-    $ container.kill agent('hello');
-    $ ps
+    > container.kill agent('hello');
+    > ps
     shell: org.arl.fjage.shell.ShellAgent - IDLE
-    $ <hello
-    $ ps
+    > <hello
+    > ps
     hello: HelloWorldAgent - IDLE
     shell: org.arl.fjage.shell.ShellAgent - IDLE
-    $
+    >
 
 This is useful for testing. However, in a production system, you usually want to define agents in their own files, compile them and package them into a jar on the classpath. To do this, you would create a source file `HelloWorldAgent.groovy` with the class definition:
 
@@ -151,13 +151,13 @@ The `fjage.sh` startup script includes all jar files from the `build/libs` folde
 .. code-block:: console
 
     bash$ ./fjage.sh
-    $ ps
+    > ps
     shell: org.arl.fjage.shell.ShellAgent - IDLE
-    $ container.add 'hello', new HelloWorldAgent();
-    $ ps
+    > container.add 'hello', new HelloWorldAgent();
+    > ps
     hello: HelloWorldAgent - IDLE
     shell: org.arl.fjage.shell.ShellAgent - IDLE
-    $ 
+    >
 
 If you wanted the agent to be automatically loaded, you can put the `container.add 'hello', new HelloWorldAgent()` statement in the `initrc.groovy` startup script.
 
