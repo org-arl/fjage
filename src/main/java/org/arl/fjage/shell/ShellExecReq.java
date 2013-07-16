@@ -24,9 +24,25 @@ public class ShellExecReq extends Message {
   
   private static final long serialVersionUID = 1L;
 
-  private String cmd;
-  private File script;
-  private List<String> args;
+  private String cmd = null;
+  private File script = null;
+  private List<String> args = null;
+
+  /**
+   * Create an empty request for shell command.
+   */
+  public ShellExecReq() {
+    super(Performative.REQUEST);
+  }
+
+  /**
+   * Create an empty request for shell command.
+   * 
+   * @param to shell agent id.
+   */
+  public ShellExecReq(AgentID to) {
+    super(to, Performative.REQUEST);
+  }
 
   /**
    * Create request for shell command.
@@ -37,8 +53,6 @@ public class ShellExecReq extends Message {
   public ShellExecReq(AgentID to, String cmd) {
     super(to, Performative.REQUEST);
     this.cmd = cmd;
-    this.script = null;
-    this.args = null;
   }
 
   /**
@@ -49,9 +63,7 @@ public class ShellExecReq extends Message {
    */
   public ShellExecReq(AgentID to, File script) {
     super(to, Performative.REQUEST);
-    this.cmd = null;
     this.script = script;
-    this.args = null;
   }
 
   /**
@@ -63,11 +75,20 @@ public class ShellExecReq extends Message {
    */
   public ShellExecReq(AgentID to, File script, List<String> args) {
     super(to, Performative.REQUEST);
-    this.cmd = null;
     this.script = script;
     this.args = args;
   }
 
+  /**
+   * Set the command to execute.
+   * 
+   * @param cmd command to execute.
+   */
+  public void setCommand(String cmd) {
+    if (cmd != null && script != null) throw new UnsupportedOperationException("ShellExecReq can either have a command or script, but not both");
+    this.cmd = cmd;
+  }
+  
   /**
    * Get the command to execute.
    * 
@@ -75,6 +96,28 @@ public class ShellExecReq extends Message {
    */
   public String getCommand() {
     return cmd;
+  }
+  
+  /**
+   * Set the command to execute.
+   * 
+   * @param script script file to execute.
+   */
+  public void setScript(File script) {
+    if (script != null && cmd != null) throw new UnsupportedOperationException("ShellExecReq can either have a command or script, but not both");
+    this.script = script;
+  }
+  
+  /**
+   * Set the command to execute.
+   * 
+   * @param script script file to execute.
+   * @param args arguments to pass to script.
+   */
+  public void setScript(File script, List<String> args) {
+    if (script != null && cmd != null) throw new UnsupportedOperationException("ShellExecReq can either have a command or script, but not both");
+    this.script = script;
+    this.args = args;
   }
   
   /**
