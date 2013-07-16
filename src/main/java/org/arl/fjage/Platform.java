@@ -146,7 +146,7 @@ public abstract class Platform implements TimestampProvider {
       if (addr == null) return "localhost";
       return addr.getHostAddress();
     } catch (UnknownHostException ex) {
-      return null;
+      return "localhost";
     }
   }
 
