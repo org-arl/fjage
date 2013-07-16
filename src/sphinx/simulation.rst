@@ -12,7 +12,7 @@ In order to use the discrete event simulation mode, a few conditions have to be 
 
 1. Agents must not use any system timing functions directly. Rather than use `System.currentTimeMillis()` or `System.nanoTime()`, the agents should use `Agent.currentTimeMillis()` and `Agent.nanoTime()`.
 
-2. Agents must not use any system scheduling functions directly. Rather than use `Thread.sleep()`, the agent should use `Agent.sleep()`.
+2. Agents must not use any system scheduling functions directly. Rather than use `Thread.sleep()`, the agent should use `Agent.delay()`.
 
 3. All agents must be deployed in a single container for testing. Distributed containers (master or slave) are currently not supported by the discrete event simulator.
 

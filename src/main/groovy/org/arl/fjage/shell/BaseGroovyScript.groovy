@@ -230,12 +230,12 @@ abstract class BaseGroovyScript extends Script {
    *
    * @param millis time in milliseconds.
    */
-  void sleep(long millis) {
+  void delay(long millis) {
     Binding binding = getBinding();
     if (binding.hasVariable('agent')) {
       Agent a = binding.getVariable('agent');
       Platform p = a.getPlatform();
-      p.sleep(millis);
+      p.delay(millis);
     }
     else Thread.sleep(millis);
   }

@@ -19,11 +19,11 @@ println - display message on console
 Example:
   println \'hello there!\'
 '''
-doc['sleep'] = '''\
-sleep - delay execution by the specified number of milliseconds
+doc['delay'] = '''\
+delay - delay execution by the specified number of milliseconds
 
 Example:
-  sleep 1000                      // sleep for 1000 ms
+  delay 1000                      // delay for 1000 ms
 '''
 doc['shutdown'] = 'shutdown - shutdown the local platform'
 doc['logLevel'] = '''\

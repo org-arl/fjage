@@ -40,7 +40,7 @@ public class BasicTests {
     container.add("C", client);
     container.add("S", server);
     platform.start();
-    platform.sleep(DELAY);
+    platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -57,7 +57,7 @@ public class BasicTests {
     container.add("C", client);
     container.add("S", server);
     platform.start();
-    platform.sleep(DELAY);
+    platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -83,7 +83,7 @@ public class BasicTests {
     assertTrue(slave.containsAgent(c));
     assertTrue(!slave.containsAgent(s));
     assertTrue(slave.canLocateAgent(s));
-    platform.sleep(DELAY);
+    platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -101,7 +101,7 @@ public class BasicTests {
     master.add("C", client);
     slave.add("S", server);
     platform.start();
-    platform.sleep(DELAY);
+    platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -119,7 +119,7 @@ public class BasicTests {
     slave.add("C", client);
     slave.add("S", server);
     platform.start();
-    platform.sleep(DELAY);
+    platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -186,7 +186,7 @@ public class BasicTests {
     });
     agent.add(fsm);
     platform.start();
-    platform.sleep(DELAY);
+    platform.delay(DELAY);
     assertTrue(fsm.done());
     platform.shutdown();
   }
@@ -217,7 +217,7 @@ public class BasicTests {
       agent.add(tb[i]);
     }
     platform.start();
-    platform.sleep(tickDelay*ticks);
+    platform.delay(tickDelay*ticks);
     platform.shutdown();
     for (int i = 0; i < nAgents; i++)
       assertTrue(tb[i].getTickCount() == ticks);

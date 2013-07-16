@@ -58,7 +58,7 @@ public final class RealTimePlatform extends Platform {
   }
 
   @Override
-  public void sleep(long millis) {
+  public void delay(long millis) {
     try {
       Thread.sleep(millis);
     } catch (InterruptedException e) {

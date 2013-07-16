@@ -70,7 +70,7 @@ public abstract class Platform implements TimestampProvider {
    *
    * @param millis number of milliseconds to delay execution.
    */
-  public abstract void sleep(long millis);
+  public abstract void delay(long millis);
 
   ////////// Interface methods
 

@@ -68,7 +68,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   }
 
   @Override
-  public void sleep(long millis) {
+  public void delay(long millis) {
     if (millis <= 0) return;
     final Object sync = new Object();
     long t = time + millis;

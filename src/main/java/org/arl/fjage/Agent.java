@@ -204,12 +204,12 @@ public class Agent implements Runnable, TimestampProvider {
   /**
    * Blocks the agent for a specified period. This method should be used
    * in preference to {@link java.lang.Thread#sleep} as this method provides
-   * measures correct sleep time for the hosting platform, be it a real-time
+   * measures correct delay time for the hosting platform, be it a real-time
    * or a simulated discrete-time platform.
    *
-   * @param millis period to sleep in milliseconds.
+   * @param millis period to delay in milliseconds.
    */
-  protected void sleep(long millis) {
+  protected void delay(long millis) {
     long t = currentTimeMillis() + millis;
     long dt = millis;
     while (dt > 0) {

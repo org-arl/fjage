@@ -19,7 +19,7 @@ The default shell provided by fjåge is a Groovy shell, and can execute any vali
     who - display list of variables in workspace
     run script - run a Groovy script
     println message - display message on console
-    sleep millis - delay execution by the specified number of milliseconds
+    delay millis - delay execution by the specified number of milliseconds
     shutdown - shutdown the local platform
     logLevel [name],level - set loglevel (optionally for a named logger)
     subscribe topic(name) - subscribe to notifications from a named topic

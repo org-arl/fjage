@@ -36,7 +36,7 @@ class AlohaTest {
     long t0 = p.currentTimeMillis()
     p.start()
     println "Running..."
-    p.sleep(TESTTIME)
+    p.delay(TESTTIME)
     println "Done"
     p.shutdown()
     long dt = p.currentTimeMillis()-t0
