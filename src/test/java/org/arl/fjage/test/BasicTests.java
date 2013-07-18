@@ -133,8 +133,8 @@ public class BasicTests {
     MasterContainer master = new MasterContainer(platform);
     ServerAgent server = new ServerAgent();
     master.add("S", server);
-    Gateway gw = new Gateway(platform, master.getURL());
     platform.start();
+    Gateway gw = new Gateway(master.getURL());
     Message rsp = gw.receive(100);
     assertTrue(rsp == null);
     AgentID s = gw.agentForService("server");
@@ -151,6 +151,7 @@ public class BasicTests {
     req = new NuisanceMessage(server.getAgentID());
     rsp = gw.request(req, 100);
     assertTrue(rsp == null);
+    gw.shutdown();
     platform.shutdown();
   }
 

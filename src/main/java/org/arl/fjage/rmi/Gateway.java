@@ -44,12 +44,28 @@ public class Gateway {
   /////////// Interface methods
 
   /**
-   * Creates a gateway connecting to a specified master container.
+   * Creates a gateway connecting to a specified master container. The platform specified
+   * is this call should not be started previously, and will be automatically started
+   * by the gateway.
    *
-   * @param platform platform on which the container runs.
+   * @param platform platform to use
    * @param url URL of master platform to connect to.
    */
   public Gateway(Platform platform, String url) throws IOException, NotBoundException {
+    init(platform, url);
+  }
+
+  /**
+   * Creates a gateway connecting to a specified master container.
+   *
+   * @param url URL of master platform to connect to.
+   */
+  public Gateway(String url) throws IOException, NotBoundException {
+    Platform platform = new RealTimePlatform();
+    init(platform, url);
+  }
+
+  private void init(Platform platform, String url) throws IOException, NotBoundException {
     container = new SlaveContainer(platform, "Gateway@"+hashCode(), url);
     agent = new Agent() {
       private Message rsp;
@@ -78,6 +94,7 @@ public class Gateway {
       }
     };
     container.add("GatewayAgent@"+hashCode(), agent);
+    platform.start();
   }
 
   /**
@@ -224,6 +241,16 @@ public class Gateway {
    * @return object representing the topic.
    */
   public AgentID topic(Enum<?> topic) {
+    return agent.topic(topic);
+  }
+
+  /**
+   * Returns an object representing the notification topic for an agent.
+   *
+   * @param topic agent to get notification topic for.
+   * @return object representing the topic.
+   */
+  public AgentID topic(AgentID topic) {
     return agent.topic(topic);
   }
 
