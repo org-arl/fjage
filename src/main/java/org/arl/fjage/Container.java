@@ -60,7 +60,11 @@ public class Container {
     name = Integer.toHexString(hashCode());
     this.platform = platform;
     LogHandlerProxy.install(platform, log);
-    setCloner(SERIAL_CLONER);
+    try {
+      setCloner(SERIAL_CLONER);
+    } catch (FjageError ex) {
+      log.warning("Cloning disabled");
+    }
     platform.addContainer(this);
   }
 
@@ -74,7 +78,11 @@ public class Container {
     this.name = name;
     this.platform = platform;
     LogHandlerProxy.install(platform, log);
-    setCloner(SERIAL_CLONER);
+    try {
+      setCloner(SERIAL_CLONER);
+    } catch (FjageError ex) {
+      log.warning("Cloning disabled");
+    }
     platform.addContainer(this);
   }
 
@@ -128,13 +136,13 @@ public class Container {
       } else {
         cloner = null;
         doClone = null;
-        throw new FjageError("Unknown cloner name, cloning disabled");
+        throw new FjageError("Unknown cloner name");
       }
     } catch (Exception ex) {
       log.warning("Cloner creation failed: "+ex.toString());
       cloner = null;
       doClone = null;
-      throw new FjageError("Cloner creation failed, cloning disabled");
+      throw new FjageError("Cloner creation failed");
     }
   }
 
