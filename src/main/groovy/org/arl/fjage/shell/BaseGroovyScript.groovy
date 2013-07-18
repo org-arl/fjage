@@ -74,7 +74,7 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding();
     if (binding.hasVariable('agent')) {
       Agent a = binding.getVariable('agent');
-      a.subscribe(a.topic(topic));
+      a.subscribe(topic);
     }
   }
 
@@ -87,7 +87,7 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding();
     if (binding.hasVariable('agent')) {
       Agent a = binding.getVariable('agent');
-      a.unsubscribe(a.topic(topic));
+      a.unsubscribe(topic);
     }
   }
 

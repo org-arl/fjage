@@ -343,10 +343,7 @@ public class Container {
    * @return true on success, false on failure.
    */
   public synchronized boolean subscribe(AgentID aid, AgentID topic) {
-    if (!topic.isTopic()) {
-      log.warning("Unable to subscribe to non-topic "+topic);
-      return false;
-    }
+    if (!topic.isTopic()) topic = new AgentID(topic.getName()+"__ntf", true);
     Agent agent = agents.get(aid);
     if (agent == null) {
       log.warning("Unable to subscribe unknown agent "+aid+" to topic "+topic);
