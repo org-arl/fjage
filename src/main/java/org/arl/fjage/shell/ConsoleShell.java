@@ -117,7 +117,9 @@ public class ConsoleShell extends Thread implements Shell {
   }
   
   @Override
-  public void println(String s, OutputType type) {
+  public void println(Object obj, OutputType type) {
+    if (obj == null) return;
+    String s = obj.toString();
     try {
       if (console != null) {
         switch(type) {

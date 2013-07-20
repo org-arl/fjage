@@ -25,9 +25,9 @@ public interface Shell {
   /**
    * Display a message on the shell.
    * 
-   * @param s message to display.
+   * @param obj object to display.
    * @param type message type.
    */
-  public void println(String s, OutputType type);
+  public void println(Object obj, OutputType type);
 
 }

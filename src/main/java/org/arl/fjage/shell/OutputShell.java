@@ -53,7 +53,9 @@ public class OutputShell implements Shell {
   }
 
   @Override
-  public void println(String s, OutputType type) {
+  public void println(Object obj, OutputType type) {
+    if (obj == null) return;
+    String s = obj.toString();
     switch(type) {
       case RESPONSE:
         out.println(term.response(s));

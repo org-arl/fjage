@@ -91,7 +91,9 @@ public class TcpShell extends Thread implements Shell {
   }
 
   @Override
-  public void println(String s, OutputType type) {
+  public void println(Object obj, OutputType type) {
+    if (obj == null) return;
+    String s = obj.toString();
     s = s.replace("\n","\r\n")+"\r\n";
     try {
       if (console != null) {
