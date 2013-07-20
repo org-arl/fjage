@@ -12,7 +12,6 @@ package org.arl.fjage.shell;
 
 import java.io.File;
 import java.util.List;
-
 import org.arl.fjage.AgentID;
 import org.arl.fjage.Message;
 import org.arl.fjage.Performative;

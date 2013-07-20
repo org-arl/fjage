@@ -268,24 +268,16 @@ abstract class BaseGroovyScript extends Script {
   void println(def x) {
     Binding binding = getBinding();
     if (binding.hasVariable('out')) {
-      ScriptOutputStream out = binding.getVariable('out');
-      if (out != null) out.println(x.toString(), out.RESPONSE);
+      def out = binding.getVariable('out');
+      if (out != null) out.println(x.toString(), OutputType.RESPONSE);
     }
   }
 
   /**
-   * Display on console. This method displays output from the
-   * current cursor position, and does not automatically generate
-   * any newline.
-   * 
-   * @param s object to display.
+   * Do not use print(), use println() only.
    */
   void print(def x) {
-    Binding binding = getBinding();
-    if (binding.hasVariable('out')) {
-      ScriptOutputStream out = binding.getVariable('out');
-      if (out != null) out.print(x.toString());
-    }
+    throw new FjageError("print() not supported, use println() instead");
   }
 
   /**

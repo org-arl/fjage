@@ -10,8 +10,9 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import java.awt.event.*;
 import java.io.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.util.logging.Logger;
 import jline.console.ConsoleReader;
 
@@ -24,7 +25,7 @@ public class ConsoleShell extends Thread implements Shell {
   ////////// Private attributes
 
   private ScriptEngine engine = null;
-  private ScriptOutputStream sos = new ScriptOutputStream();
+  private Term term = new Term();
   private ConsoleReader console = null;
   private Logger log = Logger.getLogger(getClass().getName());
 
@@ -44,15 +45,6 @@ public class ConsoleShell extends Thread implements Shell {
   }
 
   /**
-   * Gets the current script output handler.
-   * 
-   * @return the current script output handler.
-   */
-  public ScriptOutputStream getOutputStream() {
-    return sos;
-  }
-  
-  /**
    * Thread implementation.
    *
    * @see java.lang.Runnable#run()
@@ -64,6 +56,12 @@ public class ConsoleShell extends Thread implements Shell {
       OutputStream out = System.out;
       InputStream in = System.in;
       console = new ConsoleReader(in, out);
+      try {
+        console.getTerminal().init();
+      } catch (Exception ex) {
+        // do nothing
+      }
+      if (!console.getTerminal().isAnsiSupported()) term.disable();
       console.setExpandEvents(false);
       console.addTriggeredAction((char)27, new ActionListener() {
         @Override
@@ -75,7 +73,6 @@ public class ConsoleShell extends Thread implements Shell {
           }
         }
       });
-      sos.setOutputStream(out);
       StringBuffer sb = new StringBuffer();
       boolean nest = false;
       while (true) {
@@ -95,8 +92,8 @@ public class ConsoleShell extends Thread implements Shell {
             interrupt();
           }
         }
-        if (sb.length() > 0) console.setPrompt("- ");
-        else console.setPrompt("> ");
+        if (sb.length() > 0) console.setPrompt(term.prompt("- "));
+        else console.setPrompt(term.prompt("> "));
         String s1 = console.readLine();
         if (s1 == null) break;
         sb.append(s1);
@@ -106,14 +103,13 @@ public class ConsoleShell extends Thread implements Shell {
         else if (s.length() > 0) {
           sb = new StringBuffer();
           log.info("> "+s);
-          boolean ok = engine.exec(s, sos);
+          boolean ok = engine.exec(s, this);
           if (!ok) {
-            sos.println("BUSY", sos.ERROR);
+            console.println(term.error("BUSY"));
             log.info("BUSY");
           }
         }
       }
-      sos.println("");
       System.exit(0);
     } catch (IOException ex) {
       // do nothing
@@ -121,17 +117,25 @@ public class ConsoleShell extends Thread implements Shell {
   }
   
   @Override
-  public void println(String s, int type) {
-    if (sos != null) sos.println(s, type);
+  public void println(String s, OutputType type) {
     try {
       if (console != null) {
-        // for some strange reason, works well with a short delay!
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          interrupt();
+        switch(type) {
+          case RESPONSE:
+            console.println(term.response(s));
+            break;
+          case NOTIFICATION:
+            console.println(term.notification(s));
+            break;
+          case ERROR:
+            console.println(term.error(s));
+            break;
+          default:
+            console.println(s);
+            break;
         }
-        console.redrawLine();
+        if (term.isEnabled()) console.redrawLine();
+        console.flush();
       }
     } catch (IOException ex) {
       // do nothing

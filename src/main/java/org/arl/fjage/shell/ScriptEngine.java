@@ -28,7 +28,7 @@ public interface ScriptEngine {
    * @param out output stream (null to suppress output).
    * @return true if accepted for execution, false if busy.
    */
-  public boolean exec(String cmd, ScriptOutputStream out);
+  public boolean exec(String cmd, Shell out);
 
   /**
    * Execute a script file. The method does not wait for execution to be completed
@@ -38,7 +38,7 @@ public interface ScriptEngine {
    * @param out output stream (null to suppress output).
    * @return true if accepted for execution, false if busy.
    */
-  public boolean exec(File script, ScriptOutputStream out);
+  public boolean exec(File script, Shell out);
 
   /**
    * Execute a script file. The method does not wait for execution to be completed
@@ -49,7 +49,7 @@ public interface ScriptEngine {
    * @param out output stream (null to suppress output).
    * @return true if accepted for execution, false if busy.
    */
-  public boolean exec(File script, List<String> args, ScriptOutputStream out);
+  public boolean exec(File script, List<String> args, Shell out);
   
   /**
    * Execute a script from a reader. The method does not wait for execution to be completed
@@ -60,7 +60,7 @@ public interface ScriptEngine {
    * @param out output stream (null to suppress output).
    * @return true if accepted for execution, false if busy.
    */
-  public boolean exec(Reader reader, String name, ScriptOutputStream out);
+  public boolean exec(Reader reader, String name, Shell out);
 
   /**
    * Execute a script from a reader. The method does not wait for execution to be completed
@@ -72,7 +72,7 @@ public interface ScriptEngine {
    * @param out output stream (null to suppress output).
    * @return true if accepted for execution, false if busy.
    */
-  public boolean exec(Reader reader, String name, List<String> args, ScriptOutputStream out);
+  public boolean exec(Reader reader, String name, List<String> args, Shell out);
 
   /**
    * Check if script is currently being executed.

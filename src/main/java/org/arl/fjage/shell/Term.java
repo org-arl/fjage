@@ -78,7 +78,7 @@ public class Term {
 
   public String prompt(String msg) {
     if (!enabled) return msg;
-    return CLREOL+CYAN+msg+RESET;
+    return HOME+CLREOL+CYAN+msg+RESET;
   }
 
 }

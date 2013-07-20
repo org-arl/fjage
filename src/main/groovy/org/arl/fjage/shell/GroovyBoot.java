@@ -55,7 +55,7 @@ public class GroovyBoot {
 
       // parse command line and execute scripts
       ScriptEngine engine = new GroovyScriptEngine();
-      ScriptOutputStream out = new ScriptOutputStream(System.out);
+      OutputShell out = new OutputShell(System.out);
       List<String> arglist = new ArrayList<String>();
       for (String a: args) {
         if (a.equals("-nocolor")) {

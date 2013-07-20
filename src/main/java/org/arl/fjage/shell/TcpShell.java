@@ -12,7 +12,8 @@ package org.arl.fjage.shell;
 
 import java.io.*;
 import java.net.*;
-import java.awt.event.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.util.logging.Logger;
 import jline.console.ConsoleReader;
 import jline.console.completer.*;
@@ -31,7 +32,8 @@ public class TcpShell extends Thread implements Shell {
   private ServerSocket sock = null;
   private ClientThread clientThread = null;
   private Logger log = Logger.getLogger(getClass().getName());
-  private ScriptOutputStream sos = new ScriptOutputStream();
+  private ConsoleReader console = null;
+  private Term term = new Term();
 
   ////////// Methods
 
@@ -50,15 +52,6 @@ public class TcpShell extends Thread implements Shell {
     setName(getClass().getSimpleName());
     setDaemon(true);
     start();
-  }
-
-  /**
-   * Gets the current script output handler.
-   * 
-   * @return the current script output handler.
-   */
-  public ScriptOutputStream getOutputStream() {
-    return sos;
   }
 
   /**
@@ -98,8 +91,30 @@ public class TcpShell extends Thread implements Shell {
   }
 
   @Override
-  public void println(String s, int type) {
-    if (sos != null) sos.println(s, type);
+  public void println(String s, OutputType type) {
+    s = s.replace("\n","\r\n")+"\r\n";
+    try {
+      if (console != null) {
+        switch(type) {
+          case RESPONSE:
+            console.print(term.response(s));
+            break;
+          case NOTIFICATION:
+            console.print(term.notification(s));
+            break;
+          case ERROR:
+            console.print(term.error(s));
+            break;
+          default:
+            console.print(s);
+            break;
+        }
+        if (term.isEnabled()) console.redrawLine();
+        console.flush();
+      }
+    } catch (IOException ex) {
+      // do nothing
+    }
   }
 
   ////////// Private stuff
@@ -107,7 +122,6 @@ public class TcpShell extends Thread implements Shell {
   private class ClientThread extends Thread {
 
     private Socket client;
-    private ConsoleReader console = null;
 
     public ClientThread(Socket client) {
       setName(getClass().getSimpleName());
@@ -133,10 +147,23 @@ public class TcpShell extends Thread implements Shell {
         }
         while (in.available() > 0) in.read();  // flush input stream
         console = new ConsoleReader(in, out);
+        try {
+          console.getTerminal().init();
+        } catch (Exception ex) {
+          // do nothing
+        }
+        if (!console.getTerminal().isAnsiSupported()) term.disable();
         console.setExpandEvents(false);
-        sos.setOutputStream(out);
-        sos.setTelnet(true);
-        sos.setPrompt("> ");
+        console.addTriggeredAction((char)27, new ActionListener() {
+          @Override
+          public void actionPerformed(ActionEvent arg0) {
+            try {
+              console.redrawLine();
+            } catch (IOException ex) {
+              // do nothing
+            }
+          }
+        });
         StringBuffer sb = new StringBuffer();
         boolean nest = false;
         while (true) {
@@ -157,12 +184,12 @@ public class TcpShell extends Thread implements Shell {
               interrupt();
             }
           }
-          if (sb.length() > 0) console.setPrompt("- ");
-          else console.setPrompt("> ");
-          sos.print("\r");
+          if (sb.length() > 0) console.setPrompt(term.prompt("- "));
+          else console.setPrompt(term.prompt("> "));
           while (in.available() > 0) in.read();
           String s1 = console.readLine();
-          sos.print("\r");
+          console.print("\r");
+          console.flush();
           if (s1 == null) break;
           sb.append(s1);
           String s = sb.toString();
@@ -171,9 +198,9 @@ public class TcpShell extends Thread implements Shell {
           else if (s.length() > 0) {
             sb = new StringBuffer();
             log.info("> "+s);
-            boolean ok = engine.exec(s, sos);
+            boolean ok = engine.exec(s, TcpShell.this);
             if (!ok) {
-              sos.println("BUSY", sos.ERROR);
+              println("BUSY", OutputType.ERROR);
               log.info("BUSY");
             }
           }
@@ -183,7 +210,7 @@ public class TcpShell extends Thread implements Shell {
         log.warning(ex.toString());
       }
       log.info("Connection closed");
-      sos.setOutputStream(null);
+      console = null;
       try {
         if (in != null) in.close();
       } catch (IOException ex) {

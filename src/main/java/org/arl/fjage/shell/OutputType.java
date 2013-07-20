@@ -11,23 +11,11 @@ for full license details.
 package org.arl.fjage.shell;
 
 /**
- * An interface to be implemented by all shells.
+ * Represents the type of output string to display.
  */
-public interface Shell {
-  
-  /**
-   * Starts the shell using the specified script engine.
-   * 
-   * @param engine script engine to use.
-   */
-  public void start(ScriptEngine engine);
-
-  /**
-   * Display a message on the shell.
-   * 
-   * @param s message to display.
-   * @param type message type.
-   */
-  public void println(String s, OutputType type);
-
+enum OutputType {
+  NORMAL,
+  RESPONSE,
+  NOTIFICATION,
+  ERROR
 }

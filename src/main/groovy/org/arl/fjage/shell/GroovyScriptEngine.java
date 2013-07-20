@@ -27,7 +27,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
 
   private GroovyShell groovy;
   private Binding binding;
-  private ScriptOutputStream out = null;
+  private Shell out = null;
   private String cmd = null;
   private File script = null;
   private Reader reader = null;
@@ -110,7 +110,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           result = groovy.run(reader, readerName, argsArr);
         }
       } catch (InterruptedException ex) {
-        if (out != null) out.println("Aborted!", out.ERROR);
+        if (out != null) out.println("Aborted!", OutputType.ERROR);
       } catch (Throwable ex) {
         error(ex);
       } finally {
@@ -122,7 +122,6 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
       readerName = null;
       args = null;
       busy = false;
-      if (out != null) out.eos();
       synchronized (done) {
         done.notifyAll();
       }
@@ -133,7 +132,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   ////// script engine methods
   
   @Override
-  public synchronized boolean exec(String cmd, ScriptOutputStream out) {
+  public synchronized boolean exec(String cmd, Shell out) {
     if (busy) return false;
     binding.setVariable("script", null);
     this.cmd = cmd;
@@ -146,7 +145,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   }
 
   @Override
-  public synchronized boolean exec(File script, ScriptOutputStream out) {
+  public synchronized boolean exec(File script, Shell out) {
     if (busy) return false;
     this.script = script;
     args = null;
@@ -159,7 +158,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   }
 
   @Override
-  public synchronized boolean exec(File script, List<String> args, ScriptOutputStream out) {
+  public synchronized boolean exec(File script, List<String> args, Shell out) {
     if (busy) return false;
     this.script = script;
     this.args = args;
@@ -172,7 +171,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   }
 
   @Override
-  public synchronized boolean exec(Reader reader, String name, ScriptOutputStream out) {
+  public synchronized boolean exec(Reader reader, String name, Shell out) {
     if (busy) return false;
     this.reader = reader;
     readerName = name;
@@ -186,7 +185,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   }
 
   @Override
-  public synchronized boolean exec(Reader reader, String name, List<String> args, ScriptOutputStream out) {
+  public synchronized boolean exec(Reader reader, String name, List<String> args, Shell out) {
     if (busy) return false;
     this.reader = reader;
     readerName = name;
@@ -248,12 +247,12 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   
   private void println(String s) {
     log.fine("RESULT: "+s);
-    if (out != null) out.println(s, out.RESPONSE);
+    if (out != null) out.println(s, OutputType.RESPONSE);
   }
 
   private void error(Throwable ex) {
     log.log(Level.WARNING, "Exception in Groovy script", ex);
-    if (out != null) out.println(ex.toString(), out.ERROR);
+    if (out != null) out.println(ex.toString(), OutputType.ERROR);
   }
 
 }
