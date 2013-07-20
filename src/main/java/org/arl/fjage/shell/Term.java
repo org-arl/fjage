@@ -17,18 +17,18 @@ public class Term {
 
   ///////// constants
 
-  public static final String ESC = "\033[";
-  public static final String RESET = ESC+"0m";
-  public static final String BLACK = ESC+"30m";
-  public static final String RED = ESC+"31m";
-  public static final String GREEN = ESC+"32m";
-  public static final String YELLOW = ESC+"33m";
-  public static final String BLUE = ESC+"34m";
-  public static final String MAGENTA = ESC+"35m";
-  public static final String CYAN = ESC+"36m";
-  public static final String WHITE = ESC+"37m";
-  public static final String HOME = ESC+"0G";
-  public static final String CLREOL = ESC+"0K";
+  private static final String ESC = "\033[";
+  private static final String RESET = ESC+"0m";
+  private static final String BLACK = ESC+"30m";
+  private static final String RED = ESC+"31m";
+  private static final String GREEN = ESC+"32m";
+  private static final String YELLOW = ESC+"33m";
+  private static final String BLUE = ESC+"34m";
+  private static final String MAGENTA = ESC+"35m";
+  private static final String CYAN = ESC+"36m";
+  private static final String WHITE = ESC+"37m";
+  private static final String HOME = ESC+"0G";
+  private static final String CLREOL = ESC+"0K";
 
   ///////// private state
 

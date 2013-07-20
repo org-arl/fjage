@@ -110,10 +110,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           result = groovy.run(reader, readerName, argsArr);
         }
       } catch (InterruptedException ex) {
-        if (out != null) {
-          Term t = out.getTerm();
-          out.println(t.error("Aborted!"));
-        }
+        if (out != null) out.println("Aborted!", out.ERROR);
       } catch (Throwable ex) {
         error(ex);
       } finally {
@@ -251,18 +248,12 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   
   private void println(String s) {
     log.fine("RESULT: "+s);
-    if (out != null) {
-      Term t = out.getTerm();
-      out.println(t.response(s));
-    }
+    if (out != null) out.println(s, out.RESPONSE);
   }
 
   private void error(Throwable ex) {
     log.log(Level.WARNING, "Exception in Groovy script", ex);
-    if (out != null) {
-      Term t = out.getTerm();
-      out.println(t.error(ex.toString()));
-    }
+    if (out != null) out.println(ex.toString(), out.ERROR);
   }
 
 }

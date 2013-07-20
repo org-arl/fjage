@@ -16,6 +16,11 @@ import java.io.*;
  * Script output handler.
  */
 public class ScriptOutputStream {
+
+  public final static int NORMAL = 0;
+  public final static int RESPONSE = 1;
+  public final static int NOTIFICATION = 2;
+  public final static int ERROR = 3;
   
   ////// private attributes
   
@@ -86,12 +91,58 @@ public class ScriptOutputStream {
   }
 
   /**
+   * Output a string followed by a newline.
+   * 
+   * @param s string to output.
+   * @param type output type (NORMAL, RESPONSE, NOTIFICATION, ERROR).
+   */
+  public synchronized void println(String s, int type) {
+    switch (type) {
+      case RESPONSE:
+        println(term.response(s));
+        break;
+      case NOTIFICATION:
+        println(term.notification(s));
+        break;
+      case ERROR:
+        println(term.error(s));
+        break;
+      default:
+        println(s);
+        break;
+    }
+  }
+
+  /**
+   * Output a string.
+   * 
+   * @param s string to output.
+   * @param type output type (NORMAL, RESPONSE, NOTIFICATION, ERROR).
+   */
+  public synchronized void print(String s, int type) {
+    switch (type) {
+      case RESPONSE:
+        print(term.response(s));
+        break;
+      case NOTIFICATION:
+        print(term.notification(s));
+        break;
+      case ERROR:
+        print(term.error(s));
+        break;
+      default:
+        print(s);
+        break;
+    }
+  }
+
+  /**
    * Set prompt to be displayed when eos() is called.
    * 
    * @param s prompt to display, null to disable.
    */
   public void setPrompt(String s) {
-    prompt = s;
+    prompt = term.prompt(s);
   }
 
   /**
@@ -107,12 +158,17 @@ public class ScriptOutputStream {
   }
 
   /**
-   * Get the terminal in use.
-   * 
-   * @return the current terminal.
+   * Enable terminal enhancements.
    */
-  public Term getTerm() {
-    return term;
+  public void enableTerm() {
+    term.enable();
+  }
+
+  /**
+   * Disable terminal enhancements.
+   */
+  public void disableTerm() {
+    term.disable();
   }
 
 }

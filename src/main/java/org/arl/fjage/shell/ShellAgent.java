@@ -251,19 +251,13 @@ public class ShellAgent extends Agent {
   private void handleRsp(Message rsp) {
     log.fine("RSP: "+rsp.toString());
     engine.setVariable("rsp", rsp);
-    if (shell != null) {
-      Term term = shell.getTerm();
-      shell.println(term.response(rsp.toString()));
-    }
+    if (shell != null) shell.println(rsp.toString(), ScriptOutputStream.RESPONSE);
   }
   
   private void handleNtf(Message ntf) {
     log.fine("NTF: "+ntf.toString());
     engine.setVariable("ntf", ntf);
-    if (shell != null) {
-      Term term = shell.getTerm();
-      shell.println(term.notification(ntf.toString()));
-    }
+    if (shell != null) shell.println(ntf.toString(), ScriptOutputStream.NOTIFICATION);
   }
   
 }

@@ -60,7 +60,7 @@ public class GroovyBoot {
       for (String a: args) {
         if (a.equals("-nocolor")) {
           Term.setDefaultState(false);
-          out.getTerm().disable();
+          out.disableTerm();
         } else if (a.equals("-debug")) {
           log.info("Setting root logger level to ALL");
           Logger logger = Logger.getLogger("");

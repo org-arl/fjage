@@ -98,14 +98,8 @@ public class TcpShell extends Thread implements Shell {
   }
 
   @Override
-  public Term getTerm() {
-    if (sos == null) return null;
-    return sos.getTerm();
-  }
-  
-  @Override
-  public void println(String s) {
-    if (sos != null) sos.println(s);
+  public void println(String s, int type) {
+    if (sos != null) sos.println(s, type);
   }
 
   ////////// Private stuff
@@ -142,8 +136,7 @@ public class TcpShell extends Thread implements Shell {
         console.setExpandEvents(false);
         sos.setOutputStream(out);
         sos.setTelnet(true);
-        Term term = sos.getTerm();
-        sos.setPrompt(term.prompt("> "));
+        sos.setPrompt("> ");
         StringBuffer sb = new StringBuffer();
         boolean nest = false;
         while (true) {
@@ -164,8 +157,8 @@ public class TcpShell extends Thread implements Shell {
               interrupt();
             }
           }
-          if (sb.length() > 0) console.setPrompt(term.prompt("- "));
-          else console.setPrompt(term.prompt("> "));
+          if (sb.length() > 0) console.setPrompt("- ");
+          else console.setPrompt("> ");
           sos.print("\r");
           while (in.available() > 0) in.read();
           String s1 = console.readLine();
@@ -180,7 +173,7 @@ public class TcpShell extends Thread implements Shell {
             log.info("> "+s);
             boolean ok = engine.exec(s, sos);
             if (!ok) {
-              sos.println(term.error("BUSY"));
+              sos.println("BUSY", sos.ERROR);
               log.info("BUSY");
             }
           }

@@ -26,15 +26,8 @@ public interface Shell {
    * Display a message on the shell.
    * 
    * @param s message to display.
+   * @param type message type (see {@link ScriptOutputStream}).
    */
-  public void println(String s);
-
-  /**
-   * Returns a terminal object associated with the shell.
-   * 
-   * @return the terminal.
-   */
-  public Term getTerm();
+  public void println(String s, int type);
 
 }
-

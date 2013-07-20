@@ -76,7 +76,6 @@ public class ConsoleShell extends Thread implements Shell {
         }
       });
       sos.setOutputStream(out);
-      Term term = sos.getTerm();
       StringBuffer sb = new StringBuffer();
       boolean nest = false;
       while (true) {
@@ -96,8 +95,8 @@ public class ConsoleShell extends Thread implements Shell {
             interrupt();
           }
         }
-        if (sb.length() > 0) console.setPrompt(term.prompt("- "));
-        else console.setPrompt(term.prompt("> "));
+        if (sb.length() > 0) console.setPrompt("- ");
+        else console.setPrompt("> ");
         String s1 = console.readLine();
         if (s1 == null) break;
         sb.append(s1);
@@ -109,7 +108,7 @@ public class ConsoleShell extends Thread implements Shell {
           log.info("> "+s);
           boolean ok = engine.exec(s, sos);
           if (!ok) {
-            sos.println(term.error("BUSY"));
+            sos.println("BUSY", sos.ERROR);
             log.info("BUSY");
           }
         }
@@ -122,14 +121,8 @@ public class ConsoleShell extends Thread implements Shell {
   }
   
   @Override
-  public Term getTerm() {
-    if (sos == null) return null;
-    return sos.getTerm();
-  }
-  
-  @Override
-  public void println(String s) {
-    if (sos != null) sos.println(s);
+  public void println(String s, int type) {
+    if (sos != null) sos.println(s, type);
     try {
       if (console != null) {
         // for some strange reason, works well with a short delay!

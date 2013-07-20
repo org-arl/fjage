@@ -269,10 +269,7 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding();
     if (binding.hasVariable('out')) {
       ScriptOutputStream out = binding.getVariable('out');
-      if (out != null) {
-        Term t = out.getTerm();
-        out.println(t.response(x.toString()));
-      }
+      if (out != null) out.println(x.toString(), out.RESPONSE);
     }
   }
 
@@ -287,10 +284,7 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding();
     if (binding.hasVariable('out')) {
       ScriptOutputStream out = binding.getVariable('out');
-      if (out != null) {
-        Term t = out.getTerm();
-        out.print(x.toString());
-      }
+      if (out != null) out.print(x.toString());
     }
   }
 
