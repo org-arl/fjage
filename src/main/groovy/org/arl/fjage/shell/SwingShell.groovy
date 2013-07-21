@@ -13,6 +13,7 @@ package org.arl.fjage.shell
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
+import javax.swing.table.*
 import org.arl.fjage.*
 import groovy.swing.SwingBuilder
 import java.awt.BorderLayout
@@ -27,15 +28,16 @@ class SwingShell implements Shell {
   Color errorFG = Color.red
   Color notificationFG = Color.blue
   Color markerBG = Color.black
-  Font font = new Font('Arial', Font.PLAIN, 14)
+  Font font = new Font('Courier', Font.PLAIN, 14)
 
   private name
   private SwingBuilder swing = new SwingBuilder()
   private ScriptEngine engine
-  private def cmd, details, mbar, detailsText
+  private def cmd, details, mbar
   private def cmdLog, ntfLog
-  private DefaultListModel cmdLogModel = new DefaultListModel();
-  private DefaultListModel ntfLogModel = new DefaultListModel();
+  private DefaultListModel cmdLogModel = new DefaultListModel()
+  private DefaultListModel ntfLogModel = new DefaultListModel()
+  private def detailsModel
   private java.util.List<String> history = []
   private int historyNdx = -1
   private def gui = [:]
@@ -58,8 +60,7 @@ class SwingShell implements Shell {
     this.engine = engine
     createGUI()
     gui.menubar = mbar
-    gui.detailsPane = details
-    gui.detailsText = detailsText
+    gui.details = details
     engine.setVariable('gui', gui)
   }
 
@@ -95,7 +96,7 @@ class SwingShell implements Shell {
       } else {
         model.addElement(new ListEntry(data: obj, fg: fg))
       }
-      component.clearSelection()
+      if (type != OutputType.NOTIFICATION) component.clearSelection()
       component.ensureIndexIsVisible(model.size()-1)
     }
   }
@@ -104,6 +105,7 @@ class SwingShell implements Shell {
     swing.edt {
       cmdLogModel.clear()
       ntfLogModel.clear()
+      detailsModel.rowsModel.value.clear()
     }
   }
 
@@ -116,9 +118,41 @@ class SwingShell implements Shell {
     }
   }
 
-  private String expose(def obj) {
-    def s = obj?.properties.findAll { it.key != 'class' }.collect { "${it.key}: ${it.value}" }
-    s.join('\n')
+  private String bytesToHexString(byte[] data) {
+    int n = data.length
+    if (n > 65) n = 65
+    StringBuffer sb = new StringBuffer(2*n)
+    for (int i = 0; i < n; i++) {
+      int v = data[i] & 0xff
+      if (v < 16) sb.append('0')
+      sb.append(Integer.toHexString(v))
+    }
+    return sb.toString()
+  }
+
+  private void updateDetailsModel(def obj) {
+    detailsModel.rowsModel.value.clear()
+    if (obj) {
+      obj.properties.findAll { it.key != 'class' }.each {
+        String s = it.value as String
+        if (it.value instanceof byte[]) s = bytesToHexString(it.value)
+        if (s != null) {
+          if (s.length() > 128) s = s.substring(0, 128) + '...'
+          detailsModel.rowsModel.value.add([key: it.key, value: s])
+        }
+      }
+      if (obj instanceof Map) {     // for GenericMessage
+        obj.each {
+          String s = it.value as String
+          if (it.value instanceof byte[]) s = bytesToHexString(it.value)
+          if (s != null) {
+            if (s.length() > 128) s = s.substring(0, 128) + '...'
+            detailsModel.rowsModel.value.add([key: it.key, value: s])
+          }
+        }
+      }
+    }
+    detailsModel.fireTableDataChanged()
   }
 
   private void exit() {
@@ -134,8 +168,12 @@ class SwingShell implements Shell {
             menuItem(text: 'Exit', accelerator: KeyStroke.getKeyStroke('meta Q'), actionPerformed: { exit() })
           }
           menu(text: 'Edit', mnemonic: 'E') {
-            menuItem(text: 'Clear', accelerator: KeyStroke.getKeyStroke('meta K') , actionPerformed: { cls() })
-            menuItem(text: 'Mark', accelerator: KeyStroke.getKeyStroke('meta M'), actionPerformed: { mark() })
+            menuItem(text: 'Clear workspace', accelerator: KeyStroke.getKeyStroke('meta K') , actionPerformed: { cls() })
+            menuItem(text: 'Insert marker', accelerator: KeyStroke.getKeyStroke('meta M'), actionPerformed: { mark() })
+            menuItem(text: 'Copy to "ntf"', accelerator: KeyStroke.getKeyStroke('meta N'), actionPerformed: {
+              int ndx = ntfLog.selectedIndex
+              if (ndx >= 0) engine.setVariable('ntf', ntfLogModel[ndx].data)
+            })
           }
         }
         splitPane {
@@ -157,20 +195,27 @@ class SwingShell implements Shell {
             })
           }
           splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 384) {
-            panel(constraints: 'top') {
-              borderLayout()
-              details = scrollPane(constraints: BorderLayout.CENTER) {
-                detailsText = textArea(editable: false)
+            details = tabbedPane(constraints: 'top') {
+              panel(name: 'Details') {
+                borderLayout()
+                scrollPane(constraints: BorderLayout.CENTER) {
+                  table {
+                    detailsModel = tableModel {
+                      propertyColumn(header: 'Property', propertyName: 'key', preferredWidth: 100, editable: false)
+                      propertyColumn(header: 'Value', propertyName: 'value', preferredWidth: 300, editable: false)
+                    }
+                  }
+                }
               }
             }
             panel(constraints: 'bottom') {
               borderLayout()
               label(text: 'Notifications', constraints: BorderLayout.NORTH)
               scrollPane(constraints: BorderLayout.CENTER) {
-                ntfLog = list(model: ntfLogModel, font: font, cellRenderer: new CmdListCellRenderer(), valueChanged: {
+                ntfLog = list(model: ntfLogModel, font: font, cellRenderer: new CmdListCellRenderer(), selectionMode: ListSelectionModel.SINGLE_SELECTION, valueChanged: {
                   int ndx = ntfLog.selectedIndex
-                  if (ndx < 0) detailsText.text = ''
-                  else detailsText.text = expose(ntfLogModel[ndx].data)
+                  if (ndx < 0) detailsModel.rowsModel.value.clear()
+                  else updateDetailsModel(ntfLogModel[ndx].data)
                 })
               }
             }
