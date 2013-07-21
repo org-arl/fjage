@@ -181,6 +181,7 @@ class SwingShell implements Shell {
             menuItem(text: 'Exit', accelerator: KeyStroke.getKeyStroke('meta Q'), actionPerformed: { window.dispose() })
           }
           menu(text: 'Edit', mnemonic: 'E') {
+            menuItem(text: 'Abort operation', accelerator: KeyStroke.getKeyStroke('ctrl C'), actionPerformed: { if (engine.isBusy()) engine.abort() })
             menuItem(text: 'Clear workspace', accelerator: KeyStroke.getKeyStroke('meta K') , actionPerformed: { cls() })
             menuItem(text: 'Insert marker', accelerator: KeyStroke.getKeyStroke('meta M'), actionPerformed: { mark() })
             menuItem(text: 'Copy to "ntf"', accelerator: KeyStroke.getKeyStroke('meta N'), actionPerformed: {
@@ -197,14 +198,16 @@ class SwingShell implements Shell {
               cmdLog = list(model: cmdLogModel, font: font, cellRenderer: new CmdListCellRenderer())
             }
             cmd = textField(constraints: BorderLayout.SOUTH, font: font, actionPerformed: {
-              def s = cmd.text.trim()
-              if (s.length() > 0) {
-                println("> $s", OutputType.NORMAL)
-                if (history.size() == 0 || history.last() != s) history << s
-                historyNdx = -1
-                engine.exec(s, this)
+              if (!engine.isBusy()) {
+                def s = cmd.text.trim()
+                if (s.length() > 0) {
+                  println("> $s", OutputType.NORMAL)
+                  if (history.size() == 0 || history.last() != s) history << s
+                  historyNdx = -1
+                  engine.exec(s, this)
+                }
+                cmd.text = ''
               }
-              cmd.text = ''
             })
           }
           splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 384) {
