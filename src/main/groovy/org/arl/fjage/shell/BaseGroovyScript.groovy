@@ -510,4 +510,15 @@ abstract class BaseGroovyScript extends Script {
     return null;
   }
 
+  /**
+   * Checks is a named variable is defined in the shell.
+   *
+   * @param varname name of the variable
+   * @return true if defined, false otherwise
+   */
+  boolean defined(String varname) {
+    Binding binding = getBinding();
+    return binding.hasVariable(varname)
+  }
+
 }
