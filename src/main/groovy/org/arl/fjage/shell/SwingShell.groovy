@@ -62,6 +62,7 @@ class SwingShell implements Shell {
     createGUI()
     gui.menubar = mbar
     gui.details = details
+    gui.cmd = cmd
     engine.setVariable('gui', gui)
   }
 
@@ -267,8 +268,10 @@ class SwingShell implements Shell {
       if (value instanceof ListEntry) {
         bg = value.bg
         fg = value.fg
-        value = value.data?.toString()?:''
+        value = value.data?.toString()
       }
+      if (value == null) value = ''
+      else if (value == '') value = ' '
       JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
       if (!isSelected) {
         if (bg) label.setBackground(bg)

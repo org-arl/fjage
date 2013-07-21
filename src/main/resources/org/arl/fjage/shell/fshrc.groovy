@@ -102,7 +102,7 @@ doc['receive'] = '''\
 receive - wait for a message
 
 Usage:
-  receive [filter],[timeout]
+  receive [filter], [timeout]
   receive [msg], [timeout]
 
 Examples:
@@ -113,3 +113,192 @@ Examples:
   msg = receive { it instanceof A } // get message that of class A
   msg = receive req                 // get message response to req
 '''
+
+////// GUI specific closures
+
+if (!defined('gui')) return
+
+doc['guiAddMenu'] = '''\
+guiAddMenu - add menu item to GUI shell
+
+Usage:
+  guiAddMenu title, subtitle, task, [accelerator]
+
+Examples:
+  guiAddMenu 'Custom', 'Do it!', { println 'Just do it!' }
+  guiAddMenu 'Custom', 'Copy', { copy() }, 'meta C'
+'''
+
+guiAddMenu = { String title, String subtitle, Closure task, String acc = null ->
+  def swing = new groovy.swing.SwingBuilder()
+  def menubar = gui.menubar
+  def menu = null
+  for (int i = 0; i < menubar.menuCount; i++) {
+    def m = menubar.getMenu(i)
+    if (m.text == title) {
+      menu = m
+      break
+    }
+  }
+  if (!menu) {
+    menu = swing.menu(text: title)
+    swing.edt {
+      menubar.add(menu)
+    }
+  }
+  for (int i = 0; i < menu.itemCount; i++) {
+    def m = menu.getItem(i)
+    if (m.text == subtitle) {
+      menu.remove(i)
+      break
+    }
+  }
+  def menuitem = swing.menuItem(text: subtitle, actionPerformed: task)
+  if (acc) menuitem.accelerator = javax.swing.KeyStroke.getKeyStroke(acc)
+  swing.edt {
+    menu.add(menuitem)
+    menubar.revalidate()
+  }
+  return menuitem
+}
+
+doc['guiGetMenu'] = '''\
+guiGetMenu - find menu item in GUI shell
+
+Usage:
+  item = getGuiMenu(title, [subtitle])
+
+If only title is specified, returns JMenu. If subtitle is specified,
+returns JMenuItem.
+
+Example:
+  getGuiMenu('Custom', 'Do it!').enabled = false
+'''
+
+guiGetMenu = { String title, String subtitle = null ->
+  def swing = new groovy.swing.SwingBuilder()
+  def menubar = gui.menubar
+  def menu = null
+  for (int i = 0; i < menubar.menuCount; i++) {
+    def m = menubar.getMenu(i)
+    if (m.text == title) {
+      menu = m
+      break
+    }
+  }
+  if (!menu) return null
+  if (!subtitle) return menu
+  for (int i = 0; i < menu.itemCount; i++) {
+    def m = menu.getItem(i)
+    if (m.text == subtitle) return m
+  }
+  return null
+}
+
+doc['guiRemoveMenu'] = '''\
+guiRemoveMenu - removes menu from from GUI shell
+
+Usage:
+  guiRemoveMenu title, subtitle
+
+Examples:
+  guiRemoveMenu 'Custom', 'Do it!'
+'''
+
+guiRemoveMenu = { String title, String subtitle ->
+  def swing = new groovy.swing.SwingBuilder()
+  def menubar = gui.menubar
+  def menu = null
+  for (int i = 0; i < menubar.menuCount; i++) {
+    def m = menubar.getMenu(i)
+    if (m.text == title) {
+      menu = m
+      break
+    }
+  }
+  if (!menu) return false
+  for (int i = 0; i < menu.itemCount; i++) {
+    def m = menu.getItem(i)
+    if (m.text == subtitle) {
+      swing.edt {
+        menu.remove(i)
+        menubar.revalidate()
+      }
+      return true
+    }
+  }
+  return false
+}
+
+doc['guiAddPanel'] = '''\
+guiAddPanel - adds a details panel to GUI shell
+
+Usage:
+  guiAddPanel title, panel
+
+panel must be a AWT or Swing component.
+
+Example:
+  guiAddPanel 'Demo', new javax.swing.JPanel()  // add panel called 'Demo'
+'''
+
+guiAddPanel = { String title, java.awt.Component panel ->
+  def swing = new groovy.swing.SwingBuilder()
+  def tabs = gui.details
+  swing.edt {
+    tabs.add title, panel
+    tabs.selectedComponent = panel
+    tabs.revalidate()
+  }
+}
+
+doc['guiGetPanel'] = '''\
+guiGetPanel - gets and optionally activates a GUI shell details panel
+
+Usage:
+  panel = guiGetPanel title, [select]
+
+If select is true, the panel is activated.
+
+Example:
+  guiGetPanel 'Demo', true                  // activate panel called 'Demo'
+'''
+
+guiGetPanel = { String title, boolean select = false ->
+  def swing = new groovy.swing.SwingBuilder()
+  def tabs = gui.details
+  for (int i = 0; i < tabs.tabCount; i++)
+    if (tabs.getTitleAt(i) == title) {
+      if (select)
+        swing.edt {
+          tabs.selectedIndex = i
+          tabs.revalidate()
+        }
+      return tabs.getComponentAt(i)
+    }
+  return null
+}
+
+doc['guiRemovePanel'] = '''\
+guiRemovePanel - remove a details panel from the GUI shell
+
+Usage:
+  guiRemovePanel title
+
+Example:
+  guiRemovePanel 'Demo'                     // remove panel called 'Demo'
+'''
+
+guiRemovePanel = { String title ->
+  def swing = new groovy.swing.SwingBuilder()
+  def tabs = gui.details
+  for (int i = 0; i < tabs.tabCount; i++)
+    if (tabs.getTitleAt(i) == title) {
+      swing.edt {
+        tabs.remove(i)
+        tabs.revalidate()
+      }
+      return true
+    }
+  return false
+}
