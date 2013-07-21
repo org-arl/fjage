@@ -23,6 +23,8 @@ import java.awt.BorderLayout
  */
 class SwingShell implements Shell {
 
+  static def location = [0, 0]
+
   Color normalFG = Color.black
   Color responseFG = new Color(128, 96, 0)
   Color errorFG = Color.red
@@ -167,8 +169,10 @@ class SwingShell implements Shell {
   }
 
   private void createGUI() {
+    location[0] += 100
+    location[1] += 100
     swing.edt {
-      window = frame(title: name, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE, size: [1024, 768], show: true, locationRelativeTo: null, windowOpened: { cmd.requestFocus() }, windowClosed: { exit() }) {
+      window = frame(title: name, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE, size: [1024, 768], show: true, location: location, windowOpened: { cmd.requestFocus() }, windowClosed: { exit() }) {
         lookAndFeel('system')
         mbar = menuBar() {
           menu(text: 'File', mnemonic: 'F') {
