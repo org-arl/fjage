@@ -29,14 +29,16 @@ class SwingShell implements Shell {
   Color markerBG = Color.black
   Font font = new Font('Arial', Font.PLAIN, 14)
 
+  private name
   private SwingBuilder swing = new SwingBuilder()
   private ScriptEngine engine
-  private def cmd, details
+  private def cmd, details, mbar, detailsText
   private def cmdLog, ntfLog
   private DefaultListModel cmdLogModel = new DefaultListModel();
   private DefaultListModel ntfLogModel = new DefaultListModel();
   private java.util.List<String> history = []
   private int historyNdx = -1
+  private def gui = [:]
 
   private class ListEntry {
     Object data
@@ -44,9 +46,21 @@ class SwingShell implements Shell {
     Color fg
   }
 
+  SwingShell() {
+    name = 'Command Shell'
+  }
+
+  SwingShell(String name) {
+    this.name = name
+  }
+
   void start(ScriptEngine engine) {
     this.engine = engine
     createGUI()
+    gui.menubar = mbar
+    gui.detailsPane = details
+    gui.detailsText = detailsText
+    engine.setVariable('gui', gui)
   }
 
   void println(def obj, OutputType type) {
@@ -107,13 +121,17 @@ class SwingShell implements Shell {
     s.join('\n')
   }
 
+  private void exit() {
+    engine.exec('shutdown', null)
+  }
+
   private void createGUI() {
     swing.edt {
-      frame(title:'UnetGUI', defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE, size: [1024, 768], show: true, locationRelativeTo: null, windowOpened: { cmd.requestFocus() }) {
+      frame(title: name, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE, size: [1024, 768], show: true, locationRelativeTo: null, windowOpened: { cmd.requestFocus() }, windowClosed: { exit() }) {
         lookAndFeel('system')
-        menuBar() {
+        mbar = menuBar() {
           menu(text: 'File', mnemonic: 'F') {
-            menuItem(text: 'Exit', accelerator: KeyStroke.getKeyStroke('meta Q'), actionPerformed: { System.exit(0) })
+            menuItem(text: 'Exit', accelerator: KeyStroke.getKeyStroke('meta Q'), actionPerformed: { exit() })
           }
           menu(text: 'Edit', mnemonic: 'E') {
             menuItem(text: 'Clear', accelerator: KeyStroke.getKeyStroke('meta K') , actionPerformed: { cls() })
@@ -141,9 +159,8 @@ class SwingShell implements Shell {
           splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 384) {
             panel(constraints: 'top') {
               borderLayout()
-              label(text: 'Notification details', constraints: BorderLayout.NORTH)
-              scrollPane(constraints: BorderLayout.CENTER) {
-                details = textArea(editable: false)
+              details = scrollPane(constraints: BorderLayout.CENTER) {
+                detailsText = textArea(editable: false)
               }
             }
             panel(constraints: 'bottom') {
@@ -152,8 +169,8 @@ class SwingShell implements Shell {
               scrollPane(constraints: BorderLayout.CENTER) {
                 ntfLog = list(model: ntfLogModel, font: font, cellRenderer: new CmdListCellRenderer(), valueChanged: {
                   int ndx = ntfLog.selectedIndex
-                  if (ndx < 0) details.text = ''
-                  else details.text = expose(ntfLogModel[ndx].data)
+                  if (ndx < 0) detailsText.text = ''
+                  else detailsText.text = expose(ntfLogModel[ndx].data)
                 })
               }
             }
@@ -175,6 +192,8 @@ class SwingShell implements Shell {
             if (historyNdx == 0) return
             if (historyNdx < 0) historyNdx = history.size()
             if (--historyNdx >= 0) cmd.text = history[historyNdx]
+            cmd.caretPosition = cmd.text.length()
+            e.consume()
           } else if (code == KeyEvent.VK_DOWN) {
             if (historyNdx < 0) return
             if (++historyNdx < history.size()) cmd.text = history[historyNdx]
@@ -182,6 +201,8 @@ class SwingShell implements Shell {
               cmd.text = ''
               historyNdx = -1
             }
+            cmd.caretPosition = cmd.text.length()
+            e.consume()
           }
         }
       })
