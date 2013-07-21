@@ -28,6 +28,7 @@ public class ConsoleShell extends Thread implements Shell {
   private Term term = new Term();
   private ConsoleReader console = null;
   private Logger log = Logger.getLogger(getClass().getName());
+  private boolean quit = false;
 
   ////////// Methods
 
@@ -42,6 +43,11 @@ public class ConsoleShell extends Thread implements Shell {
     setName(getClass().getSimpleName());
     setDaemon(true);
     start();
+  }
+
+  @Override
+  public void shutdown() {
+    quit = true;
   }
 
   /**
@@ -75,7 +81,7 @@ public class ConsoleShell extends Thread implements Shell {
       });
       StringBuffer sb = new StringBuffer();
       boolean nest = false;
-      while (true) {
+      while (!quit) {
         int esc = 0;
         while (engine.isBusy()) {
           if (in.available() > 0) {
@@ -95,7 +101,11 @@ public class ConsoleShell extends Thread implements Shell {
         if (sb.length() > 0) console.setPrompt(term.prompt("- "));
         else console.setPrompt(term.prompt("> "));
         String s1 = console.readLine();
-        if (s1 == null) break;
+        if (s1 == null) {
+          // FIXME would be better to have a listener to control what to do when shell closes
+          engine.exec("shutdown", null);
+          break;
+        }
         sb.append(s1);
         String s = sb.toString();
         nest = nested(s);
@@ -110,9 +120,8 @@ public class ConsoleShell extends Thread implements Shell {
           }
         }
       }
-      System.exit(0);
     } catch (IOException ex) {
-      // do nothing
+      log.warning(ex.toString());
     }
   }
   

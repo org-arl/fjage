@@ -91,6 +91,7 @@ public class ShellAgent extends Agent {
   
   @Override
   public void shutdown() {
+    shell.shutdown();
     engine.shutdown();
   }
   

@@ -30,6 +30,7 @@ class SwingShell implements Shell {
   Color markerBG = Color.black
   Font font = new Font('Courier', Font.PLAIN, 14)
 
+  private JFrame window
   private name
   private SwingBuilder swing = new SwingBuilder()
   private ScriptEngine engine
@@ -62,6 +63,10 @@ class SwingShell implements Shell {
     gui.menubar = mbar
     gui.details = details
     engine.setVariable('gui', gui)
+  }
+
+  void shutdown() {
+    window.dispose()
   }
 
   void println(def obj, OutputType type) {
@@ -156,16 +161,17 @@ class SwingShell implements Shell {
   }
 
   private void exit() {
+    // FIXME would be better to have a listener to control what to do when shell closes
     engine.exec('shutdown', null)
   }
 
   private void createGUI() {
     swing.edt {
-      frame(title: name, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE, size: [1024, 768], show: true, locationRelativeTo: null, windowOpened: { cmd.requestFocus() }, windowClosed: { exit() }) {
+      window = frame(title: name, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE, size: [1024, 768], show: true, locationRelativeTo: null, windowOpened: { cmd.requestFocus() }, windowClosed: { exit() }) {
         lookAndFeel('system')
         mbar = menuBar() {
           menu(text: 'File', mnemonic: 'F') {
-            menuItem(text: 'Exit', accelerator: KeyStroke.getKeyStroke('meta Q'), actionPerformed: { exit() })
+            menuItem(text: 'Exit', accelerator: KeyStroke.getKeyStroke('meta Q'), actionPerformed: { window.dispose() })
           }
           menu(text: 'Edit', mnemonic: 'E') {
             menuItem(text: 'Clear workspace', accelerator: KeyStroke.getKeyStroke('meta K') , actionPerformed: { cls() })

@@ -30,4 +30,9 @@ public interface Shell {
    */
   public void println(Object obj, OutputType type);
 
+  /**
+   * Stops the shell.
+   */
+  public void shutdown();
+
 }

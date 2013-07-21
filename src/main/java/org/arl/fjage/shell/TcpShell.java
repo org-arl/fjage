@@ -54,6 +54,18 @@ public class TcpShell extends Thread implements Shell {
     start();
   }
 
+  @Override
+  public void shutdown() {
+    if (clientThread != null) clientThread.close();
+    try {
+      ServerSocket s = sock;
+      sock = null;
+      s.close();
+    } catch (Exception ex) {
+      // do nothing
+    }
+  }
+
   /**
    * Thread implementation.
    *
@@ -65,7 +77,7 @@ public class TcpShell extends Thread implements Shell {
     try {
       Socket client = null;
       sock = new ServerSocket(port);
-      while (true) {
+      while (sock != null) {
         try {
           log.info("Listening on port "+port);
           client = sock.accept();
