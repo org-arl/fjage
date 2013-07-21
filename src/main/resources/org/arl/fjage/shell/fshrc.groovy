@@ -1,4 +1,4 @@
-include 'org.arl.fjage.*'
+shellImport 'org.arl.fjage.*'
 
 doc['help'] = 'help [topic] - provide help on a specified topic'
 doc['ps'] = 'ps - list all the agents running on the local container'
@@ -50,12 +50,16 @@ Examples:
   unsubscribe topic(\'MyTopic\')   // unsubscribe notifications from MyTopic
   unsubscribe agent(\'abc\')       // unsubscribe notifications from agent abc
 '''
-doc['include'] = '''\
-include - add specified package/classes to list of imports
+doc['shellImport'] = '''\
+shellImport - add specified package/classes to list of imports
 
 Examples:
-  include \'org.arl.fjage.*\'      // import package org.arl.fjage
-  include \'mypackage.MyClass\'    // import class mypackage.MyClass
+  shellImport \'org.arl.fjage.*\'    // import package org.arl.fjage
+  shellImport \'mypackage.MyClass\'  // import class mypackage.MyClass
+
+At the shell prompt (but not in a script), shellImport can be abbreviated
+to import. For example:
+  import org.arl.fjage.*             // import package org.arl.fjage
 '''
 doc['agent'] = '''\
 agent - return an agent id for the named agent

@@ -56,13 +56,20 @@ abstract class BaseGroovyScript extends Script {
    *
    * @param name name of class or package to import.
    */
-  def include(String name) {
+  def shellImport(String name) {
     Binding binding = getBinding();
     if (binding.hasVariable('imports')) {
       ImportCustomizer imports = binding.getVariable('imports');
       if (name.endsWith('.*')) imports.addStarImport(name[0..-3]);
       else imports.addImport(name);
     }
+  }
+
+  /**
+   * Do not use include(), use shellImport() instead.
+   */
+  def include(String name) {
+    throw new FjageError('include() has been superceded by shellImport()');
   }
 
   /**

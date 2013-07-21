@@ -80,7 +80,8 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
         if (cmd != null) {
           cmd = cmd.trim();
           if (cmd.startsWith("help ")) cmd = "help '"+cmd.substring(5)+"'";
-          if (cmd.startsWith("<")) {
+          else if (cmd.startsWith("import ")) cmd = "shellImport '"+cmd.substring(7)+"'";
+          else if (cmd.startsWith("<")) {
             if (cmd.contains(" ")) cmd = "run('"+cmd.substring(1).replaceFirst(" ","',")+");";
             else cmd = "run('"+cmd.substring(1)+"');";
           }

@@ -24,7 +24,7 @@ The default shell provided by fjåge is a Groovy shell, and can execute any vali
     logLevel [name],level - set loglevel (optionally for a named logger)
     subscribe topic(name) - subscribe to notifications from a named topic
     unsubscribe topic(name) - unsubscribe from notifications for a named topic
-    include spec - add specified package/classes to list of imports
+    shellImport spec - add specified package/classes to list of imports
     agent(name) - return an agent id for the named agent
     agentForService(service) - find an agent id providing the specified service
     agentsForService(service) - get a list of agent ids providing the specified service
