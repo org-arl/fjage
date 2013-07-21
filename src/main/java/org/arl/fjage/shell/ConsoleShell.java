@@ -29,6 +29,7 @@ public class ConsoleShell extends Thread implements Shell {
   private ConsoleReader console = null;
   private Logger log = Logger.getLogger(getClass().getName());
   private boolean quit = false;
+  private boolean shutdownOnExit = true;
 
   ////////// Methods
 
@@ -48,6 +49,15 @@ public class ConsoleShell extends Thread implements Shell {
   @Override
   public void shutdown() {
     quit = true;
+  }
+
+  /**
+   * Set whether to shutdown platform when console shell is terminated.
+   *
+   * @param value true to initiate shutdown, false otherwise.
+   */
+  public void setShutdownOnExit(boolean value) {
+    shutdownOnExit = value;
   }
 
   /**
@@ -102,8 +112,7 @@ public class ConsoleShell extends Thread implements Shell {
         else console.setPrompt(term.prompt("> "));
         String s1 = console.readLine();
         if (s1 == null) {
-          // FIXME would be better to have a listener to control what to do when shell closes
-          engine.exec("shutdown", null);
+          if (shutdownOnExit) engine.exec("shutdown", null);
           break;
         }
         sb.append(s1);

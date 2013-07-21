@@ -31,6 +31,7 @@ class SwingShell implements Shell {
   Color notificationFG = Color.blue
   Color markerBG = Color.black
   Font font = new Font('Courier', Font.PLAIN, 14)
+  boolean shutdownOnExit = true
 
   private JFrame window
   private name
@@ -65,6 +66,8 @@ class SwingShell implements Shell {
     gui.menubar = mbar
     gui.details = details
     gui.cmd = cmd
+    gui.cmdLog = cmdLog
+    gui.ntfLog = ntfLog
     engine.setVariable('gui', gui)
   }
 
@@ -164,15 +167,14 @@ class SwingShell implements Shell {
   }
 
   private void exit() {
-    // FIXME would be better to have a listener to control what to do when shell closes
-    engine.exec('shutdown', null)
+    if (shutdownOnExit) engine.exec('shutdown', null)
   }
 
   private void createGUI() {
     location[0] += 100
     location[1] += 100
     swing.edt {
-      window = frame(title: name, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE, size: [1024, 768], show: true, location: location, windowOpened: { cmd.requestFocus() }, windowClosed: { exit() }) {
+      window = frame(title: name, /*iconImage: ,*/ defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE, size: [1024, 768], show: true, location: location, windowOpened: { cmd.requestFocus() }, windowClosed: { exit() }) {
         lookAndFeel('system')
         mbar = menuBar() {
           menu(text: 'File', mnemonic: 'F') {
