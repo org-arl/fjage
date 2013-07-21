@@ -93,7 +93,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
             if (c.getMaximumNumberOfParameters() == 1) result = c.call();
           }
           binding.setVariable("ans", result);
-          if (result != null && !cmd.endsWith(";")) println(groovy.evaluate("ans.toString()").toString());
+          if (result != null && !cmd.endsWith(";")) println(groovy.evaluate("ans"));
         } else if (script != null) {
           if (args == null) args = new ArrayList<String>();
           log.fine("RUN: "+script.getAbsolutePath());
@@ -246,14 +246,14 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
 
   ////// private methods
   
-  private void println(String s) {
-    log.fine("RESULT: "+s);
+  private void println(Object s) {
+    log.fine("RESULT: "+s.toString());
     if (out != null) out.println(s, OutputType.RESPONSE);
   }
 
   private void error(Throwable ex) {
     log.log(Level.WARNING, "Exception in Groovy script", ex);
-    if (out != null) out.println(ex.toString(), OutputType.ERROR);
+    if (out != null) out.println(ex, OutputType.ERROR);
   }
 
 }

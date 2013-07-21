@@ -48,6 +48,7 @@ class SwingShell implements Shell {
 
   private class ListEntry {
     Object data
+    OutputType type
     Color bg
     Color fg
   }
@@ -102,10 +103,10 @@ class SwingShell implements Shell {
     swing.edt {
       if (obj instanceof String) {
         obj.readLines().each {
-          model.addElement(new ListEntry(data: it, fg: fg))
+          model.addElement(new ListEntry(data: it, type: type, fg: fg))
         }
       } else {
-        model.addElement(new ListEntry(data: obj, fg: fg))
+        model.addElement(new ListEntry(data: obj, type: type, fg: fg))
       }
       if (type != OutputType.NOTIFICATION) component.clearSelection()
       component.ensureIndexIsVisible(model.size()-1)
@@ -117,6 +118,7 @@ class SwingShell implements Shell {
       cmdLogModel.clear()
       ntfLogModel.clear()
       detailsModel.rowsModel.value.clear()
+      detailsModel.fireTableDataChanged()
     }
   }
 
@@ -134,6 +136,7 @@ class SwingShell implements Shell {
     if (n > 65) n = 65
     StringBuffer sb = new StringBuffer(2*n)
     for (int i = 0; i < n; i++) {
+      if (i > 0 && i%4 == 0) sb.append(' ')
       int v = data[i] & 0xff
       if (v < 16) sb.append('0')
       sb.append(Integer.toHexString(v))
@@ -184,9 +187,14 @@ class SwingShell implements Shell {
             menuItem(text: 'Abort operation', accelerator: KeyStroke.getKeyStroke('ctrl C'), actionPerformed: { if (engine.isBusy()) engine.abort() })
             menuItem(text: 'Clear workspace', accelerator: KeyStroke.getKeyStroke('meta K') , actionPerformed: { cls() })
             menuItem(text: 'Insert marker', accelerator: KeyStroke.getKeyStroke('meta M'), actionPerformed: { mark() })
-            menuItem(text: 'Copy to "ntf"', accelerator: KeyStroke.getKeyStroke('meta N'), actionPerformed: {
+            menuItem(text: 'Copy to workspace', accelerator: KeyStroke.getKeyStroke('ctrl W'), actionPerformed: {
               int ndx = ntfLog.selectedIndex
               if (ndx >= 0) engine.setVariable('ntf', ntfLogModel[ndx].data)
+              ndx = cmdLog.selectedIndex
+              if (ndx >= 0) {
+                def msg = cmdLogModel[ndx].data
+                if (msg instanceof Message) engine.setVariable('ans', msg)
+              }
             })
           }
         }
@@ -195,7 +203,15 @@ class SwingShell implements Shell {
             borderLayout()
             label(text: 'Commands', constraints: BorderLayout.NORTH)
             scrollPane(constraints: BorderLayout.CENTER) {
-              cmdLog = list(model: cmdLogModel, font: font, cellRenderer: new CmdListCellRenderer())
+              cmdLog = list(model: cmdLogModel, font: font, cellRenderer: new CmdListCellRenderer(), selectionMode: ListSelectionModel.SINGLE_SELECTION, valueChanged: {
+                int ndx = cmdLog.selectedIndex
+                if (ndx >= 0) {
+                  ntfLog.clearSelection()
+                  def msg = cmdLogModel[ndx].data
+                  if (msg instanceof Message) updateDetailsModel(msg)
+                  else updateDetailsModel(null)
+                }
+              })
             }
             cmd = textField(constraints: BorderLayout.SOUTH, font: font, actionPerformed: {
               if (!engine.isBusy()) {
@@ -230,8 +246,10 @@ class SwingShell implements Shell {
               scrollPane(constraints: BorderLayout.CENTER) {
                 ntfLog = list(model: ntfLogModel, font: font, cellRenderer: new CmdListCellRenderer(), selectionMode: ListSelectionModel.SINGLE_SELECTION, valueChanged: {
                   int ndx = ntfLog.selectedIndex
-                  if (ndx < 0) detailsModel.rowsModel.value.clear()
-                  else updateDetailsModel(ntfLogModel[ndx].data)
+                  if (ndx >= 0) {
+                    cmdLog.clearSelection()
+                    updateDetailsModel(ntfLogModel[ndx].data)
+                  }
                 })
               }
             }
