@@ -16,8 +16,12 @@ Examples:
 doc['println'] = '''\
 println - display message on console
 
-Example:
+Usage:
+  println output, [type]
+
+Examples:
   println \'hello there!\'
+  println \'that failed!\', org.arl.fjage.shell.OutputType.ERROR
 '''
 doc['delay'] = '''\
 delay - delay execution by the specified number of milliseconds
@@ -153,7 +157,13 @@ guiAddMenu = { String title, String subtitle, Closure task, String acc = null ->
       break
     }
   }
-  def menuitem = swing.menuItem(text: subtitle, actionPerformed: task)
+  def menuitem = swing.menuItem(text: subtitle, actionPerformed: {
+    try {
+      task()
+    } catch (Exception ex) {
+      println(ex.toString(), org.arl.fjage.shell.OutputType.ERROR)
+    }
+  })
   if (acc) menuitem.accelerator = javax.swing.KeyStroke.getKeyStroke(acc)
   swing.edt {
     menu.add(menuitem)

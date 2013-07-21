@@ -281,6 +281,21 @@ abstract class BaseGroovyScript extends Script {
   }
 
   /**
+   * Display on console. This method clears the current line
+   * and displays output on it, followed by a newline.
+   * 
+   * @param s object to display.
+   * @param type type of output to display.
+   */
+  void println(def x, OutputType type) {
+    Binding binding = getBinding();
+    if (binding.hasVariable('out')) {
+      def out = binding.getVariable('out');
+      if (out != null) out.println(x.toString(), type);
+    }
+  }
+
+  /**
    * Do not use print(), use println() only.
    */
   void print(def x) {
