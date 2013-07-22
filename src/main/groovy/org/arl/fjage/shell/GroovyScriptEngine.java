@@ -111,7 +111,11 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           result = groovy.run(reader, readerName, argsArr);
         }
       } catch (InterruptedException ex) {
-        if (out != null) out.println("Aborted!", OutputType.ERROR);
+        try {
+          if (out != null) out.println("Aborted!", OutputType.ERROR);
+        } catch (Throwable ex1) {
+          // ignore          
+        }
       } catch (Throwable ex) {
         error(ex);
       } finally {

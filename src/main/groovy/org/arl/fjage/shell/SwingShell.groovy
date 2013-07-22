@@ -31,6 +31,8 @@ class SwingShell implements Shell {
   Color receivedFG = Color.blue
   Color sentFG = Color.black
   Color markerBG = Color.black
+  Color busyBG = Color.pink
+  Color idleBG = Color.white
   Font font = new Font('Courier', Font.PLAIN, 14)
   boolean shutdownOnExit = true
 
@@ -46,6 +48,7 @@ class SwingShell implements Shell {
   private java.util.List<String> history = []
   private int historyNdx = -1
   private def gui = [:]
+  private def timer
 
   private class ListEntry {
     Object data
@@ -221,7 +224,7 @@ class SwingShell implements Shell {
                 }
               })
             }
-            cmd = textField(constraints: BorderLayout.SOUTH, font: font, actionPerformed: {
+            cmd = textField(constraints: BorderLayout.SOUTH, background: idleBG, font: font, actionPerformed: {
               if (!engine.isBusy()) {
                 def s = cmd.text.trim()
                 if (s.length() > 0) {
@@ -231,6 +234,17 @@ class SwingShell implements Shell {
                   engine.exec(s, this)
                 }
                 cmd.text = ''
+                if (timer == null) {
+                  timer = new javax.swing.Timer(100, {
+                    if (engine.isBusy()) cmd.background = busyBG
+                    else {
+                      cmd.background = idleBG
+                      timer.stop()
+                      timer = null
+                    }
+                  } as ActionListener)
+                  timer.start()
+                }
               }
             })
           }
