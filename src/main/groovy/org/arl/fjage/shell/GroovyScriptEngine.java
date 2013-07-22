@@ -93,7 +93,11 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
             if (c.getMaximumNumberOfParameters() == 1) result = c.call();
           }
           binding.setVariable("ans", result);
-          if (result != null && !cmd.endsWith(";")) println(groovy.evaluate("ans"));
+          if (result != null && !cmd.endsWith(";")) {
+            // convert ans to String, unless it is a message
+            // retain messages for possible GUI logging
+            println(groovy.evaluate("(ans instanceof Message)?ans:(ans?.toString())"));
+          }
         } else if (script != null) {
           if (args == null) args = new ArrayList<String>();
           log.fine("RUN: "+script.getAbsolutePath());
@@ -251,8 +255,11 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   ////// private methods
   
   private void println(Object s) {
-    log.fine("RESULT: "+s.toString());
-    if (out != null) out.println(s, OutputType.OUTPUT);
+    String str = s.toString();
+    log.fine("RESULT: "+str);
+    // Mostly log the String version, but for messages, log it so that GUI can display details
+    // Be careful not to ever log AgentIDs otherwise the toString() extensions can get called too often by GUI!
+    if (out != null) out.println((s instanceof org.arl.fjage.Message)?s:str, OutputType.OUTPUT);
   }
 
   private void error(Throwable ex) {
