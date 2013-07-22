@@ -141,18 +141,20 @@ public class ConsoleShell extends Thread implements Shell {
     try {
       if (console != null) {
         switch(type) {
-          case RESPONSE:
-            console.println(term.response(s));
+          case INPUT:
+            console.println(s);
             break;
-          case NOTIFICATION:
-            console.println(term.notification(s));
+          case OUTPUT:
+            console.println(term.response(s));
             break;
           case ERROR:
             console.println(term.error(s));
             break;
-          default:
-            console.println(s);
+          case NOTIFY:
+            console.println(term.notification(s));
             break;
+          default:
+            return;
         }
         if (term.isEnabled()) console.redrawLine();
         console.flush();

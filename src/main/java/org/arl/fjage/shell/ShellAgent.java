@@ -48,9 +48,10 @@ public class ShellAgent extends Agent {
   private ScriptEngine engine;
   private Shell shell;
   private List<Script> initScripts = new ArrayList<Script>();
-  private Message rsp;
-  private Object sync = new Object();
   private MessageBehavior msgBehavior;
+  private Object sync = new Object();
+  private volatile Message lastMsg = null;
+  private volatile int waiting = 0;
   
   ////// agent methods
   
@@ -72,8 +73,22 @@ public class ShellAgent extends Agent {
       @Override
       public void onReceive(Message msg) {
         if (msg instanceof ShellExecReq) handleReq((ShellExecReq)msg);
-        else if (msg.getInReplyTo() != null) handleRsp(msg);
-        else handleNtf(msg);
+        else {
+          log.fine("RCV: "+msg.toString());
+          boolean consumed = false;
+          synchronized (sync) {
+            lastMsg = msg;
+            if (waiting > 0) {
+              consumed = true;
+              sync.notify();
+            }
+          }
+          if (!consumed) engine.setVariable((msg.getInReplyTo()==null)?"ntf":"rsp", msg);
+          if (shell != null) {
+            shell.println(msg, OutputType.RECEIVED);
+            if (!consumed) shell.println(msg, OutputType.NOTIFY);
+          }
+        }
       }
     };
     add(msgBehavior);
@@ -178,25 +193,22 @@ public class ShellAgent extends Agent {
     if (Thread.currentThread().getId() == tid)
       return super.receive(filter, timeout);
     synchronized (sync) {
-      rsp = null;
-      try {
-        msgBehavior.block();
-        add(new OneShotBehavior() {
-          @Override
-          public void action() {
-            rsp = receive(filter, timeout);
-            synchronized (sync) {
-              sync.notify();
-            }
-          }
-        });
-        sync.wait();
-      } catch (InterruptedException ex) {
-        // ignore exception
-      } finally {
-        msgBehavior.restart();
+      lastMsg = null;
+      long t = currentTimeMillis();
+      long t1 = t+timeout;
+      while (t < t1) {
+        try {
+          waiting++;
+          sync.wait(t1-t);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        } finally {
+          waiting--;
+        }
+        if (lastMsg != null && (filter == null || filter.matches(lastMsg))) return lastMsg;
+        t = currentTimeMillis();
       }
-      return rsp;
+      return null;
     }
   }
   
@@ -205,26 +217,17 @@ public class ShellAgent extends Agent {
     if (Thread.currentThread().getId() == tid)
       return super.request(msg, timeout);
     synchronized (sync) {
-      rsp = null;
-      try {
-        msgBehavior.block();
-        add(new OneShotBehavior() {
-          @Override
-          public void action() {
-            rsp = request(msg, timeout);
-            synchronized (sync) {
-              sync.notify();
-            }
-          }
-        });
-        sync.wait();
-      } catch (InterruptedException ex) {
-        // ignore exception
-      } finally {
-        msgBehavior.restart();
-      }
+      if (!send(msg)) return null;
+      Message rsp = receive(msg, timeout);
       return rsp;
     }
+  }
+
+  @Override
+  public boolean send(Message msg) {
+    log.fine("SEND: "+msg.toString());
+    if (shell != null) shell.println(msg, OutputType.SENT);
+    return super.send(msg);
   }
 
   ////// private methods
@@ -249,17 +252,4 @@ public class ShellAgent extends Agent {
     if (rsp != null) send(rsp);
   }
   
-  private void handleRsp(Message rsp) {
-    log.fine("RSP: "+rsp.toString());
-    engine.setVariable("rsp", rsp);
-    if (shell != null) shell.println(rsp, OutputType.RESPONSE);
-  }
-  
-  private void handleNtf(Message ntf) {
-    log.fine("NTF: "+ntf.toString());
-    engine.setVariable("ntf", ntf);
-    if (shell != null) shell.println(ntf, OutputType.NOTIFICATION);
-  }
-  
 }
-

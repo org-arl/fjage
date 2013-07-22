@@ -62,17 +62,17 @@ public class OutputShell implements Shell {
     if (obj == null) return;
     String s = obj.toString();
     switch(type) {
-      case RESPONSE:
-        out.println(term.response(s));
+      case INPUT:
+        out.println(s);
         break;
-      case NOTIFICATION:
-        out.println(term.notification(s));
+      case OUTPUT:
+        out.println(term.response(s));
         break;
       case ERROR:
         out.println(term.error(s));
         break;
-      default:
-        out.println(s);
+      case NOTIFY:
+        out.println(term.notification(s));
         break;
     }
   }

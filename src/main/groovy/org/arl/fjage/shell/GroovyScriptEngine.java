@@ -248,7 +248,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   
   private void println(Object s) {
     log.fine("RESULT: "+s.toString());
-    if (out != null) out.println(s, OutputType.RESPONSE);
+    if (out != null) out.println(s, OutputType.OUTPUT);
   }
 
   private void error(Throwable ex) {

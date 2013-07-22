@@ -25,10 +25,11 @@ class SwingShell implements Shell {
 
   static def location = [0, 0]
 
-  Color normalFG = Color.black
-  Color responseFG = new Color(128, 96, 0)
+  Color inputFG = Color.black
+  Color outputFG = new Color(128, 96, 0)
   Color errorFG = Color.red
-  Color notificationFG = Color.blue
+  Color receivedFG = Color.blue
+  Color sentFG = Color.black
   Color markerBG = Color.black
   Font font = new Font('Courier', Font.PLAIN, 14)
   boolean shutdownOnExit = true
@@ -79,26 +80,33 @@ class SwingShell implements Shell {
   void println(def obj, OutputType type) {
     def model, component, fg
     switch (type) {
-      case OutputType.NORMAL:
+      case OutputType.INPUT:
         model = cmdLogModel
         component = cmdLog
-        fg = normalFG
+        fg = inputFG
         break
-      case OutputType.RESPONSE:
+      case OutputType.OUTPUT:
         model = cmdLogModel
         component = cmdLog
-        fg = responseFG
+        fg = outputFG
         break
       case OutputType.ERROR:
         model = cmdLogModel
         component = cmdLog
         fg = errorFG
         break
-      case OutputType.NOTIFICATION:
+      case OutputType.RECEIVED:
         model = ntfLogModel
         component = ntfLog
-        fg = notificationFG
+        fg = receivedFG
         break
+      case OutputType.SENT:
+        model = ntfLogModel
+        component = ntfLog
+        fg = sentFG
+        break
+      default:
+        return
     }
     swing.edt {
       if (obj instanceof String) {
@@ -108,7 +116,7 @@ class SwingShell implements Shell {
       } else {
         model.addElement(new ListEntry(data: obj, type: type, fg: fg))
       }
-      if (type != OutputType.NOTIFICATION) component.clearSelection()
+      if (type != OutputType.RECEIVED && type != OutputType.SENT) component.clearSelection()
       component.ensureIndexIsVisible(model.size()-1)
     }
   }
@@ -217,7 +225,7 @@ class SwingShell implements Shell {
               if (!engine.isBusy()) {
                 def s = cmd.text.trim()
                 if (s.length() > 0) {
-                  println("> $s", OutputType.NORMAL)
+                  println("> $s", OutputType.INPUT)
                   if (history.size() == 0 || history.last() != s) history << s
                   historyNdx = -1
                   engine.exec(s, this)
@@ -242,7 +250,7 @@ class SwingShell implements Shell {
             }
             panel(constraints: 'bottom') {
               borderLayout()
-              label(text: 'Notifications', constraints: BorderLayout.NORTH)
+              label(text: 'Messages', constraints: BorderLayout.NORTH)
               scrollPane(constraints: BorderLayout.CENTER) {
                 ntfLog = list(model: ntfLogModel, font: font, cellRenderer: new CmdListCellRenderer(), selectionMode: ListSelectionModel.SINGLE_SELECTION, valueChanged: {
                   int ndx = ntfLog.selectedIndex

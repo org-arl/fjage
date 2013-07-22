@@ -110,18 +110,20 @@ public class TcpShell extends Thread implements Shell {
     try {
       if (console != null) {
         switch(type) {
-          case RESPONSE:
-            console.print(term.response(s));
+          case INPUT:
+            console.print(s);
             break;
-          case NOTIFICATION:
-            console.print(term.notification(s));
+          case OUTPUT:
+            console.print(term.response(s));
             break;
           case ERROR:
             console.print(term.error(s));
             break;
-          default:
-            console.print(s);
+          case NOTIFY:
+            console.print(term.notification(s));
             break;
+          default:
+            return;
         }
         if (term.isEnabled()) console.redrawLine();
         console.flush();

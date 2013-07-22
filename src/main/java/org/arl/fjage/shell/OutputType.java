@@ -14,8 +14,10 @@ package org.arl.fjage.shell;
  * Represents the type of output string to display.
  */
 enum OutputType {
-  NORMAL,
-  RESPONSE,
-  NOTIFICATION,
-  ERROR
+  INPUT,
+  OUTPUT,
+  NOTIFY,
+  ERROR,
+  RECEIVED,
+  SENT
 }

@@ -276,7 +276,7 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding();
     if (binding.hasVariable('out')) {
       def out = binding.getVariable('out');
-      if (out != null) out.println(x.toString(), OutputType.RESPONSE);
+      if (out != null) out.println(x.toString(), OutputType.OUTPUT);
     }
   }
 
