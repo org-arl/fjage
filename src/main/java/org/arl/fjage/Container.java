@@ -366,10 +366,7 @@ public class Container {
    * @return true on success, false on failure.
    */
   public synchronized boolean unsubscribe(AgentID aid, AgentID topic) {
-    if (!topic.isTopic()) {
-      log.warning("Unable to unsubscribe from non-topic "+topic);
-      return false;
-    }
+    if (!topic.isTopic()) topic = new AgentID(topic.getName()+"__ntf", true);
     Agent agent = agents.get(aid);
     if (agent == null) return false;
     Set<Agent> subscribers = topics.get(topic);
