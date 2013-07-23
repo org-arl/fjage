@@ -262,16 +262,19 @@ public class ShellAgent extends Agent {
   private void handleReq(final ShellExecReq req) {
     Message rsp = null;
     if (req.isScript()) {
-      boolean ok = engine.exec(req.getScriptFile(), req.getScriptArgs(), null);
+      File file = req.getScriptFile();
+      boolean ok = false;
+      if (file != null) ok = engine.exec(file, req.getScriptArgs(), null);
       if (ok) rsp = new Message(req, Performative.AGREE);
       else rsp = new Message(req, Performative.REFUSE);
     } else {
       String cmd = req.getCommand();
-      if (cmd.equals(ABORT)) {
+      if (cmd != null && cmd.equals(ABORT)) {
         engine.abort();
         rsp = new Message(req, Performative.AGREE);
       } else {
-        boolean ok = engine.exec(req.getCommand(), null);
+        boolean ok = false;
+        if (cmd != null) ok = engine.exec(cmd, null);
         if (ok) rsp = new Message(req, Performative.AGREE);
         else rsp = new Message(req, Performative.REFUSE);
       }
