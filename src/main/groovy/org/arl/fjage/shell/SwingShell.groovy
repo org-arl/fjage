@@ -55,6 +55,7 @@ class SwingShell implements Shell {
     OutputType type
     Color bg
     Color fg
+    String prefix
   }
 
   SwingShell() {
@@ -81,7 +82,7 @@ class SwingShell implements Shell {
   }
 
   void println(def obj, OutputType type) {
-    def model, component, fg
+    def model, component, fg, prefix
     switch (type) {
       case OutputType.INPUT:
         model = cmdLogModel
@@ -107,6 +108,7 @@ class SwingShell implements Shell {
         model = ntfLogModel
         component = ntfLog
         fg = sentFG
+        prefix = '+'
         break
       default:
         return
@@ -114,10 +116,10 @@ class SwingShell implements Shell {
     swing.edt {
       if (obj instanceof String) {
         obj.readLines().each {
-          model.addElement(new ListEntry(data: it, type: type, fg: fg))
+          model.addElement(new ListEntry(data: it, type: type, fg: fg, prefix: prefix))
         }
       } else {
-        model.addElement(new ListEntry(data: obj, type: type, fg: fg))
+        model.addElement(new ListEntry(data: obj, type: type, fg: fg, prefix: prefix))
       }
       if (type != OutputType.RECEIVED && type != OutputType.SENT) component.clearSelection()
       component.ensureIndexIsVisible(model.size()-1)
@@ -248,7 +250,7 @@ class SwingShell implements Shell {
               }
             })
           }
-          splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 384) {
+          splitPane(orientation: JSplitPane.VERTICAL_SPLIT, dividerLocation: 256) {
             details = tabbedPane(constraints: 'top') {
               panel(name: 'Details') {
                 borderLayout()
@@ -317,7 +319,8 @@ class SwingShell implements Shell {
       if (value instanceof ListEntry) {
         bg = value.bg
         fg = value.fg
-        value = value.data?.toString()
+        if (value.prefix) value = value.prefix + value.data?.toString()
+        else value = value.data?.toString()
       }
       if (value == null) value = ''
       else if (value == '') value = ' '
