@@ -91,6 +91,12 @@ public class ConsoleShell extends Thread implements Shell {
       });
       StringBuffer sb = new StringBuffer();
       boolean nest = false;
+      try {
+        // wait a short while to let fshrc execution progress
+        Thread.sleep(500);
+      } catch (InterruptedException ex) {
+        // do nothing
+      }
       while (!quit) {
         int esc = 0;
         while (engine.isBusy()) {

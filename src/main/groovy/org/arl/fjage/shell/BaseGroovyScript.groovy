@@ -107,7 +107,6 @@ abstract class BaseGroovyScript extends Script {
       Agent a = binding.getVariable('agent');
       Platform p = a.getPlatform();
       p.shutdown();
-      binding.setVariable('agent', null);
     }
   }
 
