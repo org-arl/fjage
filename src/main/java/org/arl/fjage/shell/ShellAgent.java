@@ -50,6 +50,7 @@ public class ShellAgent extends Agent {
   private List<Script> initScripts = new ArrayList<Script>();
   private MessageBehavior msgBehavior;
   private MessageQueue mq = new MessageQueue();
+  private List<MessageListener> listeners = new ArrayList<MessageListener>();
   
   ////// agent methods
   
@@ -73,16 +74,15 @@ public class ShellAgent extends Agent {
         if (msg instanceof ShellExecReq) handleReq((ShellExecReq)msg);
         else {
           log.fine("RCV: "+msg.toString());
-          if (engine.isBusy()) {
+          engine.setVariable((msg.getInReplyTo()==null)?"ntf":"rsp", msg);
+          if (shell != null) shell.println(msg, OutputType.RECEIVED);
+          if (!engine.isBusy()) display(msg);
+          else {
             synchronized (mq) {
               mq.add(msg);
               mq.notifyAll();
             }
-          } else {
-            if (shell != null) shell.println(msg, OutputType.NOTIFY);
           }
-          engine.setVariable((msg.getInReplyTo()==null)?"ntf":"rsp", msg);
-          if (shell != null) shell.println(msg, OutputType.RECEIVED);
         }
       }
     };
@@ -91,13 +91,10 @@ public class ShellAgent extends Agent {
       @Override
       public void onTick() {
         if (!engine.isBusy() && mq.length() > 0) {
-          if (shell == null) mq.clear();
-          else {
-            Message m = mq.get();
-            while (m != null) {
-              shell.println(m, OutputType.NOTIFY);
-              m = mq.get();
-            }
+          Message m = mq.get();
+          while (m != null) {
+            display(m);
+            m = mq.get();
           }
         }
       }
@@ -195,6 +192,31 @@ public class ShellAgent extends Agent {
   public void addInitrc(String name, Reader reader) {
     initScripts.add(new Script(name, reader));
   }
+
+  /**
+   * Adds a message monitor for displayed messages.
+   *
+   * @param ml message listener.
+   */
+  public void addMessageMonitor(MessageListener ml) {
+    listeners.add(ml);
+  }
+  
+  /**
+   * Removes a message monitor.
+   *
+   * @param ml message listener.
+   */
+  public void removeMessageMonitor(MessageListener ml) {
+    listeners.remove(ml);
+  }
+
+  /**
+   * Removes all message monitors.
+   */
+  public void clearMessageMonitors() {
+    listeners.clear();
+  }
   
   ////// overriden methods to allow external threads to call receive/request directly
 
@@ -255,6 +277,12 @@ public class ShellAgent extends Agent {
       }
     }
     if (rsp != null) send(rsp);
+  }
+
+  private void display(Message msg) {
+    if (shell != null) shell.println(msg, OutputType.NOTIFY);
+    for (MessageListener ml: listeners)
+      ml.onReceive(msg);
   }
   
 }
