@@ -163,7 +163,7 @@ guiAddMenu = { String title, String subtitle, Closure task, Map opt = [:] ->
   else menuitem = swing.menuItem(text: subtitle)
   if (task) menuitem.actionPerformed = {
     try {
-      task()
+      task(it.source)
     } catch (Exception ex) {
       println(ex.toString(), org.arl.fjage.shell.OutputType.ERROR)
     }

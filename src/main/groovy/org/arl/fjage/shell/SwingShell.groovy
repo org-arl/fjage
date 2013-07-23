@@ -103,12 +103,13 @@ class SwingShell implements Shell {
         model = ntfLogModel
         component = ntfLog
         fg = receivedFG
+        if (obj instanceof Message) prefix = "${obj.sender} > "
         break
       case OutputType.SENT:
         model = ntfLogModel
         component = ntfLog
         fg = sentFG
-        prefix = '+'
+        if (obj instanceof Message) prefix = "${obj.recepient} < "
         break
       default:
         return
