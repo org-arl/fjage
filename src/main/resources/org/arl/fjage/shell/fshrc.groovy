@@ -126,14 +126,15 @@ doc['guiAddMenu'] = '''\
 guiAddMenu - add menu item to GUI shell
 
 Usage:
-  guiAddMenu title, subtitle, task, [accelerator]
+  guiAddMenu title, subtitle, task, [options]
 
 Examples:
   guiAddMenu 'Custom', 'Do it!', { println 'Just do it!' }
-  guiAddMenu 'Custom', 'Copy', { copy() }, 'meta C'
+  guiAddMenu 'Custom', 'Copy', { copy() }, [acc: 'meta C']  // accelerator
+  guiAddMenu 'Custom', 'Enable', null, [checked: true]      // checkbox
 '''
 
-guiAddMenu = { String title, String subtitle, Closure task, String acc = null ->
+guiAddMenu = { String title, String subtitle, Closure task, Map opt = [:] ->
   def swing = new groovy.swing.SwingBuilder()
   def menubar = gui.menubar
   def menu = null
@@ -157,14 +158,17 @@ guiAddMenu = { String title, String subtitle, Closure task, String acc = null ->
       break
     }
   }
-  def menuitem = swing.menuItem(text: subtitle, actionPerformed: {
+  def menuitem
+  if (opt.checked instanceof Boolean) menuitem = swing.checkBoxMenuItem(text: subtitle, state: opt.checked)
+  else menuitem = swing.menuItem(text: subtitle)
+  if (task) menuitem.actionPerformed = {
     try {
       task()
     } catch (Exception ex) {
       println(ex.toString(), org.arl.fjage.shell.OutputType.ERROR)
     }
-  })
-  if (acc) menuitem.accelerator = javax.swing.KeyStroke.getKeyStroke(acc)
+  }
+  if (opt.acc) menuitem.accelerator = javax.swing.KeyStroke.getKeyStroke(opt.acc)
   swing.edt {
     menu.add(menuitem)
     menubar.revalidate()
