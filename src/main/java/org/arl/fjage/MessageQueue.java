@@ -17,7 +17,7 @@ import java.util.*;
  *
  * @author  Mandar Chitre
  */
-class MessageQueue {
+public class MessageQueue {
 
   /////////// Private attributes
 
@@ -26,21 +26,21 @@ class MessageQueue {
 
   /////////// Interface methods
 
-  synchronized void setSize(int size) {
+  public synchronized void setSize(int size) {
     maxQueueLen = size;
     while (maxQueueLen > 0 && queue.size() >= maxQueueLen)
       queue.remove();
   }
 
-  synchronized void add(Message m) {
+  public synchronized void add(Message m) {
     queue.offer(m);
   }
 
-  synchronized Message get() {
+  public synchronized Message get() {
     return queue.poll();
   }
 
-  synchronized Message get(MessageFilter filter) {
+  public synchronized Message get(MessageFilter filter) {
     if (filter == null) return queue.poll();
     Iterator<Message> it = queue.iterator();
     while (it.hasNext()) {
@@ -51,6 +51,14 @@ class MessageQueue {
       }
     }
     return null;
+  }
+
+  public synchronized void clear() {
+    queue.clear();
+  }
+
+  public int length() {
+    return queue.size();
   }
 
 }

@@ -49,9 +49,7 @@ public class ShellAgent extends Agent {
   private Shell shell;
   private List<Script> initScripts = new ArrayList<Script>();
   private MessageBehavior msgBehavior;
-  private Object sync = new Object();
-  private volatile Message lastMsg = null;
-  private volatile int waiting = 0;
+  private MessageQueue mq = new MessageQueue();
   
   ////// agent methods
   
@@ -75,23 +73,35 @@ public class ShellAgent extends Agent {
         if (msg instanceof ShellExecReq) handleReq((ShellExecReq)msg);
         else {
           log.fine("RCV: "+msg.toString());
-          boolean consumed = false;
-          synchronized (sync) {
-            lastMsg = msg;
-            if (waiting > 0) {
-              consumed = true;
-              sync.notify();
+          if (engine.isBusy()) {
+            synchronized (mq) {
+              mq.add(msg);
+              mq.notifyAll();
             }
+          } else {
+            if (shell != null) shell.println(msg, OutputType.NOTIFY);
           }
-          if (!consumed) engine.setVariable((msg.getInReplyTo()==null)?"ntf":"rsp", msg);
-          if (shell != null) {
-            shell.println(msg, OutputType.RECEIVED);
-            if (!consumed) shell.println(msg, OutputType.NOTIFY);
-          }
+          engine.setVariable((msg.getInReplyTo()==null)?"ntf":"rsp", msg);
+          if (shell != null) shell.println(msg, OutputType.RECEIVED);
         }
       }
     };
     add(msgBehavior);
+    add(new TickerBehavior(250) {
+      @Override
+      public void onTick() {
+        if (!engine.isBusy() && mq.length() > 0) {
+          if (shell == null) mq.clear();
+          else {
+            Message m = mq.get();
+            while (m != null) {
+              shell.println(m, OutputType.NOTIFY);
+              m = mq.get();
+            }
+          }
+        }
+      }
+    });
     add(new OneShotBehavior() {
       @Override
       public void action() {
@@ -192,35 +202,30 @@ public class ShellAgent extends Agent {
   public Message receive(final MessageFilter filter, final long timeout) {
     if (Thread.currentThread().getId() == tid)
       return super.receive(filter, timeout);
-    synchronized (sync) {
-      lastMsg = null;
-      long t = currentTimeMillis();
-      long t1 = t+timeout;
-      while (t < t1) {
+    long t = currentTimeMillis();
+    long t1 = t+timeout;
+    while (t < t1) {
+      synchronized (mq) {
+        Message m = mq.get(filter);
+        if (m != null) return m;
         try {
-          waiting++;
-          sync.wait(t1-t);
+          mq.wait(t1-t);
         } catch (InterruptedException ex) {
           Thread.currentThread().interrupt();
-        } finally {
-          waiting--;
         }
-        if (lastMsg != null && (filter == null || filter.matches(lastMsg))) return lastMsg;
-        t = currentTimeMillis();
       }
-      return null;
+      t = currentTimeMillis();
     }
+    return null;
   }
   
   @Override
   public Message request(final Message msg, final long timeout) {
     if (Thread.currentThread().getId() == tid)
       return super.request(msg, timeout);
-    synchronized (sync) {
-      if (!send(msg)) return null;
-      Message rsp = receive(msg, timeout);
-      return rsp;
-    }
+    if (!send(msg)) return null;
+    Message rsp = receive(msg, timeout);
+    return rsp;
   }
 
   @Override
