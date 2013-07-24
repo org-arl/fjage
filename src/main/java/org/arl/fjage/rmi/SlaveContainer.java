@@ -36,6 +36,7 @@ public class SlaveContainer extends Container implements RemoteContainer {
 
   private RemoteContainer master;
   private String myurl = null;
+  private String masterUrl = null;
   private RemoteContainerProxy proxy = null;
 
   ////////////// Constructors
@@ -49,7 +50,8 @@ public class SlaveContainer extends Container implements RemoteContainer {
   public SlaveContainer(Platform platform, String url) throws IOException, NotBoundException {
     super(platform);
     if (platform.getNetworkInterface() == null) determineNetworkInterface(url);
-    enableRMI();
+    enableRMI(true);
+    masterUrl = url;
     attach(url);
   }
 
@@ -63,7 +65,8 @@ public class SlaveContainer extends Container implements RemoteContainer {
   public SlaveContainer(Platform platform, String name, String url) throws IOException, NotBoundException {
     super(platform, name);
     if (platform.getNetworkInterface() == null) determineNetworkInterface(url);
-    enableRMI();
+    enableRMI(true);
+    masterUrl = url;
     attach(url);
   }
 
@@ -78,6 +81,7 @@ public class SlaveContainer extends Container implements RemoteContainer {
   protected boolean isDuplicate(AgentID aid) {
     if (super.isDuplicate(aid)) return true;
     try {
+      if (master == null && !reattach()) return false;
       if (master.containsAgent(aid)) return true;
     } catch (RemoteException ex) {
       logRemoteException(ex);
@@ -93,6 +97,7 @@ public class SlaveContainer extends Container implements RemoteContainer {
   @Override
   public boolean send(Message m, boolean relay) {
     if (!running) return false;
+    if (master == null && !reattach()) return false;
     AgentID aid = m.getRecipient();
     if (aid == null) return false;
     if (aid.isTopic()) {
@@ -119,6 +124,7 @@ public class SlaveContainer extends Container implements RemoteContainer {
 
   @Override
   public synchronized boolean register(AgentID aid, String service) {
+    if (master == null && !reattach()) return false;
     try {
       return master.register(aid, service);
     } catch (RemoteException ex) {
@@ -129,6 +135,7 @@ public class SlaveContainer extends Container implements RemoteContainer {
 
   @Override
   public synchronized AgentID agentForService(String service) {
+    if (master == null && !reattach()) return null;
     try {
       return master.agentForService(service);
     } catch (RemoteException ex) {
@@ -139,6 +146,7 @@ public class SlaveContainer extends Container implements RemoteContainer {
 
   @Override
   public synchronized AgentID[] agentsForService(String service) {
+    if (master == null && !reattach()) return null;
     try {
       return master.agentsForService(service);
     } catch (RemoteException ex) {
@@ -149,6 +157,7 @@ public class SlaveContainer extends Container implements RemoteContainer {
 
   @Override
   public synchronized boolean deregister(AgentID aid, String service) {
+    if (master == null && !reattach()) return false;
     try {
       return master.deregister(aid, service);
     } catch (RemoteException ex) {
@@ -159,6 +168,7 @@ public class SlaveContainer extends Container implements RemoteContainer {
 
   @Override
   public synchronized void deregister(AgentID aid) {
+    if (master == null && !reattach()) return;
     try {
       master.deregister(aid);
     } catch (RemoteException ex) {
@@ -170,19 +180,11 @@ public class SlaveContainer extends Container implements RemoteContainer {
   public void shutdown() {
     super.shutdown();
     try {
-      master.detachSlave(myurl);
+      if (master != null) master.detachSlave(myurl);
     } catch (RemoteException ex) {
       log.warning("Unable to detach from master during shutdown, perhaps master has already shutdown");
     }
-    if (proxy != null) {
-      try {
-        Naming.unbind(myurl);
-        UnicastRemoteObject.unexportObject(proxy, true);
-        proxy = null;
-      } catch (Exception ex) {
-        logRemoteException(ex);
-      }
-    }
+    disableRMI();
   }
 
   @Override
@@ -220,7 +222,7 @@ public class SlaveContainer extends Container implements RemoteContainer {
     }
   }
 
-  private void enableRMI() throws IOException {
+  private void enableRMI(boolean localNamingOK) throws IOException {
     int port = platform.getPort();
     String hostname = platform.getHostname();
     System.setProperty("java.rmi.server.hostname", hostname);
@@ -230,9 +232,12 @@ public class SlaveContainer extends Container implements RemoteContainer {
       // test if a registry is already running
       Naming.lookup(myurl);
     } catch (ConnectException ex) {
-      // if not, start one...
-      log.info("Unable to find RMI registry, so starting one...");
-      LocateRegistry.createRegistry(port);
+      // if not, perhaps start one...
+      log.info("Unable to find RMI registry...");
+      if (localNamingOK) {
+        log.info("Starting local RMI registry!");
+        LocateRegistry.createRegistry(port);
+      }
     } catch (NotBoundException e) {
       // do nothing, since this is fine
     }
@@ -240,14 +245,43 @@ public class SlaveContainer extends Container implements RemoteContainer {
     Naming.rebind(myurl, proxy);
   }
 
+  private void disableRMI() {
+    try {
+      if (proxy != null) UnicastRemoteObject.unexportObject(proxy, true);
+      Naming.unbind(myurl);
+    } catch (Exception ex) {
+      // ignore
+    }
+    master = null;
+    proxy = null;
+  }
+
   private void attach(String url) throws IOException, NotBoundException {
     master = (RemoteContainer)Naming.lookup(url);
-    if (!master.attachSlave(myurl)) throw new RemoteException("Master cannot bind to us");
+    if (!master.attachSlave(myurl)) {
+      master = null;
+      throw new RemoteException("Master cannot bind to us");
+    }
     log.info("Attached to "+url);
   }
 
   private void logRemoteException(Exception ex) {
-    log.log(Level.WARNING, "Call to master container failed", ex);
+    //log.log(Level.WARNING, "Call to master container failed", ex);
+    log.warning("Lost connection to master: "+ex.toString());
+    disableRMI();
+  }
+
+  private boolean reattach() {
+    log.info("Trying to reconnect...");
+    try {
+      enableRMI(false);
+      attach(masterUrl);
+    } catch (Exception ex1) {
+      log.info("Connection failed: "+ex1.toString());
+      disableRMI();
+      return false;
+    }
+    return true;
   }
 
 }

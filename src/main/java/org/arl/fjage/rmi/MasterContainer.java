@@ -144,11 +144,12 @@ public class MasterContainer extends Container implements RemoteContainer {
     }
     if (proxy != null) {
       try {
-        Naming.unbind(myurl);
         UnicastRemoteObject.unexportObject(proxy, true);
-        proxy = null;
+        Naming.unbind(myurl);
       } catch (Exception ex) {
         logRemoteException(ex);
+      } finally {
+        proxy = null;
       }
     }
   }
