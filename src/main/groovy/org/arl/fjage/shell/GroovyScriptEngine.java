@@ -85,7 +85,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
             if (cmd.contains(" ")) cmd = "run('"+cmd.substring(1).replaceFirst(" ","',")+");";
             else cmd = "run('"+cmd.substring(1)+"');";
           }
-          log.fine("EVAL: "+cmd);
+          log.info("EVAL: "+cmd);
           result = groovy.evaluate(cmd);
           if (result != null && result instanceof Closure && !cmd.endsWith("}") && !cmd.endsWith("};")) {
             // try calling returned closures with no arguments if they take a single argument
@@ -100,13 +100,13 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           }
         } else if (script != null) {
           if (args == null) args = new ArrayList<String>();
-          log.fine("RUN: "+script.getAbsolutePath());
+          log.info("RUN: "+script.getAbsolutePath());
           groovy.getClassLoader().clearCache();
           binding.setVariable("script", script.getAbsoluteFile());
           result = groovy.run(script, args);
         } else if (reader != null) {
           if (args == null) args = new ArrayList<String>();
-          log.fine("RUN: "+readerName);
+          log.info("RUN: "+readerName);
           groovy.getClassLoader().clearCache();
           String[] argsArr = new String[args.size()];
           int i = 0;
@@ -214,7 +214,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
 
   @Override
   public void abort() {
-    log.fine("ABORT: "+busy);
+    log.info("ABORT");
     if (busy) interrupt();
   }
 
@@ -256,7 +256,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   
   private void println(Object s) {
     String str = s.toString();
-    log.fine("RESULT: "+str);
+    log.info("RESULT: "+str);
     // Mostly log the String version, but for messages, log it so that GUI can display details
     // Be careful not to ever log AgentIDs otherwise the toString() extensions can get called too often by GUI!
     if (out != null) out.println((s instanceof org.arl.fjage.Message)?s:str, OutputType.OUTPUT);

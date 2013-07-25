@@ -73,7 +73,7 @@ public class ShellAgent extends Agent {
       public void onReceive(Message msg) {
         if (msg instanceof ShellExecReq) handleReq((ShellExecReq)msg);
         else {
-          log.fine("RCV: "+msg.toString());
+          log.info(msg.getSender()+" > "+msg.toString());
           engine.setVariable((msg.getInReplyTo()==null)?"ntf":"rsp", msg);
           if (shell != null) shell.println(msg, OutputType.RECEIVED);
           if (!engine.isBusy()) display(msg);
@@ -252,7 +252,7 @@ public class ShellAgent extends Agent {
 
   @Override
   public boolean send(Message msg) {
-    log.fine("SEND: "+msg.toString());
+    log.info(msg.getRecipient()+" < "+msg.toString());
     if (shell != null) shell.println(msg, OutputType.SENT);
     return super.send(msg);
   }

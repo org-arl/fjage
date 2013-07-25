@@ -33,7 +33,7 @@ class SwingShell implements Shell {
   Color markerBG = Color.black
   Color busyBG = Color.pink
   Color idleBG = Color.white
-  Font font = new Font('Courier', Font.PLAIN, 14)
+  Font font = new Font(Font.MONOSPACED, Font.PLAIN, 12)
   boolean shutdownOnExit = true
 
   private JFrame window
