@@ -12,6 +12,7 @@ package org.arl.fjage.shell
 
 import java.awt.*
 import java.awt.event.*
+import java.awt.datatransfer.*
 import javax.swing.*
 import javax.swing.table.*
 import org.arl.fjage.*
@@ -225,6 +226,15 @@ class SwingShell implements Shell {
                   if (msg instanceof Message) updateDetailsModel(msg)
                   else updateDetailsModel(null)
                 }
+              }, transferHandler: new TransferHandler() {
+                void exportToClipboard(JComponent component, Clipboard clipboard, int action) {
+                  int ndx = cmdLog.selectedIndex
+                  if (ndx >= 0) {
+                    String text = cmdLogModel[ndx].data as String
+                    if (cmdLogModel[ndx].type == OutputType.INPUT) text = text.substring(2)
+                    clipboard.setContents(new StringSelection(text), null)
+                  }
+                }
               })
             }
             cmd = textField(constraints: BorderLayout.SOUTH, background: idleBG, font: font, actionPerformed: {
@@ -275,7 +285,15 @@ class SwingShell implements Shell {
                     cmdLog.clearSelection()
                     updateDetailsModel(ntfLogModel[ndx].data)
                   }
-                })
+                }, transferHandler: new TransferHandler() {
+                void exportToClipboard(JComponent component, Clipboard clipboard, int action) {
+                  int ndx = ntfLog.selectedIndex
+                  if (ndx >= 0) {
+                    String text = ntfLogModel[ndx].data as String
+                    clipboard.setContents(new StringSelection(text), null)
+                  }
+                }
+              })
               }
             }
           }
