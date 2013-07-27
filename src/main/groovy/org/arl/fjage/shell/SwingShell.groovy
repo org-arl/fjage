@@ -34,6 +34,7 @@ class SwingShell implements Shell {
   Color markerBG = Color.black
   Color busyBG = Color.pink
   Color idleBG = Color.white
+  Color selectedBG = new Color(255, 255, 192)
   Font font = new Font(Font.MONOSPACED, Font.PLAIN, 12)
   boolean shutdownOnExit = true
 
@@ -184,6 +185,12 @@ class SwingShell implements Shell {
     detailsModel.fireTableDataChanged()
   }
 
+  private void redrawList(def model) {
+    // hack, but seems to be the only way to get a JList to repaint completely
+    model.addElement('')
+    model.removeElement(model.lastElement())
+  }
+
   private void exit() {
     if (shutdownOnExit) engine.exec('shutdown', null)
   }
@@ -217,8 +224,8 @@ class SwingShell implements Shell {
           panel(constraints: 'left', preferredSize: [512, -1]) {
             borderLayout()
             label(text: 'Commands', constraints: BorderLayout.NORTH)
-            scrollPane(constraints: BorderLayout.CENTER) {
-              cmdLog = list(model: cmdLogModel, font: font, cellRenderer: new CmdListCellRenderer(), selectionMode: ListSelectionModel.SINGLE_SELECTION, valueChanged: {
+            scrollPane(constraints: BorderLayout.CENTER, componentResized: { redrawList(cmdLogModel) }) {
+              cmdLog = list(model: cmdLogModel, font: font, cellRenderer: new CmdListCellRenderer(), valueChanged: {
                 int ndx = cmdLog.selectedIndex
                 if (ndx >= 0) {
                   ntfLog.clearSelection()
@@ -228,18 +235,22 @@ class SwingShell implements Shell {
                 }
               }, transferHandler: new TransferHandler() {
                 void exportToClipboard(JComponent component, Clipboard clipboard, int action) {
-                  int ndx = cmdLog.selectedIndex
-                  if (ndx >= 0) {
-                    String text = cmdLogModel[ndx].data as String
-                    if (cmdLogModel[ndx].type == OutputType.INPUT) text = text.substring(2)
-                    clipboard.setContents(new StringSelection(text), null)
+                  def ndx = cmdLog.selectedIndices
+                  def text = null
+                  ndx.each {
+                    String s = cmdLogModel[it].data as String
+                    if (cmdLogModel[it].type == OutputType.INPUT) s = s.substring(2)
+                    if (text) text += "\n$s"
+                    else text = s
                   }
+                  if (text) clipboard.setContents(new StringSelection(text), null)
                 }
               })
             }
             cmd = textField(constraints: BorderLayout.SOUTH, background: idleBG, font: font, actionPerformed: {
               if (!engine.isBusy()) {
                 def s = cmd.text.trim()
+                if (nested(s)) return
                 if (s.length() > 0) {
                   println("> $s", OutputType.INPUT)
                   if (history.size() == 0 || history.last() != s) history << s
@@ -278,8 +289,8 @@ class SwingShell implements Shell {
             panel(constraints: 'bottom') {
               borderLayout()
               label(text: 'Messages', constraints: BorderLayout.NORTH)
-              scrollPane(constraints: BorderLayout.CENTER) {
-                ntfLog = list(model: ntfLogModel, font: font, cellRenderer: new CmdListCellRenderer(), selectionMode: ListSelectionModel.SINGLE_SELECTION, valueChanged: {
+              scrollPane(constraints: BorderLayout.CENTER, componentResized: { redrawList(ntfLogModel) }) {
+                ntfLog = list(model: ntfLogModel, font: font, cellRenderer: new CmdListCellRenderer(), valueChanged: {
                   int ndx = ntfLog.selectedIndex
                   if (ndx >= 0) {
                     cmdLog.clearSelection()
@@ -287,11 +298,14 @@ class SwingShell implements Shell {
                   }
                 }, transferHandler: new TransferHandler() {
                 void exportToClipboard(JComponent component, Clipboard clipboard, int action) {
-                  int ndx = ntfLog.selectedIndex
-                  if (ndx >= 0) {
-                    String text = ntfLogModel[ndx].data as String
-                    clipboard.setContents(new StringSelection(text), null)
+                  def ndx = ntfLog.selectedIndices
+                  def text = null
+                  ndx.each {
+                    String s = ntfLogModel[it].data as String
+                    if (text) text += "\n$s"
+                    else text = s
                   }
+                  if (text) clipboard.setContents(new StringSelection(text), null)
                 }
               })
               }
@@ -303,7 +317,7 @@ class SwingShell implements Shell {
       im.put(KeyStroke.getKeyStroke('ESCAPE'), 'esc')
       im.put(KeyStroke.getKeyStroke('ctrl L'), 'cls')
       def am = cmd.actionMap
-      am.put('esc', { cmd.text = ''; historyNdx = -1 } as AbstractAction)
+      am.put('esc', { cmd.selectAll() } as AbstractAction)
       am.put('cls', { cls() } as AbstractAction)
       cmd.addKeyListener(new KeyListener() {
         void keyTyped(KeyEvent e) { }
@@ -331,6 +345,43 @@ class SwingShell implements Shell {
     }
   }
 
+  private boolean nested(String s) {
+    int nest1 = 0
+    int nest2 = 0
+    int nest3 = 0
+    int quote1 = 0
+    int quote2 = 0
+    s.length().times { i ->
+      switch (s.charAt(i)) {
+        case '{':
+          nest1++
+          break
+        case '}':
+          if (nest1 > 0) nest1--
+          break
+        case '(':
+          nest2++
+          break
+        case ')':
+          if (nest2 > 0) nest2--
+          break
+        case '[':
+          nest3++
+          break
+        case ']':
+          if (nest3 > 0) nest3--
+          break
+        case '\'':
+          quote1 = 1-quote1
+          break
+        case '"':
+          quote2 = 1-quote2
+          break
+      }
+    }
+    return nest1+nest2+nest3+quote1+quote2 > 0
+  }
+
   private class CmdListCellRenderer extends DefaultListCellRenderer {
     Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
       def bg = null
@@ -344,7 +395,11 @@ class SwingShell implements Shell {
       if (value == null) value = ''
       else if (value == '') value = ' '
       JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
-      if (!isSelected) {
+      label.text = "<html><body style='width: ${0.8*list.parent.width}px;'>${label.text}</body></html>";
+      if (isSelected) {
+        label.setBackground(selectedBG)
+        if (fg) label.setForeground(fg)
+      } else {
         if (bg) label.setBackground(bg)
         if (fg) label.setForeground(fg)
       }
