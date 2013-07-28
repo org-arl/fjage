@@ -245,11 +245,13 @@ public class Agent implements Runnable, TimestampProvider {
    * the behavior is immediately called once its added to the agent.
    *
    * @param b behavior to be added.
+   * @return the behavior (same as input b)
    */
-  public void add(Behavior b) {
+  public Behavior add(Behavior b) {
     b.setOwner(this);
     newBehaviors.add(b);
     wake();
+    return b;
   }
 
   /**
