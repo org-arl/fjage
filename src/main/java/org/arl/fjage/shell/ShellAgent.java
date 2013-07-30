@@ -54,6 +54,24 @@ public class ShellAgent extends Agent {
   
   ////// agent methods
   
+  /**
+   * Creates a shell agent with no user interface. This is typically used for
+   * executing scripts. This shell has no default initrc.
+   *
+   * @param engine scripting engine
+   */
+  public ShellAgent(ScriptEngine engine) {
+    this.shell = null;
+    this.engine = engine;
+    engine.setVariable("agent", this);
+  }
+
+  /**
+   * Creates a shell agent with a specified user interface and defailt initrc.
+   *
+   * @param shell user interface
+   * @param engine scripting engine
+   */
   public ShellAgent(Shell shell, ScriptEngine engine) {
     this.shell = shell;
     this.engine = engine;
@@ -67,7 +85,7 @@ public class ShellAgent extends Agent {
     register(Services.SHELL);
     engine.setVariable("container", getContainer());
     engine.setVariable("platform", getPlatform());
-    shell.start(engine);
+    if (shell != null) shell.start(engine);
     msgBehavior = new MessageBehavior() {
       @Override
       public void onReceive(Message msg) {
@@ -113,7 +131,7 @@ public class ShellAgent extends Agent {
   
   @Override
   public void shutdown() {
-    shell.shutdown();
+    if (shell != null) shell.shutdown();
     engine.shutdown();
   }
   
