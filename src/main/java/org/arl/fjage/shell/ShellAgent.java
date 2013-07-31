@@ -50,6 +50,7 @@ public class ShellAgent extends Agent {
   private List<Script> initScripts = new ArrayList<Script>();
   private MessageBehavior msgBehavior;
   private MessageQueue mq = new MessageQueue();
+  private int waiting = 0;
   private List<MessageListener> listeners = new ArrayList<MessageListener>();
   
   ////// agent methods
@@ -94,12 +95,9 @@ public class ShellAgent extends Agent {
           log.info(msg.getSender()+" > "+msg.toString());
           engine.setVariable((msg.getInReplyTo()==null)?"ntf":"rsp", msg);
           if (shell != null) shell.println(msg, OutputType.RECEIVED);
-          if (!engine.isBusy()) display(msg);
-          else {
-            synchronized (mq) {
-              mq.add(msg);
-              mq.notifyAll();
-            }
+          synchronized (mq) {
+            mq.add(msg);
+            mq.notifyAll();
           }
         }
       }
@@ -108,7 +106,7 @@ public class ShellAgent extends Agent {
     add(new TickerBehavior(250) {
       @Override
       public void onTick() {
-        if (!engine.isBusy() && mq.length() > 0) {
+        if (waiting == 0 && !engine.isBusy() && mq.length() > 0) {
           Message m = mq.get();
           while (m != null) {
             display(m);
@@ -240,31 +238,40 @@ public class ShellAgent extends Agent {
 
   @Override
   public Message receive(final MessageFilter filter, final long timeout) {
-    if (Thread.currentThread().getId() == tid)
-      return super.receive(filter, timeout);
+    if (Thread.currentThread().getId() == tid) return super.receive(filter, timeout);
     long t = currentTimeMillis();
     long t1 = t+timeout;
-    while (t < t1) {
-      synchronized (mq) {
+    synchronized (mq) {
+      waiting++;
+      while (t < t1) {
         Message m = mq.get(filter);
-        if (m != null) return m;
+        if (m != null) {
+          waiting--;
+          return m;
+        }
         try {
           mq.wait(t1-t);
         } catch (InterruptedException ex) {
           Thread.currentThread().interrupt();
         }
+        t = currentTimeMillis();
       }
-      t = currentTimeMillis();
+      waiting--;
     }
     return null;
   }
   
   @Override
   public Message request(final Message msg, final long timeout) {
-    if (Thread.currentThread().getId() == tid)
-      return super.request(msg, timeout);
-    if (!send(msg)) return null;
-    Message rsp = receive(msg, timeout);
+    if (Thread.currentThread().getId() == tid) return super.request(msg, timeout);
+    synchronized (mq) {
+      waiting++;
+    }
+    Message rsp = null;
+    if (send(msg)) rsp = receive(msg, timeout);
+    synchronized (mq) {
+      waiting--;
+    }
     return rsp;
   }
 
