@@ -18,6 +18,7 @@ import javax.swing.table.*
 import org.arl.fjage.*
 import groovy.swing.SwingBuilder
 import java.awt.BorderLayout
+import org.apache.commons.lang3.StringEscapeUtils
 
 /**
  * Swing GUI command shell.
@@ -395,7 +396,8 @@ class SwingShell implements Shell {
       if (value == null) value = ''
       else if (value == '') value = ' '
       JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
-      label.text = "<html><body style='width: ${0.8*list.parent.width}px;'>${label.text}</body></html>";
+      String s = StringEscapeUtils.escapeHtml4(label.text)
+      label.text = "<html><body style='width: ${0.8*list.parent.width}px;'>$s</body></html>";
       if (isSelected) {
         label.setBackground(selectedBG)
         if (fg) label.setForeground(fg)
