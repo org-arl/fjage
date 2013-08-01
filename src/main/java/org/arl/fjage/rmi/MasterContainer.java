@@ -15,6 +15,7 @@ import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.registry.LocateRegistry;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 
 import org.arl.fjage.*;
@@ -31,7 +32,7 @@ public class MasterContainer extends Container implements RemoteContainer {
   
   ////////////// Private attributes
 
-  private Map<String,RemoteContainer> slaves = Collections.synchronizedMap(new HashMap<String,RemoteContainer>());
+  private Map<String,RemoteContainer> slaves = new ConcurrentHashMap<String,RemoteContainer>();
   private String myurl = null;
   private RemoteContainerProxy proxy = null;
   
