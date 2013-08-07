@@ -530,6 +530,17 @@ public class Agent implements Runnable, TimestampProvider {
   }
 
   /**
+   * Sends a request and waits for a response. This method blocks until a default
+   * timeout of 1 second, if no response is received.
+   *
+   * @param msg message to send.
+   * @return received response message, null on timeout.
+   */
+  public Message request(Message msg) {
+    return request(msg, 1000);
+  }
+
+  /**
    * Sets the maximum length of the incoming message queue for the agent.
    * If the queue overflows, the oldest messages are dropped.
    *

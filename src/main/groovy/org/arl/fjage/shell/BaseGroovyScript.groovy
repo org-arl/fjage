@@ -210,6 +210,22 @@ abstract class BaseGroovyScript extends Script {
     return null;
   }
 
+ /**
+  * Represents a named notification topic for a specified agent.
+  *
+  * @param aid agent identifier. 
+  * @param s name of the notification topic.
+  * @return topic.
+  */
+  AgentID topic(aid, s) {
+    Binding binding = getBinding();
+    if (binding.hasVariable('agent')) {
+      Agent a = binding.getVariable('agent');
+      return a.topic(aid, s);
+    }
+    return null;
+  }
+
   /**
    * Sets current log level for a specified logger.
    *
