@@ -82,7 +82,7 @@ public class ShellAgent extends Agent {
 
   @Override
   public void init() {
-    log.info(getClass().getName()+" init");
+    log.info("Agent "+getName()+" init");
     register(Services.SHELL);
     engine.setVariable("container", getContainer());
     engine.setVariable("platform", getPlatform());

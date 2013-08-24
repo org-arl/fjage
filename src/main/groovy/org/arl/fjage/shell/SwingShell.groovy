@@ -249,6 +249,7 @@ class SwingShell implements Shell {
               })
             }
             cmd = textField(constraints: BorderLayout.SOUTH, background: idleBG, font: font, actionPerformed: {
+              window.title = "$name [${getContainerState()}]"
               if (!engine.isBusy()) {
                 def s = cmd.text.trim()
                 if (nested(s)) return
@@ -266,6 +267,7 @@ class SwingShell implements Shell {
                       cmd.background = idleBG
                       timer.stop()
                       timer = null
+                      window.title = "$name [${getContainerState()}]"
                     }
                   } as ActionListener)
                   timer.start()
@@ -344,6 +346,12 @@ class SwingShell implements Shell {
         }
       })
     }
+  }
+
+  private String getContainerState() {
+    def container = engine.getVariable('container')
+    if (container) return container.state
+    return '-'
   }
 
   private boolean nested(String s) {

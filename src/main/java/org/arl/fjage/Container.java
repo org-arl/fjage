@@ -552,6 +552,16 @@ public class Container {
     }
   }
 
+  /**
+   * Gets human readble state information for container.
+   *
+   * @return state string.
+   */
+  public String getState() {
+    if (!running) return "Not running";
+    return "Running";
+  }
+
   /////////////// Standard Java methods to customize
 
   /**

@@ -198,6 +198,13 @@ public class SlaveContainer extends Container implements RemoteContainer {
   }
   
   @Override
+  public String getState() {
+    if (!running) return "Not running";
+    if (master == null) return "Running, connecting to "+masterUrl+"...";
+    return "Running, connected to "+masterUrl;
+  }
+
+  @Override
   public String toString() {
     String s = getClass().getName()+"@"+name;
     s += "/slave/"+platform;
