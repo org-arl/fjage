@@ -65,3 +65,35 @@ We could then access the shell using `telnet`:
     > ps
     shell: org.arl.fjage.shell.ShellAgent - IDLE
     >
+
+GUI shell using Java Swing
+--------------------------
+
+Although the console shell is simple and lightweight, sometimes it is convenient to have a graphical shell with enhanced functionality. A Java Swing based GUI shell can be started in the `initrc.groovy` like this::
+
+    import org.arl.fjage.*
+    import org.arl.fjage.shell.*
+
+    platform = new RealTimePlatform()
+    container = new Container(platform)
+    shell = new ShellAgent(new SwingShell(), new GroovyScriptEngine())
+    container.add 'shell', shell
+    // add other agents to the container here
+    platform.start()
+
+An option already exists in the default `initrc.groovy` to use the GUI shell. To invoke this, simply start fjåge using `./fjage.sh -gui`. A sample session using the GUI shell is shown below.
+
+.. image:: _static/gui.png
+   :alt: fjåge SwingShell GUI
+   :align: center
+
+The GUI shell displays a separate list in which unsolicited notifications are displayed. Clicking on responses or unsolicited notifications allows closer examination of the messages in the details tab. The GUI can be customized from Groovy shell scripts. Menu items and custom tabbed panels can be added and managed using `guiAddMenu`, `guiGetMenu`, `guiRemoveMenu`, `guiAddPanel`, `guiGetPanel` and `guiRemovePanel` commands. Examples of how to use these are shown in the help available for each command. A following sample script adds a menu item and a tabbed panel to the GUI::
+
+    if (defined('gui')) {    // only call GUI functions if in GUI shell
+      guiAddMenu 'Sample', 'Do something', {
+        println 'Just do it!'
+      }, [acc: 'meta D']
+      guiAddPanel 'Demo', new javax.swing.JPanel()
+    }
+
+After executing this script, a new menu item is created. Once invoked by clicking or using the accelerator key `meta-D`, 'do something' is displayed. The script also adds a blank JPanel in a tab called 'Demo'.
