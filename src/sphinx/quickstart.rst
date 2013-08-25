@@ -6,9 +6,7 @@ Getting Started
 Quick start
 -----------
 
-We assume that you are working on a UNIX (Linux or Mac OS X) system with network access. If you are working on a Windows platform, you may need `Cygwin <http://www.cygwin.com/>`_ installed. We also assume that you have Java Development Kit (JDK) 1.6 or higher installed. If you don't have one, you'll need to `install <http://www.oracle.com/technetwork/java/javase/downloads/index.html>`_ one.
-
-.. caution:: Although one would expect Java to work across platforms, fjåge has not been fully tested under Windows. If you encounter any problems, please report them via the `issue tracking system <http://github.com/org-arl/fjage/issues>`_.
+We assume that you are working on a UNIX (Linux or Mac OS X) system with network access. If you are working on a Windows platform, you will need `Cygwin <http://www.cygwin.com/>`_ installed for the shell script to work. We also assume that you have Java Development Kit (JDK) 1.6 or higher installed. If you don't have one, you'll need to `install <http://www.oracle.com/technetwork/java/javase/downloads/index.html>`_ one.
 
 Create a new folder for your first fjåge project. Lets call it `MyFjageProject`. Open a terminal window in this folder and download the `fjage_quickstart.sh <https://raw.github.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.sh>`_ script in that folder::
 
@@ -30,7 +28,7 @@ Your directory structure should now look something like this:
     logs/
     build/libs/
       fjage-|version|.jar
-      groovy-all-2.1.2.jar
+      groovy-all-2.1.3.jar
       commons-lang3-3.1.jar
       jline-2.10.jar
     etc/
@@ -84,10 +82,10 @@ To run the agent, start fjåge and run the script by typing `run 'hello'` or sim
     > shutdown
 
     bash$ cat logs/log-0.txt | grep HelloWorldAgent@
-    1365092640082|INFO|HelloWorldAgent@18|Hello world!!!
+    1377443280802|INFO|HelloWorldAgent@18:println|Hello world!!!
     bash$ 
 
-The default fjåge log file format is pipe-separated, where the first column is the timestamp in milliseconds, the second column is the log level, the third column is the agent class name and threadID, and the last column is the log message. You may change the format if you like by loading a custom logging configuration by specifying a `java.util.logging.config.file` system property while starting the JVM (see `Java logging <http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html>`_).
+The default fjåge log file format is pipe-separated, where the first column is the timestamp in milliseconds, the second column is the log level, the third column is the agent class name + threadID + method name, and the last column is the log message. You may change the format if you like by loading a custom logging configuration by specifying a `java.util.logging.config.file` system property while starting the JVM (see `Java logging <http://docs.oracle.com/javase/7/docs/technotes/guides/logging/overview.html>`_).
 
 Congratulations!!! You have just developed your first Groovy fjåge agent!
 
@@ -164,7 +162,7 @@ If you wanted the agent to be automatically loaded, you can put the `container.a
 Typical bootup for Groovy applications
 --------------------------------------
 
-In order to fully understand how fjåge works, it is useful to look at the bootup sequence of our hello world fjåge application. When we run `fjage.sh`, the shell script creates a CLASSPATH to include all jar files in the `build/libs` folder and then starts the JVM::
+In order to fully understand how fjåge works, it is useful to look at a slightly simplified version of the bootup sequence of our hello world fjåge application. When we run `fjage.sh`, the shell script creates a CLASSPATH to include all jar files in the `build/libs` folder and then starts the JVM::
 
     java -cp "$CLASSPATH" org.arl.fjage.shell.GroovyBoot etc/initrc.groovy
 

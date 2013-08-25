@@ -17,20 +17,20 @@ The default shell provided by fjåge is a Groovy shell, and can execute any vali
     help [topic] - provide help on a specified topic
     ps - list all the agents running on the local container
     who - display list of variables in workspace
-    run script - run a Groovy script
-    println message - display message on console
-    delay millis - delay execution by the specified number of milliseconds
+    run - run a Groovy script
+    println - display message on console
+    delay - delay execution by the specified number of milliseconds
     shutdown - shutdown the local platform
-    logLevel [name],level - set loglevel (optionally for a named logger)
-    subscribe topic(name) - subscribe to notifications from a named topic
-    unsubscribe topic(name) - unsubscribe from notifications for a named topic
-    shellImport spec - add specified package/classes to list of imports
-    agent(name) - return an agent id for the named agent
-    agentForService(service) - find an agent id providing the specified service
-    agentsForService(service) - get a list of agent ids providing the specified service
-    send msg - send the given message
-    request req,[timeout] - send the given request and wait for a response
-    receive [filter],[timeout] - wait for a message
+    logLevel - set loglevel (optionally for a named logger)
+    subscribe - subscribe to notifications from a named topic
+    unsubscribe - unsubscribe from notifications for a named topic
+    shellImport - add specified package/classes to list of imports
+    agent - return an agent id for the named agent
+    agentForService - find an agent id providing the specified service
+    agentsForService - get a list of all agent ids providing the specified service
+    send - send the given message
+    request - send the given request and wait for a response
+    receive - wait for a message
     > 
 
 Further help on an individual topic can be obtained by typing `help` followed by the topic name. You are encouraged to explore the help.
