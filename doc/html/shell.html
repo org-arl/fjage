@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The Shell Agent &mdash; fjåge 1.2.1 documentation</title>
+    <title>The Shell Agent &mdash; fjåge 1.3 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="fjåge 1.2.1 documentation" href="index.html" />
+    <link rel="top" title="fjåge 1.3 documentation" href="index.html" />
     <link rel="next" title="Simulation" href="simulation.html" />
     <link rel="prev" title="Distributed Agents" href="rmi.html" /> 
   </head>
@@ -38,7 +38,7 @@
         <li class="right" >
           <a href="rmi.html" title="Distributed Agents"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fjåge 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -48,6 +48,7 @@
 <li><a class="reference internal" href="#">The Shell Agent</a><ul>
 <li><a class="reference internal" href="#shell-commands">Shell commands</a></li>
 <li><a class="reference internal" href="#remote-shell-over-tcp-ip">Remote shell over TCP/IP</a></li>
+<li><a class="reference internal" href="#gui-shell-using-java-swing">GUI shell using Java Swing</a></li>
 </ul>
 </li>
 </ul>
@@ -89,25 +90,25 @@
 <h2>Shell commands<a class="headerlink" href="#shell-commands" title="Permalink to this headline">¶</a></h2>
 <p>The default shell provided by fjåge is a Groovy shell, and can execute any valid Groovy code. A few standard commands, variables and closures are made available. Just typing <cite>help</cite> will provide a list of commands that are available:</p>
 <div class="highlight-console"><div class="highlight"><pre><span class="go">bash$ ./fjage.sh</span>
-<span class="gp">$</span> <span class="nb">help</span>
+<span class="gp">&gt;</span> <span class="nb">help</span>
 <span class="go">help [topic] - provide help on a specified topic</span>
 <span class="go">ps - list all the agents running on the local container</span>
 <span class="go">who - display list of variables in workspace</span>
-<span class="go">run script - run a Groovy script</span>
-<span class="go">println message - display message on console</span>
-<span class="go">sleep millis - delay execution by the specified number of milliseconds</span>
+<span class="go">run - run a Groovy script</span>
+<span class="go">println - display message on console</span>
+<span class="go">delay - delay execution by the specified number of milliseconds</span>
 <span class="go">shutdown - shutdown the local platform</span>
-<span class="go">logLevel [name],level - set loglevel (optionally for a named logger)</span>
-<span class="go">subscribe topic(name) - subscribe to notifications from a named topic</span>
-<span class="go">unsubscribe topic(name) - unsubscribe from notifications for a named topic</span>
-<span class="go">include spec - add specified package/classes to list of imports</span>
-<span class="go">agent(name) - return an agent id for the named agent</span>
-<span class="go">agentForService(service) - find an agent id providing the specified service</span>
-<span class="go">agentsForService(service) - get a list of agent ids providing the specified service</span>
-<span class="go">send msg - send the given message</span>
-<span class="go">request req,[timeout] - send the given request and wait for a response</span>
-<span class="go">receive [filter],[timeout] - wait for a message</span>
-<span class="gp">$</span>
+<span class="go">logLevel - set loglevel (optionally for a named logger)</span>
+<span class="go">subscribe - subscribe to notifications from a named topic</span>
+<span class="go">unsubscribe - unsubscribe from notifications for a named topic</span>
+<span class="go">shellImport - add specified package/classes to list of imports</span>
+<span class="go">agent - return an agent id for the named agent</span>
+<span class="go">agentForService - find an agent id providing the specified service</span>
+<span class="go">agentsForService - get a list of all agent ids providing the specified service</span>
+<span class="go">send - send the given message</span>
+<span class="go">request - send the given request and wait for a response</span>
+<span class="go">receive - wait for a message</span>
+<span class="gp">&gt;</span>
 </pre></div>
 </div>
 <p>Further help on an individual topic can be obtained by typing <cite>help</cite> followed by the topic name. You are encouraged to explore the help.</p>
@@ -136,11 +137,38 @@
 <span class="go">Trying localhost...</span>
 <span class="go">Connected to localhost</span>
 <span class="go">Escape character is &#39;^]&#39;.</span>
-<span class="gp">$</span> ps
+<span class="gp">&gt;</span> ps
 <span class="go">shell: org.arl.fjage.shell.ShellAgent - IDLE</span>
-<span class="gp">$</span>
+<span class="gp">&gt;</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="gui-shell-using-java-swing">
+<h2>GUI shell using Java Swing<a class="headerlink" href="#gui-shell-using-java-swing" title="Permalink to this headline">¶</a></h2>
+<p>Although the console shell is simple and lightweight, sometimes it is convenient to have a graphical shell with enhanced functionality. A Java Swing based GUI shell can be started in the <cite>initrc.groovy</cite> like this:</p>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.arl.fjage.*</span>
+<span class="kn">import</span> <span class="nn">org.arl.fjage.shell.*</span>
+
+<span class="n">platform</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimePlatform</span><span class="o">()</span>
+<span class="n">container</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Container</span><span class="o">(</span><span class="n">platform</span><span class="o">)</span>
+<span class="n">shell</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ShellAgent</span><span class="o">(</span><span class="k">new</span> <span class="n">SwingShell</span><span class="o">(),</span> <span class="k">new</span> <span class="n">GroovyScriptEngine</span><span class="o">())</span>
+<span class="n">container</span><span class="o">.</span><span class="na">add</span> <span class="s1">&#39;shell&#39;</span><span class="o">,</span> <span class="n">shell</span>
+<span class="c1">// add other agents to the container here</span>
+<span class="n">platform</span><span class="o">.</span><span class="na">start</span><span class="o">()</span>
+</pre></div>
+</div>
+<p>An option already exists in the default <cite>initrc.groovy</cite> to use the GUI shell. To invoke this, simply start fjåge using <cite>./fjage.sh -gui</cite>. A sample session using the GUI shell is shown below.</p>
+<img alt="fjåge SwingShell GUI" class="align-center" src="_images/gui.png" />
+<p>The GUI shell displays a separate list in which unsolicited notifications are displayed. Clicking on responses or unsolicited notifications allows closer examination of the messages in the details tab. The GUI can be customized from Groovy shell scripts. Menu items and custom tabbed panels can be added and managed using <cite>guiAddMenu</cite>, <cite>guiGetMenu</cite>, <cite>guiRemoveMenu</cite>, <cite>guiAddPanel</cite>, <cite>guiGetPanel</cite> and <cite>guiRemovePanel</cite> commands. Examples of how to use these are shown in the help available for each command. A following sample script adds a menu item and a tabbed panel to the GUI:</p>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="k">if</span> <span class="o">(</span><span class="n">defined</span><span class="o">(</span><span class="s1">&#39;gui&#39;</span><span class="o">))</span> <span class="o">{</span>    <span class="c1">// only call GUI functions if in GUI shell</span>
+  <span class="n">guiAddMenu</span> <span class="s1">&#39;Sample&#39;</span><span class="o">,</span> <span class="s1">&#39;Do something&#39;</span><span class="o">,</span> <span class="o">{</span>
+    <span class="n">println</span> <span class="s1">&#39;Just do it!&#39;</span>
+  <span class="o">},</span> <span class="o">[</span><span class="nl">acc:</span> <span class="s1">&#39;meta D&#39;</span><span class="o">]</span>
+  <span class="n">guiAddPanel</span> <span class="s1">&#39;Demo&#39;</span><span class="o">,</span> <span class="k">new</span> <span class="n">javax</span><span class="o">.</span><span class="na">swing</span><span class="o">.</span><span class="na">JPanel</span><span class="o">()</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+<p>After executing this script, a new menu item is created. Once invoked by clicking or using the accelerator key <cite>meta-D</cite>, &#8216;do something&#8217; is displayed. The script also adds a blank JPanel in a tab called &#8216;Demo&#8217;.</p>
 </div>
 </div>
 
@@ -159,7 +187,7 @@
         <li class="right" >
           <a href="rmi.html" title="Distributed Agents"
              >previous</a> |</li>
-        <li><a href="index.html">fjåge 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

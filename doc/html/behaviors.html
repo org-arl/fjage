@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Agents and Behaviors &mdash; fjåge 1.2.1 documentation</title>
+    <title>Agents and Behaviors &mdash; fjåge 1.3 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="fjåge 1.2.1 documentation" href="index.html" />
+    <link rel="top" title="fjåge 1.3 documentation" href="index.html" />
     <link rel="next" title="Messaging" href="messages.html" />
     <link rel="prev" title="Getting Started" href="quickstart.html" /> 
   </head>
@@ -38,7 +38,7 @@
         <li class="right" >
           <a href="quickstart.html" title="Getting Started"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fjåge 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -237,7 +237,7 @@
 <h2>Finite state machine behavior<a class="headerlink" href="#finite-state-machine-behavior" title="Permalink to this headline">¶</a></h2>
 <p>Finite state machines can easily be implemented using the <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/FSMBehavior.html">FSMBehavior</a> class. These machines are composed out of multiple states, each of which is like a <cite>CyclicBehavior</cite>. State transitions are managed using the <cite>nextState</cite> property.</p>
 <p>For example, we can create a grandfather clock using a <cite>FSMBehavior</cite>:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">b</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FSMBehavior</span><span class="o">()</span>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">b</span> <span class="o">=</span> <span class="n">add</span> <span class="k">new</span> <span class="n">FSMBehavior</span><span class="o">()</span>
 <span class="n">b</span><span class="o">.</span><span class="na">add</span> <span class="k">new</span> <span class="n">FSMBehavior</span><span class="o">.</span><span class="na">State</span><span class="o">(</span><span class="s1">&#39;tick&#39;</span><span class="o">)</span> <span class="o">{</span>
   <span class="kt">void</span> <span class="nf">action</span><span class="o">()</span> <span class="o">{</span>
     <span class="n">println</span> <span class="s1">&#39;tick!&#39;</span>
@@ -252,7 +252,6 @@
     <span class="n">fsm</span><span class="o">.</span><span class="na">block</span> <span class="mi">1000</span>
   <span class="o">}</span>
 <span class="o">}</span>
-<span class="n">add</span> <span class="n">b</span>
 </pre></div>
 </div>
 </div>
@@ -319,7 +318,7 @@
         <li class="right" >
           <a href="quickstart.html" title="Getting Started"
              >previous</a> |</li>
-        <li><a href="index.html">fjåge 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

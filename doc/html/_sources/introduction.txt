@@ -38,7 +38,7 @@ There are two kinds of platforms available:
 To switch between the two platforms, the agent code does not require any changes as long as a couple of simple rules are followed while developing the agents:
 
 * Agents must not use any system timing functions directly. Rather than use `System.currentTimeMillis()` or `System.nanoTime()`, the agents should use `Agent.currentTimeMillis()` and `Agent.nanoTime()`.
-* Agents must not use any system scheduling functions directly. Rather than use `Thread.sleep()`, the agent should use `Agent.sleep()`.
+* Agents must not use any system scheduling functions directly. Rather than use `Thread.sleep()`, the agent should use `Agent.delay()`.
 
 Following these rules guarantees that the agents transparently switch between the real-time or virtual time that the platform provides.
 

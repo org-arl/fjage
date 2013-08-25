@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Introduction &mdash; fjåge 1.2.1 documentation</title>
+    <title>Introduction &mdash; fjåge 1.3 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="fjåge 1.2.1 documentation" href="index.html" />
+    <link rel="top" title="fjåge 1.3 documentation" href="index.html" />
     <link rel="next" title="Getting Started" href="quickstart.html" />
     <link rel="prev" title="Fjåge Developer’s Guide" href="index.html" /> 
   </head>
@@ -38,7 +38,7 @@
         <li class="right" >
           <a href="index.html" title="Fjåge Developer’s Guide"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fjåge 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -115,7 +115,7 @@
 <p>To switch between the two platforms, the agent code does not require any changes as long as a couple of simple rules are followed while developing the agents:</p>
 <ul class="simple">
 <li>Agents must not use any system timing functions directly. Rather than use <cite>System.currentTimeMillis()</cite> or <cite>System.nanoTime()</cite>, the agents should use <cite>Agent.currentTimeMillis()</cite> and <cite>Agent.nanoTime()</cite>.</li>
-<li>Agents must not use any system scheduling functions directly. Rather than use <cite>Thread.sleep()</cite>, the agent should use <cite>Agent.sleep()</cite>.</li>
+<li>Agents must not use any system scheduling functions directly. Rather than use <cite>Thread.sleep()</cite>, the agent should use <cite>Agent.delay()</cite>.</li>
 </ul>
 <p>Following these rules guarantees that the agents transparently switch between the real-time or virtual time that the platform provides.</p>
 <p>Agents may choose to provide one or more <em>services</em>. Rather than having to know the AgentID of an agent in advance, agents requiring the services of another agent may look for agents providing specific services via the <em>directory service</em>. Agents may choose to subscribe to and send messages to <em>topics</em>. All agents subscribing to a topic receive each message sent to that topic.</p>
@@ -132,7 +132,7 @@
 &lt;dependency&gt;
   &lt;groupId&gt; com.github.org-arl &lt;/groupId&gt;
   &lt;artifactId&gt; fjage &lt;/artifactId&gt;
-  &lt;version&gt; 1.2.1 &lt;/version&gt;
+  &lt;version&gt; 1.3 &lt;/version&gt;
 &lt;/dependency&gt;
 </pre>
 <p>Its source code is available via <a class="reference external" href="http://github.com/org-arl/fjage">GitHub</a>:</p>
@@ -156,7 +156,7 @@
         <li class="right" >
           <a href="index.html" title="Fjåge Developer’s Guide"
              >previous</a> |</li>
-        <li><a href="index.html">fjåge 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

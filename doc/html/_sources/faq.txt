@@ -8,9 +8,17 @@ Groovy syntax
 
 :A: These two synaxes supported by `GroovyExtensions` have been removed since fjåge v1.2. Instead use the new Groovy syntax `add new OneShotBehavior({ ... })`. The similarity with the Java syntax avoids confusions caused due to previous Groovy syntax.
 
+:Q: I just declared a variable in the shell using `def x = ...`, but I get a `No such property` error when I try accessing it!  Why?
+
+:A: Variables declared with types or using `def` are available during execution of the command, but not exported to the variable binding of the shell. To declare a new variable in the binding, it should be declared without a type definition (e.g. `x = ...`).
+
+:Q: What is the difference between `import` and `shellImport`?
+
+:A: In a Groovy script, `import` is used in the same sense as Java or Groovy, to import a package or class.  The imports are only active during the execution of the script.  `shellImport` is used to add an import to the shell, so that import is in force in the shell even after the script has terminated.  At the shell prompt, `import` and `shellImport` can be used interchangeably (with a slightly different syntax -- see `help shellImport` for more information).
+
 Logging
 -------
 
 :Q: How do I temporarily enable debug logging for fjåge applications without writing my own `logging.properties`?
 
-:A: Debug logging (log level `ALL`) can be enabled by simply passing a `-debug` flag on the command line to `GroovyBoot`. To enable debug logging for only certain loggers, you can use a flag of the form `-debug:loggername`. Startup scripts (such as `fjage.sh`) pass all arguments to `GroovyBoot`, allowing this flag to be simply included on the command line while starting the application.
+:A: Debug logging (log level `ALL`) can be enabled by simply passing a `-debug` flag on the command line to `GroovyBoot`. To enable debug logging for only certain loggers, you can use a flag of the form `-debug:loggername`. Startup scripts (such as `fjage.sh`) pass all arguments to `GroovyBoot`, allowing this flag to be simply included on the command line while starting the application. An alternative solution is to use the command `logLevel` at the shell prompt to control the log level of a specific logger.  For more information, try `help logLevel`.

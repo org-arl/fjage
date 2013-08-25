@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Distributed Agents &mdash; fjåge 1.2.1 documentation</title>
+    <title>Distributed Agents &mdash; fjåge 1.3 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="fjåge 1.2.1 documentation" href="index.html" />
+    <link rel="top" title="fjåge 1.3 documentation" href="index.html" />
     <link rel="next" title="The Shell Agent" href="shell.html" />
     <link rel="prev" title="Directory Services" href="services.html" /> 
   </head>
@@ -38,7 +38,7 @@
         <li class="right" >
           <a href="services.html" title="Directory Services"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fjåge 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -146,8 +146,7 @@ java -cp <span class="s2">&quot;$CLASSPATH&quot;</span> org.arl.fjage.shell.Groo
 <div class="section" id="interacting-with-agents-using-a-gateway">
 <h2>Interacting with agents using a Gateway<a class="headerlink" href="#interacting-with-agents-using-a-gateway" title="Permalink to this headline">¶</a></h2>
 <p>Only agents may access messaging and related functionality provided by fjåge. For example, non-agent Java or Groovy threads cannot send messages to, or receive messages. To aid interaction of such threads with agents, fjåge provides a <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/rmi/Gateway.html">Gateway</a> class. This class provides agent-like functionality to non-agent threads by creating a proxy agent in a slave container that has access to this functionality. Using the <cite>Gateway</cite> is fairly simple:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">Platform</span> <span class="n">platform</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimePlatform</span><span class="o">()</span>
-<span class="n">Gateway</span> <span class="n">gw</span> <span class="o">=</span> <span class="n">Gateway</span><span class="o">(</span><span class="n">platform</span><span class="o">,</span> <span class="n">masterURL</span><span class="o">)</span>
+<div class="highlight-groovy"><div class="highlight"><pre><span class="n">Gateway</span> <span class="n">gw</span> <span class="o">=</span> <span class="n">Gateway</span><span class="o">(</span><span class="n">masterURL</span><span class="o">)</span>
 <span class="kt">def</span> <span class="n">weatherStation</span> <span class="o">=</span> <span class="n">gw</span><span class="o">.</span><span class="na">agentForService</span> <span class="n">Services</span><span class="o">.</span><span class="na">WEATHER_FORECAST_SERVICE</span>
 <span class="kt">def</span> <span class="n">rsp</span> <span class="o">=</span> <span class="n">gw</span><span class="o">.</span><span class="na">request</span> <span class="k">new</span> <span class="n">WeatherForecastReq</span><span class="o">(</span><span class="nl">city:</span> <span class="s1">&#39;London&#39;</span><span class="o">,</span> <span class="nl">country:</span> <span class="s1">&#39;UK&#39;</span><span class="o">,</span> <span class="nl">recipient:</span> <span class="n">weatherStation</span><span class="o">)</span>
 <span class="n">println</span> <span class="s2">&quot;The lowest temperature today is ${rsp?rsp.minTemp:&#39;unknown&#39;}&quot;</span>
@@ -172,7 +171,7 @@ java -cp <span class="s2">&quot;$CLASSPATH&quot;</span> org.arl.fjage.shell.Groo
         <li class="right" >
           <a href="services.html" title="Directory Services"
              >previous</a> |</li>
-        <li><a href="index.html">fjåge 1.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -154,7 +154,7 @@ Finite state machines can easily be implemented using the `FSMBehavior`_ class. 
 
 For example, we can create a grandfather clock using a `FSMBehavior`::
 
-    def b = new FSMBehavior()
+    def b = add new FSMBehavior()
     b.add new FSMBehavior.State('tick') {
       void action() {
         println 'tick!'
@@ -169,7 +169,6 @@ For example, we can create a grandfather clock using a `FSMBehavior`::
         fsm.block 1000
       }
     }
-    add b
 
 Test behavior
 -------------
