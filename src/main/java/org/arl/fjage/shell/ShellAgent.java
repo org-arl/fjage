@@ -86,7 +86,6 @@ public class ShellAgent extends Agent {
     register(Services.SHELL);
     engine.setVariable("container", getContainer());
     engine.setVariable("platform", getPlatform());
-    if (shell != null) shell.start(engine);
     msgBehavior = new MessageBehavior() {
       @Override
       public void onReceive(Message msg) {
@@ -123,6 +122,8 @@ public class ShellAgent extends Agent {
           if (script.file != null) engine.exec(script.file, null);
           else engine.exec(script.reader, script.name, null);
         }
+        if (engine.isBusy()) engine.waitUntilCompletion();
+        if (shell != null) shell.start(engine);
       }
     });
   }

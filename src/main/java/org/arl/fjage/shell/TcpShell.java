@@ -161,7 +161,6 @@ public class TcpShell extends Thread implements Shell {
         } catch (InterruptedException ex) {
           // do nothing
         }
-        while (in.available() > 0) in.read();  // flush input stream
         console = new ConsoleReader(in, out);
         try {
           console.getTerminal().init();
