@@ -30,6 +30,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   private Shell out = null;
   private String cmd = null;
   private File script = null;
+  private Script gscript = null;
   private Reader reader = null;
   private String readerName = null;
   private List<String> args = null;
@@ -104,6 +105,11 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           groovy.getClassLoader().clearCache();
           binding.setVariable("script", script.getAbsoluteFile());
           result = groovy.run(script, args);
+        } else if (gscript != null) {
+          log.info("RUN: "+gscript.getClass().getName());
+          binding.setVariable("script", gscript.getClass().getName());
+          gscript.setBinding(binding);
+          gscript.run();
         } else if (reader != null) {
           if (args == null) args = new ArrayList<String>();
           log.info("RUN: "+readerName);
@@ -127,6 +133,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
       }
       cmd = null;
       script = null;
+      gscript = null;
       reader = null;
       readerName = null;
       args = null;
@@ -158,6 +165,19 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
     if (busy) return false;
     this.script = script;
     args = null;
+    result = null;
+    binding.setVariable("out", out);
+    this.out = out;
+    busy = true;
+    notify();
+    return true;
+  }
+
+  @Override
+  public synchronized boolean exec(Script script, Shell out) {
+    if (busy) return false;
+    this.gscript = script;
+    this.args = null;
     result = null;
     binding.setVariable("out", out);
     this.out = out;

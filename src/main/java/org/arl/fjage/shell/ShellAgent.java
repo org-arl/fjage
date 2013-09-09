@@ -117,13 +117,14 @@ public class ShellAgent extends Agent {
     add(new OneShotBehavior() {
       @Override
       public void action() {
+        if (shell != null) shell.bind(engine);
         for (Script script: initScripts) {
           if (engine.isBusy()) engine.waitUntilCompletion();
           if (script.file != null) engine.exec(script.file, null);
           else engine.exec(script.reader, script.name, null);
         }
         if (engine.isBusy()) engine.waitUntilCompletion();
-        if (shell != null) shell.start(engine);
+        if (shell != null) shell.start();
       }
     });
   }

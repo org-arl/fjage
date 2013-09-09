@@ -69,7 +69,7 @@ class SwingShell implements Shell {
     this.name = name
   }
 
-  void start(ScriptEngine engine) {
+  void bind(ScriptEngine engine) {
     this.engine = engine
     createGUI()
     gui.menubar = mbar
@@ -78,6 +78,10 @@ class SwingShell implements Shell {
     gui.cmdLog = cmdLog
     gui.ntfLog = ntfLog
     engine.setVariable('gui', gui)
+  }
+
+  void start() {
+    // do nothing
   }
 
   void shutdown() {

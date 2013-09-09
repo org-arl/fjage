@@ -47,11 +47,10 @@ public class TcpShell extends Thread implements Shell {
   }
   
   @Override
-  public void start(ScriptEngine engine) {
+  public void bind(ScriptEngine engine) {
     this.engine = engine;
     setName(getClass().getSimpleName());
     setDaemon(true);
-    start();
   }
 
   @Override

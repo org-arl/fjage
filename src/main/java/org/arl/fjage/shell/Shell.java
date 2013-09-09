@@ -16,11 +16,16 @@ package org.arl.fjage.shell;
 public interface Shell {
   
   /**
-   * Starts the shell using the specified script engine.
+   * Bind the shell using the specified script engine.
    * 
    * @param engine script engine to use.
    */
-  public void start(ScriptEngine engine);
+  public void bind(ScriptEngine engine);
+
+  /**
+   * Start the shell.
+   */
+  public void start();
 
   /**
    * Display a message on the shell.

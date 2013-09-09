@@ -48,7 +48,12 @@ public class OutputShell implements Shell {
   }
 
   @Override
-  public void start(ScriptEngine engine) {
+  public void bind(ScriptEngine engine) {
+    // do nothing
+  }
+
+  @Override
+  public void start() {
     // do nothing
   }
 
