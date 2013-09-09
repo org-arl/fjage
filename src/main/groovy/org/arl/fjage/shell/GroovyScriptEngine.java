@@ -173,7 +173,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
     return true;
   }
 
-  @Override
+  //@Override
   public synchronized boolean exec(Script script, Shell out) {
     if (busy) return false;
     this.gscript = script;
