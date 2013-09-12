@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Usage:
 #   ./fjage.sh [-gui] [-nocolor]
