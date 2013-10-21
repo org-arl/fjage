@@ -35,8 +35,8 @@ Support
 Binary Releases
 ---------------
 
-* [fjage-1.3.2.jar](https://oss.sonatype.org/service/local/repositories/releases/content/com/github/org-arl/fjage/1.3.2/fjage-1.3.2.jar), released Oct 21, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/RdAidaBDlNQ))
-* [fjage-1.3.1.jar](https://oss.sonatype.org/service/local/repositories/releases/content/com/github/org-arl/fjage/1.3.1/fjage-1.3.1.jar), released Sep 1, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/2M_FtV2zzRY))
+* [fjage-1.3.2.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.3.2/fjage-1.3.2.jar), released Oct 21, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/RdAidaBDlNQ))
+* [fjage-1.3.1.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.3.1/fjage-1.3.1.jar), released Sep 1, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/2M_FtV2zzRY))
 * [fjage-1.3.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.3/fjage-1.3.jar), released Aug 26, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/dibfe8w2Ijk))
 * [fjage-1.2.1.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.2.1/fjage-1.2.1.jar), released May 29, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/tw5Zf-7hil4))
 
