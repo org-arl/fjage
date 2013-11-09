@@ -164,8 +164,8 @@ public class ConsoleShell extends Thread implements Shell {
         if (term.isEnabled()) console.redrawLine();
         console.flush();
       }
-    } catch (IOException ex) {
-      // do nothing
+    } catch (Exception ex) {
+      log.warning("println: "+ex.toString());
     }
   }
 
