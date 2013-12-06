@@ -7,8 +7,8 @@
 
 import org.arl.fjage.*
 
-class WeatherForecastReq extends Message {
-  WeatherForecastReq() {
+class WeatherForecastReqMsg extends Message {
+  WeatherForecastReqMsg() {
     super(Performative.REQUEST)
   }
   String city, country

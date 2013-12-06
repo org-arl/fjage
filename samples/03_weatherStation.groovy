@@ -23,7 +23,7 @@ class WeatherForecast extends org.arl.fjage.Message {
 class MyWeatherStation extends Agent {
 
   void init() {
-    add new MessageBehavior(WeatherForecastReq, { req ->
+    add new MessageBehavior(WeatherForecastReqMsg, { req ->
       log.info "Weather forecast request for ${req.city}, ${req.country}"
       def rsp = new WeatherForecast(req)
       rsp.minTemp = 10

@@ -12,7 +12,7 @@ class MyWeatherRequest extends Agent {
 	void init() {
 		//request weather information
 		add new OneShotBehavior ({
-			def req = new WeatherForecastReq(city: 'London', country: 'UK', recipient: agent('weatherStation01'))
+			def req = new WeatherForecastReqMsg(city: 'London', country: 'UK', recipient: agent('weatherStation01'))
 			def rsp = request req, 1000         // 1000 ms timeout for reply
 			//display the information
 			println "The lowest temperature today is ${rsp?rsp.minTemp:'unknown'}"
