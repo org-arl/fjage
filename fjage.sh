@@ -28,4 +28,4 @@ do
 done
 
 mkdir -p logs
-java -cp "$CLASSPATH" -Dfjage.gui=$GUI org.arl.fjage.shell.GroovyBoot $@ etc/initrc.groovy
+java -cp "$CLASSPATH:samples" -Dfjage.gui=$GUI org.arl.fjage.shell.GroovyBoot $@ etc/initrc.groovy

@@ -4,7 +4,7 @@
 VERSION=1.3.1
 
 # create the folder structure
-mkdir -p build/libs etc logs
+mkdir -p build/libs etc logs samples
 
 # download necessary JARs
 cd build/libs
@@ -21,6 +21,14 @@ cd etc
 curl -O https://raw.github.com/org-arl/fjage/master/etc/initrc.groovy
 cd ..
 
+# download sample agents
+cd samples
+curl -O https://raw.github.com/manuignatius/fjage/master/samples/01_hello.groovy
+curl -O https://raw.github.com/manuignatius/fjage/master/samples/02_ticker.groovy
+curl -O https://raw.github.com/manuignatius/fjage/master/samples/03_weatherStation.groovy
+curl -O https://raw.github.com/manuignatius/fjage/master/samples/03_weatherRequest.groovy
+cd ..
+
 # download startup script
-curl -O https://raw.github.com/org-arl/fjage/master/fjage.sh
+curl -O https://raw.github.com/manuignatius/fjage/master/fjage.sh
 chmod a+x fjage.sh
