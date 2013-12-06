@@ -34,5 +34,5 @@ curl -O https://raw.github.com/manuignatius/fjage/dev/samples/04_weatherRequest.
 cd ..
 
 # download startup script
-curl -O https://raw.github.com/manuignatius/fjage/master/fjage.sh
+curl -O https://raw.github.com/manuignatius/fjage/dev/fjage.sh
 chmod a+x fjage.sh
