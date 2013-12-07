@@ -1,7 +1,9 @@
 #!/bin/sh
 
+#use '-windows' option for creating a windows version
+
 # fjage version
-VERSION=1.3.1
+VERSION=1.3.2
 
 # create the folder structure
 mkdir -p build/libs etc logs samples
@@ -36,3 +38,35 @@ cd ..
 # download startup script
 curl -O https://raw.github.com/manuignatius/fjage/dev/fjage.sh
 chmod a+x fjage.sh
+
+# for creating zip file for windows
+OPT1=
+while [[ $1 == -* ]]
+do
+  OPT=$1
+  if [ $OPT = "-windows" ]
+  then
+    shift
+    
+    #curl -O https://raw.github.com/manuignatius/fjage/dev/fjage.bat
+    mkdir -p fjage_windows
+    cp -r build fjage_windows
+    cp -r etc fjage_windows
+    cp -r logs fjage_windows
+    cp -r samples fjage_windows
+
+    # fjage.bat
+    echo "@echo off
+set CLASSPATH=build\libs\commons-lang3-3.1.jar;build\libs\fjage-1.3.2.jar;build\libs\groovy-all-2.1.3.jar;build\libs\jline-2.10.jar;samples
+set GUI=false
+java -Dfjage.gui= org.arl.fjage.shell.GroovyBoot etc/initrc.groovy" > fjage.bat
+    mv fjage.bat fjage_windows
+
+    # create zip file
+    zip -q fjage_windows.zip -r fjage_windows
+
+    rm -rf fjage_windows
+  fi
+  shift
+done
+
