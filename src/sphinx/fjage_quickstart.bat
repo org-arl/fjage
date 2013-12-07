@@ -53,9 +53,9 @@ echo set GUI=false>> fjage.bat
 echo java -Dfjage.gui=%GUI% org.arl.fjage.shell.GroovyBoot etc/initrc.groovy>> fjage.bat
 move fjage.bat %ROOTDIR%
 
-rem Generating the zip folder, this is optional step
+rem Generating the zip folder, this is optional step, and is commented now.
 rem Download the command line version of 7zip - 7za.exe - from http://www.7-zip.org/download.html
 rem Make sure 7za can be accessed from this path (try copying it to C:\Windows\System32)
-7za a -tzip %ROOTDIR%.zip %ROOTDIR%
+rem 7za a -tzip %ROOTDIR%.zip %ROOTDIR%
 
 rem cls
