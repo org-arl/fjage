@@ -49,7 +49,7 @@ Your directory structure should now look something like this:
 For a Windows machine
 ---------------------
 
-Create a new folder for your first fjåge project. Lets call it `MyFjageProject`. Download the PowerShell script `fjage_quickstart.ps1 <https://raw.github.com/manuignatius/fjage/dev/src/sphinx/fjage_quickstart.ps1>`_ to this folder. Now, open a command prompt at this folder and just run the script::
+Create a new folder for your first fjåge project. Lets call it `MyFjageProject`. Download the PowerShell script `fjage_quickstart.ps1 <https://raw.github.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.ps1>`_ to this folder. Now, open a command prompt at this folder and just run the script::
 
     powershell fjage_quickstart.ps1
 
