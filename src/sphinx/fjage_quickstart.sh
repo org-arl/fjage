@@ -26,17 +26,17 @@ cd ..
 #TODO: Move from dev dir to master once done
 # download sample agents
 cd samples
-curl -O https://raw.github.com/manuignatius/fjage/dev/samples/01_hello.groovy
-curl -O https://raw.github.com/manuignatius/fjage/dev/samples/02_ticker.groovy
-curl -O https://raw.github.com/manuignatius/fjage/dev/samples/03_weatherStation.groovy
-curl -O https://raw.github.com/manuignatius/fjage/dev/samples/03_weatherRequest.groovy
-curl -O https://raw.github.com/manuignatius/fjage/dev/samples/WeatherForecastReqMsg.groovy
-curl -O https://raw.github.com/manuignatius/fjage/dev/samples/04_weatherStation.groovy
-curl -O https://raw.github.com/manuignatius/fjage/dev/samples/04_weatherRequest.groovy
+curl -O https://raw.github.com/org-arl/fjage/master/samples/01_hello.groovy
+curl -O https://raw.github.com/org-arl/fjage/master/samples/02_ticker.groovy
+curl -O https://raw.github.com/org-arl/fjage/master/samples/03_weatherStation.groovy
+curl -O https://raw.github.com/org-arl/fjage/master/samples/03_weatherRequest.groovy
+curl -O https://raw.github.com/org-arl/fjage/master/samples/WeatherForecastReqMsg.groovy
+curl -O https://raw.github.com/org-arl/fjage/master/samples/04_weatherStation.groovy
+curl -O https://raw.github.com/org-arl/fjage/master/samples/04_weatherRequest.groovy
 cd ..
 
 # download startup script
-curl -O https://raw.github.com/manuignatius/fjage/dev/fjage.sh
+curl -O https://raw.github.com/org-arl/fjage/master/fjage.sh
 chmod a+x fjage.sh
 
 # for creating zip file for windows
@@ -48,7 +48,6 @@ do
   then
     shift
     
-    #curl -O https://raw.github.com/manuignatius/fjage/dev/fjage.bat
     mkdir -p fjage_windows
     cp -r build fjage_windows
     cp -r etc fjage_windows

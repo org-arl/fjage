@@ -27,19 +27,19 @@ Write-Host "  5. initrc.groovy"
 $webclient.DownloadFile("https://raw.github.com/org-arl/fjage/master/etc/initrc.groovy", "$pwd\etc\initrc.groovy")
 
 Write-Host "  6. samples\01_hello.groovy"
-$webclient.DownloadFile("https://raw.github.com/manuignatius/fjage/dev/samples/01_hello.groovy", "$pwd\samples\01_hello.groovy")
+$webclient.DownloadFile("https://raw.github.com/org-arl/fjage/master/samples/01_hello.groovy", "$pwd\samples\01_hello.groovy")
 Write-Host "  7. samples\02_ticker.groovy"
-$webclient.DownloadFile("https://raw.github.com/manuignatius/fjage/dev/samples/02_ticker.groovy", "$pwd\samples\02_ticker.groovy")
+$webclient.DownloadFile("https://raw.github.com/org-arl/fjage/master/samples/02_ticker.groovy", "$pwd\samples\02_ticker.groovy")
 Write-Host "  8. samples\03_weatherStation.groovy"
-$webclient.DownloadFile("https://raw.github.com/manuignatius/fjage/dev/samples/03_weatherStation.groovy", "$pwd\samples\03_weatherStation.groovy")
+$webclient.DownloadFile("https://raw.github.com/org-arl/fjage/master/samples/03_weatherStation.groovy", "$pwd\samples\03_weatherStation.groovy")
 Write-Host "  9. samples\03_weatherRequest.groovy"
-$webclient.DownloadFile("https://raw.github.com/manuignatius/fjage/dev/samples/03_weatherRequest.groovy", "$pwd\samples\03_weatherRequest.groovy")
+$webclient.DownloadFile("https://raw.github.com/org-arl/fjage/master/samples/03_weatherRequest.groovy", "$pwd\samples\03_weatherRequest.groovy")
 Write-Host "  10. samples\WeatherForecastReqMsg.groovy"
-$webclient.DownloadFile("https://raw.github.com/manuignatius/fjage/dev/samples/WeatherForecastReqMsg.groovy", "$pwd\samples\WeatherForecastReqMsg.groovy")
+$webclient.DownloadFile("https://raw.github.com/org-arl/fjage/master/samples/WeatherForecastReqMsg.groovy", "$pwd\samples\WeatherForecastReqMsg.groovy")
 Write-Host "  11. samples\04_weatherStation.groovy"
-$webclient.DownloadFile("https://raw.github.com/manuignatius/fjage/dev/samples/04_weatherStation.groovy", "$pwd\samples\04_weatherStation.groovy")
+$webclient.DownloadFile("https://raw.github.com/org-arl/fjage/master/samples/04_weatherStation.groovy", "$pwd\samples\04_weatherStation.groovy")
 Write-Host "  12. samples\04_weatherRequest.groovy"
-$webclient.DownloadFile("https://raw.github.com/manuignatius/fjage/dev/samples/04_weatherRequest.groovy", "$pwd\samples\04_weatherRequest.groovy")
+$webclient.DownloadFile("https://raw.github.com/org-arl/fjage/master/samples/04_weatherRequest.groovy", "$pwd\samples\04_weatherRequest.groovy")
 
 Write-Host "Creating fjage.bat"
 $op = New-Item $pwd\fjage.bat -type file -force -value "@echo off
