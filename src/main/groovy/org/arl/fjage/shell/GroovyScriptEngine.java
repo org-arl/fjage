@@ -89,9 +89,9 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           log.info("EVAL: "+cmd);
           result = groovy.evaluate(cmd);
           if (result != null && result instanceof Closure && !cmd.endsWith("}") && !cmd.endsWith("};")) {
-            // try calling returned closures with no arguments if they take a single argument
+            // try calling returned closures with no arguments
             Closure<?> c = (Closure<?>)result;
-            if (c.getMaximumNumberOfParameters() == 1) result = c.call();
+            result = c.call();
           }
           binding.setVariable("ans", result);
           if (result != null && !cmd.endsWith(";")) {
