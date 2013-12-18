@@ -12,7 +12,9 @@ class HelloWorldAgent extends Agent {
   void init() {
     add new OneShotBehavior({
       println 'Hello World!!!'
-      //log.info 'Hello World!!!'
+
+      // or you can use the logging service
+      log.info 'Hello World (using log.info)!!!'
     })
   }
 }

@@ -23,7 +23,6 @@ cd etc
 curl -O https://raw.github.com/org-arl/fjage/master/etc/initrc.groovy
 cd ..
 
-#TODO: Move from dev dir to master once done
 # download sample agents
 cd samples
 curl -O https://raw.github.com/org-arl/fjage/master/samples/01_hello.groovy

@@ -8,7 +8,7 @@
 
 import org.arl.fjage.*
 
-//response message
+// response message
 class WeatherForecast extends org.arl.fjage.Message {
 
   WeatherForecast(Message req) {
@@ -29,7 +29,7 @@ class MyWeatherStation extends Agent {
       rsp.minTemp = 10
       rsp.maxTemp = 25
       rsp.probRain = 0.25
-      //sending response with data
+      // sending response with data
       send rsp
     })
   }

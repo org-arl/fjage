@@ -14,11 +14,11 @@ class MyAgent extends Agent {
 		// wakes up every 1s and do something
 		add new TickerBehavior(1000, {
 
-			//log every 1s
+			// log every 1s
 			println "${n}. tick"
 			agent.n++
 			
-			//stop after 20 ticks
+			// stop after 20 ticks
 			if (n >= 20) stop();
 		})
 	}

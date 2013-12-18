@@ -20,23 +20,23 @@ class MyWeatherStation extends Agent {
     })
 
     add new MessageBehavior({ msg ->
-      //check for message fields
+      // check for message fields
       if (msg.performative == Performative.REQUEST && msg.type == 'WeatherForecast') {
         log.info "Weather forecast request for ${msg.city}, ${msg.country}"
 
-        //create generic response
+        // create generic response
         def rsp = new GenericMessage(msg, Performative.INFORM)
 
-        //fill in the data
+        // fill in the data
         rsp.minTemp = agent.minTemp--
         rsp.maxTemp = agent.maxTemp++
         rsp.probRain = agent.probRain
 
-        //update temperature
+        // update temperature
         if (agent.minTemp <= 0) agent.minTemp = 10
         if (agent.maxTemp >= 30) agent.maxTemp = 25
 
-        //send response
+        // send response
         send rsp
       }
     })
