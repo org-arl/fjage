@@ -4,6 +4,7 @@
 #   ./fjage.sh [-gui] [-nocolor]
 
 CLASSPATH=.`find build/libs -name *.jar -exec /bin/echo -n :'{}' \;`
+export CLASSPATH=$CLASSPATH:samples
 
 # Cygwin/Windows uses a ";" classpath separator
 if [ $(expr "$(uname -s)" : 'CYGWIN.*') -gt 0 ];then
