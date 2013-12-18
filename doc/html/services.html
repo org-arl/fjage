@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -6,15 +8,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Directory Services &mdash; fjåge 1.3.1 documentation</title>
+    <title>Directory Services &mdash; fjåge 1.3.3-SNAPSHOT documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3.1',
+        URL_ROOT:    '',
+        VERSION:     '1.3.3-SNAPSHOT',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="fjåge 1.3.1 documentation" href="index.html" />
+    <link rel="top" title="fjåge 1.3.3-SNAPSHOT documentation" href="index.html" />
     <link rel="next" title="Distributed Agents" href="rmi.html" />
     <link rel="prev" title="Messaging" href="messages.html" /> 
   </head>
@@ -38,7 +40,7 @@
         <li class="right" >
           <a href="messages.html" title="Messaging"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fjåge 1.3.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3.3-SNAPSHOT documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -93,54 +95,48 @@
 <p class="last">A <em>service</em> is a logical concept, and not enforced by the framework. The messages and behaviors represented by a service are not described in the code. However, it is recommended that the documentation associated with the service clearly spell out the messages and behaviors that are expected of any agent claiming to provide the service.</p>
 </div>
 <p>An agent providing a service usually advertises the service during <cite>init()</cite>:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">MyServer</span> <span class="kd">extends</span> <span class="n">org</span><span class="o">.</span><span class="na">arl</span><span class="o">.</span><span class="na">fjage</span><span class="o">.</span><span class="na">Agent</span> <span class="o">{</span>
-  <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">register</span> <span class="s1">&#39;WeatherForecastService&#39;</span>
-  <span class="o">}</span>
-<span class="o">}</span>
-</pre></div>
+<div class="highlight-groovy"><pre>class MyServer extends org.arl.fjage.Agent {
+  void init() {
+    register 'WeatherForecastService'
+  }
+}</pre>
 </div>
 <p>Rather than use a <cite>String</cite>, we may (and usually should) use an Enum to define the service:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">enum</span> <span class="n">Services</span> <span class="o">{</span>
-  <span class="n">WEATHER_FORECAST_SERVICE</span><span class="o">,</span>
-  <span class="n">CLEANING_SERVICE</span><span class="o">,</span>
-  <span class="n">FOOD_DELIVERY_SERVICE</span>
-<span class="o">}</span>
-</pre></div>
+<div class="highlight-groovy"><pre>enum Services {
+  WEATHER_FORECAST_SERVICE,
+  CLEANING_SERVICE,
+  FOOD_DELIVERY_SERVICE
+}</pre>
 </div>
 <p>and then use it to advertise our services:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">MyServer</span> <span class="kd">extends</span> <span class="n">org</span><span class="o">.</span><span class="na">arl</span><span class="o">.</span><span class="na">fjage</span><span class="o">.</span><span class="na">Agent</span> <span class="o">{</span>
-  <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">register</span> <span class="n">Services</span><span class="o">.</span><span class="na">WEATHER_FORECAST_SERVICE</span>
-  <span class="o">}</span>
-<span class="o">}</span>
-</pre></div>
+<div class="highlight-groovy"><pre>class MyServer extends org.arl.fjage.Agent {
+  void init() {
+    register Services.WEATHER_FORECAST_SERVICE
+  }
+}</pre>
 </div>
 </div>
 <div class="section" id="looking-up-service-providers">
 <h2>Looking up service providers<a class="headerlink" href="#looking-up-service-providers" title="Permalink to this headline">¶</a></h2>
 <p>A client interested in availing a specific service can look for an agent that provides the service:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">weatherStation</span> <span class="o">=</span> <span class="n">agentForService</span> <span class="n">Services</span><span class="o">.</span><span class="na">WEATHER_FORECAST_SERVICE</span>
-<span class="kt">def</span> <span class="n">rsp</span> <span class="o">=</span> <span class="n">weatherStation</span> <span class="o">&lt;&lt;</span> <span class="k">new</span> <span class="n">WeatherForecastReq</span><span class="o">(</span><span class="nl">city:</span> <span class="s1">&#39;London&#39;</span><span class="o">,</span> <span class="nl">country:</span> <span class="s1">&#39;UK&#39;</span><span class="o">)</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def weatherStation = agentForService Services.WEATHER_FORECAST_SERVICE
+def rsp = weatherStation &lt;&lt; new WeatherForecastReq(city: 'London', country: 'UK')</pre>
 </div>
 <p>If there are more than one agents providing the service, the <cite>agentForService()</cite> method returns any one of the service providers. If we wish to get a list of all service providers, we can use the <cite>agentsForService()</cite> method instead:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">providerList</span> <span class="o">=</span> <span class="n">agentsForService</span> <span class="n">Services</span><span class="o">.</span><span class="na">WEATHER_FORECAST_SERVICE</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def providerList = agentsForService Services.WEATHER_FORECAST_SERVICE</pre>
 </div>
 </div>
 <div class="section" id="caching-service-providers">
 <h2>Caching service providers<a class="headerlink" href="#caching-service-providers" title="Permalink to this headline">¶</a></h2>
 <p>If your application uses a set of agents that are instantiated in the <cite>initrc.groovy</cite> and not terminated until the application terminates, it may be reasonable to lookup the service providers once and cache them once and for all. However, since the services are only advertised during agent initialization and the order of agent intialization may be indeterminate, the service lookups should be done after all agents are initialized (and not during <cite>init()</cite>). This can easily be accomplished using a one-shot behavior:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">MyClient</span> <span class="kd">extends</span> <span class="n">org</span><span class="o">.</span><span class="na">arl</span><span class="o">.</span><span class="na">fjage</span><span class="o">.</span><span class="na">Agent</span> <span class="o">{</span>
-  <span class="kt">def</span> <span class="n">weatherStation</span>
-  <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">add</span> <span class="k">new</span> <span class="nf">OneShotBehavior</span><span class="o">({</span>
-      <span class="n">weatherStation</span> <span class="o">=</span> <span class="n">agentForService</span> <span class="n">Services</span><span class="o">.</span><span class="na">WEATHER_FORECAST_SERVICE</span>
-    <span class="o">})</span>
-  <span class="o">}</span>
-<span class="o">}</span>
-</pre></div>
+<div class="highlight-groovy"><pre>class MyClient extends org.arl.fjage.Agent {
+  def weatherStation
+  void init() {
+    add new OneShotBehavior({
+      weatherStation = agentForService Services.WEATHER_FORECAST_SERVICE
+    })
+  }
+}</pre>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -164,7 +160,7 @@
         <li class="right" >
           <a href="messages.html" title="Messaging"
              >previous</a> |</li>
-        <li><a href="index.html">fjåge 1.3.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3.3-SNAPSHOT documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

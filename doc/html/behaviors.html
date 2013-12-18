@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -6,15 +8,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Agents and Behaviors &mdash; fjåge 1.3.1 documentation</title>
+    <title>Agents and Behaviors &mdash; fjåge 1.3.3-SNAPSHOT documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3.1',
+        URL_ROOT:    '',
+        VERSION:     '1.3.3-SNAPSHOT',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="fjåge 1.3.1 documentation" href="index.html" />
+    <link rel="top" title="fjåge 1.3.3-SNAPSHOT documentation" href="index.html" />
     <link rel="next" title="Messaging" href="messages.html" />
     <link rel="prev" title="Getting Started" href="quickstart.html" /> 
   </head>
@@ -38,7 +40,7 @@
         <li class="right" >
           <a href="quickstart.html" title="Getting Started"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fjåge 1.3.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3.3-SNAPSHOT documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -100,43 +102,40 @@
 <p>A behavior that is not ready to run may be in a blocked state (e.g. a behavior that is to be executed at a specified later time). An agent may make a behavior as blocked, by explicitly calling the <cite>block()</cite> method on that behavior. If there are no active behaviors for an agent, the agent goes into an IDLE state. Behaviors may be activated due to timer events, message delivery events or by explicit <cite>restart()</cite> method calls. When one or more behaviors become active, the agent goes back into a RUNNING state.</p>
 <p>When an agent is killed or the platform is shutdown, the agent is placed in a FINISHING state. Agents in this state are given a chance to cleanup via a call to their <cite>shutdown()</cite> method. An agent may override this method if a cleanup is required. After the cleanup, the agent is terminated and placed in a FINISHED state, and removed from the container.</p>
 <p>An example skeleton agent is shown below:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">MyAgent</span> <span class="kd">extends</span> <span class="n">Agent</span> <span class="o">{</span>
+<div class="highlight-groovy"><pre>class MyAgent extends Agent {
 
-  <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
-    <span class="c1">// agent is in INIT state</span>
-    <span class="n">log</span><span class="o">.</span><span class="na">info</span> <span class="s1">&#39;Agent init&#39;</span>
-    <span class="n">add</span> <span class="k">new</span> <span class="nf">OneShotBehavior</span><span class="o">({</span>
-      <span class="c1">// behavior will be executed after all agents are initialized</span>
-      <span class="c1">// agent is in RUNNING state</span>
-      <span class="n">log</span><span class="o">.</span><span class="na">info</span> <span class="s1">&#39;Agent ready&#39;</span>
-    <span class="o">})</span>
-  <span class="o">}</span>
+  void init() {
+    // agent is in INIT state
+    log.info 'Agent init'
+    add new OneShotBehavior({
+      // behavior will be executed after all agents are initialized
+      // agent is in RUNNING state
+      log.info 'Agent ready'
+    })
+  }
 
-  <span class="kt">void</span> <span class="nf">shutdown</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">log</span><span class="o">.</span><span class="na">info</span> <span class="s1">&#39;Agent shutdown&#39;</span>
-  <span class="o">}</span>
+  void shutdown() {
+    log.info 'Agent shutdown'
+  }
 
-<span class="o">}</span>
-</pre></div>
+}</pre>
 </div>
 <div class="admonition tip">
 <p class="first admonition-title">Tip</p>
 <p class="last"><cite>println()</cite> from an agent is mapped to <cite>log.info()</cite>, and can be used interchangably. However, the <cite>log</cite> object provides more flexibility (e.g. <cite>log.warning()</cite>, <cite>log.fine()</cite>, etc).</p>
 </div>
 <p>The <em>traditional</em> behavior creation style may be used by Java and Groovy agents:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span><span class="o">(</span><span class="k">new</span> <span class="n">OneShotBehavior</span><span class="o">()</span> <span class="o">{</span>
-  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">action</span><span class="o">()</span> <span class="o">{</span>
-    <span class="c1">// do something</span>
-  <span class="o">}</span>
-<span class="o">});</span>
-</pre></div>
+<div class="highlight-groovy"><pre>add(new OneShotBehavior() {
+  public void action() {
+    // do something
+  }
+});</pre>
 </div>
 <p>The method to override depends on the behavior (e.g. <cite>action()</cite> for most behaviors, but <cite>onTick()</cite> for <cite>TickerBehavior</cite>, and <cite>onWake()</cite> for <cite>WakerBehavior</cite>).</p>
 <p>Groovy agents support a simpler alternative syntax if the <cite>GroovyExtensions</cite> are enabled:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="k">new</span> <span class="nf">OneShotBehavior</span><span class="o">({</span>
-  <span class="c1">// do something</span>
-<span class="o">})</span>
-</pre></div>
+<div class="highlight-groovy"><pre>add new OneShotBehavior({
+  // do something
+})</pre>
 </div>
 <p>Both variants are identical in function. With this syntax, the appropriate method is automatically overridden to call the defined closure. For the examples in the rest of this chapter, we will adopt the simpler Groovy syntax.</p>
 </div>
@@ -147,18 +146,17 @@
 <div class="section" id="cyclic-behavior">
 <h2>Cyclic behavior<a class="headerlink" href="#cyclic-behavior" title="Permalink to this headline">¶</a></h2>
 <p>A <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/CyclicBehavior.html">CyclicBehavior</a> is run repeatedly as long as it is active. The behavior may be blocked and restarted as necessary.</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">MyAgent</span> <span class="kd">extends</span> <span class="n">Agent</span> <span class="o">{</span>
-  <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
-  <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
-    <span class="c1">// a cyclic behavior that runs 5 times and then marks itself as blocked</span>
-    <span class="n">add</span> <span class="k">new</span> <span class="nf">CyclicBehavior</span><span class="o">({</span>
-      <span class="n">agent</span><span class="o">.</span><span class="na">n</span><span class="o">++</span>
-      <span class="n">println</span> <span class="s2">&quot;n = ${agent.n}&quot;</span>
-      <span class="k">if</span> <span class="o">(</span><span class="n">agent</span><span class="o">.</span><span class="na">n</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="o">)</span> <span class="n">block</span><span class="o">()</span>
-    <span class="o">})</span>
-  <span class="o">}</span>
-<span class="o">}</span>
-</pre></div>
+<div class="highlight-groovy"><pre>class MyAgent extends Agent {
+  int n = 0
+  void init() {
+    // a cyclic behavior that runs 5 times and then marks itself as blocked
+    add new CyclicBehavior({
+      agent.n++
+      println "n = ${agent.n}"
+      if (agent.n &gt;= 5) block()
+    })
+  }
+}</pre>
 </div>
 <div class="admonition tip">
 <p class="first admonition-title">Tip</p>
@@ -172,133 +170,123 @@
 <div class="section" id="waker-behavior">
 <h2>Waker behavior<a class="headerlink" href="#waker-behavior" title="Permalink to this headline">¶</a></h2>
 <p>A <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/WakerBehavior.html">WakerBehavior</a> is run after a specified delay in milliseconds.</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="k">new</span> <span class="nf">WakerBehavior</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="o">{</span>
-  <span class="c1">// invoked 1 second later</span>
-  <span class="n">println</span> <span class="s1">&#39;1000 ms have elapsed!&#39;</span>
-<span class="o">})</span>
-</pre></div>
+<div class="highlight-groovy"><pre>add new WakerBehavior(1000, {
+  // invoked 1 second later
+  println '1000 ms have elapsed!'
+})</pre>
 </div>
 </div>
 <div class="section" id="ticker-behavior">
 <h2>Ticker behavior<a class="headerlink" href="#ticker-behavior" title="Permalink to this headline">¶</a></h2>
 <p>A <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/TickerBehavior.html">TickerBehavior</a> is run repeated with a specified delay between invocations. The ticker behavior may be terminated by calling <cite>stop()</cite> at any time.</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="k">new</span> <span class="nf">TickerBehavior</span><span class="o">(</span><span class="mi">5000</span><span class="o">,</span> <span class="o">{</span>
-  <span class="c1">// called at intervals of 5 seconds</span>
-  <span class="n">println</span> <span class="s1">&#39;tick!&#39;</span>
-<span class="o">})</span>
-</pre></div>
+<div class="highlight-groovy"><pre>add new TickerBehavior(5000, {
+  // called at intervals of 5 seconds
+  println 'tick!'
+})</pre>
 </div>
 </div>
 <div class="section" id="backoff-behavior">
 <h2>Backoff behavior<a class="headerlink" href="#backoff-behavior" title="Permalink to this headline">¶</a></h2>
 <p>A <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/BackoffBehavior.html">BackoffBehavior</a> is similar to a waker behavior, but allows the wakeup time to be extended dynamically. This is typically useful to implement backoff or retry timeouts.</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="k">new</span> <span class="nf">BackoffBehavior</span><span class="o">(</span><span class="mi">5000</span><span class="o">,</span> <span class="o">{</span>     <span class="c1">// first attempt after 5 seconds</span>
-  <span class="c1">// make some request, and if it fails, try again after 3 seconds</span>
-  <span class="kt">def</span> <span class="n">rsp</span> <span class="o">=</span> <span class="n">request</span><span class="o">(</span><span class="n">req</span><span class="o">)</span>
-  <span class="k">if</span> <span class="o">(</span><span class="n">rsp</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">rsp</span><span class="o">.</span><span class="na">performative</span> <span class="o">==</span> <span class="n">Performative</span><span class="o">.</span><span class="na">FAILURE</span><span class="o">)</span> <span class="n">backoff</span><span class="o">(</span><span class="mi">3000</span><span class="o">)</span>
-<span class="o">})</span>
-</pre></div>
+<div class="highlight-groovy"><pre>add new BackoffBehavior(5000, {     // first attempt after 5 seconds
+  // make some request, and if it fails, try again after 3 seconds
+  def rsp = request(req)
+  if (rsp == null || rsp.performative == Performative.FAILURE) backoff(3000)
+})</pre>
 </div>
 </div>
 <div class="section" id="poisson-behavior">
 <h2>Poisson behavior<a class="headerlink" href="#poisson-behavior" title="Permalink to this headline">¶</a></h2>
 <p>A <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/PoissonBehavior.html">PoissonBehavior</a> is similar to a ticker behavior, but the interval between invocations is an exponentially distributed random variable. This simulates a Poisson arrival process.</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="k">new</span> <span class="nf">PoissonBehavior</span><span class="o">(</span><span class="mi">5000</span><span class="o">,</span> <span class="o">{</span>
-  <span class="c1">// called at an average rate of once every 5 seconds</span>
-  <span class="n">println</span> <span class="s1">&#39;arrival!&#39;</span>
-<span class="o">})</span>
-</pre></div>
+<div class="highlight-groovy"><pre>add new PoissonBehavior(5000, {
+  // called at an average rate of once every 5 seconds
+  println 'arrival!'
+})</pre>
 </div>
 </div>
 <div class="section" id="message-behavior">
 <span id="msgbehavior"></span><h2>Message behavior<a class="headerlink" href="#message-behavior" title="Permalink to this headline">¶</a></h2>
 <p>A <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/MessageBehavior.html">MessageBehavior</a> is invoked when a message is received by the agent. A message behavior may specify what kind of message it is interested in. If multiple message behaviors admit a received message, any one of the behaviors may be invoked for that message.</p>
 <p>A message behavior that accepts any message can be added as follows:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="k">new</span> <span class="nf">MessageBehavior</span><span class="o">({</span> <span class="n">msg</span> <span class="o">-&gt;</span>
-  <span class="n">println</span> <span class="s2">&quot;Incoming message from ${msg.sender}&quot;</span>
-<span class="o">})</span>
-</pre></div>
+<div class="highlight-groovy"><pre>add new MessageBehavior({ msg -&gt;
+  println "Incoming message from ${msg.sender}"
+})</pre>
 </div>
 <p>If we were only interested in messages of class <cite>MyMessage</cite>, we could set up a behavior accordingly:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">add</span> <span class="k">new</span> <span class="nf">MessageBehavior</span><span class="o">(</span><span class="n">MyMessage</span><span class="o">,</span> <span class="o">{</span> <span class="n">msg</span> <span class="o">-&gt;</span>
-  <span class="n">println</span> <span class="s2">&quot;Incoming message of class ${msg.class} from ${msg.sender}&quot;</span>
-<span class="o">})</span>
-</pre></div>
+<div class="highlight-groovy"><pre>add new MessageBehavior(MyMessage, { msg -&gt;
+  println "Incoming message of class ${msg.class} from ${msg.sender}"
+})</pre>
 </div>
 <p>Let us next consider a more complex case where we are interested in message of a specific class and from a specific sender:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">filter</span> <span class="o">=</span> <span class="o">{</span> <span class="n">it</span> <span class="k">instanceof</span> <span class="n">MyMessage</span> <span class="o">&amp;&amp;</span> <span class="n">it</span><span class="o">.</span><span class="na">sender</span><span class="o">.</span><span class="na">name</span> <span class="o">==</span> <span class="s1">&#39;myFriend&#39;</span> <span class="o">}</span> <span class="k">as</span> <span class="n">MessageFilter</span>
-<span class="n">add</span> <span class="k">new</span> <span class="nf">MessageBehavior</span><span class="o">(</span><span class="n">filter</span><span class="o">,</span> <span class="o">{</span> <span class="n">msg</span> <span class="o">-&gt;</span>
-  <span class="n">println</span> <span class="s2">&quot;Incoming message of class ${msg.class} from ${msg.sender}&quot;</span>
-<span class="o">})</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def filter = { it instanceof MyMessage &amp;&amp; it.sender.name == 'myFriend' } as MessageFilter
+add new MessageBehavior(filter, { msg -&gt;
+  println "Incoming message of class ${msg.class} from ${msg.sender}"
+})</pre>
 </div>
 </div>
 <div class="section" id="finite-state-machine-behavior">
 <h2>Finite state machine behavior<a class="headerlink" href="#finite-state-machine-behavior" title="Permalink to this headline">¶</a></h2>
 <p>Finite state machines can easily be implemented using the <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/FSMBehavior.html">FSMBehavior</a> class. These machines are composed out of multiple states, each of which is like a <cite>CyclicBehavior</cite>. State transitions are managed using the <cite>nextState</cite> property.</p>
 <p>For example, we can create a grandfather clock using a <cite>FSMBehavior</cite>:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">b</span> <span class="o">=</span> <span class="n">add</span> <span class="k">new</span> <span class="n">FSMBehavior</span><span class="o">()</span>
-<span class="n">b</span><span class="o">.</span><span class="na">add</span> <span class="k">new</span> <span class="n">FSMBehavior</span><span class="o">.</span><span class="na">State</span><span class="o">(</span><span class="s1">&#39;tick&#39;</span><span class="o">)</span> <span class="o">{</span>
-  <span class="kt">void</span> <span class="nf">action</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">println</span> <span class="s1">&#39;tick!&#39;</span>
-    <span class="n">nextState</span> <span class="o">=</span> <span class="s1">&#39;tock&#39;</span>
-    <span class="n">fsm</span><span class="o">.</span><span class="na">block</span> <span class="mi">1000</span>
-  <span class="o">}</span>
-<span class="o">}</span>
-<span class="n">b</span><span class="o">.</span><span class="na">add</span> <span class="k">new</span> <span class="n">FSMBehavior</span><span class="o">.</span><span class="na">State</span><span class="o">(</span><span class="s1">&#39;tock&#39;</span><span class="o">)</span> <span class="o">{</span>
-  <span class="kt">void</span> <span class="nf">action</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">println</span> <span class="s1">&#39;tock!&#39;</span>
-    <span class="n">nextState</span> <span class="o">=</span> <span class="s1">&#39;tick&#39;</span>
-    <span class="n">fsm</span><span class="o">.</span><span class="na">block</span> <span class="mi">1000</span>
-  <span class="o">}</span>
-<span class="o">}</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def b = add new FSMBehavior()
+b.add new FSMBehavior.State('tick') {
+  void action() {
+    println 'tick!'
+    nextState = 'tock'
+    fsm.block 1000
+  }
+}
+b.add new FSMBehavior.State('tock') {
+  void action() {
+    println 'tock!'
+    nextState = 'tick'
+    fsm.block 1000
+  }
+}</pre>
 </div>
 </div>
 <div class="section" id="test-behavior">
 <h2>Test behavior<a class="headerlink" href="#test-behavior" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/TestBehavior.html">TestBehavior</a> is a special behavior that helps with development of unit tests. Any <cite>AssertionError</cite> thrown in the behavior is stored and thrown when the test ends. A typical usage for a test case is shown below:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.arl.fjage.*</span>
+<div class="highlight-groovy"><pre>import org.arl.fjage.*
 
-<span class="kt">def</span> <span class="n">platform</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimePlatform</span><span class="o">()</span>
-<span class="kt">def</span> <span class="n">container</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Container</span><span class="o">(</span><span class="n">platform</span><span class="o">)</span>
-<span class="kt">def</span> <span class="n">agent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Agent</span><span class="o">()</span>
-<span class="n">container</span><span class="o">.</span><span class="na">add</span> <span class="n">agent</span>
-<span class="n">platform</span><span class="o">.</span><span class="na">start</span><span class="o">()</span>
+def platform = new RealTimePlatform()
+def container = new Container(platform)
+def agent = new Agent()
+container.add agent
+platform.start()
 
-<span class="n">TestBehavior</span> <span class="n">test</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TestBehavior</span><span class="o">({</span>
-  <span class="k">assert</span> <span class="mi">1</span><span class="o">+</span><span class="mi">1</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">:</span> <span class="s1">&#39;Simple math failed&#39;</span>
-  <span class="kt">def</span> <span class="n">aid</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="na">getAgentID</span><span class="o">()</span>
-  <span class="k">assert</span> <span class="n">aid</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">:</span> <span class="s1">&#39;AgentID undefined&#39;</span>
-  <span class="k">assert</span> <span class="n">agent</span><span class="o">.</span><span class="na">send</span><span class="o">(</span><span class="k">new</span> <span class="n">Message</span><span class="o">(</span><span class="n">aid</span><span class="o">))</span> <span class="o">:</span> <span class="s1">&#39;Message could not be sent&#39;</span>
-<span class="o">})</span>
-<span class="n">test</span><span class="o">.</span><span class="na">runOn</span><span class="o">(</span><span class="n">agent</span><span class="o">)</span>
+TestBehavior test = new TestBehavior({
+  assert 1+1 == 2 : 'Simple math failed'
+  def aid = agent.getAgentID()
+  assert aid != null : 'AgentID undefined'
+  assert agent.send(new Message(aid)) : 'Message could not be sent'
+})
+test.runOn(agent)
 
-<span class="n">platform</span><span class="o">.</span><span class="na">shutdown</span><span class="o">()</span>
-</pre></div>
+platform.shutdown()</pre>
 </div>
 </div>
 <div class="section" id="custom-behaviors">
 <h2>Custom behaviors<a class="headerlink" href="#custom-behaviors" title="Permalink to this headline">¶</a></h2>
 <p>Although the above behaviors meet most needs, there are times when you need a behavior that isn&#8217;t already available. In such cases, you can simply extend the <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/Behavior.html">Behavior</a> class to implement your own behavior. This typically involves overriding the <cite>onStart()</cite>, <cite>action()</cite>, <cite>done()</cite> and <cite>onEnd()</cite> methods.</p>
 <p>An example two-shot behavior is shown below:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">TwoShotBehavior</span> <span class="kd">extends</span> <span class="n">Behavior</span> <span class="o">{</span>
-  <span class="kt">int</span> <span class="n">fired</span>
-  <span class="kt">void</span> <span class="nf">onStart</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">fired</span> <span class="o">=</span> <span class="mi">0</span>
-  <span class="o">}</span>
-  <span class="kt">void</span> <span class="nf">action</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">fired</span><span class="o">++</span>
-    <span class="n">log</span><span class="o">.</span><span class="na">info</span> <span class="s1">&#39;Bang!&#39;</span>
-  <span class="o">}</span>
-  <span class="kt">boolean</span> <span class="nf">done</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">fired</span> <span class="o">&gt;=</span> <span class="mi">2</span>
-  <span class="o">}</span>
-  <span class="kt">void</span> <span class="nf">onEnd</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">log</span><span class="o">.</span><span class="na">info</span> <span class="s1">&#39;You are dead!&#39;</span>
-  <span class="o">}</span>
-<span class="o">}</span>
-</pre></div>
+<div class="highlight-groovy"><pre>class TwoShotBehavior extends Behavior {
+  int fired
+  void onStart() {
+    fired = 0
+  }
+  void action() {
+    fired++
+    log.info 'Bang!'
+  }
+  boolean done() {
+    fired &gt;= 2
+  }
+  void onEnd() {
+    log.info 'You are dead!'
+  }
+}</pre>
 </div>
 </div>
 </div>
@@ -318,7 +306,7 @@
         <li class="right" >
           <a href="quickstart.html" title="Getting Started"
              >previous</a> |</li>
-        <li><a href="index.html">fjåge 1.3.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3.3-SNAPSHOT documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

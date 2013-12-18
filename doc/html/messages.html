@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -6,15 +8,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Messaging &mdash; fjåge 1.3.1 documentation</title>
+    <title>Messaging &mdash; fjåge 1.3.3-SNAPSHOT documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3.1',
+        URL_ROOT:    '',
+        VERSION:     '1.3.3-SNAPSHOT',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="fjåge 1.3.1 documentation" href="index.html" />
+    <link rel="top" title="fjåge 1.3.3-SNAPSHOT documentation" href="index.html" />
     <link rel="next" title="Directory Services" href="services.html" />
     <link rel="prev" title="Agents and Behaviors" href="behaviors.html" /> 
   </head>
@@ -38,7 +40,7 @@
         <li class="right" >
           <a href="behaviors.html" title="Agents and Behaviors"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fjåge 1.3.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3.3-SNAPSHOT documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -92,104 +94,93 @@
 <p>Agents interact with each other using messages. A <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/Message.html">Message</a> is usally tagged with a <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/Performative.html">Performative</a> that defines the purpose of the message, and is uniquely identified by a message identifier. A message is also usually associated with a sender and a recipient <cite>AgentID</cite>. If a message is sent in reply to another message, the original message&#8217;s message identifier is included as a <cite>inReplyTo</cite> property of the reply message. This allows the sender to associate the reply with the original request/query message.</p>
 <p>Although the <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/Message.html">Message</a> class provides all the basic attributes of a message, it does not provide any fields to hold the message content. Typical messages will extend the <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/Message.html">Message</a> class and add relevant content fields.</p>
 <p>Request message:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">WeatherForecastReq</span> <span class="kd">extends</span> <span class="n">org</span><span class="o">.</span><span class="na">arl</span><span class="o">.</span><span class="na">fjage</span><span class="o">.</span><span class="na">Message</span> <span class="o">{</span>
-  <span class="n">WeatherForecastReq</span><span class="o">()</span> <span class="o">{</span>
-    <span class="kd">super</span><span class="o">(</span><span class="n">Performative</span><span class="o">.</span><span class="na">REQUEST</span><span class="o">)</span>
-  <span class="o">}</span>
-  <span class="n">String</span> <span class="n">city</span><span class="o">,</span> <span class="n">country</span>
-<span class="o">}</span>
-</pre></div>
+<div class="highlight-groovy"><pre>class WeatherForecastReq extends org.arl.fjage.Message {
+  WeatherForecastReq() {
+    super(Performative.REQUEST)
+  }
+  String city, country
+}</pre>
 </div>
 <p>Response message:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">WeatherForecast</span> <span class="kd">extends</span> <span class="n">org</span><span class="o">.</span><span class="na">arl</span><span class="o">.</span><span class="na">fjage</span><span class="o">.</span><span class="na">Message</span> <span class="o">{</span>
-  <span class="n">WeatherForecast</span><span class="o">()</span> <span class="o">{</span>
-    <span class="kd">super</span><span class="o">(</span><span class="n">Performative</span><span class="o">.</span><span class="na">INFORM</span><span class="o">)</span>
-  <span class="o">}</span>
-  <span class="n">WeatherForecast</span><span class="o">(</span><span class="n">Message</span> <span class="n">req</span><span class="o">)</span> <span class="o">{</span>
-    <span class="kd">super</span><span class="o">(</span><span class="n">req</span><span class="o">,</span> <span class="n">Performative</span><span class="o">.</span><span class="na">INFORM</span><span class="o">)</span>   <span class="c1">// create a response with inReplyTo = req</span>
-    <span class="n">city</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="na">city</span>
-    <span class="n">country</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="na">country</span>
-  <span class="o">}</span>
-  <span class="n">String</span> <span class="n">city</span><span class="o">,</span> <span class="n">country</span>
-  <span class="kt">float</span> <span class="n">minTemp</span><span class="o">,</span> <span class="n">maxTemp</span><span class="o">,</span> <span class="n">probRain</span>
-<span class="o">}</span>
-</pre></div>
+<div class="highlight-groovy"><pre>class WeatherForecast extends org.arl.fjage.Message {
+  WeatherForecast() {
+    super(Performative.INFORM)
+  }
+  WeatherForecast(Message req) {
+    super(req, Performative.INFORM)   // create a response with inReplyTo = req
+    city = req.city
+    country = req.country
+  }
+  String city, country
+  float minTemp, maxTemp, probRain
+}</pre>
 </div>
 <p>A client agent may send a weather forecast request to another agent named &#8220;WeatherStation&#8221;:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">send</span> <span class="k">new</span> <span class="nf">WeatherForecastReq</span><span class="o">(</span><span class="nl">city:</span> <span class="s1">&#39;London&#39;</span><span class="o">,</span> <span class="nl">country:</span> <span class="s1">&#39;UK&#39;</span><span class="o">,</span> <span class="nl">recipient:</span> <span class="n">agent</span><span class="o">(</span><span class="s1">&#39;WeatherStation&#39;</span><span class="o">))</span>
-</pre></div>
+<div class="highlight-groovy"><pre>send new WeatherForecastReq(city: 'London', country: 'UK', recipient: agent('WeatherStation'))</pre>
 </div>
 <p>The &#8220;WeatherStation&#8221; agent would receive the request and send back a reply. Although messages may be received using an agent&#8217;s <cite>receive()</cite> method, the preferred way to process messages is using the <a class="reference internal" href="behaviors.html#msgbehavior"><em>Message behavior</em></a>:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">MyWeatherStation</span> <span class="kd">extends</span> <span class="n">org</span><span class="o">.</span><span class="na">arl</span><span class="o">.</span><span class="na">fjage</span><span class="o">.</span><span class="na">Agent</span> <span class="o">{</span>
-  <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">add</span> <span class="k">new</span> <span class="nf">MessageBehavior</span><span class="o">(</span><span class="n">WeatherForecastReq</span><span class="o">,</span> <span class="o">{</span> <span class="n">req</span> <span class="o">-&gt;</span>
-      <span class="n">log</span><span class="o">.</span><span class="na">info</span> <span class="s2">&quot;Weather forecast request for ${req.city}, ${req.country}&quot;</span>
-      <span class="kt">def</span> <span class="n">rsp</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WeatherForecast</span><span class="o">(</span><span class="n">req</span><span class="o">)</span>
-      <span class="n">rsp</span><span class="o">.</span><span class="na">minTemp</span> <span class="o">=</span> <span class="mi">10</span>
-      <span class="n">rsp</span><span class="o">.</span><span class="na">maxTemp</span> <span class="o">=</span> <span class="mi">25</span>
-      <span class="n">rsp</span><span class="o">.</span><span class="na">probRain</span> <span class="o">=</span> <span class="mf">0.25</span>
-      <span class="n">send</span> <span class="n">rsp</span>
-    <span class="o">})</span>
-  <span class="o">}</span>
-<span class="o">}</span>
-</pre></div>
+<div class="highlight-groovy"><pre>class MyWeatherStation extends org.arl.fjage.Agent {
+  void init() {
+    add new MessageBehavior(WeatherForecastReq, { req -&gt;
+      log.info "Weather forecast request for ${req.city}, ${req.country}"
+      def rsp = new WeatherForecast(req)
+      rsp.minTemp = 10
+      rsp.maxTemp = 25
+      rsp.probRain = 0.25
+      send rsp
+    })
+  }
+}</pre>
 </div>
 <p>The client agent would then receive the message, either through a message behavior or by explicitly calling <cite>receive()</cite>. An easier alternative is to send a request and wait for the associated response via the <cite>request()</cite> method:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">req</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WeatherForecastReq</span><span class="o">(</span><span class="nl">city:</span> <span class="s1">&#39;London&#39;</span><span class="o">,</span> <span class="nl">country:</span> <span class="s1">&#39;UK&#39;</span><span class="o">,</span> <span class="nl">recipient:</span> <span class="n">agent</span><span class="o">(</span><span class="s1">&#39;WeatherStation&#39;</span><span class="o">))</span>
-<span class="kt">def</span> <span class="n">rsp</span> <span class="o">=</span> <span class="n">request</span> <span class="n">req</span><span class="o">,</span> <span class="mi">1000</span>         <span class="c1">// 1000 ms timeout for reply</span>
-<span class="n">println</span> <span class="s2">&quot;The lowest temperature today is ${rsp?rsp.minTemp:&#39;unknown&#39;}&quot;</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def req = new WeatherForecastReq(city: 'London', country: 'UK', recipient: agent('WeatherStation'))
+def rsp = request req, 1000         // 1000 ms timeout for reply
+println "The lowest temperature today is ${rsp?rsp.minTemp:'unknown'}"</pre>
 </div>
 </div>
 <div class="section" id="generic-messages">
 <h2>Generic messages<a class="headerlink" href="#generic-messages" title="Permalink to this headline">¶</a></h2>
 <p>Although it usually makes sense to create message classes for specific interactions, there are times when it can be useful to send a generic message with key-value pairs. This functionality is provided by the <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/GenericMessage.html">GenericMessage</a> class, which provides a <cite>java.util.Map</cite> interface. In Groovy, this provides a nice syntax that allows the keys to work like dynamic attributes of the message. A weather forecast service implemented using generic messages is shown below.</p>
 <p>Server code:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.arl.fjage.*</span>
+<div class="highlight-groovy"><pre>import org.arl.fjage.*
 
-<span class="kd">class</span> <span class="nc">MyWeatherStation</span> <span class="kd">extends</span> <span class="n">Agent</span> <span class="o">{</span>
-  <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
-    <span class="n">add</span> <span class="k">new</span> <span class="nf">MessageBehavior</span><span class="o">({</span> <span class="n">msg</span> <span class="o">-&gt;</span>
-      <span class="k">if</span> <span class="o">(</span><span class="n">msg</span><span class="o">.</span><span class="na">performative</span> <span class="o">==</span> <span class="n">Performative</span><span class="o">.</span><span class="na">REQUEST</span> <span class="o">&amp;&amp;</span> <span class="n">msg</span><span class="o">.</span><span class="na">type</span> <span class="o">==</span> <span class="s1">&#39;WeatherForecast&#39;</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">log</span><span class="o">.</span><span class="na">info</span> <span class="s2">&quot;Weather forecast request for ${msg.city}, ${msg.country}&quot;</span>
-        <span class="kt">def</span> <span class="n">rsp</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericMessage</span><span class="o">(</span><span class="n">msg</span><span class="o">,</span> <span class="n">Performative</span><span class="o">.</span><span class="na">INFORM</span><span class="o">)</span>
-        <span class="n">rsp</span><span class="o">.</span><span class="na">minTemp</span> <span class="o">=</span> <span class="mi">10</span>
-        <span class="n">rsp</span><span class="o">.</span><span class="na">maxTemp</span> <span class="o">=</span> <span class="mi">25</span>
-        <span class="n">rsp</span><span class="o">.</span><span class="na">probRain</span> <span class="o">=</span> <span class="mf">0.25</span>
-        <span class="n">send</span> <span class="n">rsp</span>
-      <span class="o">}</span>
-    <span class="o">})</span>
-  <span class="o">}</span>
-<span class="o">}</span>
-</pre></div>
+class MyWeatherStation extends Agent {
+  void init() {
+    add new MessageBehavior({ msg -&gt;
+      if (msg.performative == Performative.REQUEST &amp;&amp; msg.type == 'WeatherForecast') {
+        log.info "Weather forecast request for ${msg.city}, ${msg.country}"
+        def rsp = new GenericMessage(msg, Performative.INFORM)
+        rsp.minTemp = 10
+        rsp.maxTemp = 25
+        rsp.probRain = 0.25
+        send rsp
+      }
+    })
+  }
+}</pre>
 </div>
 <p>Client code snippet:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">req</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericMessage</span><span class="o">(</span><span class="n">agent</span><span class="o">(</span><span class="s1">&#39;WeatherStation&#39;</span><span class="o">),</span> <span class="n">Performative</span><span class="o">.</span><span class="na">REQUEST</span><span class="o">)</span>
-<span class="n">req</span><span class="o">.</span><span class="na">type</span> <span class="o">=</span> <span class="s1">&#39;WeatherForecast&#39;</span>
-<span class="n">req</span><span class="o">.</span><span class="na">city</span> <span class="o">=</span> <span class="s1">&#39;London&#39;</span>
-<span class="n">req</span><span class="o">.</span><span class="na">country</span> <span class="o">=</span> <span class="s1">&#39;UK&#39;</span>
-<span class="kt">def</span> <span class="n">rsp</span> <span class="o">=</span> <span class="n">request</span> <span class="n">req</span><span class="o">,</span> <span class="mi">1000</span>         <span class="c1">// 1000 ms timeout for reply</span>
-<span class="n">println</span> <span class="s2">&quot;The lowest temperature today is ${rsp?rsp.minTemp:&#39;unknown&#39;}&quot;</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def req = new GenericMessage(agent('WeatherStation'), Performative.REQUEST)
+req.type = 'WeatherForecast'
+req.city = 'London'
+req.country = 'UK'
+def rsp = request req, 1000         // 1000 ms timeout for reply
+println "The lowest temperature today is ${rsp?rsp.minTemp:'unknown'}"</pre>
 </div>
 </div>
 <div class="section" id="alternate-syntax">
 <h2>Alternate syntax<a class="headerlink" href="#alternate-syntax" title="Permalink to this headline">¶</a></h2>
 <p>Let us assume we have an <cite>AgentID</cite> for the &#8220;WeatherStation&#8221;:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">weatherStation</span> <span class="o">=</span> <span class="n">agent</span><span class="o">(</span><span class="s1">&#39;WeatherStation&#39;</span><span class="o">)</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def weatherStation = agent('WeatherStation')</pre>
 </div>
 <p>It is sometimes nicer to be able to use a syntax like this:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">weatherStation</span><span class="o">.</span><span class="na">send</span> <span class="k">new</span> <span class="nf">WeatherForecastReq</span><span class="o">(</span><span class="nl">city:</span> <span class="s1">&#39;London&#39;</span><span class="o">,</span> <span class="nl">country:</span> <span class="s1">&#39;UK&#39;</span><span class="o">)</span>
-</pre></div>
+<div class="highlight-groovy"><pre>weatherStation.send new WeatherForecastReq(city: 'London', country: 'UK')</pre>
 </div>
 <p>or:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">rsp</span> <span class="o">=</span> <span class="n">weatherStation</span><span class="o">.</span><span class="na">request</span> <span class="k">new</span> <span class="n">WeatherForecastReq</span><span class="o">(</span><span class="nl">city:</span> <span class="s1">&#39;London&#39;</span><span class="o">,</span> <span class="nl">country:</span> <span class="s1">&#39;UK&#39;</span><span class="o">)</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def rsp = weatherStation.request new WeatherForecastReq(city: 'London', country: 'UK')</pre>
 </div>
 <p>or perhaps even:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">rsp</span> <span class="o">=</span> <span class="n">weatherStation</span> <span class="o">&lt;&lt;</span> <span class="k">new</span> <span class="n">WeatherForecastReq</span><span class="o">(</span><span class="nl">city:</span> <span class="s1">&#39;London&#39;</span><span class="o">,</span> <span class="nl">country:</span> <span class="s1">&#39;UK&#39;</span><span class="o">)</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def rsp = weatherStation &lt;&lt; new WeatherForecastReq(city: 'London', country: 'UK')</pre>
 </div>
 <p>This alternate syntax sometimes yields more readable code, and is supported by fjåge. It is important, however, to remember that the message is sent in the context of the client agent that provided us with the <cite>AgentID</cite>. Any <cite>AgentID</cite> returned by an agent (by methods such as <cite>agent()</cite>, <cite>agentForService()</cite>, etc) is associated with or <em>owned by</em> that agent. When this <cite>AgentID</cite> is used with the above syntax, the message is actually sent using the associated agent.</p>
 <div class="admonition note">
@@ -201,70 +192,60 @@
 <h2>Publishing and subscribing<a class="headerlink" href="#publishing-and-subscribing" title="Permalink to this headline">¶</a></h2>
 <p>So far we have sent messages to recipients whose <cite>AgentID</cite> we know. There are times when we may want to publish a message without explicitly knowing who the recipients are. All agents <em>subscribing</em> to the <em>topic</em> that we publish on would then receive the published message.</p>
 <p>This is supported by fjåge using the messaging constructs we have already encountered. Messages can be sent to topics in the same way that messages are sent to other agents. A topic is simply a special <cite>AgentID</cite>:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">weatherChannel</span> <span class="o">=</span> <span class="n">topic</span><span class="o">(</span><span class="s1">&#39;WeatherChannel&#39;</span><span class="o">)</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def weatherChannel = topic('WeatherChannel')</pre>
 </div>
 <p>Instead of using a <cite>String</cite> for the topic name, it is also possible (and usually recommended) to use Enums:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kd">enum</span> <span class="n">Topics</span> <span class="o">{</span>
-  <span class="n">WEATHER_CHANNEL</span><span class="o">,</span>
-  <span class="n">TSUNAMI_WARNING_CHANNEL</span>
-<span class="o">}</span>
-</pre></div>
+<div class="highlight-groovy"><pre>enum Topics {
+  WEATHER_CHANNEL,
+  TSUNAMI_WARNING_CHANNEL
+}</pre>
 </div>
 <p>and</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">weatherChannel</span> <span class="o">=</span> <span class="n">topic</span><span class="o">(</span><span class="n">Topics</span><span class="o">.</span><span class="na">WEATHER_CHANNEL</span><span class="o">)</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def weatherChannel = topic(Topics.WEATHER_CHANNEL)</pre>
 </div>
 <p>Agents can subscribe to the topic of interest, typically in their <cite>init()</cite> method:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">subscribe</span> <span class="n">weatherChannel</span>
-</pre></div>
+<div class="highlight-groovy"><pre>subscribe weatherChannel</pre>
 </div>
 <p>Messages can be sent to all agents subscribing to the topic:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">forecast</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WeatherForecast</span><span class="o">(</span><span class="nl">city:</span> <span class="s1">&#39;London&#39;</span><span class="o">,</span> <span class="nl">country:</span> <span class="s1">&#39;UK&#39;</span><span class="o">,</span> <span class="nl">minTemp:</span> <span class="mi">10</span><span class="o">,</span> <span class="nl">maxTemp:</span> <span class="mi">25</span><span class="o">,</span> <span class="nl">probRain:</span> <span class="mf">0.25</span><span class="o">)</span>
-<span class="n">weatherChannel</span><span class="o">.</span><span class="na">send</span> <span class="n">forecast</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def forecast = new WeatherForecast(city: 'London', country: 'UK', minTemp: 10, maxTemp: 25, probRain: 0.25)
+weatherChannel.send forecast</pre>
 </div>
 <p>Agents that no longer wish to receive messages on a topic may also unsubscribe from the topic:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">unsubscribe</span> <span class="n">weatherChannel</span>
-</pre></div>
+<div class="highlight-groovy"><pre>unsubscribe weatherChannel</pre>
 </div>
 </div>
 <div class="section" id="cloning-messages">
 <h2>Cloning messages<a class="headerlink" href="#cloning-messages" title="Permalink to this headline">¶</a></h2>
 <p>By default, a message delivered to another agent in the same container is the original object, and not a copy. This has some subtle but important implications. If an agent modifies a message after sending it, this can lead to unexpected behaviors.</p>
 <p>Let&#8217;s take an example:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">msg</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericMessage</span><span class="o">()</span>
-<span class="n">msg</span><span class="o">.</span><span class="na">text</span> <span class="o">=</span> <span class="s1">&#39;Hello!&#39;</span>
-<span class="n">agent</span><span class="o">(</span><span class="s1">&#39;Susan&#39;</span><span class="o">).</span><span class="na">send</span> <span class="n">msg</span>
-<span class="n">msg</span><span class="o">.</span><span class="na">text</span> <span class="o">=</span> <span class="s1">&#39;Holla!&#39;</span>
-<span class="n">agent</span><span class="o">(</span><span class="s1">&#39;Lola&#39;</span><span class="o">).</span><span class="na">send</span> <span class="n">msg</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def msg = new GenericMessage()
+msg.text = 'Hello!'
+agent('Susan').send msg
+msg.text = 'Holla!'
+agent('Lola').send msg</pre>
 </div>
 <p>If the message is delivered to Susan before the agent modifies the message, Susan gets a &#8220;Hello!&#8221; message and then Lola gets a &#8220;Holla!&#8221; message. If the message is modified after delivery to Susan, but before she has had a chance to read it, both Susan and Lola get a &#8220;Holla!&#8221; message. If the message is modified and sent to Lola before it is delivered to Susan, the recipient of the message changes, and two copies of &#8220;Holla!&#8221; get delivered to Lola and nothing gets delivered to Susan. As you can see, the behavior is indeterminate and a debugging nightmare!</p>
 <p>Fortunately, there are several simple ways around this:</p>
 <ol class="arabic">
 <li><p class="first">Do not modify a message once it is sent. The code would then look like this:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">msg</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericMessage</span><span class="o">()</span>
-<span class="n">msg</span><span class="o">.</span><span class="na">text</span> <span class="o">=</span> <span class="s1">&#39;Hello!&#39;</span>
-<span class="n">agent</span><span class="o">(</span><span class="s1">&#39;Susan&#39;</span><span class="o">).</span><span class="na">send</span> <span class="n">msg</span>
-<span class="n">msg</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericMessage</span><span class="o">()</span>        <span class="c1">// create a new message, don&#39;t modify the old one</span>
-<span class="n">msg</span><span class="o">.</span><span class="na">text</span> <span class="o">=</span> <span class="s1">&#39;Holla!&#39;</span>
-<span class="n">agent</span><span class="o">(</span><span class="s1">&#39;Lola&#39;</span><span class="o">).</span><span class="na">send</span> <span class="n">msg</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def msg = new GenericMessage()
+msg.text = 'Hello!'
+agent('Susan').send msg
+msg = new GenericMessage()        // create a new message, don't modify the old one
+msg.text = 'Holla!'
+agent('Lola').send msg</pre>
 </div>
 </li>
 <li><p class="first">Send a copy of the message, rather than the original. You can then freely modify the original:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kt">def</span> <span class="n">msg</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericMessage</span><span class="o">()</span>
-<span class="n">msg</span><span class="o">.</span><span class="na">text</span> <span class="o">=</span> <span class="s1">&#39;Hello!&#39;</span>
-<span class="n">agent</span><span class="o">(</span><span class="s1">&#39;Susan&#39;</span><span class="o">).</span><span class="na">send</span> <span class="n">clone</span><span class="o">(</span><span class="n">msg</span><span class="o">)</span>    <span class="c1">// send a copy of the message</span>
-<span class="n">msg</span><span class="o">.</span><span class="na">text</span> <span class="o">=</span> <span class="s1">&#39;Holla!&#39;</span>
-<span class="n">agent</span><span class="o">(</span><span class="s1">&#39;Lola&#39;</span><span class="o">).</span><span class="na">send</span> <span class="n">msg</span>
-</pre></div>
+<div class="highlight-groovy"><pre>def msg = new GenericMessage()
+msg.text = 'Hello!'
+agent('Susan').send clone(msg)    // send a copy of the message
+msg.text = 'Holla!'
+agent('Lola').send msg</pre>
 </div>
 </li>
 <li><p class="first">Ask the container to always send copies of messages rather than the original, and then you can use the original code without a problem:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">container</span><span class="o">.</span><span class="na">autoClone</span> <span class="o">=</span> <span class="kc">true</span>
-</pre></div>
+<div class="highlight-groovy"><pre>container.autoClone = true</pre>
 </div>
 </li>
 </ol>
@@ -274,8 +255,7 @@
 <li><a class="reference external" href="http://search.maven.org/remotecontent?filepath=org/objenesis/objenesis/1.2/objenesis-1.2.jar">objenesis-1.2.jar</a></li>
 </ul>
 <p>Then switch to using the fast cloner:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">container</span><span class="o">.</span><span class="na">cloner</span> <span class="o">=</span> <span class="n">Container</span><span class="o">.</span><span class="na">FAST_CLONER</span>
-</pre></div>
+<div class="highlight-groovy"><pre>container.cloner = Container.FAST_CLONER</pre>
 </div>
 </div>
 </div>
@@ -295,7 +275,7 @@
         <li class="right" >
           <a href="behaviors.html" title="Agents and Behaviors"
              >previous</a> |</li>
-        <li><a href="index.html">fjåge 1.3.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3.3-SNAPSHOT documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

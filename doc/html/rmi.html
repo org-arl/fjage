@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -6,15 +8,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Distributed Agents &mdash; fjåge 1.3.1 documentation</title>
+    <title>Distributed Agents &mdash; fjåge 1.3.3-SNAPSHOT documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3.1',
+        URL_ROOT:    '',
+        VERSION:     '1.3.3-SNAPSHOT',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="top" title="fjåge 1.3.1 documentation" href="index.html" />
+    <link rel="top" title="fjåge 1.3.3-SNAPSHOT documentation" href="index.html" />
     <link rel="next" title="The Shell Agent" href="shell.html" />
     <link rel="prev" title="Directory Services" href="services.html" /> 
   </head>
@@ -38,7 +40,7 @@
         <li class="right" >
           <a href="services.html" title="Directory Services"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fjåge 1.3.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3.3-SNAPSHOT documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -89,26 +91,24 @@
 <h2>Master and slave containers<a class="headerlink" href="#master-and-slave-containers" title="Permalink to this headline">¶</a></h2>
 <p>Once we have developed our agents, it is easy to deploy them on multiple nodes as necessary. To do so, we require one <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/rmi/MasterContainer.html">MasterContainer</a> in our application, and any number of <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/rmi/SlaveContainer.html">SlaveContainer</a>. The master container must be started first, and the slave containers connect to it.</p>
 <p>To start a master container, we simply replace <cite>Container</cite> with <cite>MasterContainer</cite> in the <cite>initrc.groovy</cite>:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.arl.fjage.*</span>
-<span class="kn">import</span> <span class="nn">org.arl.fjage.rmi.*</span>
+<div class="highlight-groovy"><pre>import org.arl.fjage.*
+import org.arl.fjage.rmi.*
 
-<span class="n">platform</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimePlatform</span><span class="o">()</span>
-<span class="n">container</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MasterContainer</span><span class="o">(</span><span class="n">platform</span><span class="o">,</span> <span class="n">name</span><span class="o">)</span>
-<span class="n">println</span> <span class="s2">&quot;Master container started at ${container.getURL()}&quot;</span>
-<span class="c1">// add agents to the container here</span>
-<span class="n">platform</span><span class="o">.</span><span class="na">start</span><span class="o">()</span>
-</pre></div>
+platform = new RealTimePlatform()
+container = new MasterContainer(platform, name)
+println "Master container started at ${container.getURL()}"
+// add agents to the container here
+platform.start()</pre>
 </div>
 <p>Specifying the <cite>name</cite> for the master container is optional, but recommended. Any <cite>String</cite> can be used as the container name.</p>
 <p>To start slave containers, we need to specify the Java RMI URL of the master container. Typically, the master container URL is of the form <cite>//hostname:port/fjage/name</cite> and the <cite>port</cite> usually is 1099.</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.arl.fjage.*</span>
-<span class="kn">import</span> <span class="nn">org.arl.fjage.rmi.*</span>
+<div class="highlight-groovy"><pre>import org.arl.fjage.*
+import org.arl.fjage.rmi.*
 
-<span class="n">platform</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimePlatform</span><span class="o">()</span>
-<span class="n">container</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SlaveContainer</span><span class="o">(</span><span class="n">platform</span><span class="o">,</span> <span class="n">masterURL</span><span class="o">)</span>
-<span class="c1">// add agents to the container here</span>
-<span class="n">platform</span><span class="o">.</span><span class="na">start</span><span class="o">()</span>
-</pre></div>
+platform = new RealTimePlatform()
+container = new SlaveContainer(platform, masterURL)
+// add agents to the container here
+platform.start()</pre>
 </div>
 <p>That&#8217;s it! We can deploy agents on any of the containers in the system, and they can interact with agents from other containers transparently.</p>
 </div>
@@ -122,21 +122,20 @@ java -cp <span class="s2">&quot;$CLASSPATH&quot;</span> org.arl.fjage.shell.Groo
 </pre></div>
 </div>
 <p>and <cite>etc/initrc-rconsole.groovy</cite>:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.arl.fjage.*</span>
-<span class="kn">import</span> <span class="nn">org.arl.fjage.rmi.*</span>
-<span class="kn">import</span> <span class="nn">org.arl.fjage.shell.*</span>
+<div class="highlight-groovy"><pre>import org.arl.fjage.*
+import org.arl.fjage.rmi.*
+import org.arl.fjage.shell.*
 
-<span class="n">String</span> <span class="n">url</span> <span class="o">=</span>  <span class="n">System</span><span class="o">.</span><span class="na">properties</span><span class="o">.</span><span class="na">getProperty</span><span class="o">(</span><span class="s1">&#39;url&#39;</span><span class="o">)</span>
-<span class="k">if</span> <span class="o">(</span><span class="n">url</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">url</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
-  <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span> <span class="s1">&#39;Master container URL not specified&#39;</span>
-  <span class="n">System</span><span class="o">.</span><span class="na">exit</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
-<span class="o">}</span>
-<span class="n">platform</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimePlatform</span><span class="o">()</span>
-<span class="n">container</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SlaveContainer</span><span class="o">(</span><span class="n">platform</span><span class="o">,</span> <span class="n">url</span><span class="o">)</span>
-<span class="n">shell</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ShellAgent</span><span class="o">(</span><span class="k">new</span> <span class="n">ConsoleShell</span><span class="o">(),</span> <span class="k">new</span> <span class="n">GroovyScriptEngine</span><span class="o">())</span>
-<span class="n">container</span><span class="o">.</span><span class="na">add</span> <span class="s1">&#39;rshell&#39;</span><span class="o">,</span> <span class="n">shell</span>
-<span class="n">platform</span><span class="o">.</span><span class="na">start</span><span class="o">()</span>
-</pre></div>
+String url =  System.properties.getProperty('url')
+if (url == null || url.length() == 0) {
+  System.out.println 'Master container URL not specified'
+  System.exit(1)
+}
+platform = new RealTimePlatform()
+container = new SlaveContainer(platform, url)
+shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
+container.add 'rshell', shell
+platform.start()</pre>
 </div>
 <p>The shell script passes the URL specified on the command line to the initialization Groovy script, that connects to the master container at that URL and offers a local console shell for the user to interact. Assuming you have a fjåge application called &#8220;myApp&#8221; running locally, you can connect to it:</p>
 <div class="highlight-sh"><div class="highlight"><pre>./rconsole.sh //localhost:1099/fjage/myApp
@@ -146,12 +145,11 @@ java -cp <span class="s2">&quot;$CLASSPATH&quot;</span> org.arl.fjage.shell.Groo
 <div class="section" id="interacting-with-agents-using-a-gateway">
 <h2>Interacting with agents using a Gateway<a class="headerlink" href="#interacting-with-agents-using-a-gateway" title="Permalink to this headline">¶</a></h2>
 <p>Only agents may access messaging and related functionality provided by fjåge. For example, non-agent Java or Groovy threads cannot send messages to, or receive messages. To aid interaction of such threads with agents, fjåge provides a <a class="reference external" href="http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/rmi/Gateway.html">Gateway</a> class. This class provides agent-like functionality to non-agent threads by creating a proxy agent in a slave container that has access to this functionality. Using the <cite>Gateway</cite> is fairly simple:</p>
-<div class="highlight-groovy"><div class="highlight"><pre><span class="n">Gateway</span> <span class="n">gw</span> <span class="o">=</span> <span class="n">Gateway</span><span class="o">(</span><span class="n">masterURL</span><span class="o">)</span>
-<span class="kt">def</span> <span class="n">weatherStation</span> <span class="o">=</span> <span class="n">gw</span><span class="o">.</span><span class="na">agentForService</span> <span class="n">Services</span><span class="o">.</span><span class="na">WEATHER_FORECAST_SERVICE</span>
-<span class="kt">def</span> <span class="n">rsp</span> <span class="o">=</span> <span class="n">gw</span><span class="o">.</span><span class="na">request</span> <span class="k">new</span> <span class="n">WeatherForecastReq</span><span class="o">(</span><span class="nl">city:</span> <span class="s1">&#39;London&#39;</span><span class="o">,</span> <span class="nl">country:</span> <span class="s1">&#39;UK&#39;</span><span class="o">,</span> <span class="nl">recipient:</span> <span class="n">weatherStation</span><span class="o">)</span>
-<span class="n">println</span> <span class="s2">&quot;The lowest temperature today is ${rsp?rsp.minTemp:&#39;unknown&#39;}&quot;</span>
-<span class="n">gw</span><span class="o">.</span><span class="na">shutdown</span><span class="o">()</span>
-</pre></div>
+<div class="highlight-groovy"><pre>Gateway gw = Gateway(masterURL)
+def weatherStation = gw.agentForService Services.WEATHER_FORECAST_SERVICE
+def rsp = gw.request new WeatherForecastReq(city: 'London', country: 'UK', recipient: weatherStation)
+println "The lowest temperature today is ${rsp?rsp.minTemp:'unknown'}"
+gw.shutdown()</pre>
 </div>
 </div>
 </div>
@@ -171,7 +169,7 @@ java -cp <span class="s2">&quot;$CLASSPATH&quot;</span> org.arl.fjage.shell.Groo
         <li class="right" >
           <a href="services.html" title="Directory Services"
              >previous</a> |</li>
-        <li><a href="index.html">fjåge 1.3.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fjåge 1.3.3-SNAPSHOT documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
