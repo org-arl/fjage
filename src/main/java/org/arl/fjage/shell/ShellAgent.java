@@ -92,7 +92,7 @@ public class ShellAgent extends Agent {
         if (msg instanceof ShellExecReq) handleReq((ShellExecReq)msg);
         else {
           log.info(msg.getSender()+" > "+msg.toString());
-          engine.setVariable((msg.getInReplyTo()==null)?"ntf":"rsp", msg);
+          engine.setVariable((msg.getInReplyTo() == null || msg.getClass().getName().endsWith("Ntf")) ? "ntf" : "rsp", msg);
           if (shell != null) shell.println(msg, OutputType.RECEIVED);
           synchronized (mq) {
             mq.add(msg);
