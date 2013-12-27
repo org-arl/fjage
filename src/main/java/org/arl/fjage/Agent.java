@@ -179,7 +179,7 @@ public class Agent implements Runnable, TimestampProvider {
       log.info("Spurious wakeup detected, evasive action taken");
       if (oldState != AgentState.NONE) {
         state = oldState;
-        container.reportBusy(aid);
+        if (container != null) container.reportBusy(aid);
         oldState = AgentState.NONE;
       }
     }
@@ -224,7 +224,7 @@ public class Agent implements Runnable, TimestampProvider {
   public synchronized void wake() {
     if (oldState != AgentState.NONE) {
       state = oldState;
-      container.reportBusy(aid);
+      if (container != null) container.reportBusy(aid);
       oldState = AgentState.NONE;
     }
     notify();
@@ -236,7 +236,7 @@ public class Agent implements Runnable, TimestampProvider {
   public void stop() {
     if (state == AgentState.FINISHED  || state == AgentState.FINISHING) return;
     state = oldState = AgentState.FINISHING;
-    container.reportBusy(aid);
+    if (container != null) container.reportBusy(aid);
     wake();
   }
 
