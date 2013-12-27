@@ -551,4 +551,26 @@ abstract class BaseGroovyScript extends Script {
     return binding.hasVariable(varname)
   }
 
+  /**
+   * Try executing a named script if a command/property does not exist.
+   */
+  void propertyMissing(String name) {
+    try {
+      run(name)
+    } catch (FileNotFoundException ex) {
+      throw new MissingPropertyException(name, getClass())
+    }
+  }
+
+  /**
+   * Try executing a named script if a command/property does not exist.
+   */
+  void methodMissing(String name, args) {
+    try {
+      run(name, args)
+    } catch (FileNotFoundException ex) {
+      throw new MissingMethodException(name, getClass(), args)    
+    }
+  }
+
 }
