@@ -40,10 +40,12 @@ public class Container {
   protected String name;
   protected Platform platform;
   protected Map<AgentID,Agent> agents = Collections.synchronizedMap(new HashMap<AgentID,Agent>());
+  protected Map<AgentID,Agent> agentsToAdd = Collections.synchronizedMap(new HashMap<AgentID,Agent>());
   protected Map<AgentID,Set<Agent>> topics = new HashMap<AgentID,Set<Agent>>();
   protected Map<String,Set<AgentID>> services = new HashMap<String,Set<AgentID>>();
   protected Logger log = Logger.getLogger(getClass().getName());
   protected boolean running = false;
+  protected boolean initing = false;
   protected Object cloner;
   protected Method doClone;
   protected boolean autoclone = false;
@@ -200,7 +202,8 @@ public class Container {
       return null;
     }
     agent.bind(aid, this);
-    agents.put(aid, agent);
+    if (initing) agentsToAdd.put(aid, agent);
+    else agents.put(aid, agent);
     AgentLocalRandom.bind(agent);
     if (running) {
       Thread t = new Thread(agent);
@@ -461,9 +464,11 @@ public class Container {
   void init() {
     if (!running) {
       log.info("Initializing agents...");
+      initing = true;
       synchronized (agents) {
         SortedSet<AgentID> keys = new TreeSet<AgentID>(agents.keySet());
         for (AgentID aid: keys) {
+          log.fine("Starting agent "+aid);
           Agent a = agents.get(aid);
           Thread t = new Thread(a);
           t.setName(a.getName());
@@ -479,7 +484,24 @@ public class Container {
         } catch (InterruptedException ex) {
           // do nothing
         }
+        if (agentsToAdd.size() > 0) {
+          synchronized (agents) {
+            agents.putAll(agentsToAdd);
+            SortedSet<AgentID> keys = new TreeSet<AgentID>(agentsToAdd.keySet());
+            for (AgentID aid: keys) {
+              log.fine("Starting agent "+aid);
+              Agent a = agents.get(aid);
+              Thread t = new Thread(a);
+              t.setName(a.getName());
+              t.setDaemon(false);
+              AgentLocalRandom.bind(a, t);
+              t.start();
+            }
+            agentsToAdd.clear();
+          }
+        }
       } while (!isIdle());
+      initing = false;
       log.info("Agents ready...");
     }
   }
