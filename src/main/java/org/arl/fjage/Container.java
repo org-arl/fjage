@@ -12,6 +12,7 @@ package org.arl.fjage;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 import java.lang.reflect.*;
 
@@ -39,8 +40,8 @@ public class Container {
 
   protected String name;
   protected Platform platform;
-  protected Map<AgentID,Agent> agents = Collections.synchronizedMap(new HashMap<AgentID,Agent>());
-  protected Map<AgentID,Agent> agentsToAdd = Collections.synchronizedMap(new HashMap<AgentID,Agent>());
+  protected Map<AgentID,Agent> agents = new ConcurrentHashMap<AgentID,Agent>();
+  protected Map<AgentID,Agent> agentsToAdd = new ConcurrentHashMap<AgentID,Agent>();
   protected Map<AgentID,Set<Agent>> topics = new HashMap<AgentID,Set<Agent>>();
   protected Map<String,Set<AgentID>> services = new HashMap<String,Set<AgentID>>();
   protected Logger log = Logger.getLogger(getClass().getName());
