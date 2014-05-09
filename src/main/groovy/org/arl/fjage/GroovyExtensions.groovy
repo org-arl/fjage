@@ -31,7 +31,6 @@ class GroovyExtensions {
     OneShotBehavior.metaClass.constructor << bcon0.curry(OneShotBehavior)
     CyclicBehavior.metaClass.constructor << bcon0.curry(CyclicBehavior)
     TestBehavior.metaClass.constructor << bcon0.curry(TestBehavior)
-    MessageBehavior.metaClass.constructor << bcon0.curry(MessageBehavior)
 
     def bcon1 = { Class<Behavior> cls, Number param, Closure c ->
       def b = cls.getDeclaredConstructor(long).newInstance((long)param)
