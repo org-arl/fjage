@@ -44,8 +44,8 @@ class AlohaTest {
     int s1 = a1.success
     int n2 = a2.attempts-a2.tx
     int s2 = a2.success
-    double T1 = s1*FRAMELEN/dt
-    double T2 = s2*FRAMELEN/dt
+    double T1 = (double)s1*FRAMELEN/dt
+    double T2 = (double)s2*FRAMELEN/dt
     println "Simulation time: ${dt/1000} seconds"
     println "Offered Load: ${100*NODES*FRAMELEN/EXPDELAY}%"
     println "Success: ${s1}/${n1} = ${n1?100*s1/n1:0}%, ${s2}/${n2} = ${n2?100*s2/n2:0}%"
