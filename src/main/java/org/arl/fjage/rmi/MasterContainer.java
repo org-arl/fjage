@@ -192,15 +192,11 @@ public class MasterContainer extends Container implements RemoteContainer {
     System.setProperty("java.rmi.server.hostname", hostname);
     myurl = "//"+hostname+":"+port+"/fjage/"+name;
     log.info("Container URL: "+myurl);
+    log.info("Starting local registry...");
     try {
-      // test if a registry is already running
-      Naming.lookup(myurl);
-    } catch (ConnectException ex) {
-      // if not, start one...
-      log.info("Unable to find RMI registry, so starting one...");
       LocateRegistry.createRegistry(port);
-    } catch (NotBoundException e) {
-      // do nothing, since this is fine
+    } catch (java.rmi.server.ExportException ex) {
+      log.info("Could not create registry, perhaps one is already running!");
     }
     proxy = new RemoteContainerProxy(this);
     Naming.rebind(myurl, proxy);
