@@ -622,6 +622,7 @@ public class Container {
    * @return true if it exists, false otherwise.
    */
   protected boolean isDuplicate(AgentID aid) {
+    if (aid == null) return false;
     return agents.containsKey(aid);
   }
 
