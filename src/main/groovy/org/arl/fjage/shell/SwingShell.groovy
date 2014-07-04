@@ -35,6 +35,7 @@ class SwingShell implements Shell {
   Color markerBG = Color.black
   Color busyBG = Color.pink
   Color idleBG = Color.white
+  Color seperatorBG = new Color(192, 192, 192)
   Color selectedBG = new Color(255, 255, 192)
   Font font = new Font(Font.MONOSPACED, Font.PLAIN, 12)
   boolean shutdownOnExit = true
@@ -124,7 +125,8 @@ class SwingShell implements Shell {
     swing.edt {
       if (obj instanceof String) {
         obj.readLines().each {
-          model.addElement(new ListEntry(data: it, type: type, fg: fg, prefix: prefix))
+          if (!prefix && it == '') model.addElement(new ListEntry(data: it, type: type, bg: seperatorBG))
+          else model.addElement(new ListEntry(data: it, type: type, fg: fg, prefix: prefix))
         }
       } else {
         model.addElement(new ListEntry(data: obj, type: type, fg: fg, prefix: prefix))
@@ -410,6 +412,8 @@ class SwingShell implements Shell {
       else if (value == '') value = ' '
       JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
       String s = StringEscapeUtils.escapeHtml4(label.text)
+      s = s.replaceAll(/^ +/, {'&nbsp;' * (it.length()-1) + ' ' })
+      s = s.replaceAll(/  +/, {'&nbsp;' * (it.length()-1) + ' ' })
       label.text = "<html><body style='width: ${0.8*list.parent.width}px;'>$s</body></html>";
       if (isSelected) {
         label.setBackground(selectedBG)
