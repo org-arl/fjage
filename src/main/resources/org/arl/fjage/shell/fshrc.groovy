@@ -2,6 +2,7 @@ shellImport 'org.arl.fjage.*'
 
 doc['help'] = 'help [topic] - provide help on a specified topic'
 doc['ps'] = 'ps - list all the agents running on the local container'
+doc['exit'] = 'exit - terminate the current shell session'
 doc['who'] = 'who - display list of variables in workspace'
 doc['run'] = '''\
 run - run a Groovy script

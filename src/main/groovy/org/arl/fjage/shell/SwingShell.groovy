@@ -261,7 +261,8 @@ class SwingShell implements Shell {
                   println("> $s", OutputType.INPUT)
                   if (history.size() == 0 || history.last() != s) history << s
                   historyNdx = -1
-                  engine.exec(s, this)
+                  if (s == 'exit') window.dispose()
+                  else engine.exec(s, this)
                 }
                 cmd.text = ''
                 if (timer == null) {

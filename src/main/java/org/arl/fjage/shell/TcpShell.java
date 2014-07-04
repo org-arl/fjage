@@ -212,6 +212,7 @@ public class TcpShell extends Thread implements Shell {
           else if (s.length() > 0) {
             sb = new StringBuffer();
             log.info("> "+s);
+            if (s.trim().equals("exit")) break;
             boolean ok = engine.exec(s, TcpShell.this);
             if (!ok) {
               println("BUSY", OutputType.ERROR);

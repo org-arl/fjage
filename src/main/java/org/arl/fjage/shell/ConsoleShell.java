@@ -127,6 +127,10 @@ public class ConsoleShell extends Thread implements Shell {
         else if (s.length() > 0) {
           sb = new StringBuffer();
           log.info("> "+s);
+          if (s.trim().equals("exit")) {
+            if (shutdownOnExit) engine.exec("shutdown", null);
+            break;
+          }
           boolean ok = engine.exec(s, this);
           if (!ok) {
             console.println(term.error("BUSY"));
