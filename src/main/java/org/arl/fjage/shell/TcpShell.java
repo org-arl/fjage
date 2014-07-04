@@ -127,7 +127,7 @@ public class TcpShell extends Thread implements Shell {
         if (term.isEnabled()) console.redrawLine();
         console.flush();
       }
-    } catch (IOException ex) {
+    } catch (Exception ex) {
       // do nothing
     }
   }
@@ -220,7 +220,6 @@ public class TcpShell extends Thread implements Shell {
             }
           }
         }
-
       } catch (Exception ex) {
         log.warning(ex.toString());
       }
