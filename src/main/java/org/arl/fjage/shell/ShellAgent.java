@@ -195,7 +195,7 @@ public class ShellAgent extends Agent {
       try {
         initScripts.add(new InitScript(Class.forName(script.substring(6))));
       } catch (ClassNotFoundException ex) {
-        log.warning("Class "+script+" not found");
+        log.warning(script+" not found");
       }
     } else {
       initScripts.add(new InitScript(new File(script)));
