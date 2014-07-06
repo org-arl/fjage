@@ -21,7 +21,7 @@ import org.arl.fjage.*  ;
  * <p>
  * Usage:
  * <code>
- * java [-Djava.util.logging.config.file=logging.properties] org.arl.fjage.shell.Boot [-nocolor] [-debug:package-name] [[-arg:arg]... script-file]...
+ * java [-Djava.util.logging.config.file=logging.properties] org.arl.fjage.shell.GroovyBoot [-nocolor] [-debug:package-name] [[-arg:arg]... script-file]...
  * </code>
  *
  * @author Mandar Chitre
