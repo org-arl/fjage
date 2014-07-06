@@ -97,7 +97,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           if (result != null && !cmd.endsWith(";")) {
             // convert ans to String, unless it is a message
             // retain messages for possible GUI logging
-            println(groovy.evaluate("(ans instanceof Message)?ans:(ans?.toString())"));
+            println(groovy.evaluate("(ans instanceof org.arl.fjage.Message)?ans:(ans?.toString())"));
           }
         } else if (script != null) {
           if (args == null) args = new ArrayList<String>();
@@ -106,7 +106,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           binding.setVariable("script", script.getAbsoluteFile());
           result = groovy.run(script, args);
         } else if (gscript != null) {
-          log.info("RUN: "+gscript.getClass().getName());
+          log.info("RUN: cls://"+gscript.getClass().getName());
           binding.setVariable("script", gscript.getClass().getName());
           gscript.setBinding(binding);
           gscript.run();
@@ -144,7 +144,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
     }
     groovy.evaluate("_cleanup_()");
   }
-  
+
   ////// script engine methods
   
   @Override
@@ -173,10 +173,28 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
     return true;
   }
 
-  //@Override
-  public synchronized boolean exec(Script script, Shell out) {
+  @Override
+  public synchronized boolean exec(File script, List<String> args, Shell out) {
     if (busy) return false;
-    this.gscript = script;
+    this.script = script;
+    this.args = args;
+    result = null;
+    binding.setVariable("out", out);
+    this.out = out;
+    busy = true;
+    notify();
+    return true;
+  }
+
+  @Override
+  public synchronized boolean exec(Class<?> script, Shell out) {
+    if (busy) return false;
+    try {
+      this.gscript = (Script)(script.newInstance());
+    } catch (Exception ex) {
+      log.warning("Exec failed: "+ex.toString());
+      return false;
+    }
     this.args = null;
     result = null;
     binding.setVariable("out", out);
@@ -187,9 +205,14 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   }
 
   @Override
-  public synchronized boolean exec(File script, List<String> args, Shell out) {
+  public synchronized boolean exec(Class<?> script, List<String> args, Shell out) {
     if (busy) return false;
-    this.script = script;
+    try {
+      this.gscript = (Script)(script.newInstance());
+    } catch (Exception ex) {
+      log.warning("Exec failed: "+ex.toString());
+      return false;
+    }
     this.args = args;
     result = null;
     binding.setVariable("out", out);

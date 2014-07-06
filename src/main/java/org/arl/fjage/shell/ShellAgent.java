@@ -27,19 +27,23 @@ public class ShellAgent extends Agent {
   
   ////// private classes
 
-  private class Script {
+  private class InitScript {
     String name;
     File file;
     Reader reader;
-    Script(File file) {
+    Class<?> cls;
+    InitScript(File file) {
       this.name = null;
       this.file = file;
       this.reader = null;
     }
-    Script(String name, Reader reader) {
+    InitScript(String name, Reader reader) {
       this.name = name;
       this.file = null;
       this.reader = reader;
+    }
+    InitScript(Class<?> cls) {
+      this.cls = cls;
     }
   }
   
@@ -47,7 +51,7 @@ public class ShellAgent extends Agent {
   
   private ScriptEngine engine;
   private Shell shell;
-  private List<Script> initScripts = new ArrayList<Script>();
+  private List<InitScript> initScripts = new ArrayList<InitScript>();
   private MessageBehavior msgBehavior;
   private MessageQueue mq = new MessageQueue();
   private int waiting = 0;
@@ -77,7 +81,8 @@ public class ShellAgent extends Agent {
     this.shell = shell;
     this.engine = engine;
     engine.setVariable("agent", this);
-    addInitrc("res://org/arl/fjage/shell/fshrc.groovy");
+    //addInitrc("res://org/arl/fjage/shell/fshrc.groovy");
+    addInitrc("cls://org.arl.fjage.shell.fshrc");
   }
 
   @Override
@@ -118,10 +123,11 @@ public class ShellAgent extends Agent {
       @Override
       public void action() {
         if (shell != null) shell.bind(engine);
-        for (Script script: initScripts) {
+        for (InitScript script: initScripts) {
           if (engine.isBusy()) engine.waitUntilCompletion();
           if (script.file != null) engine.exec(script.file, null);
-          else engine.exec(script.reader, script.name, null);
+          else if (script.reader != null) engine.exec(script.reader, script.name, null);
+          else if (script.cls != null) engine.exec(script.cls, null);
         }
         if (engine.isBusy()) engine.waitUntilCompletion();
         if (shell != null) shell.start();
@@ -185,8 +191,14 @@ public class ShellAgent extends Agent {
         return;
       }
       addInitrc(script, new InputStreamReader(inp));
+    } else if (script.startsWith("cls://")) {
+      try {
+        initScripts.add(new InitScript(Class.forName(script.substring(6))));
+      } catch (ClassNotFoundException ex) {
+        log.warning("Class "+script+" not found");
+      }
     } else {
-      initScripts.add(new Script(new File(script)));
+      initScripts.add(new InitScript(new File(script)));
     }
   }
 
@@ -197,7 +209,7 @@ public class ShellAgent extends Agent {
    * @param script script file.
    */
   public void addInitrc(File script) {
-    initScripts.add(new Script(script));
+    initScripts.add(new InitScript(script));
   }
   
   /**
@@ -208,7 +220,7 @@ public class ShellAgent extends Agent {
    * @param reader script reader.
    */
   public void addInitrc(String name, Reader reader) {
-    initScripts.add(new Script(name, reader));
+    initScripts.add(new InitScript(name, reader));
   }
 
   /**

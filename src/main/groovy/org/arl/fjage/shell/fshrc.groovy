@@ -1,3 +1,6 @@
+package org.arl.fjage.shell
+@groovy.transform.BaseScript org.arl.fjage.shell.BaseGroovyScript fjageGroovyScript
+
 shellImport 'org.arl.fjage.*'
 
 doc['help'] = 'help [topic] - provide help on a specified topic'

@@ -54,7 +54,7 @@ public class GroovyBoot {
       log.info("fjage Build: "+Platform.getBuildVersion());
 
       // parse command line and execute scripts
-      ScriptEngine engine = new GroovyScriptEngine();
+      GroovyScriptEngine engine = new GroovyScriptEngine();
       OutputShell out = new OutputShell(System.out);
       List<String> arglist = new ArrayList<String>();
       for (String a: args) {
@@ -75,7 +75,7 @@ public class GroovyBoot {
         } else if (a.startsWith("-arg:")) {
           arglist.add(a.substring(5));
         } else {
-          if (!a.endsWith(".groovy")) a += ".groovy";
+          if (!a.endsWith(".groovy") && !a.startsWith("cls://")) a += ".groovy";
           log.info("Running "+a);
           if (a.startsWith("res:/")) {
             // execute script from resource file
@@ -83,6 +83,10 @@ public class GroovyBoot {
             if (inp == null) throw new FileNotFoundException(a+" not found");
             engine.exec(new InputStreamReader(inp), a, arglist, out);
             if (arglist.size() > 0) arglist = new ArrayList<String>();
+          } else if (a.startsWith("cls://")) {
+            // execute pre-compiled script from class file
+            Class<?> cls = Class.forName(a.substring(6));
+            engine.exec(cls, arglist, out);
           } else {
             // execute script from file
             engine.exec(new File(a), arglist, out);

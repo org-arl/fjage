@@ -52,6 +52,27 @@ public interface ScriptEngine {
   public boolean exec(File script, List<String> args, Shell out);
   
   /**
+   * Execute a precompiled script. The method does not wait for execution to be completed
+   * but returns immediately.
+   *
+   * @param script script class to execute.
+   * @param out output stream (null to suppress output).
+   * @return true if accepted for execution, false if busy or unable to instantiate class.
+   */
+  public boolean exec(Class<?> script, Shell out);
+
+  /**
+   * Execute a precomplied script. The method does not wait for execution to be completed
+   * but returns immediately.
+   *
+   * @param script script class to execute.
+   * @param args arguments to pass to script.
+   * @param out output stream (null to suppress output).
+   * @return true if accepted for execution, false if busy or unable to instantiate class.
+   */
+  public boolean exec(Class<?> script, List<String> args, Shell out);
+  
+  /**
    * Execute a script from a reader. The method does not wait for execution to be completed
    * but returns immediately.
    *

@@ -326,16 +326,24 @@ abstract class BaseGroovyScript extends Script {
   void run(String name, Object... args) {
     Binding binding = getBinding();
     def oldScript = binding.getVariable('script');
+    def oldArgs = binding.getVariable('args');
     try {
       if (binding.hasVariable('groovy')) {
         GroovyShell groovy = binding.getVariable('groovy');
         groovy.getClassLoader().clearCache();
-        if (!name.endsWith('.groovy')) name += '.groovy';
+        if (!name.endsWith('.groovy') && !name.startsWith("cls://")) name += '.groovy';
         if (name.startsWith('res:/')) {
           InputStream inp = groovy.class.getResourceAsStream(name.substring(5));
           if (inp == null) throw new FileNotFoundException(name+" not found");
           binding.setVariable('script', name);
           groovy.run(new InputStreamReader(inp), name, args as String[]);
+        } else if (name.startsWith("cls://")) {
+          Class<Script> cls = (Class<Script>)(Class.forName(name.substring(6)));
+          Script script = cls.newInstance();
+          binding.setVariable('script', cls.getName());
+          binding.setVariable('args', args as String[]);
+          script.setBinding(binding);
+          script.run();
         } else {
           List<?> arglist = new ArrayList<?>();
           if (args != null && args.length > 0)
@@ -351,6 +359,7 @@ abstract class BaseGroovyScript extends Script {
       }
     } finally {
       binding.setVariable('script', oldScript);
+      binding.setVariable('args', oldArgs);
     }
   }
   
