@@ -15,7 +15,14 @@ workspace. If no such variable is defined, they are in the current folder.
 
 Examples:
   run \'myscript\'                   // run a script called myscript.groovy
-  <myscript                        // alternative syntax for running myscript.groovy
+  <myscript                        // alternative syntax for running myscript
+  myscript                         // alternative syntax for running myscript
+  run \'res://myscript.groovy\'      // run a script from resources (in jar)
+  run \'cls://myscript\'             // run a precompiled script from class
+
+Note:
+  Precompiled scripts should be declared with a base class annotation:
+    @groovy.transform.BaseScript org.arl.fjage.shell.BaseGroovyScript fGS
 '''
 doc['println'] = '''\
 println - display message on console

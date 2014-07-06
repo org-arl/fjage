@@ -22,3 +22,10 @@ Logging
 :Q: How do I temporarily enable debug logging for fjåge applications without writing my own `logging.properties`?
 
 :A: Debug logging (log level `ALL`) can be enabled by simply passing a `-debug` flag on the command line to `GroovyBoot`. To enable debug logging for only certain loggers, you can use a flag of the form `-debug:loggername`. Startup scripts (such as `fjage.sh`) pass all arguments to `GroovyBoot`, allowing this flag to be simply included on the command line while starting the application. An alternative solution is to use the command `logLevel` at the shell prompt to control the log level of a specific logger.  For more information, try `help logLevel`.
+
+Precompiled scripts
+-------------------
+
+:Q: Why does my precompiled script not work correctly?
+
+:A: Precompiled scripts should be derived from the `org.arl.fjage.shell.BaseGroovyScript` base class. To do this, ensure that you have the `@groovy.transform.BaseScript org.arl.fjage.shell.BaseGroovyScript fGroovyScript` annotation in the script.
