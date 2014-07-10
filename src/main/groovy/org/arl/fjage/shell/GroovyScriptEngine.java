@@ -108,6 +108,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
         } else if (gscript != null) {
           log.info("RUN: cls://"+gscript.getClass().getName());
           binding.setVariable("script", gscript.getClass().getName());
+          binding.setVariable("args", (args == null) ? new String[0] : args);
           gscript.setBinding(binding);
           gscript.run();
         } else if (reader != null) {
