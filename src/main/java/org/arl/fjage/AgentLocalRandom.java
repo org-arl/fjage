@@ -36,7 +36,6 @@ public class AgentLocalRandom extends Random {
   public static AgentLocalRandom current() {
     Thread tid = Thread.currentThread();
     AgentLocalRandom r = rng.get(tid);
-    //log.info("Thread "+tid.getId()+" "+(r==null?root.toString():r.toString()));
     if (r != null) return r;
     return root;
   }
@@ -48,7 +47,6 @@ public class AgentLocalRandom extends Random {
     long seed = root.nextLong();
     r.setSeed(seed);
     rng.put(agent, r);
-    //log.info("Agent "+agent.getName()+" seed = "+seed);
   }
 
   static void bind(Agent agent, Thread tid) {
@@ -56,12 +54,10 @@ public class AgentLocalRandom extends Random {
     if (r != null) {
       rng.put(tid, r);
       rng.remove(agent);
-      //log.info("Agent "+agent.getName()+" thread = "+tid.getId());
     }
   }
 
   static void unbind(Thread tid) {
-    //log.info("Thread "+tid.getId()+" unbound");
     rng.remove(tid);
   }
 
@@ -76,7 +72,6 @@ public class AgentLocalRandom extends Random {
    * @param seed random number seed.
    */
   public static void setRootSeed(long seed) {
-    //log.info("Root seed = "+seed);
     root.setSeed(seed);
     rng.clear();
   }
@@ -84,7 +79,7 @@ public class AgentLocalRandom extends Random {
   //// instance methods
 
   /**
-   * Generate a random double.
+   * Generates a random double.
    *
    * @param min minimum value to generate.
    * @param max maximum value to generate.
@@ -95,14 +90,55 @@ public class AgentLocalRandom extends Random {
   }
 
   /**
-   * Generate an exponentially distributed random number with unit mean.
+   * Generates an exponentially distributed random number with mean 1/lambda.
+   *
+   * @param lambda rate parameter.
+   * @return random number.
+   */
+  public double nextExp(double lambda) {
+    return nextExp()/lambda;
+  }
+
+  /**
+   * Generates an exponentially distributed random number with unit mean.
    *
    * @return random number.
    */
   public double nextExp() {
     double r = -Math.log(nextDouble());
-    //log.info("EXP: "+r);
     return r;
+  }
+
+  /**
+   * Generates a Gaussian distributed random number.
+   *
+   * @param mu mean of the distribution.
+   * @param sigma2 variance of the distribution.
+   * @return random number.
+   */
+  public double nextGaussian(double mu, double sigma2) {
+    return nextGaussian()*Math.sqrt(sigma2) + mu;
+  }
+
+  /**
+   * Generates a Rayleigh distributed random number.
+   *
+   * @param sigma scale parameter.
+   * @return random number.
+   */
+  public double nextRayleigh(double sigma) {
+    return Math.sqrt(-2*Math.log(nextDouble()))*sigma;
+  }
+
+  /**
+   * Generates a Rician distributed random number.
+   *
+   * @param nu location parameter.
+   * @param sigma scale parameter.
+   * @return random number.
+   */
+  public double nextRician(double nu, double sigma) {
+    return Math.sqrt(Math.pow(nextGaussian()*sigma+nu,2) + Math.pow(nextGaussian()*sigma,2));
   }
 
 }
