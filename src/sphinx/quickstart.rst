@@ -32,9 +32,9 @@ Your directory structure should now look something like this:
     logs/
     build/libs/
       fjage-|version|.jar
-      groovy-all-2.1.3.jar
+      groovy-all-2.3.1.jar
       commons-lang3-3.1.jar
-      jline-2.10.jar
+      jline-2.12.jar
     etc/
       initrc.groovy
     samples/
@@ -63,9 +63,9 @@ Your directory structure should now look something like this:
     logs/
     build/libs/
       fjage-|version|.jar
-      groovy-all-2.1.3.jar
+      groovy-all-2.3.1.jar
       commons-lang3-3.1.jar
-      jline-2.10.jar
+      jline-2.12.jar
     etc/
       initrc.groovy
     samples/
