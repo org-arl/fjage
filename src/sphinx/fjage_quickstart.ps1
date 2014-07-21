@@ -1,6 +1,6 @@
 #Powershell script to install fjage for Windows
 
-$ver = "1.3.2"
+$ver = "1.3.3"
 
 Write-Host ""
 Write-Host "Creating directories"
@@ -16,12 +16,12 @@ Write-Host "Downloading files: "
 $webclient = New-Object System.Net.WebClient
 Write-Host "  1. fjage-$ver.jar"
 $webclient.DownloadFile("http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/$ver/fjage-$ver.jar", "$pwd\build\libs\fjage-$ver.jar")
-Write-Host "  2. groovy-all-2.1.3.jar"
-$webclient.DownloadFile("http://search.maven.org/remotecontent?filepath=org/codehaus/groovy/groovy-all/2.1.3/groovy-all-2.1.3.jar", "$pwd\build\libs\groovy-all-2.1.3.jar")
+Write-Host "  2. groovy-all-2.3.1.jar"
+$webclient.DownloadFile("http://search.maven.org/remotecontent?filepath=org/codehaus/groovy/groovy-all/2.3.1/groovy-all-2.3.1.jar", "$pwd\build\libs\groovy-all-2.3.1.jar")
 Write-Host "  3. commons-lang3-3.1.jar"
 $webclient.DownloadFile("http://search.maven.org/remotecontent?filepath=org/apache/commons/commons-lang3/3.1/commons-lang3-3.1.jar", "$pwd\build\libs\commons-lang3-3.1.jar")
-Write-Host "  4. jline-2.10.jar"
-$webclient.DownloadFile("http://search.maven.org/remotecontent?filepath=jline/jline/2.10/jline-2.10.jar", "$pwd\build\libs\jline-2.10.jar")
+Write-Host "  4. jline-2.12.jar"
+$webclient.DownloadFile("http://search.maven.org/remotecontent?filepath=jline/jline/2.12/jline-2.12.jar", "$pwd\build\libs\jline-2.12.jar")
 
 Write-Host "  5. initrc.groovy"
 $webclient.DownloadFile("https://raw.github.com/org-arl/fjage/master/etc/initrc.groovy", "$pwd\etc\initrc.groovy")
@@ -43,7 +43,7 @@ $webclient.DownloadFile("https://raw.github.com/org-arl/fjage/master/samples/04_
 
 Write-Host "Creating fjage.bat"
 $op = New-Item $pwd\fjage.bat -type file -force -value "@echo off
-set CLASSPATH=build\libs\commons-lang3-3.1.jar;build\libs\fjage-1.3.2.jar;build\libs\groovy-all-2.1.3.jar;build\libs\jline-2.10.jar;samples
+set CLASSPATH=build\libs\commons-lang3-3.1.jar;build\libs\fjage-1.3.2.jar;build\libs\groovy-all-2.3.1.jar;build\libs\jline-2.12.jar;samples
 set GUI=false
 java -Dfjage.gui= org.arl.fjage.shell.GroovyBoot etc/initrc.groovy" 2>$null
 
