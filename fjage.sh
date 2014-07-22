@@ -9,6 +9,7 @@ export CLASSPATH=$CLASSPATH:samples
 # Cygwin/Windows uses a ";" classpath separator
 if [ $(expr "$(uname -s)" : 'CYGWIN.*') -gt 0 ];then
   CLASSPATH=`echo "$CLASSPATH" | sed 's/:/;/g'`
+  TERMOPT="-Djline.terminal=jline.UnixTerminal"
 fi
 
 # process command line options
@@ -29,4 +30,4 @@ do
 done
 
 mkdir -p logs
-java -cp "$CLASSPATH" -Dfjage.gui=$GUI org.arl.fjage.shell.GroovyBoot $@ etc/initrc.groovy
+java -cp "$CLASSPATH" -Dfjage.gui=$GUI $TERMOPT org.arl.fjage.shell.GroovyBoot $@ etc/initrc.groovy
