@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'/>
+    <style>*:focus { outline: 0; }</style>
+  </head>
+  <body>
+    <div id='content' style='border : solid 1px #404040; background : #000000; color : #ffffff; padding : 4px; width : 800px; height : 600px; font-family: monospace; overflow : auto;'>
+    </div>
+    <div style='border : solid 1px #404040; background : #000000; color : #ffff00; padding: 4px; width : 800px; height : 25px; font-family: monospace;'>
+      <form action='javascript:doExec()'>
+        &gt; <input type='text' id='cmd' placeholder='Enter command here' autocomplete='off' autofocus='true' style='border: none; background: #000000; color: #ffff00; width : 750px; height : 20px; font-family: monospace;'/>
+      </form>
+    </div>
+    <script>
+      var history = [];
+      var histNdx = -1;
+      var source = new EventSource('out');
+      source.addEventListener('open', function(e) {
+        document.getElementById('content').innerHTML += '<font color=\"#808080\">Connection established</font><br/>';
+      }, false);
+      source.onmessage = function(e) {
+        document.getElementById('content').innerHTML += e.data+'<br/>';
+        document.getElementById('content').scrollTop = document.getElementById('content').scrollHeight;
+      };
+      document.getElementById('cmd').onkeydown=function(e){
+        // ^L or Apple-K to clear screen
+        if ((e.ctrlKey && e.keyCode == 76) || (e.metaKey && e.keyCode == 75)) {
+          document.getElementById('content').innerHTML = '';
+          return false;
+        }
+        // ESC to clear input
+        if (e.keyCode == 27) {
+          document.getElementById('cmd').value = '';
+          histNdx = -1;
+          return false;
+        }
+        // UP/DOWN history navigation
+        if (e.keyCode == 38) {
+          if (histNdx == -1) histNdx = history.length;
+          if (histNdx > 0) histNdx--;
+          if (histNdx >= 0 && histNdx < history.length) {
+            var el = document.getElementById('cmd')
+            el.value = history[histNdx];
+            el.select();
+            return false;
+          }
+        }
+        if (e.keyCode == 40 && histNdx >= 0) {
+          if (histNdx < history.length-1) {
+            var el = document.getElementById('cmd')
+            el.value = history[++histNdx];
+            el.select();
+            return false;
+          } else if (histNdx == history.length-1) {
+            histNdx = -1;
+            document.getElementById('cmd').value = '';
+            return false;
+          }
+        }
+      }
+      function doExec(){
+        var cmd = document.getElementById('cmd').value.trim();
+        if (cmd != '') {
+          document.getElementById('cmd').value = '';
+          histNdx = -1;
+          if (history.length == 0 || history[history.length-1] != cmd) history[history.length] = cmd;
+          var httpreq = new XMLHttpRequest();
+          httpreq.onreadystatechange = function() {
+            if (httpreq.readyState == 4 && httpreq.status == 200) {
+              document.getElementById('content').innerHTML += httpreq.responseText;
+              document.getElementById('content').scrollTop = document.getElementById('content').scrollHeight;
+            }
+          }
+          httpreq.open('GET', 'exec?' + encodeURIComponent(cmd), true);
+          httpreq.send();
+        }
+      }
+    </script>
+  </body>
+</html>

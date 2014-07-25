@@ -22,6 +22,9 @@ dependencies {
   compile 'jline:jline:2.12'
   compile 'org.apache.commons:commons-lang3:3.1'
   compile 'uk.com.robust-it:cloning:1.9.0'
+  compile 'org.eclipse.jetty:jetty-server:8.0.4.v20111024'
+  compile 'org.eclipse.jetty:jetty-servlet:8.0.4.v20111024'
+  compile 'org.eclipse.jetty:jetty-eventsource-servlet:1.0.0'
   testCompile 'junit:junit:4.11'
 }
 
