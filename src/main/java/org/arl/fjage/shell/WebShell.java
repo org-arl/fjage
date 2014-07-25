@@ -164,12 +164,16 @@ public class WebShell implements Shell {
       case INPUT:
         s = "<font color='#ffff00'>"+s+"</font>";
         break;
+      case OUTPUT:
+        break;
       case ERROR:
         s = "<font color='#ff0000'>"+s+"</font>";
         break;
       case NOTIFY:
         s = "<font color='#8080ff'>"+s+"</font>";
         break;
+      default:
+        return;
     }
     for (Emitter e: out) {
       try {
