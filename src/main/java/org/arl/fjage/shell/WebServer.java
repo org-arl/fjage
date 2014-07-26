@@ -1,0 +1,95 @@
+/******************************************************************************
+
+Copyright (c) 2013, Mandar Chitre
+
+This file is part of fjage which is released under Simplified BSD License.
+See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
+for full license details.
+
+******************************************************************************/
+
+package org.arl.fjage.shell;
+
+import java.util.*;
+import org.eclipse.jetty.util.log.*;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.*;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+
+public class WebServer {
+
+  private static Map<Integer,WebServer> servers = new HashMap<Integer,WebServer>();
+  private static java.util.logging.Logger log = java.util.logging.Logger.getLogger(WebServer.class.getName());
+
+  // disable Jetty logging (except warnings)
+  static {
+    /*System.setProperty("org.eclipse.jetty.LEVEL", "WARN");
+    Log.setLog(new Logger() {
+      @Override public String getName()                         { return "[jetty]"; }
+      @Override public Logger getLogger(String name)            { return this;      }
+      @Override public boolean isDebugEnabled()                 { return false;     }
+      @Override public void warn(String msg, Object... args)    { log.warning(msg);          }
+      @Override public void warn(Throwable t)                   { log.warning(t.toString()); }
+      @Override public void warn(String msg, Throwable thrown)  { log.warning(msg);          }
+      @Override public void info(String msg, Object... args)    { }
+      @Override public void info(Throwable thrown)              { }
+      @Override public void info(String msg, Throwable thrown)  { }
+      @Override public void setDebugEnabled(boolean enabled)    { }
+      @Override public void debug(String msg, Object... args)   { }
+      @Override public void debug(Throwable thrown)             { }
+      @Override public void debug(String msg, Throwable thrown) { }
+      @Override public void ignore(Throwable ignored)           { }
+    });*/
+  }
+
+  public static WebServer getInstance(int port) {
+    synchronized (servers) {
+      WebServer svr = servers.get(port);
+      if (svr != null) return svr;
+      svr = new WebServer(port);
+      servers.put(port, svr);
+      return svr;
+    }
+  }
+
+  private Server server;
+  private ContextHandlerCollection contexts;
+  private boolean started;
+
+  private WebServer(int port) {
+    log.info("Starting web server on port "+port);
+    server = new Server(port);
+    contexts = new ContextHandlerCollection();
+    server.setHandler(contexts);
+    started = false;
+  }
+
+  public void add(ContextHandler handler) {
+    log.info("Adding web context: "+handler.getContextPath());
+    contexts.addHandler(handler);
+  }
+
+  public void start() {
+    if (started) return;
+    try {
+      server.start();
+      started = true;
+    } catch (Exception ex) {
+      log.warning(ex.toString());
+    }
+  }
+
+  public void stop() {
+    if (server == null) return;
+    try {
+      log.info("Stopping web server");
+      server.stop();
+      started = false;
+    } catch (Exception ex) {
+      log.warning(ex.toString());
+    }
+    server = null;
+    contexts = null;
+  }
+
+}

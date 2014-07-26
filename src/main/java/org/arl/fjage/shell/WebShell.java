@@ -13,12 +13,10 @@ package org.arl.fjage.shell;
 import java.io.*;
 import java.util.*;
 import java.net.URLDecoder;
+import java.util.logging.Logger;
 import javax.servlet.*;
 import javax.servlet.http.*;
 import javax.servlet.annotation.*;
-import org.eclipse.jetty.util.log.Log;
-import org.eclipse.jetty.util.log.Logger;
-import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlets.EventSource;
@@ -39,20 +37,44 @@ public class WebShell implements Shell {
   ////////// Private attributes
 
   private ScriptEngine engine = null;
-  private java.util.logging.Logger log = java.util.logging.Logger.getLogger(getClass().getName());
-  private Server server = null;
+  private Logger log = Logger.getLogger(getClass().getName());
+  private WebServer server = null;
   private List<Emitter> out = new ArrayList<Emitter>();
-  private int port;
+  private ServletContextHandler context;
 
   ////////// Methods
 
   /**
-   * Creates a web command shell running on a specified port.
+   * Creates a web command shell running on a specified port and context path.
+   *
+   * @param port TCP port number.
+   * @param path context path.
+   */
+  public WebShell(int port, String path) {
+    server = WebServer.getInstance(port);
+    init(path);
+    server.add(context);
+  }
+
+  /**
+   * Creates a web command shell running on a specified port and root context.
    *
    * @param port TCP port number.
    */
   public WebShell(int port) {
-    this.port = port;
+    server = WebServer.getInstance(port);
+    init("/");
+    server.add(context);
+  }
+
+  /**
+   * Creates a web command shell without a web server. The shell's context handler should later
+   * be added to an existing web server.
+   *
+   * @param path context path.
+   */
+  public WebShell(String path) {
+    init(path);
   }
 
   @Override
@@ -62,29 +84,59 @@ public class WebShell implements Shell {
 
   @Override
   public void start() {
-    // disable Jetty logging (except warnings)
-    System.setProperty("org.eclipse.jetty.LEVEL", "WARN");
-    Log.setLog(new Logger() {
-      @Override public String getName()                         { return "[jetty]"; }
-      @Override public Logger getLogger(String name)            { return this;      }
-      @Override public boolean isDebugEnabled()                 { return false;     }
-      @Override public void warn(String msg, Object... args)    { log.warning("[jetty] "+msg);          }
-      @Override public void warn(Throwable t)                   { log.warning("[jetty] "+t.toString()); }
-      @Override public void warn(String msg, Throwable thrown)  { log.warning("[jetty] "+msg);          }
-      @Override public void info(String msg, Object... args)    { }
-      @Override public void info(Throwable thrown)              { }
-      @Override public void info(String msg, Throwable thrown)  { }
-      @Override public void setDebugEnabled(boolean enabled)    { }
-      @Override public void debug(String msg, Object... args)   { }
-      @Override public void debug(Throwable thrown)             { }
-      @Override public void debug(String msg, Throwable thrown) { }
-      @Override public void ignore(Throwable ignored)           { }
-    });
-    // setup Jetty server
-    server = new Server(port);
-    ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-    context.setContextPath("/");
-    server.setHandler(context);
+    server.start();
+  }
+
+  @Override
+  public void shutdown() {
+    if (server != null) {
+      server.stop();
+      server = null;
+    }
+  }
+
+  @Override
+  public void println(Object obj, OutputType type) {
+    if (obj == null) return;
+    String s = obj.toString();
+    s = s.replace("\n","<br/>");
+    switch(type) {
+      case INPUT:
+        s = "<font color='#ffff00'>"+s+"</font>";
+        break;
+      case OUTPUT:
+        break;
+      case ERROR:
+        s = "<font color='#ff0000'>"+s+"</font>";
+        break;
+      case NOTIFY:
+        s = "<font color='#8080ff'>"+s+"</font>";
+        break;
+      default:
+        return;
+    }
+    for (Emitter e: out) {
+      try {
+        e.data(s+"\n");
+      } catch (IOException ex) {
+        log.warning(ex.toString());
+      }
+    }
+  }
+
+  /**
+   * Gets the context handler to add to an existing web server.
+   * @return context handler.
+   */
+  public ServletContextHandler getContextHandler() {
+    return context;
+  }
+
+  //////// Private methods
+
+  private void init(String path) {
+    context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+    context.setContextPath(path);
     context.addServlet(new ServletHolder(new EventSourceServlet() {
       protected EventSource newEventSource(final HttpServletRequest req) {
         return new EventSource() {
@@ -147,53 +199,6 @@ public class WebShell implements Shell {
         }
       }
     }), "/");
-    try {
-      server.start();
-    } catch (Exception ex) {
-      log.severe("Unable to start web server: " + ex.toString());
-      server = null;
-    }
-  }
-
-  @Override
-  public void shutdown() {
-    if (server != null) {
-      try {
-        server.stop();
-      } catch (Exception ex) {
-        log.warning("Unable to stop web server: " + ex.toString());
-      }
-      server = null;
-    }
-  }
-
-  @Override
-  public void println(Object obj, OutputType type) {
-    if (obj == null) return;
-    String s = obj.toString();
-    s = s.replace("\n","<br/>");
-    switch(type) {
-      case INPUT:
-        s = "<font color='#ffff00'>"+s+"</font>";
-        break;
-      case OUTPUT:
-        break;
-      case ERROR:
-        s = "<font color='#ff0000'>"+s+"</font>";
-        break;
-      case NOTIFY:
-        s = "<font color='#8080ff'>"+s+"</font>";
-        break;
-      default:
-        return;
-    }
-    for (Emitter e: out) {
-      try {
-        e.data(s+"\n");
-      } catch (IOException ex) {
-        log.warning(ex.toString());
-      }
-    }
   }
 
   private void copy(InputStream in, OutputStream out) throws IOException {
