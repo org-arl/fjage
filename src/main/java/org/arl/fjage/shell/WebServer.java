@@ -16,14 +16,19 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 
+/**
+ * Web server instance manager.
+ */
 public class WebServer {
+
+  //////// static attributes and methods
 
   private static Map<Integer,WebServer> servers = new HashMap<Integer,WebServer>();
   private static java.util.logging.Logger log = java.util.logging.Logger.getLogger(WebServer.class.getName());
 
-  // disable Jetty logging (except warnings)
   static {
-    /*System.setProperty("org.eclipse.jetty.LEVEL", "WARN");
+    // disable Jetty logging (except warnings)
+    System.setProperty("org.eclipse.jetty.LEVEL", "WARN");
     Log.setLog(new Logger() {
       @Override public String getName()                         { return "[jetty]"; }
       @Override public Logger getLogger(String name)            { return this;      }
@@ -39,9 +44,15 @@ public class WebServer {
       @Override public void debug(Throwable thrown)             { }
       @Override public void debug(String msg, Throwable thrown) { }
       @Override public void ignore(Throwable ignored)           { }
-    });*/
+    });
   }
 
+  /**
+   * Gets an instance of a web server running on the specified port. If an instance is not
+   * already available, a new one is created.
+   *
+   * @param port HTTP port number.
+   */
   public static WebServer getInstance(int port) {
     synchronized (servers) {
       WebServer svr = servers.get(port);
@@ -51,6 +62,8 @@ public class WebServer {
       return svr;
     }
   }
+
+  //////// instance attributes and methods
 
   private Server server;
   private ContextHandlerCollection contexts;
@@ -64,11 +77,20 @@ public class WebServer {
     started = false;
   }
 
+  /**
+   * Adds a context handler to the server. Context handlers should be added before the web
+   * server is started.
+   *
+   * @param handler context handler.
+   */
   public void add(ContextHandler handler) {
     log.info("Adding web context: "+handler.getContextPath());
     contexts.addHandler(handler);
   }
 
+  /**
+   * Starts the web server.
+   */
   public void start() {
     if (started) return;
     try {
@@ -79,6 +101,9 @@ public class WebServer {
     }
   }
 
+  /**
+   * Stops the web server. Once this method is called, the server cannot be restarted.
+   */
   public void stop() {
     if (server == null) return;
     try {

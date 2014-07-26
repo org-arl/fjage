@@ -77,6 +77,14 @@ public class WebShell implements Shell {
     init(path);
   }
 
+  /**
+   * Gets the context handler to add to an existing web server.
+   * @return context handler.
+   */
+  public ServletContextHandler getContextHandler() {
+    return context;
+  }
+
   @Override
   public void bind(ScriptEngine engine) {
     this.engine = engine;
@@ -122,14 +130,6 @@ public class WebShell implements Shell {
         log.warning(ex.toString());
       }
     }
-  }
-
-  /**
-   * Gets the context handler to add to an existing web server.
-   * @return context handler.
-   */
-  public ServletContextHandler getContextHandler() {
-    return context;
   }
 
   //////// Private methods
