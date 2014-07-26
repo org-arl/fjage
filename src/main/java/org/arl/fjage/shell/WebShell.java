@@ -30,10 +30,6 @@ import org.eclipse.jetty.servlets.EventSourceServlet;
  */
 public class WebShell implements Shell {
 
-  ////////// Constants
-
-  private final static String WEB_HTML = "/org/arl/fjage/web/webshell.html";
-
   ////////// Private attributes
 
   private ScriptEngine engine = null;
@@ -41,6 +37,9 @@ public class WebShell implements Shell {
   private WebServer server = null;
   private List<Emitter> out = new ArrayList<Emitter>();
   private ServletContextHandler context;
+  private boolean bare = false;
+  private String style = readResource("/org/arl/fjage/web/webshell.css");
+  private String body = readResource("/org/arl/fjage/web/webshell.html");
 
   ////////// Methods
 
@@ -85,6 +84,63 @@ public class WebShell implements Shell {
     return context;
   }
 
+  /**
+   * Gets the current CSS stylesheet.
+   *
+   * @return CSS code.
+   */
+  public String getCSS() {
+    return style;
+  }
+
+  /**
+   * Sets the CSS stylesheet. The stylesheet may be null, if no stylesheet desired. If the
+   * full HTML is specified using setHtml() then the stylesheet is ignored.
+   *
+   * @param style CSS code.
+   */
+  public void setCSS(String style) {
+    this.style = style;
+  }
+
+  /**
+   * Gets the current HTML code.
+   *
+   * @return HTML code.
+   */
+  public String getHtml() {
+    return body;
+  }
+
+  /**
+   * Sets the HTML code to be served.
+   *
+   * @param body HTML body code.
+   */   
+  public void setHtmlBody(String body) {
+    this.body = body;
+    bare = false;
+  }
+
+  /**
+   * Sets the HTML code to be served.
+   *
+   * @param body HTML body code.
+   */   
+  public void setHtml(String body) {
+    this.body = body;
+    bare = true;
+  }
+
+  /**
+   * Checks if the HTML code is to be served "as is", or as part of the body.
+   *
+   * @return true if the code is to be served "as is", false otherwise.
+   */
+  public boolean isBare() {
+    return bare;
+  }
+
   @Override
   public void bind(ScriptEngine engine) {
     this.engine = engine;
@@ -110,15 +166,16 @@ public class WebShell implements Shell {
     s = s.replace("\n","<br/>");
     switch(type) {
       case INPUT:
-        s = "<font color='#ffff00'>"+s+"</font>";
+        s = "<span class='input'>"+s+"</span>";
         break;
       case OUTPUT:
+        s = "<span class='output'>"+s+"</span>";
         break;
       case ERROR:
-        s = "<font color='#ff0000'>"+s+"</font>";
+        s = "<span class='error'>"+s+"</span>";
         break;
       case NOTIFY:
-        s = "<font color='#8080ff'>"+s+"</font>";
+        s = "<span class='ntf'>"+s+"</span>";
         break;
       default:
         return;
@@ -193,7 +250,14 @@ public class WebShell implements Shell {
         response.setContentType("text/html");
         response.setStatus(HttpServletResponse.SC_OK);
         try {
-          copy(getClass().getResourceAsStream(WEB_HTML), response.getOutputStream());
+          Writer w = response.getWriter();
+          if (!bare) {
+            w.write("<!DOCTYPE html>\n<html>\n<head>\n<meta charset='utf-8'/>\n");
+            if (style != null) w.write("<style>\n"+style+"</style>\n");
+            w.write("</head>\n<body>\n");
+          }
+          if (body != null) w.write(body);
+          if (!bare) w.write("</body>\n</html>\n");
         } catch (IOException ex) {
           log.warning(ex.toString());
         }
@@ -201,12 +265,9 @@ public class WebShell implements Shell {
     }), "/");
   }
 
-  private void copy(InputStream in, OutputStream out) throws IOException {
-    int len;
-    byte[] buffer = new byte[1024];
-    while ((len = in.read(buffer)) != -1) {
-      out.write(buffer, 0, len);
-    }
+  private String readResource(String resource) {
+    InputStream in = getClass().getResourceAsStream(resource);
+    return new Scanner(in, "UTF8").useDelimiter("\\Z").next();
   }
 
 }

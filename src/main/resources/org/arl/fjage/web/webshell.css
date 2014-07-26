@@ -1,0 +1,8 @@
+*:focus   { outline: 0; }
+#display  { border: solid 1px #404040; background: #000000; color: #ffffff; padding: 4px; width: 800px; height: 600px; font-family: monospace; overflow: auto; }
+#cmdPane  { border: solid 1px #404040; background: #000000; color: #ffff00; padding: 4px; width: 800px; height: 25px; font-family: monospace; }
+#cmd      { border: none; background: #000000; color: #ffff00; width : 750px; height : 20px; font-family: monospace; }
+.input    { color: #ffff00; }
+.output   { color: #ffffff; }
+.error    { color: #ff0000; }
+.ntf      { color: #8080ff; }
