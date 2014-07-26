@@ -115,8 +115,20 @@ public class WebShell implements Shell {
         response.setStatus(HttpServletResponse.SC_OK);
         try {
           String s = URLDecoder.decode(request.getQueryString(), "UTF-8");
-          boolean ok = engine.exec(s, WebShell.this);
-          if (ok) println("&gt; "+s, OutputType.INPUT);
+          if (s.equals("__ABORT__")) {
+            if (engine.isBusy()) {
+              log.info("ABORT");
+              engine.abort();
+              println("ABORT", OutputType.ERROR);
+            }
+          } else if (s.length() > 0) {
+            if (engine.isBusy()) println("BUSY", OutputType.ERROR);
+            else {
+              println("&gt; "+s, OutputType.INPUT);
+              boolean ok = engine.exec(s, WebShell.this);
+              if (!ok) println("ERROR", OutputType.ERROR);
+            }
+          }
         } catch (UnsupportedEncodingException ex) {
           log.warning(ex.toString());
         } catch (IOException ex) {

@@ -9,16 +9,22 @@
     </div>
     <div style='border : solid 1px #404040; background : #000000; color : #ffff00; padding: 4px; width : 800px; height : 25px; font-family: monospace;'>
       <form action='javascript:doExec()'>
-        &gt; <input type='text' id='cmd' placeholder='Enter command here' autocomplete='off' autofocus='true' style='border: none; background: #000000; color: #ffff00; width : 750px; height : 20px; font-family: monospace;'/>
+        &gt; <input type='text' id='cmd' disabled='true' placeholder='Waiting for connection...' autocomplete='off' autofocus='true' style='border: none; background: #000000; color: #ffff00; width : 750px; height : 20px; font-family: monospace;'/>
       </form>
     </div>
     <script>
       var history = [];
       var histNdx = -1;
       var source = new EventSource('out');
-      source.addEventListener('open', function(e) {
-        document.getElementById('content').innerHTML += '<font color=\"#808080\">Connection established</font><br/>';
-      }, false);
+      source.onopen = function(e) {
+        document.getElementById('cmd').placeholder = 'Enter command here';
+        document.getElementById('cmd').disabled = false;
+      };
+      source.onerror = function(e) {
+        document.getElementById('cmd').placeholder = 'Connection lost, trying to reconnect...';
+        document.getElementById('cmd').value = '';
+        document.getElementById('cmd').disabled = true;
+      };
       source.onmessage = function(e) {
         document.getElementById('content').innerHTML += e.data+'<br/>';
         document.getElementById('content').scrollTop = document.getElementById('content').scrollHeight;
@@ -34,6 +40,12 @@
           document.getElementById('cmd').value = '';
           histNdx = -1;
           return false;
+        }
+        // ^C to abort operation
+        if (e.ctrlKey && e.keyCode == 67) {
+          var httpreq = new XMLHttpRequest();
+          httpreq.open('GET', 'exec?' + encodeURIComponent('__ABORT__'), true);
+          httpreq.send();
         }
         // UP/DOWN history navigation
         if (e.keyCode == 38) {
