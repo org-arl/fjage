@@ -35,6 +35,7 @@ public class MasterContainer extends Container implements RemoteContainer {
   private Map<String,RemoteContainer> slaves = new ConcurrentHashMap<String,RemoteContainer>();
   private String myurl = null;
   private RemoteContainerProxy proxy = null;
+  private int containerPort = 0;
   
   ////////////// Constructors
 
@@ -49,6 +50,18 @@ public class MasterContainer extends Container implements RemoteContainer {
   }
 
   /**
+   * Creates a master container, runs its container stub on a specified port.
+   * 
+   * @param platform platform on which the container runs.
+   * @param port port on which the container's stub runs.
+   */
+  public MasterContainer(Platform platform, int port) throws IOException {
+	  super(platform);
+	  containerPort = port;
+	  enableRMI();
+  }
+  
+  /**
    * Creates a named master container.
    * 
    * @param platform platform on which the container runs.
@@ -56,6 +69,19 @@ public class MasterContainer extends Container implements RemoteContainer {
    */
   public MasterContainer(Platform platform, String name) throws IOException {
     super(platform, name);
+    enableRMI();
+  }
+  
+  /**
+   * Creates a named master container, runs its container stub on a specified port.
+   * 
+   * @param platform platform on which the container runs.
+   * @param name of the container.
+   * @param port port on which the container's stub runs.
+   */
+  public MasterContainer(Platform platform, String name, int port) throws IOException {
+    super(platform, name);
+    containerPort = port;
     enableRMI();
   }
   
@@ -198,7 +224,12 @@ public class MasterContainer extends Container implements RemoteContainer {
     } catch (java.rmi.server.ExportException ex) {
       log.info("Could not create registry, perhaps one is already running!");
     }
-    proxy = new RemoteContainerProxy(this);
+    if (containerPort != 0) {
+      proxy = new RemoteContainerProxy(this, containerPort);
+    }
+    else {
+      proxy = new RemoteContainerProxy(this);
+    }
     Naming.rebind(myurl, proxy);
   }
 
