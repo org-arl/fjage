@@ -38,6 +38,7 @@ public class SlaveContainer extends Container implements RemoteContainer {
   private String myurl = null;
   private String masterUrl = null;
   private RemoteContainerProxy proxy = null;
+  private int containerPort = 0;
 
   ////////////// Constructors
 
@@ -54,7 +55,24 @@ public class SlaveContainer extends Container implements RemoteContainer {
     masterUrl = url;
     attach(url);
   }
-
+  
+  
+  /**
+   * Creates a slave container, runs its container stub on a specified port.
+   * 
+   * @param platform platform on which the container runs.
+   * @param port port on which the container's stub runs.
+   * @param url URL of master platform to connect to.
+   */
+  public SlaveContainer(Platform platform, int port, String url) throws IOException, NotBoundException {
+	  super(platform);
+	  if (platform.getNetworkInterface() == null) determineNetworkInterface(url);
+	  containerPort = port;
+	  enableRMI(true);
+	  masterUrl = url;
+	  attach(url);
+  }
+  
   /**
    * Creates a named slave container.
    * 
@@ -65,6 +83,23 @@ public class SlaveContainer extends Container implements RemoteContainer {
   public SlaveContainer(Platform platform, String name, String url) throws IOException, NotBoundException {
     super(platform, name);
     if (platform.getNetworkInterface() == null) determineNetworkInterface(url);
+    enableRMI(true);
+    masterUrl = url;
+    attach(url);
+  }
+  
+  /**
+   * Creates a named slave container, runs its container stub on a specified port.
+   * 
+   * @param platform platform on which the container runs.
+   * @param name name of the container.
+   * @param port port on which the container's stub runs.
+   * @param url URL of master platform to connect to.
+   */
+  public SlaveContainer(Platform platform, String name, int port, String url) throws IOException, NotBoundException {
+    super(platform, name);
+    if (platform.getNetworkInterface() == null) determineNetworkInterface(url);
+    containerPort = port;
     enableRMI(true);
     masterUrl = url;
     attach(url);
@@ -248,7 +283,12 @@ public class SlaveContainer extends Container implements RemoteContainer {
     } catch (NotBoundException e) {
       // do nothing, since this is fine
     }
-    proxy = new RemoteContainerProxy(this);
+    if (containerPort != 0) {
+      proxy = new RemoteContainerProxy(this, containerPort);
+    }
+    else {
+      proxy = new RemoteContainerProxy(this);	
+    }
     Naming.rebind(myurl, proxy);
   }
 

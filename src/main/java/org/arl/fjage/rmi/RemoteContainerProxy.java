@@ -36,6 +36,11 @@ public class RemoteContainerProxy extends UnicastRemoteObject implements RemoteC
     super();
     this.delegate = delegate;
   }
+  
+  RemoteContainerProxy(RemoteContainer delegate, int port) throws RemoteException {
+	  super(port);
+	  this.delegate = delegate;
+  }
 
   /////////// Delegated methods
 
