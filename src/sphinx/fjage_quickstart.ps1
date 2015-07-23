@@ -16,8 +16,8 @@ Write-Host "Downloading files: "
 $webclient = New-Object System.Net.WebClient
 Write-Host "  1. fjage-$ver.jar"
 $webclient.DownloadFile("https://repo1.maven.org/maven2/com/github/org-arl/fjage/$ver/fjage-$ver.jar", "$pwd\build\libs\fjage-$ver.jar")
-Write-Host "  2. groovy-all-2.3.1.jar"
-$webclient.DownloadFile("https://repo1.maven.org/maven2/org/codehaus/groovy/groovy-all/2.3.1/groovy-all-2.3.1.jar", "$pwd\build\libs\groovy-all-2.3.1.jar")
+Write-Host "  2. groovy-all-2.4.4.jar"
+$webclient.DownloadFile("https://repo1.maven.org/maven2/org/codehaus/groovy/groovy-all/2.4.4/groovy-all-2.4.4.jar", "$pwd\build\libs\groovy-all-2.4.4.jar")
 Write-Host "  3. commons-lang3-3.1.jar"
 $webclient.DownloadFile("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.1/commons-lang3-3.1.jar", "$pwd\build\libs\commons-lang3-3.1.jar")
 Write-Host "  4. jline-2.12.jar"
@@ -43,7 +43,7 @@ $webclient.DownloadFile("https://raw.githubusercontent.com/org-arl/fjage/master/
 
 Write-Host "Creating fjage.bat"
 $op = New-Item $pwd\fjage.bat -type file -force -value "@echo off
-set CLASSPATH=build\libs\commons-lang3-3.1.jar;build\libs\fjage-1.3.2.jar;build\libs\groovy-all-2.3.1.jar;build\libs\jline-2.12.jar;samples
+set CLASSPATH=build\libs\commons-lang3-3.1.jar;build\libs\fjage-1.3.2.jar;build\libs\groovy-all-2.4.4.jar;build\libs\jline-2.12.jar;samples
 set GUI=false
 java -Dfjage.gui= org.arl.fjage.shell.GroovyBoot etc/initrc.groovy" 2>$null
 

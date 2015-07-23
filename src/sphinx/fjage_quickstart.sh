@@ -9,7 +9,7 @@ mkdir -p build/libs etc logs samples
 # download necessary JARs
 cd build/libs
 curl -O https://repo1.maven.org/maven2/com/github/org-arl/fjage/$VERSION/fjage-$VERSION.jar
-curl -O https://repo1.maven.org/maven2/org/codehaus/groovy/groovy-all/2.3.1/groovy-all-2.3.1.jar
+curl -O https://repo1.maven.org/maven2/org/codehaus/groovy/groovy-all/2.4.4/groovy-all-2.4.4.jar
 curl -O https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.1/commons-lang3-3.1.jar
 curl -O https://repo1.maven.org/maven2/jline/jline/2.12/jline-2.12.jar
 #curl -O https://repo1.maven.org/maven2/uk/com/robust-it/cloning/1.9.0/cloning-1.9.0.jar

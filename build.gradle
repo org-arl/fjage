@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-  compile 'org.codehaus.groovy:groovy-all:2.3.1'
+  compile 'org.codehaus.groovy:groovy-all:2.4.4'
   compile 'jline:jline:2.12'
   compile 'org.apache.commons:commons-lang3:3.1'
   compile 'uk.com.robust-it:cloning:1.9.0'
