@@ -35,18 +35,19 @@ Support
 Binary Releases
 ---------------
 
-* [fjage-1.3.3.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.3.3/fjage-1.3.3.jar), released Jul 21, 2014 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/_9p7w8eES9Q))
-* [fjage-1.3.2.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.3.2/fjage-1.3.2.jar), released Oct 21, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/RdAidaBDlNQ))
-* [fjage-1.3.1.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.3.1/fjage-1.3.1.jar), released Sep 1, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/2M_FtV2zzRY))
-* [fjage-1.3.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.3/fjage-1.3.jar), released Aug 26, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/dibfe8w2Ijk))
-* [fjage-1.2.1.jar](http://search.maven.org/remotecontent?filepath=com/github/org-arl/fjage/1.2.1/fjage-1.2.1.jar), released May 29, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/tw5Zf-7hil4))
+* [fjage-1.3.4.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3.4/fjage-1.3.4.jar), released Jul 23, 2015 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/7d5CZB82QCc))
+* [fjage-1.3.3.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3.3/fjage-1.3.3.jar), released Jul 21, 2014 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/_9p7w8eES9Q))
+* [fjage-1.3.2.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3.2/fjage-1.3.2.jar), released Oct 21, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/RdAidaBDlNQ))
+* [fjage-1.3.1.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3.1/fjage-1.3.1.jar), released Sep 1, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/2M_FtV2zzRY))
+* [fjage-1.3.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3/fjage-1.3.jar), released Aug 26, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/dibfe8w2Ijk))
+* [fjage-1.2.1.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.2.1/fjage-1.2.1.jar), released May 29, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/tw5Zf-7hil4))
 
 **Maven Central dependency:**
 
     <dependency>
       <groupId>com.github.org-arl</groupId>
       <artifactId>fjage</artifactId>
-      <version>1.3.3</version>
+      <version>1.3.4</version>
     </dependency>
 
 License

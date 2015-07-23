@@ -1,6 +1,6 @@
 #Powershell script to install fjage for Windows
 
-$ver = "1.3.3"
+$ver = "1.3.4"
 
 Write-Host ""
 Write-Host "Creating directories"
