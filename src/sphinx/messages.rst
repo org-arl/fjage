@@ -188,8 +188,8 @@ Fortunately, there are several simple ways around this:
 
 The cloning of the message is accomplished using the `org.apache.commons.lang3.SerializationUtils` class. This performs a deep clone (clones all objects contained in the message) by serializing the entire message, and then deserializing it. This is very portable (as long as your message is `Serializable`), but somewhat slow. A faster deep cloning implementation is available from `com.rits.cloning.Cloner`, but it is less portable (it seems to have trouble dealing with some Groovy messages). If you wish to try this implementation for your application, ensure that you have the following jars in your classpath:
 
-* `cloning-1.9.0.jar <http://search.maven.org/remotecontent?filepath=uk/com/robust-it/cloning/1.9.0/cloning-1.9.0.jar>`_
-* `objenesis-1.2.jar <http://search.maven.org/remotecontent?filepath=org/objenesis/objenesis/1.2/objenesis-1.2.jar>`_
+* `cloning-1.9.0.jar <https://repo1.maven.org/maven2/uk/com/robust-it/cloning/1.9.0/cloning-1.9.0.jar>`_
+* `objenesis-1.2.jar <https://repo1.maven.org/maven2/org/objenesis/objenesis/1.2/objenesis-1.2.jar>`_
 
 Then switch to using the fast cloner::
 

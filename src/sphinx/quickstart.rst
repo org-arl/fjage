@@ -12,9 +12,9 @@ For a UNIX based platform
 -------------------------
 (Linux, Mac OS X or `Cygwin <http://www.cygwin.com/>`_ on Windows)
 
-Create a new folder for your first fjåge project. Lets call it `MyFjageProject`. Open a terminal window in this folder and download the `fjage_quickstart.sh <https://raw.github.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.sh>`_ script in that folder::
+Create a new folder for your first fjåge project. Lets call it `MyFjageProject`. Open a terminal window in this folder and download the `fjage_quickstart.sh <https://raw.githubusercontent.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.sh>`_ script in that folder::
 
-    curl -O https://raw.github.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.sh
+    curl -O https://raw.githubusercontent.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.sh
 
 To get your project ready, just run the script::
 
@@ -49,7 +49,7 @@ Your directory structure should now look something like this:
 For a Windows machine
 ---------------------
 
-Create a new folder for your first fjåge project. Lets call it `MyFjageProject`. Download the PowerShell script `fjage_quickstart.ps1 <https://raw.github.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.ps1>`_ to this folder. Now, open a command prompt at this folder and just run the script::
+Create a new folder for your first fjåge project. Lets call it `MyFjageProject`. Download the PowerShell script `fjage_quickstart.ps1 <https://raw.githubusercontent.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.ps1>`_ to this folder. Now, open a command prompt at this folder and just run the script::
 
     powershell fjage_quickstart.ps1
 
