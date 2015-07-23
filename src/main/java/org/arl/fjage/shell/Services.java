@@ -11,18 +11,18 @@ for full license details.
 package org.arl.fjage.shell;
 /**
  * Services supported by fjage agents.
- * </br>
+ * <br>
  * Agents can be searched based on the services they provide.
- * </br>
+ * <br>
  * Example usage:
- * <code><pre> 
+ * <pre> 
  *  // Agent can register for services it provides
  *  register(Services.SHELL);
  *  
  *  // Agents can be looked up for the provides for services
  *  AgentID stack = agent.agentForService(Services.SHELL); 
  *  
- *  </pre></code>
+ *  </pre>
  */
 public enum Services {
   SHELL

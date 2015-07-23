@@ -18,14 +18,14 @@ import java.util.*;
  * this is a suitable platform for most applications.
  * <p>
  * Typical use of this platform is shown below:
- * <code><pre>
+ * <pre>
  * import org.arl.fjage.*;
  *
  * Platform platform = new RealTimePlatform();
  * Container container = new Container(platform);
  * container.add("myAgent", new myAgent());         // add appropriate agents
  * platform.start();
- * </pre></code>
+ * </pre>
  *
  * @author  Mandar Chitre
  */

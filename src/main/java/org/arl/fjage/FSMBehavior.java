@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * with cyclic behavior-like states.
  * <p>
  * An example FSM is shown below:
- * <code><pre>
+ * <pre>
  * FSMBehavior fsm = new FSMBehavior();
  * fsm.add(new FSMBehavior.State("state1") {
  *   public void action() {
@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  *   }
  * });
  * agent.add(fsm);
- * </pre></code>
+ * </pre>
  *
  * @author  Mandar Chitre
  */

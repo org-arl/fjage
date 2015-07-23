@@ -17,7 +17,7 @@ package org.arl.fjage;
  * and can be later thrown using the {@link #checkAssertions()} method.
  * <p>
  * Typical usage of this behavior is shown below:
- * <code><pre>
+ * <pre>
  * // setup
  * Platform platform = new RealtimePlatform();
  * Container container = new Container(platform);
@@ -36,7 +36,7 @@ package org.arl.fjage;
  *
  * // tear down
  * platform.shutdown();
- * </pre></code>
+ * </pre>
  *
  * @author  Mandar Chitre
  */

@@ -20,7 +20,7 @@ import java.util.logging.*;
  * methods to provide the appropriate behavior.
  * <p>
  * A simple example agent is shown below:
- * <code><pre>
+ * <pre>
  * import org.arl.fjage.*;
  *
  * public class MyAgent extends Agent {
@@ -39,7 +39,7 @@ import java.util.logging.*;
  *   }
  *
  * }
- * </pre></code>
+ * </pre>
  *
  * @author  Mandar Chitre
  */

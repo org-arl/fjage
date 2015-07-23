@@ -21,14 +21,14 @@ import java.util.logging.*;
  * and other operations take insignificant amount of time.
  * <p>
  * Typical use of this platform is shown below:
- * <code><pre>
+ * <pre>
  * import org.arl.fjage.*;
  *
  * Platform platform = new DiscreteEventSimulator();
  * Container container = new Container(platform);
  * container.add("myAgent", new myAgent());         // add appropriate agents
  * platform.start();
- * </pre></code>
+ * </pre>
  *
  * @author  Mandar Chitre
  */
