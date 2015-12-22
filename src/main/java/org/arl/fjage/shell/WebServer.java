@@ -56,9 +56,7 @@ public class WebServer {
   public static WebServer getInstance(int port) {
     synchronized (servers) {
       WebServer svr = servers.get(port);
-      if (svr != null) return svr;
-      svr = new WebServer(port);
-      servers.put(port, svr);
+      if (svr == null) svr = new WebServer(port);
       return svr;
     }
   }
@@ -68,6 +66,7 @@ public class WebServer {
   private Server server;
   private ContextHandlerCollection contexts;
   private boolean started;
+  private int port;
 
   private WebServer(int port) {
     log.info("Starting web server on port "+port);
@@ -89,12 +88,23 @@ public class WebServer {
   }
 
   /**
+   * Gets the port number that the web server is running on.
+   *
+   * @return TCP port number.
+   */
+  public int getPort() {
+    return port;
+  }
+
+  /**
    * Starts the web server.
    */
   public void start() {
     if (started) return;
     try {
       server.start();
+      port = server.getConnectors()[0].getLocalPort();
+      servers.put(port, this);
       started = true;
     } catch (Exception ex) {
       log.warning(ex.toString());

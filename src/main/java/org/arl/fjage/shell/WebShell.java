@@ -46,7 +46,7 @@ public class WebShell implements Shell {
   /**
    * Creates a web command shell running on a specified port and context path.
    *
-   * @param port TCP port number.
+   * @param port TCP port number (0 to automatically select port).
    * @param path context path.
    */
   public WebShell(int port, String path) {
@@ -58,7 +58,7 @@ public class WebShell implements Shell {
   /**
    * Creates a web command shell running on a specified port and root context.
    *
-   * @param port TCP port number.
+   * @param port TCP port number (0 to automatically select port).
    */
   public WebShell(int port) {
     server = WebServer.getInstance(port);
@@ -139,6 +139,16 @@ public class WebShell implements Shell {
    */
   public boolean isBare() {
     return bare;
+  }
+
+  /**
+   * Gets the TCP port of the web server. This should only be called after the
+   * web server is started.
+   *
+   * @return the TCP port of the web server.
+   */
+  public int getPort() {
+    return server.getPort();
   }
 
   @Override
