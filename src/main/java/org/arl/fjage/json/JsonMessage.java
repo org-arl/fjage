@@ -22,8 +22,9 @@ class JsonMessage {
   Action action;
   Action inResponseTo;
   AgentID agentID;
+  AgentID[] agentIDs;
   String service;
-  Object response;
+  Boolean answer;
   Message message;
   Boolean relay;
 

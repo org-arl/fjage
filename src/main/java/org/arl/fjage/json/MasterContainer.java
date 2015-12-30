@@ -23,12 +23,15 @@ import org.arl.fjage.*;
  *
  * @author Mandar Chitre
  */
-public class MasterContainer extends Container {
+public class MasterContainer extends Container implements ConnectionClosedListener {
 
   ////////////// Private attributes
 
+  private static final long TIMEOUT = 1000;
+
   private ServerSocket listener;
-  private List<SlaveProxy> slaves = new ArrayList<SlaveProxy>();
+  private List<ConnectionHandler> slaves = new ArrayList<ConnectionHandler>();
+  private boolean needsCleanup = false;
 
   ////////////// Constructors
 
@@ -81,7 +84,19 @@ public class MasterContainer extends Container {
   @Override
   protected boolean isDuplicate(AgentID aid) {
     if (super.isDuplicate(aid)) return true;
-    // TODO check with slaves
+    JsonMessage rq = new JsonMessage();
+    rq.action = Action.CONTAINS_AGENT;
+    rq.agentID = aid;
+    rq.id = UUID.randomUUID().toString();
+    String json = rq.toJson();
+    if (needsCleanup) cleanupSlaves();
+    synchronized(slaves) {
+      for (ConnectionHandler slave: slaves) {
+        slave.println(json);
+        JsonMessage rsp = slave.getResponse(rq.id, TIMEOUT);
+        if (rsp != null && rsp.answer) return true;
+      }
+    }
     return false;
   }
 
@@ -102,8 +117,9 @@ public class MasterContainer extends Container {
     rq.message = m;
     rq.relay = false;
     String json = rq.toJson();
+    if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
-      for (SlaveProxy slave: slaves)
+      for (ConnectionHandler slave: slaves)
         slave.println(json);
     }
     return true;
@@ -116,11 +132,12 @@ public class MasterContainer extends Container {
     rq.action = Action.SHUTDOWN;
     String json = rq.toJson();
     synchronized(slaves) {
-      while (!slaves.isEmpty()) {
-        SlaveProxy slave = slaves.get(0);
+      for (ConnectionHandler slave: slaves) {
         slave.println(json);
         slave.close();
       }
+      slaves.clear();
+      needsCleanup = false;
     }
     try {
       if (listener != null) listener.close();
@@ -138,95 +155,13 @@ public class MasterContainer extends Container {
     return s;
   }
 
-  /////////////// Private stuff
-  
-  private class SlaveProxy extends Thread {
-    private Socket sock;
-    private DataOutputStream out;
-
-    public SlaveProxy(Socket sock) {
-      this.sock = sock;
-    }
-
-    @Override
-    public void run() {
-      String name = sock.getRemoteSocketAddress().toString();
-      log.info("Incoming connection from "+name);
-      try {
-        BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-        out = new DataOutputStream(sock.getOutputStream());
-        while (true) {
-          String s = in.readLine();
-          if (s != null) {
-            try {
-              JsonMessage rq = JsonMessage.fromJson(s);
-              switch (rq.action) {
-                case CONTAINS_AGENT:
-                  respond(rq, containsAgent(rq.agentID));
-                  break;
-                case REGISTER:
-                  register(rq.agentID, rq.service);
-                  break;
-                case DEREGISTER:
-                  if  (rq.service != null) deregister(rq.agentID, rq.service);
-                  else deregister(rq.agentID);
-                  break;
-                case AGENT_FOR_SERVICE:
-                  respond(rq, agentForService(rq.service));
-                  break;
-                case AGENTS_FOR_SERVICE:
-                  respond(rq, agentsForService(rq.service));
-                  break;
-                case SEND:
-                  if (rq.relay != null) send(rq.message, rq.relay);
-                  else send(rq.message);
-                  break;
-                case SHUTDOWN:
-                  shutdown();
-                  break;
-              }
-            } catch(Exception ex) {
-              log.warning("Bad JSON request: "+ex.toString());
-            }
-          }
-        }
-      } catch(IOException ex) {
-        log.info("Connection to "+name+" closed");
-      }
-      close();
-    }
-
-    private void respond(JsonMessage rq, Object answer) {
-      JsonMessage rsp = new JsonMessage();
-      rsp.inResponseTo = rq.action;
-      rsp.id = rq.id;
-      rsp.response = answer;
-      println(rsp.toJson());
-    }
-
-    public synchronized void println(String s) {
-      if (out == null) return;
-      try {
-        out.writeBytes(s+"\n");
-      } catch(IOException ex) {
-        log.warning("Write failed: "+ex.toString());
-        // TODO remove from slaves (be careful that this may be called from iterators!)
-      }
-    }
-
-    public void close() {
-      synchronized(slaves) {
-        slaves.remove(this);
-      }
-      try {
-        if (sock != null) sock.close();
-        sock = null;
-        out = null;
-      } catch (IOException ex) {
-        // do nothing
-      }
-    }
+  @Override
+  public void connectionClosed(ConnectionHandler handler) {
+    log.info("Connection to "+handler.getName()+" closed");
+    needsCleanup = true;
   }
+
+  /////////////// Private stuff
 
   private void openSocket(int port) throws IOException {
     listener = new ServerSocket(port);
@@ -237,7 +172,8 @@ public class MasterContainer extends Container {
         try {
           while (true) {
             Socket conn = listener.accept();
-            SlaveProxy t = new SlaveProxy(conn);
+            log.info("Incoming connection from "+conn.getRemoteSocketAddress());
+            ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this);
             synchronized(slaves) {
               slaves.add(t);
             }
@@ -248,6 +184,17 @@ public class MasterContainer extends Container {
         }
       }
     }.start();
+  }
+
+  private void cleanupSlaves() {
+    synchronized(slaves) {
+      Iterator<ConnectionHandler> it = slaves.iterator();
+      while (it.hasNext()) {
+        ConnectionHandler slave = it.next();
+        if (slave.isClosed()) it.remove();
+      }
+    }
+    needsCleanup = false;
   }
 
 }
