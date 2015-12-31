@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.json;
 
 import java.lang.reflect.Type;
+import java.util.logging.Logger;
 import org.arl.fjage.*;
 import com.google.gson.*;
 
@@ -25,7 +26,19 @@ class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Messag
 
   // TODO add support for GenericMessage
 
+  private static ClassLoader classloader = null;
   private static Gson gson = new GsonBuilder().registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter()).create();
+
+  static {
+    try {
+      Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
+      classloader = (ClassLoader)cls.newInstance();
+      Logger log = Logger.getLogger(MessageAdapter.class.getName());
+      log.info("Groovy detected, using GroovyClassLoader");
+    } catch (Exception ex) {
+      // do nothing
+    }
+  }
 
   @Override public JsonElement serialize(Message src, Type typeOfSrc, JsonSerializationContext context) {
     JsonElement rv = gson.toJsonTree(src);
@@ -41,8 +54,7 @@ class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Messag
       JsonObject jsonObj =  json.getAsJsonObject();
       JsonPrimitive prim = (JsonPrimitive)jsonObj.get("msgType");
       String className = prim.getAsString();
-      // TODO fix for non-Groovy environments!
-      Class<?> cls = Class.forName(className, true, new groovy.lang.GroovyClassLoader());
+      Class<?> cls = classloader != null ? Class.forName(className, true, classloader) : Class.forName(className);
       return (Message)gson.fromJson(jsonObj, cls);
     } catch (Exception e) {
       return gson.fromJson(json, typeOfT);
