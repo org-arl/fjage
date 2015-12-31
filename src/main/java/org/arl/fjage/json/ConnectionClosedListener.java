@@ -14,5 +14,5 @@ package org.arl.fjage.json;
  * Listener interface for closed TCP connections.
  */
 interface ConnectionClosedListener {
-  void connectionClosed(ConnectionHandler handler);
+  public void connectionClosed(ConnectionHandler handler);
 }

@@ -23,7 +23,7 @@ import org.arl.fjage.*;
  *
  * @author Mandar Chitre
  */
-public class SlaveContainer extends Container {
+public class SlaveContainer extends Container implements LocalAgentForService {
 
   ////////////// Private attributes
 
@@ -119,18 +119,6 @@ public class SlaveContainer extends Container {
   }
 
   @Override
-  public boolean register(AgentID aid, String service) {
-    if (master == null) return false;
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.REGISTER;
-    rq.agentID = aid;
-    rq.service = service;
-    String json = rq.toJson();
-    master.println(json);
-    return true;
-  }
-
-  @Override
   public AgentID agentForService(String service) {
     if (master == null) return null;
     JsonMessage rq = new JsonMessage();
@@ -159,30 +147,19 @@ public class SlaveContainer extends Container {
   }
 
   @Override
-  public boolean deregister(AgentID aid, String service) {
-    if (master == null) return false;
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.DEREGISTER;
-    rq.agentID = aid;
-    rq.service = service;
-    String json = rq.toJson();
-    master.println(json);
-    return true;
+  public AgentID localAgentForService(String service) {
+    return super.agentForService(service);
   }
 
   @Override
-  public void deregister(AgentID aid) {
-    if (master == null) return;
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.DEREGISTER;
-    rq.agentID = aid;
-    String json = rq.toJson();
-    master.println(json);
+  public AgentID[] localAgentsForService(String service) {
+    return super.agentsForService(service);
   }
 
   @Override
   public void shutdown() {
     quit = true;
+    if (master != null) master.close();
     super.shutdown();
   }
 

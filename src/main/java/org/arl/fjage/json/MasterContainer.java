@@ -23,7 +23,7 @@ import org.arl.fjage.*;
  *
  * @author Mandar Chitre
  */
-public class MasterContainer extends Container implements ConnectionClosedListener {
+public class MasterContainer extends Container implements ConnectionClosedListener, LocalAgentForService {
 
   ////////////// Private attributes
 
@@ -123,6 +123,61 @@ public class MasterContainer extends Container implements ConnectionClosedListen
         slave.println(json);
     }
     return true;
+  }
+
+  @Override
+  public AgentID agentForService(String service) {
+    AgentID aid = super.agentForService(service);
+    if (aid != null) return aid;
+    JsonMessage rq = new JsonMessage();
+    rq.action = Action.AGENT_FOR_SERVICE;
+    rq.service = service;
+    rq.id = UUID.randomUUID().toString();
+    String json = rq.toJson();
+    if (needsCleanup) cleanupSlaves();
+    synchronized(slaves) {
+      for (ConnectionHandler slave: slaves) {
+        slave.println(json);
+        JsonMessage rsp = slave.getResponse(rq.id, TIMEOUT);
+        if (rsp != null && rsp.agentID != null) return rsp.agentID;
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public AgentID[] agentsForService(String service) {
+    List<AgentID> rv = new ArrayList<AgentID>();
+    AgentID[] aids = super.agentsForService(service);
+    for (int i = 0; i < aids.length; i++)
+      rv.add(aids[i]);
+    JsonMessage rq = new JsonMessage();
+    rq.action = Action.AGENTS_FOR_SERVICE;
+    rq.service = service;
+    rq.id = UUID.randomUUID().toString();
+    String json = rq.toJson();
+    if (needsCleanup) cleanupSlaves();
+    synchronized(slaves) {
+      for (ConnectionHandler slave: slaves) {
+        slave.println(json);
+        JsonMessage rsp = slave.getResponse(rq.id, TIMEOUT);
+        if (rsp != null && rsp.agentIDs != null) {
+          for (int i = 0; i < rsp.agentIDs.length; i++)
+            rv.add(rsp.agentIDs[i]);
+        }
+      }
+    }
+    return rv.toArray(new AgentID[0]);
+  }
+
+  @Override
+  public AgentID localAgentForService(String service) {
+    return agentForService(service);
+  }
+
+  @Override
+  public AgentID[] localAgentsForService(String service) {
+    return agentsForService(service);
   }
 
   @Override

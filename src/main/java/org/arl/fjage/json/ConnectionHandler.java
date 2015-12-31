@@ -13,6 +13,7 @@ package org.arl.fjage.json;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 import org.arl.fjage.*;
 
@@ -37,7 +38,7 @@ class ConnectionHandler extends Thread {
 
   @Override
   public void run() {
-    getName();
+    ExecutorService pool = Executors.newSingleThreadExecutor();
     try {
       BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
       out = new DataOutputStream(sock.getOutputStream());
@@ -49,7 +50,7 @@ class ConnectionHandler extends Thread {
           JsonMessage rq = JsonMessage.fromJson(s);
           if (rq.action == null) {
             if (rq.id != null) {
-              // response to some request to slave
+              // response to some request
               Object obj = pending.get(rq.id);
               if (obj != null) {
                 pending.put(rq.id, rq);
@@ -59,32 +60,8 @@ class ConnectionHandler extends Thread {
               }
             }
           } else {
-            // request from slave
-            switch (rq.action) {
-              case CONTAINS_AGENT:
-                respond(rq, container.containsAgent(rq.agentID));
-                break;
-              case REGISTER:
-                container.register(rq.agentID, rq.service);
-                break;
-              case DEREGISTER:
-                if  (rq.service != null) container.deregister(rq.agentID, rq.service);
-                else container.deregister(rq.agentID);
-                break;
-              case AGENT_FOR_SERVICE:
-                respond(rq, container.agentForService(rq.service));
-                break;
-              case AGENTS_FOR_SERVICE:
-                respond(rq, container.agentsForService(rq.service));
-                break;
-              case SEND:
-                if (rq.relay != null) container.send(rq.message, rq.relay);
-                else container.send(rq.message);
-                break;
-              case SHUTDOWN:
-                container.shutdown();
-                break;
-            }
+            // new request
+            pool.execute(new JsonTask(rq));
           }
         } catch(Exception ex) {
           log.warning("Bad JSON request: "+ex.toString());
@@ -94,6 +71,7 @@ class ConnectionHandler extends Thread {
       // do nothing
     }
     close();
+    pool.shutdown();
   }
 
   private void respond(JsonMessage rq, boolean answer) {
@@ -162,5 +140,37 @@ class ConnectionHandler extends Thread {
   public boolean isClosed() {
     return sock == null;
   }
+
+  private class JsonTask implements Runnable {
+
+    private JsonMessage rq;
+
+    JsonTask(JsonMessage rq) {
+      this.rq = rq;
+    }
+
+    @Override
+    public void run() {
+      switch (rq.action) {
+        case CONTAINS_AGENT:
+          respond(rq, container.containsAgent(rq.agentID));
+          break;
+        case AGENT_FOR_SERVICE:
+          respond(rq, ((LocalAgentForService)container).localAgentForService(rq.service));
+          break;
+        case AGENTS_FOR_SERVICE:
+          respond(rq, ((LocalAgentForService)container).localAgentsForService(rq.service));
+          break;
+        case SEND:
+          if (rq.relay != null) container.send(rq.message, rq.relay);
+          else container.send(rq.message);
+          break;
+        case SHUTDOWN:
+          container.shutdown();
+          break;
+      }
+    }
+
+  } // inner class
 
 }

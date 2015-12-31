@@ -10,15 +10,12 @@ for full license details.
 
 package org.arl.fjage.json;
 
-import com.google.gson.annotations.SerializedName;
+import org.arl.fjage.AgentID;
 
 /**
- * JSON message actions.
+ * Private interface to support lookup of local agents.
  */
-enum Action {
-  @SerializedName("containsAgent")    CONTAINS_AGENT,
-  @SerializedName("agentForService")  AGENT_FOR_SERVICE,
-  @SerializedName("agentsForService") AGENTS_FOR_SERVICE,
-  @SerializedName("send")             SEND,
-  @SerializedName("shutdown")         SHUTDOWN;
+interface LocalAgentForService {
+  public AgentID localAgentForService(String service);
+  public AgentID[] localAgentsForService(String service);
 }
