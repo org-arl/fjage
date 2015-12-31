@@ -23,7 +23,7 @@ import org.arl.fjage.*;
  *
  * @author Mandar Chitre
  */
-public class SlaveContainer extends Container implements ConnectionClosedListener {
+public class SlaveContainer extends Container {
 
   ////////////// Private attributes
 
@@ -33,6 +33,7 @@ public class SlaveContainer extends Container implements ConnectionClosedListene
   private String hostname;
   private int port;
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
+  private boolean quit = false;
 
   ////////////// Constructors
 
@@ -180,6 +181,12 @@ public class SlaveContainer extends Container implements ConnectionClosedListene
   }
 
   @Override
+  public void shutdown() {
+    quit = true;
+    super.shutdown();
+  }
+
+  @Override
   public String getState() {
     if (!running) return "Not running";
     if (master == null) return "Running, connecting to "+hostname+":"+port+"...";
@@ -193,27 +200,32 @@ public class SlaveContainer extends Container implements ConnectionClosedListene
     return s;
   }
 
-  @Override
-  public void connectionClosed(ConnectionHandler handler) {
-    log.info("Connection to "+handler.getName()+" lost, retrying");
-    master = null;
-    connectToMaster();
-  }
-
   /////////////// Private stuff
 
   private void connectToMaster() {
-    while (true) {
-      try {
-        log.info("Connecting to "+hostname+":"+port);
-        Socket conn = new Socket(hostname, port);
-        master = new ConnectionHandler(conn, this);
-        master.start();
-        return;
-      } catch (IOException ex) {
-        log.warning("Connection failed: "+ex.toString());
+    new Thread() {
+      @Override
+      public void run() {
+        try {
+          while (!quit) {
+            try {
+              log.info("Connecting to "+hostname+":"+port);
+              Socket conn = new Socket(hostname, port);
+              master = new ConnectionHandler(conn, SlaveContainer.this);
+              master.start();
+              master.join();
+              log.info("Connection to "+hostname+" lost");
+              master = null;
+            } catch (IOException ex) {
+              log.warning("Connection failed: "+ex.toString());
+            }
+            Thread.sleep(1000);
+          }
+        } catch (InterruptedException ex) {
+          log.severe("Connection manager interrupted!");
+        }
       }
-    }
+    }.start();
   }
 
 }
