@@ -26,22 +26,25 @@ class ConnectionHandler extends Thread {
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
   private Logger log = Logger.getLogger(getClass().getName());
   private Container container;
+  private String name;
 
   public ConnectionHandler(Socket sock, Container container) {
     this.sock = sock;
     this.container = container;
-    setName(sock.getRemoteSocketAddress().toString());
+    name = sock.getRemoteSocketAddress().toString();
+    setName(name);
   }
 
   @Override
   public void run() {
+    getName();
     try {
       BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
       out = new DataOutputStream(sock.getOutputStream());
       while (true) {
         String s = in.readLine();
         if (s == null) break;
-        // log.fine("<<< "+s);
+        log.fine(name+" <<< "+s);
         try {
           JsonMessage rq = JsonMessage.fromJson(s);
           if (rq.action == null) {
@@ -121,7 +124,7 @@ class ConnectionHandler extends Thread {
     if (out == null) return;
     try {
       out.writeBytes(s+"\n");
-      // log.fine(">>> "+s);
+      log.fine(name+" >>> "+s);
     } catch(IOException ex) {
       log.warning("Write failed: "+ex.toString());
       close();
