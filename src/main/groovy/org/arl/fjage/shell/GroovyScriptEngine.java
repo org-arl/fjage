@@ -191,7 +191,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   public synchronized boolean exec(Class<?> script, Shell out) {
     if (busy) return false;
     try {
-      this.gscript = (Script)(script.newInstance());
+      this.gscript = (Script)script.newInstance();
     } catch (Exception ex) {
       log.warning("Exec failed: "+ex.toString());
       return false;
@@ -209,7 +209,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   public synchronized boolean exec(Class<?> script, List<String> args, Shell out) {
     if (busy) return false;
     try {
-      this.gscript = (Script)(script.newInstance());
+      this.gscript = (Script)script.newInstance();
     } catch (Exception ex) {
       log.warning("Exec failed: "+ex.toString());
       return false;

@@ -338,7 +338,7 @@ abstract class BaseGroovyScript extends Script {
           binding.setVariable('script', name);
           groovy.run(new InputStreamReader(inp), name, args as String[]);
         } else if (name.startsWith("cls://")) {
-          Class<Script> cls = (Class<Script>)(Class.forName(name.substring(6)));
+          Class<Script> cls = (Class<Script>)Class.forName(name.substring(6));
           Script script = cls.newInstance();
           binding.setVariable('script', cls.getName());
           binding.setVariable('args', args as String[]);
