@@ -589,7 +589,7 @@ public class Agent implements Runnable, TimestampProvider {
    * @return true if the registration was successful, false otherwise.
    */
   public boolean register(Enum<?> service) {
-    return container.register(aid, service.toString());
+    return container.register(aid, service.getClass().getName()+"."+service.toString());
   }
 
   /**
@@ -611,7 +611,7 @@ public class Agent implements Runnable, TimestampProvider {
    * @return true if the de-registration was successful, false otherwise.
    */
   public boolean deregister(Enum<?> service) {
-    return container.deregister(aid, service.toString());
+    return container.deregister(aid, service.getClass().getName()+"."+service.toString());
   }
 
   /**
@@ -635,7 +635,7 @@ public class Agent implements Runnable, TimestampProvider {
    * @return an agent id for an agent that provides the service.
    */
   public AgentID agentForService(Enum<?> service) {
-    AgentID a = container.agentForService(service.toString());
+    AgentID a = container.agentForService(service.getClass().getName()+"."+service.toString());
     if (a != null) a = new AgentID(a, this);
     return a;
   }
@@ -662,7 +662,7 @@ public class Agent implements Runnable, TimestampProvider {
    * @return an array of agent ids representing all agent that provide the service.
    */
   public AgentID[] agentsForService(Enum<?> service) {
-    AgentID[] a = container.agentsForService(service.toString());
+    AgentID[] a = container.agentsForService(service.getClass().getName()+"."+service.toString());
     if (a != null) {
       for (int i = 0; i < a.length; i++)
         a[i] = new AgentID(a[i], this);
