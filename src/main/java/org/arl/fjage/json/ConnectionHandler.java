@@ -61,7 +61,7 @@ class ConnectionHandler extends Thread {
             }
           } else {
             // new request
-            pool.execute(new JsonTask(rq));
+            pool.execute(new RemoteTask(rq));
           }
         } catch(Exception ex) {
           log.warning("Bad JSON request: "+ex.toString());
@@ -98,7 +98,7 @@ class ConnectionHandler extends Thread {
     println(rsp.toJson());
   }
 
-  public synchronized void println(String s) {
+  synchronized void println(String s) {
     if (out == null) return;
     try {
       out.writeBytes(s+"\n");
@@ -109,7 +109,7 @@ class ConnectionHandler extends Thread {
     }
   }
 
-  public JsonMessage getResponse(String id, long timeout) {
+  JsonMessage getResponse(String id, long timeout) {
     if (sock == null) return null;
     pending.put(id, id);
     try {
@@ -125,7 +125,7 @@ class ConnectionHandler extends Thread {
     return null;
   }
 
-  public void close() {
+  void close() {
     if (sock == null) return;
     try {
       sock.close();
@@ -137,15 +137,17 @@ class ConnectionHandler extends Thread {
     }
   }
 
-  public boolean isClosed() {
+  boolean isClosed() {
     return sock == null;
   }
 
-  private class JsonTask implements Runnable {
+  //////// Private inner class representing task to run
+
+  private class RemoteTask implements Runnable {
 
     private JsonMessage rq;
 
-    JsonTask(JsonMessage rq) {
+    RemoteTask(JsonMessage rq) {
       this.rq = rq;
     }
 

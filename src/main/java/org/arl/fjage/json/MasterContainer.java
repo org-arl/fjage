@@ -79,6 +79,15 @@ public class MasterContainer extends RemoteContainer {
     openSocket(port);
   }
 
+  /**
+   * Gets the TCP port on which the master container listens for connections.
+   *
+   * @return port on which the container's TCP server runs.
+   */
+  public int getPort() {
+    return listener.getLocalPort();
+  }
+
   /////////////// Container interface methods to override
   
   @Override
@@ -149,8 +158,9 @@ public class MasterContainer extends RemoteContainer {
   public AgentID[] agentsForService(String service) {
     List<AgentID> rv = new ArrayList<AgentID>();
     AgentID[] aids = super.agentsForService(service);
-    for (int i = 0; i < aids.length; i++)
-      rv.add(aids[i]);
+    if (aids != null)
+      for (int i = 0; i < aids.length; i++)
+        rv.add(aids[i]);
     JsonMessage rq = new JsonMessage();
     rq.action = Action.AGENTS_FOR_SERVICE;
     rq.service = service;
