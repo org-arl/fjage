@@ -29,6 +29,7 @@ class JsonMessage {
   Boolean relay;
 
   private static Gson gson = new GsonBuilder()
+                                  .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
                                   .registerTypeHierarchyAdapter(Message.class, new MessageAdapter())
                                   .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
                                   .create();

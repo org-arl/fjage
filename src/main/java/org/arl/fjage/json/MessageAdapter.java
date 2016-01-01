@@ -18,13 +18,14 @@ import com.google.gson.*;
 /**
  * Message adapter for custom JSON representation.
  *
- * This adapted adds a "msgType" property to the JSON representation of the message,
+ * This adapter adds a "msgType" property to the JSON representation of the message,
  * representing the fully qualified message class name. This enables the message to
  * be unmarshalled into the appropriate message class at the destination.
+ *
+ * The adapter also adds special support for org.arl.fjage.GenericMessage messages
+ * so that the map key-value pairs are correctly retained in JSON.
  */
 class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Message> {
-
-  // TODO add support for GenericMessage
 
   private static ClassLoader classloader = null;
   private static Gson gson = new GsonBuilder().registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter()).create();
@@ -44,7 +45,14 @@ class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Messag
     JsonElement rv = gson.toJsonTree(src);
     if (rv.isJsonObject()) {
       JsonObject rvObj = rv.getAsJsonObject();
-      rvObj.addProperty("msgType", src.getClass().getName());
+      Class<?> cls = src.getClass();
+      if (cls == GenericMessage.class) {
+        JsonElement map = rv;
+        rv = gson.toJsonTree(src, Message.class);
+        rvObj = rv.getAsJsonObject();
+        rvObj.add("map", map);
+      }
+      rvObj.addProperty("msgType", cls.getName());
     }
     return rv;
   }
@@ -55,7 +63,16 @@ class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Messag
       JsonPrimitive prim = (JsonPrimitive)jsonObj.get("msgType");
       String className = prim.getAsString();
       Class<?> cls = classloader != null ? Class.forName(className, true, classloader) : Class.forName(className);
-      return (Message)gson.fromJson(jsonObj, cls);
+      if (cls != GenericMessage.class) return (Message)gson.fromJson(jsonObj, cls);
+      GenericMessage rv = new GenericMessage();
+      Message m = (Message)gson.fromJson(jsonObj, Message.class);
+      rv.setMessageID(m.getMessageID());
+      rv.setInReplyTo(m.getInReplyTo());
+      rv.setPerformative(m.getPerformative());
+      rv.setRecipient(m.getRecipient());
+      rv.setSender(m.getSender());
+      rv.putAll((java.util.Map)gson.fromJson(jsonObj.get("map"), java.util.Map.class));
+      return rv;
     } catch (Exception e) {
       return gson.fromJson(json, typeOfT);
     }

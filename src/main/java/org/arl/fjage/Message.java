@@ -134,6 +134,15 @@ public class Message implements Serializable {
   }
 
   /**
+   * Sets the sender of this message.
+   *
+   * @param aid sender agent id.
+   */
+  public void setSender(AgentID aid) {
+    sender = aid;
+  }
+
+  /**
    * Gets the sender of this message.
    *
    * @return sender agent id.
@@ -143,12 +152,30 @@ public class Message implements Serializable {
   }
 
   /**
+   * Sets the unique identifier for this message.
+   *
+   * @param id message identifier.
+   */
+  public void setMessageID(String id) {
+    msgID = id;
+  }
+
+  /**
    * Gets the unique identifier for this message.
    *
    * @return message identifier.
    */
   public String getMessageID() {
     return msgID;
+  }
+
+  /**
+   * Sets the message id of the associated request message.
+   *
+   * @param id message id of request message.
+   */
+  public void setInReplyTo(String id) {
+    inReplyTo = id;
   }
 
   /**
@@ -174,12 +201,6 @@ public class Message implements Serializable {
     Class<?> cls = getClass();
     if (cls.equals(Message.class)) return p;
     return p + ": " + cls.getSimpleName();
-  }
-
-  //////////// Package private methods
-
-  void setSender(AgentID aid) {
-    sender = aid;
   }
 
 }
