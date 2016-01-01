@@ -23,7 +23,7 @@ import org.arl.fjage.*;
  *
  * @author Mandar Chitre
  */
-public class MasterContainer extends Container implements ConnectionClosedListener, LocalAgentForService {
+public class MasterContainer extends RemoteContainer {
 
   ////////////// Private attributes
 

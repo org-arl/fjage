@@ -26,10 +26,10 @@ class ConnectionHandler extends Thread {
   private DataOutputStream out;
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
   private Logger log = Logger.getLogger(getClass().getName());
-  private Container container;
+  private RemoteContainer container;
   private String name;
 
-  public ConnectionHandler(Socket sock, Container container) {
+  public ConnectionHandler(Socket sock, RemoteContainer container) {
     this.sock = sock;
     this.container = container;
     name = sock.getRemoteSocketAddress().toString();
@@ -131,7 +131,7 @@ class ConnectionHandler extends Thread {
       sock.close();
       sock = null;
       out = null;
-      if (container instanceof ConnectionClosedListener) ((ConnectionClosedListener)container).connectionClosed(this);
+      container.connectionClosed(this);
     } catch (IOException ex) {
       // do nothing
     }
@@ -156,10 +156,10 @@ class ConnectionHandler extends Thread {
           respond(rq, container.containsAgent(rq.agentID));
           break;
         case AGENT_FOR_SERVICE:
-          respond(rq, ((LocalAgentForService)container).localAgentForService(rq.service));
+          respond(rq, container.localAgentForService(rq.service));
           break;
         case AGENTS_FOR_SERVICE:
-          respond(rq, ((LocalAgentForService)container).localAgentsForService(rq.service));
+          respond(rq, container.localAgentsForService(rq.service));
           break;
         case SEND:
           if (rq.relay != null) container.send(rq.message, rq.relay);

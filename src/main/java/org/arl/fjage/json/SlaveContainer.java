@@ -23,7 +23,7 @@ import org.arl.fjage.*;
  *
  * @author Mandar Chitre
  */
-public class SlaveContainer extends Container implements LocalAgentForService {
+public class SlaveContainer extends RemoteContainer {
 
   ////////////// Private attributes
 
@@ -175,6 +175,11 @@ public class SlaveContainer extends Container implements LocalAgentForService {
     String s = getClass().getName()+"@"+name;
     s += "/slave/"+platform;
     return s;
+  }
+
+  @Override
+  public void connectionClosed(ConnectionHandler handler) {
+    // do nothing
   }
 
   /////////////// Private stuff
