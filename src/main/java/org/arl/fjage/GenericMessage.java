@@ -46,20 +46,20 @@ public class GenericMessage extends Message implements Map<Object,Object> {
   /**
    * Creates a generic new message.
    *
-   * @param recepient agent id of recipient agent or topic.
+   * @param recipient agent id of recipient agent or topic.
    */
-  public GenericMessage(AgentID recepient) {
-    super(recepient);
+  public GenericMessage(AgentID recipient) {
+    super(recipient);
   }
 
   /**
    * Creates a generic new message.
    *
-   * @param recepient agent id of recipient agent or topic.
+   * @param recipient agent id of recipient agent or topic.
    * @param perf performative.
    */
-  public GenericMessage(AgentID recepient, Performative perf) {
-    super(recepient, perf);
+  public GenericMessage(AgentID recipient, Performative perf) {
+    super(recipient, perf);
   }
 
   /**

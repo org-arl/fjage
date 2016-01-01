@@ -29,7 +29,7 @@ public class Message implements Serializable {
 
   protected String msgID = UUID.randomUUID().toString();
   protected Performative perf;
-  protected AgentID recepient;
+  protected AgentID recipient;
   protected AgentID sender = null;
   protected String inReplyTo = null;
 
@@ -40,7 +40,7 @@ public class Message implements Serializable {
    */
   public Message() {
     perf = null;
-    recepient = null;
+    recipient = null;
   }
 
   /**
@@ -50,28 +50,28 @@ public class Message implements Serializable {
    */
   public Message(Performative perf) {
     this.perf = perf;
-    recepient = null;
+    recipient = null;
   }
 
   /**
    * Creates a new message.
    *
-   * @param recepient agent id of recipient agent or topic.
+   * @param recipient agent id of recipient agent or topic.
    */
-  public Message(AgentID recepient) {
+  public Message(AgentID recipient) {
     perf = null;
-    this.recepient = recepient;
+    this.recipient = recipient;
   }
 
   /**
    * Creates a new message.
    *
-   * @param recepient agent id of recipient agent or topic.
+   * @param recipient agent id of recipient agent or topic.
    * @param perf performative.
    */
-  public Message(AgentID recepient, Performative perf) {
+  public Message(AgentID recipient, Performative perf) {
     this.perf = perf;
-    this.recepient = recepient;
+    this.recipient = recipient;
   }
 
   /**
@@ -81,7 +81,7 @@ public class Message implements Serializable {
    */
   public Message(Message inReplyTo) {
     perf = null;
-    this.recepient = inReplyTo.sender;
+    this.recipient = inReplyTo.sender;
     this.inReplyTo = inReplyTo.msgID;
   }
 
@@ -93,7 +93,7 @@ public class Message implements Serializable {
    */
   public Message(Message inReplyTo, Performative perf) {
     this.perf = perf;
-    this.recepient = inReplyTo.sender;
+    this.recipient = inReplyTo.sender;
     this.inReplyTo = inReplyTo.msgID;
   }
 
@@ -121,7 +121,7 @@ public class Message implements Serializable {
    * @param aid recipient agent id.
    */
   public void setRecipient(AgentID aid) {
-    recepient = aid;
+    recipient = aid;
   }
 
   /**
@@ -130,7 +130,7 @@ public class Message implements Serializable {
    * @return recipient agent id.
    */
   public AgentID getRecipient() {
-    return recepient;
+    return recipient;
   }
 
   /**

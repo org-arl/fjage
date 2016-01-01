@@ -251,8 +251,8 @@ public class BasicTests {
   private static class RequestMessage extends Message {
     private static final long serialVersionUID = 1L;
     public int x;
-    public RequestMessage(AgentID recepient) {
-      super(recepient, Performative.REQUEST);
+    public RequestMessage(AgentID recipient) {
+      super(recipient, Performative.REQUEST);
     }
   }
 
@@ -266,8 +266,8 @@ public class BasicTests {
 
   private static class NuisanceMessage extends Message {
     private static final long serialVersionUID = 1L;
-    public NuisanceMessage(AgentID recepient) {
-      super(recepient, Performative.INFORM);
+    public NuisanceMessage(AgentID recipient) {
+      super(recipient, Performative.INFORM);
     }
   }
 
