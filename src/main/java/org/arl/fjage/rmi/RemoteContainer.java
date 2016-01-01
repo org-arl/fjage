@@ -16,8 +16,11 @@ import org.arl.fjage.*;
 /**
  * RMI interface for remote containers.
  *
+ * @deprecated As of release 1.4, this interface is no longer valid.
+ *
  * @author Mandar Chitre
  */
+@Deprecated
 public interface RemoteContainer extends Remote {
 
   /**

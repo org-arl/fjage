@@ -18,8 +18,11 @@ import org.arl.fjage.*;
  * Gateway to communicate with agents from Java classes. Only agents in a master
  * or slave container can be accessed using this gateway.
  *
+ * @deprecated As of release 1.4, this class is no longer available.
+ *
  * @author  Mandar Chitre
  */
+@Deprecated
 public class Gateway {
 
   /////////////////////// Constants

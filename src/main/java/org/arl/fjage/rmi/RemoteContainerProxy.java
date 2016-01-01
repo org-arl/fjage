@@ -18,10 +18,12 @@ import org.arl.fjage.*;
  * RMI proxy to avoid having {@link MasterContainer} and {@link SlaveContainer}
  * implement the {@link java.rmi.server.UnicastRemoteObject} interface.
  *
+ * @deprecated As of release 1.4, this class is no longer valid.
  * @see org.arl.fjage.Container
  *
  * @author Mandar Chitre
  */
+@Deprecated
 public class RemoteContainerProxy extends UnicastRemoteObject implements RemoteContainer {
 
   private static final long serialVersionUID = 1L;

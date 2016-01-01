@@ -28,8 +28,11 @@ import org.arl.fjage.*;
  * i.e., are able to communicate with each other through messaging, topics and
  * directory services.
  *
+ * @deprecated As of release 1.4, replaced by {@link org.arl.fjage.json.SlaveContainer}.
+ *
  * @author Mandar Chitre
  */
+@Deprecated
 public class SlaveContainer extends Container implements RemoteContainer {
 
   ////////////// Private attributes

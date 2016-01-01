@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.json;
 
 import java.lang.reflect.Type;
+import java.util.Map;
 import java.util.logging.Logger;
 import org.arl.fjage.*;
 import com.google.gson.*;
@@ -22,7 +23,7 @@ import com.google.gson.*;
  * representing the fully qualified message class name. This enables the message to
  * be unmarshalled into the appropriate message class at the destination.
  *
- * The adapter also adds special support for org.arl.fjage.GenericMessage messages
+ * The adapter also adds special support for {@link org.arl.fjage.GenericMessage} messages
  * so that the map key-value pairs are correctly retained in JSON.
  */
 class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Message> {
@@ -71,7 +72,7 @@ class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Messag
       rv.setPerformative(m.getPerformative());
       rv.setRecipient(m.getRecipient());
       rv.setSender(m.getSender());
-      rv.putAll((java.util.Map)gson.fromJson(jsonObj.get("map"), java.util.Map.class));
+      rv.putAll((Map<?,?>)gson.fromJson(jsonObj.get("map"), Map.class));
       return rv;
     } catch (Exception e) {
       return gson.fromJson(json, typeOfT);
