@@ -95,15 +95,13 @@ public class SlaveContainer extends RemoteContainer {
     AgentID aid = m.getRecipient();
     if (aid == null) return false;
     if (aid.isTopic()) {
-      if (relay) {
-        JsonMessage rq = new JsonMessage();
-        rq.action = Action.SEND;
-        rq.message = m;
-        rq.relay = true;
-        String json = rq.toJson();
-        master.println(json);
-      }
-      super.send(m, false);
+      if (!relay) return super.send(m, false);
+      JsonMessage rq = new JsonMessage();
+      rq.action = Action.SEND;
+      rq.message = m;
+      rq.relay = true;
+      String json = rq.toJson();
+      master.println(json);
       return true;
     } else {
       if (super.send(m, false)) return true;
