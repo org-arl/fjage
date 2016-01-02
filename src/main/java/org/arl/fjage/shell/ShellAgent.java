@@ -247,6 +247,15 @@ public class ShellAgent extends Agent {
   public void clearMessageMonitors() {
     listeners.clear();
   }
+
+  /**
+   * Gets the underlying shell.
+   *
+   * @return the shell used by the agent.
+   */
+  public Shell getShell() {
+    return shell;
+  }
   
   ////// overriden methods to allow external threads to call receive/request directly
 
