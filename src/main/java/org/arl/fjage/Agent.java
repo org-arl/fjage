@@ -335,7 +335,7 @@ public class Agent implements Runnable, TimestampProvider {
    * @return object representing the topic.
    */
   public AgentID topic(Enum<?> topic) {
-    return new AgentID(topic.toString(), true, this);
+    return new AgentID(topic.getClass().getName()+"."+topic.toString(), true, this);
   }
 
   /**
@@ -368,7 +368,7 @@ public class Agent implements Runnable, TimestampProvider {
    * @return object representing the topic.
    */
   public AgentID topic(AgentID agent, Enum<?> topic) {
-    return new AgentID(agent.getName()+"__"+topic.toString()+"__ntf", true, this);
+    return new AgentID(agent.getName()+"__"+topic.getClass().getName()+"."+topic.toString()+"__ntf", true, this);
   }
 
   /**

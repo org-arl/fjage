@@ -296,7 +296,7 @@ public class Gateway {
    * @return an agent id for an agent that provides the service.
    */
   public AgentID agentForService(Enum<?> service) {
-    return container.agentForService(service.toString());
+    return container.agentForService(service.getClass().getName()+"."+service.toString());
   }
 
   /**
@@ -316,7 +316,7 @@ public class Gateway {
    * @return an array of agent ids representing all agent that provide the service.
    */
   public AgentID[] agentsForService(Enum<?> service) {
-    return container.agentsForService(service.toString());
+    return container.agentsForService(service.getClass().getName()+"."+service.toString());
   }
 
   ////////////// Private methods
