@@ -11,23 +11,23 @@ Once we have developed our agents, it is easy to deploy them on multiple nodes a
 To start a master container, we simply replace `Container` with `MasterContainer` in the `initrc.groovy`::
 
     import org.arl.fjage.*
-    import org.arl.fjage.rmi.*
+    import org.arl.fjage.json.*
 
     platform = new RealTimePlatform()
     container = new MasterContainer(platform, name)
-    println "Master container started at ${container.getURL()}"
+    println "Master container started on port ${container.port}"
     // add agents to the container here
     platform.start()
 
-Specifying the `name` for the master container is optional, but recommended. Any `String` can be used as the container name.
+Specifying the `name` for the master container is optional, but recommended. Any `String` can be used as the container name. An additional parameter `port` may be specified while constructing the `MasterContainer`, if desired. In the absence of this parameter, the TCP port number is automatically chosen.
 
-To start slave containers, we need to specify the Java RMI URL of the master container. Typically, the master container URL is of the form `//hostname:port/fjage/name` and the `port` usually is 1099. ::
+To start slave containers, we need to specify the hostname and TCP port of the master container::
 
     import org.arl.fjage.*
-    import org.arl.fjage.rmi.*
+    import org.arl.fjage.json.*
 
     platform = new RealTimePlatform()
-    container = new SlaveContainer(platform, masterURL)
+    container = new SlaveContainer(platform, hostname, port)
     // add agents to the container here
     platform.start()
 
@@ -43,30 +43,34 @@ It is often useful to connect a console shell to a running fjåge application to
     #!/bin/sh
 
     CLASSPATH=`find build/libs -name *.jar -exec /bin/echo -n :'{}' \;`
-    java -cp "$CLASSPATH" org.arl.fjage.shell.GroovyBoot -Durl="$1" etc/initrc-rconsole.groovy
+    java -cp "$CLASSPATH" -Dhostname="$1" -Dport="$2" org.arl.fjage.shell.GroovyBoot etc/initrc-rconsole.groovy
 
 and `etc/initrc-rconsole.groovy`::
 
     import org.arl.fjage.*
-    import org.arl.fjage.rmi.*
+    import org.arl.fjage.json.*
     import org.arl.fjage.shell.*
 
-    String url =  System.properties.getProperty('url')
-    if (url == null || url.length() == 0) {
-      System.out.println 'Master container URL not specified'
-      System.exit(1)
+    String hostname =  System.properties.getProperty('hostname')
+    if (hostname == null || hostname.length() == 0) hostname = 'localhost'
+    int port
+    try {
+      port =  Integer.parseInt(System.properties.getProperty('port'))
+    } catch (Exception ex) {
+      port = 5081
     }
+    println "Connecting to $hostname:$port..."
     platform = new RealTimePlatform()
-    container = new SlaveContainer(platform, url)
+    container = new SlaveContainer(platform, hostname, port)
     shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
     container.add 'rshell', shell
     platform.start()
 
-The shell script passes the URL specified on the command line to the initialization Groovy script, that connects to the master container at that URL and offers a local console shell for the user to interact. Assuming you have a fjåge application called "myApp" running locally, you can connect to it:
+The shell script passes the hostname and TCP port specified on the command line to the initialization Groovy script, that connects to the master container and offers a local console shell for the user to interact. Assuming you have a fjåge application running locally on port 5081, you can connect to it:
 
 .. code-block:: sh
 
-    ./rconsole.sh //localhost:1099/fjage/myApp
+    ./rconsole.sh localhost 5081
 
 Interacting with agents using a Gateway
 ---------------------------------------
@@ -82,6 +86,6 @@ Only agents may access messaging and related functionality provided by fjåge. F
 .. Javadoc links
 .. -------------
 ..
-.. _MasterContainer: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/rmi/MasterContainer.html
-.. _SlaveContainer: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/rmi/SlaveContainer.html
-.. _Gateway: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/rmi/Gateway.html
+.. _MasterContainer: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/json/MasterContainer.html
+.. _SlaveContainer: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/json/SlaveContainer.html
+.. _Gateway: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/json/Gateway.html

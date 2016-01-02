@@ -12,7 +12,7 @@ Table of Contents
    behaviors
    messages
    services
-   rmi
+   remote
    shell
    simulation
    faq

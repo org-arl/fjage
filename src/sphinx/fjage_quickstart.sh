@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # fjage version
-VERSION=1.3.4
+VERSION=1.4
 
 # create the folder structure
 mkdir -p build/libs etc logs samples
@@ -12,13 +12,13 @@ curl -O https://repo1.maven.org/maven2/com/github/org-arl/fjage/$VERSION/fjage-$
 curl -O https://repo1.maven.org/maven2/org/codehaus/groovy/groovy-all/2.4.4/groovy-all-2.4.4.jar
 curl -O https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.1/commons-lang3-3.1.jar
 curl -O https://repo1.maven.org/maven2/jline/jline/2.12/jline-2.12.jar
-#curl -O https://repo1.maven.org/maven2/uk/com/robust-it/cloning/1.9.0/cloning-1.9.0.jar
-#curl -O https://repo1.maven.org/maven2/org/objenesis/objenesis/1.2/objenesis-1.2.jar
+curl -O https://repo1.maven.org/maven2/com/google/code/gson/gson/2.3.1/gson-2.3.1.jar
 cd ../..
 
 # download init scripts and logging configuration
 cd etc
 curl -O https://raw.githubusercontent.com/org-arl/fjage/master/etc/initrc.groovy
+curl -O https://raw.githubusercontent.com/org-arl/fjage/master/etc/initrc-rconsole.groovy
 cd ..
 
 # download sample agents
@@ -34,4 +34,5 @@ cd ..
 
 # download startup script
 curl -O https://raw.githubusercontent.com/org-arl/fjage/master/fjage.sh
-chmod a+x fjage.sh
+curl -O https://raw.githubusercontent.com/org-arl/fjage/master/rconsole.sh
+chmod a+x fjage.sh rconsole.sh
