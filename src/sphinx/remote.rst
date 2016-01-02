@@ -11,7 +11,7 @@ Once we have developed our agents, it is easy to deploy them on multiple nodes a
 To start a master container, we simply replace `Container` with `MasterContainer` in the `initrc.groovy`::
 
     import org.arl.fjage.*
-    import org.arl.fjage.json.*
+    import org.arl.fjage.remote.*
 
     platform = new RealTimePlatform()
     container = new MasterContainer(platform, name)
@@ -24,7 +24,7 @@ Specifying the `name` for the master container is optional, but recommended. Any
 To start slave containers, we need to specify the hostname and TCP port of the master container::
 
     import org.arl.fjage.*
-    import org.arl.fjage.json.*
+    import org.arl.fjage.remote.*
 
     platform = new RealTimePlatform()
     container = new SlaveContainer(platform, hostname, port)
@@ -48,7 +48,7 @@ It is often useful to connect a console shell to a running fjåge application to
 and `etc/initrc-rconsole.groovy`::
 
     import org.arl.fjage.*
-    import org.arl.fjage.json.*
+    import org.arl.fjage.remote.*
     import org.arl.fjage.shell.*
 
     String hostname =  System.properties.getProperty('hostname')

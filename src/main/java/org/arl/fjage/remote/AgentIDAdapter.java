@@ -8,7 +8,7 @@ for full license details.
 
 ******************************************************************************/
 
-package org.arl.fjage.json;
+package org.arl.fjage.remote;
 
 import java.lang.reflect.Type;
 import org.arl.fjage.AgentID;

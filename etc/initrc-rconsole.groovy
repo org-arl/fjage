@@ -1,5 +1,5 @@
 import org.arl.fjage.*
-import org.arl.fjage.json.*
+import org.arl.fjage.remote.*
 import org.arl.fjage.shell.*
 
 String hostname =  System.properties.getProperty('hostname')

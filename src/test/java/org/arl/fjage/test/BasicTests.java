@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.logging.*;
 import org.arl.fjage.*;
-import org.arl.fjage.json.*;
+import org.arl.fjage.remote.*;
 import org.junit.*;
 
 public class BasicTests {
