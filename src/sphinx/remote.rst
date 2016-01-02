@@ -77,7 +77,7 @@ Interacting with agents using a Gateway
 
 Only agents may access messaging and related functionality provided by fjåge. For example, non-agent Java or Groovy threads cannot send messages to, or receive messages. To aid interaction of such threads with agents, fjåge provides a `Gateway`_ class. This class provides agent-like functionality to non-agent threads by creating a proxy agent in a slave container that has access to this functionality. Using the `Gateway` is fairly simple::
 
-    Gateway gw = Gateway(masterURL)
+    Gateway gw = Gateway(hostname, port)
     def weatherStation = gw.agentForService Services.WEATHER_FORECAST_SERVICE
     def rsp = gw.request new WeatherForecastReq(city: 'London', country: 'UK', recipient: weatherStation)
     println "The lowest temperature today is ${rsp?rsp.minTemp:'unknown'}"
