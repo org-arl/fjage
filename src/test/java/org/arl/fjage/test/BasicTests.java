@@ -126,9 +126,8 @@ public class BasicTests {
     assertTrue(client.nuisance == server.nuisance);
   }
 
-  /*
   @Test
-  public void testGateway() {
+  public void testGateway() throws IOException {
     Platform platform = new RealTimePlatform();
     MasterContainer master = new MasterContainer(platform);
     ServerAgent server = new ServerAgent();
@@ -154,7 +153,6 @@ public class BasicTests {
     gw.shutdown();
     platform.shutdown();
   }
-  */
 
   @Test
   public void testFSM() {

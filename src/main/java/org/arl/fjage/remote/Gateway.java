@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2013, Mandar Chitre
+Copyright (c) 2016, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -8,21 +8,17 @@ for full license details.
 
 ******************************************************************************/
 
-package org.arl.fjage.rmi;
+package org.arl.fjage.remote;
 
 import java.io.IOException;
-import java.rmi.NotBoundException;
 import org.arl.fjage.*;
 
 /**
  * Gateway to communicate with agents from Java classes. Only agents in a master
  * or slave container can be accessed using this gateway.
  *
- * @deprecated As of release 1.4, replaced by {@link org.arl.fjage.remote.Gateway}.
- *
  * @author  Mandar Chitre
  */
-@Deprecated
 public class Gateway {
 
   /////////////////////// Constants
@@ -48,28 +44,30 @@ public class Gateway {
 
   /**
    * Creates a gateway connecting to a specified master container. The platform specified
-   * is this call should not be started previously, and will be automatically started
+   * in this call should not be started previously, and will be automatically started
    * by the gateway.
    *
    * @param platform platform to use
-   * @param url URL of master platform to connect to.
+   * @param hostname hostname to connect to.
+   * @param port TCP port to connect to.
    */
-  public Gateway(Platform platform, String url) throws IOException, NotBoundException {
-    init(platform, url);
+  public Gateway(Platform platform, String hostname, int port) throws IOException {
+    init(platform, hostname, port);
   }
 
   /**
    * Creates a gateway connecting to a specified master container.
    *
-   * @param url URL of master platform to connect to.
+   * @param hostname hostname to connect to.
+   * @param port TCP port to connect to.
    */
-  public Gateway(String url) throws IOException, NotBoundException {
+  public Gateway(String hostname, int port) throws IOException {
     Platform platform = new RealTimePlatform();
-    init(platform, url);
+    init(platform, hostname, port);
   }
 
-  private void init(Platform platform, String url) throws IOException, NotBoundException {
-    container = new SlaveContainer(platform, "Gateway@"+hashCode(), url);
+  private void init(Platform platform, String hostname, int port) throws IOException {
+    container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
     agent = new Agent() {
       private Message rsp;
       private Object sync = new Object();
