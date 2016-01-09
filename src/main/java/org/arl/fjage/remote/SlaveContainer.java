@@ -117,6 +117,32 @@ public class SlaveContainer extends RemoteContainer {
   }
 
   @Override
+  public AgentID[] getAgents() {
+    if (master == null) return null;
+    JsonMessage rq = new JsonMessage();
+    rq.action = Action.AGENTS;
+    rq.id = UUID.randomUUID().toString();
+    String json = rq.toJson();
+    master.println(json);
+    JsonMessage rsp = master.getResponse(rq.id, TIMEOUT);
+    if (rsp == null) return null;
+    return rsp.agentIDs;
+  }
+
+  @Override
+  public String[] getServices() {
+    if (master == null) return null;
+    JsonMessage rq = new JsonMessage();
+    rq.action = Action.SERVICES;
+    rq.id = UUID.randomUUID().toString();
+    String json = rq.toJson();
+    master.println(json);
+    JsonMessage rsp = master.getResponse(rq.id, TIMEOUT);
+    if (rsp == null) return null;
+    return rsp.services;
+  }
+
+  @Override
   public AgentID agentForService(String service) {
     if (master == null) return null;
     JsonMessage rq = new JsonMessage();
@@ -145,12 +171,21 @@ public class SlaveContainer extends RemoteContainer {
   }
 
   @Override
-  public AgentID localAgentForService(String service) {
+  AgentID[] getLocalAgents() {
+    return super.getAgents();
+  }
+  @Override
+  String[] getLocalServices() {
+    return super.getServices();
+  }
+
+  @Override
+  AgentID localAgentForService(String service) {
     return super.agentForService(service);
   }
 
   @Override
-  public AgentID[] localAgentsForService(String service) {
+  AgentID[] localAgentsForService(String service) {
     return super.agentsForService(service);
   }
 

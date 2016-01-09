@@ -24,6 +24,7 @@ class JsonMessage {
   AgentID agentID;
   AgentID[] agentIDs;
   String service;
+  String[] services;
   Boolean answer;
   Message message;
   Boolean relay;

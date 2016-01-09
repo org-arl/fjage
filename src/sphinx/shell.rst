@@ -15,7 +15,8 @@ The default shell provided by fjåge is a Groovy shell, and can execute any vali
     bash$ ./fjage.sh 
     > help
     help [topic] - provide help on a specified topic
-    ps - list all the agents running on the local container
+    ps - list all the agents
+    services - lists all services provided by agents
     who - display list of variables in workspace
     run - run a Groovy script
     println - display message on console
@@ -63,7 +64,7 @@ We could then access the shell using `telnet`:
     Connected to localhost
     Escape character is '^]'.
     > ps
-    shell: org.arl.fjage.shell.ShellAgent - IDLE
+    shell
     >
 
 GUI shell using Java Swing

@@ -116,34 +116,26 @@ abstract class BaseGroovyScript extends Script {
   }
 
   /**
-   * Lists all the agents running on a specified container.
+   * Lists all the agents.
    *
-   * @return a string representation of all agents and their states.
+   * @return a string representation of all agents.
    */
   String ps() {
     Binding binding = getBinding();
     if (binding.hasVariable('agent')) {
       Agent a = binding.getVariable('agent');
       Container c = a.getContainer();
-      return psContainer(c);
+      AgentID[] agentIDs = c.getAgents();
+      StringBuffer s = new StringBuffer();
+      boolean first = true;
+      for (AgentID aid: agentIDs) {
+        if (!first) s.append('\n');
+        s.append(aid);
+        first = false;
+      }
+      return s.toString();
     }
     return null;
-  }
-
-  private String psContainer(Container c) {
-    Agent[] agents = c.getAgents();
-    StringBuffer s = new StringBuffer();
-    boolean first = true;
-    for (Agent a: agents) {
-      if (!first) s.append('\n');
-      s.append(a.getAgentID());
-      s.append(': ');
-      s.append(a.getClass().getName());
-      s.append(' - ');
-      s.append(a.getState());
-      first = false;
-    }
-    return s.toString();
   }
 
   String getPs() {
@@ -165,6 +157,41 @@ abstract class BaseGroovyScript extends Script {
     return new AgentID(name);
   }
   
+  /**
+   * Lists all the services, along with a list of agents that provide them.
+   *
+   * @return a string representation of all services.
+   */
+  String services() {
+    Binding binding = getBinding();
+    if (binding.hasVariable('agent')) {
+      Agent a = binding.getVariable('agent');
+      Container c = a.getContainer();
+      String[] svc = c.getServices();
+      StringBuffer s = new StringBuffer();
+      boolean first = true;
+      for (String s1: svc) {
+        if (!first) s.append('\n');
+        s.append(s1);
+        AgentID[] aids = agentsForService(s1)
+        if (aids) {
+          s.append(':')
+          aids.each {
+            s.append(' ')
+            s.append(it)
+          }
+        }
+        first = false;
+      }
+      return s.toString();
+    }
+    return null;
+  }
+
+  String getServices() {
+    return services();
+  }
+
   /**
    * Returns an agent identifier for a specified service.
    *

@@ -4,7 +4,8 @@ package org.arl.fjage.shell
 shellImport 'org.arl.fjage.*'
 
 doc['help'] = 'help [topic] - provide help on a specified topic'
-doc['ps'] = 'ps - list all the agents running on the local container'
+doc['ps'] = 'ps - list all the agents'
+doc['services'] = 'services - list all services provided by agents'
 doc['exit'] = 'exit - terminate the current shell session'
 doc['who'] = 'who - display list of variables in workspace'
 doc['run'] = '''\

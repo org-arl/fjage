@@ -259,12 +259,12 @@ public class Container {
   }
 
   /**
-   * Gets all agents in the container.
+   * Gets all agent ids in the container.
    *
-   * @return an array of agents.
+   * @return an array of agent ids.
    */
-  public Agent[] getAgents() {
-    return agents.values().toArray(new Agent[agents.size()]);
+  public AgentID[] getAgents() {
+    return agents.keySet().toArray(new AgentID[0]);
   }
 
   /**
@@ -407,6 +407,16 @@ public class Container {
     }
     providers.add(aid);
     return true;
+  }
+
+  /**
+   * Gets a list of all services that agents in this container provide.
+   *
+   * @return an array of service names.
+   */
+  public synchronized String[] getServices() {
+    Set<String> svc = services.keySet();
+    return svc.toArray(new String[0]);
   }
 
   /**

@@ -40,6 +40,24 @@ abstract class RemoteContainer extends Container {
   abstract void connectionClosed(ConnectionHandler handler);
 
   /**
+   * Lists all agents, with subtly different behaviors on master and slave containers.
+   * On the master container, this method should be the same as getAgents(). On the
+   * slave container, however, this method should only list agents residing in that slave.
+   *
+   * @return agent ids for all agents.
+   */
+  abstract AgentID[] getLocalAgents();
+
+  /**
+   * Lists all services, with subtly different behaviors on master and slave containers.
+   * On the master container, this method should be the same as getServices(). On the
+   * slave container, however, this method should only list services residing in that slave.
+   *
+   * @return list of all services.
+   */
+  abstract String[] getLocalServices();
+
+  /**
    * Finds an agent providing a named service, with subtly different behaviors on
    * master and slave containers. On the master container, this method should
    * be the same as agentForService(). On the slave container, however, this method

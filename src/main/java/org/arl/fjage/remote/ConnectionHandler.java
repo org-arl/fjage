@@ -98,6 +98,14 @@ class ConnectionHandler extends Thread {
     println(rsp.toJson());
   }
 
+  private void respond(JsonMessage rq, String[] svc) {
+    JsonMessage rsp = new JsonMessage();
+    rsp.inResponseTo = rq.action;
+    rsp.id = rq.id;
+    rsp.services = svc;
+    println(rsp.toJson());
+  }
+
   synchronized void println(String s) {
     if (out == null) return;
     try {
@@ -154,8 +162,14 @@ class ConnectionHandler extends Thread {
     @Override
     public void run() {
       switch (rq.action) {
+        case AGENTS:
+          respond(rq, container.getLocalAgents());
+          break;
         case CONTAINS_AGENT:
           respond(rq, container.containsAgent(rq.agentID));
+          break;
+        case SERVICES:
+          respond(rq, container.getLocalServices());
           break;
         case AGENT_FOR_SERVICE:
           respond(rq, container.localAgentForService(rq.service));

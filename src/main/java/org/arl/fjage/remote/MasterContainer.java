@@ -135,6 +135,54 @@ public class MasterContainer extends RemoteContainer {
   }
 
   @Override
+  public AgentID[] getAgents() {
+    List<AgentID> rv = new ArrayList<AgentID>();
+    AgentID[] aids = super.getAgents();
+    for (int i = 0; i < aids.length; i++)
+      rv.add(aids[i]);
+    JsonMessage rq = new JsonMessage();
+    rq.action = Action.AGENTS;
+    rq.id = UUID.randomUUID().toString();
+    String json = rq.toJson();
+    if (needsCleanup) cleanupSlaves();
+    synchronized(slaves) {
+      for (ConnectionHandler slave: slaves) {
+        slave.println(json);
+        JsonMessage rsp = slave.getResponse(rq.id, TIMEOUT);
+        if (rsp != null && rsp.agentIDs != null) {
+          for (int i = 0; i < rsp.agentIDs.length; i++)
+            rv.add(rsp.agentIDs[i]);
+        }
+      }
+    }
+    return rv.toArray(new AgentID[0]);
+  }
+
+  @Override
+  public String[] getServices() {
+    Set<String> rv = new HashSet<String>();
+    String[] svc = super.getServices();
+    for (int i = 0; i < svc.length; i++)
+      rv.add(svc[i]);
+    JsonMessage rq = new JsonMessage();
+    rq.action = Action.SERVICES;
+    rq.id = UUID.randomUUID().toString();
+    String json = rq.toJson();
+    if (needsCleanup) cleanupSlaves();
+    synchronized(slaves) {
+      for (ConnectionHandler slave: slaves) {
+        slave.println(json);
+        JsonMessage rsp = slave.getResponse(rq.id, TIMEOUT);
+        if (rsp != null && rsp.services != null) {
+          for (int i = 0; i < rsp.services.length; i++)
+            rv.add(rsp.services[i]);
+        }
+      }
+    }
+    return rv.toArray(new String[0]);
+  }
+
+  @Override
   public AgentID agentForService(String service) {
     AgentID aid = super.agentForService(service);
     if (aid != null) return aid;
@@ -181,12 +229,22 @@ public class MasterContainer extends RemoteContainer {
   }
 
   @Override
-  public AgentID localAgentForService(String service) {
+  AgentID[] getLocalAgents() {
+    return getAgents();
+  }
+
+  @Override
+  String[] getLocalServices() {
+    return getServices();
+  }
+
+  @Override
+  AgentID localAgentForService(String service) {
     return agentForService(service);
   }
 
   @Override
-  public AgentID[] localAgentsForService(String service) {
+  AgentID[] localAgentsForService(String service) {
     return agentsForService(service);
   }
 
