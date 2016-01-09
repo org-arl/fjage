@@ -249,10 +249,11 @@ public class Container {
   }
 
   /**
-   * Gets an agent given its id.
+   * Gets an agent given its id. This method only finds agents in the current
+   * container.
    *
    * @param aid agent id.
-   * @return agent associated with the id if exists, false if no such agent exists.
+   * @return agent associated with the id if exists in the current container, null otherwise.
    */
   public Agent getAgent(AgentID aid) {
     return agents.get(aid);
