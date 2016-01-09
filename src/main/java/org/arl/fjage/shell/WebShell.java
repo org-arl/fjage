@@ -250,8 +250,6 @@ public class WebShell implements Shell {
           }
         } catch (UnsupportedEncodingException ex) {
           log.warning(ex.toString());
-        } catch (IOException ex) {
-          log.warning(ex.toString());
         }
       }
     }), "/exec");

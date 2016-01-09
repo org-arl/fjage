@@ -430,7 +430,7 @@ public class Container {
   public synchronized AgentID[] agentsForService(String service) {
     Set<AgentID> providers = services.get(service);
     if (providers == null || providers.size() == 0) return null;
-    return providers.toArray(new AgentID[providers.size()]);
+    return providers.toArray(new AgentID[0]);
   }
 
   /**
