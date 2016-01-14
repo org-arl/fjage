@@ -50,7 +50,7 @@ Usage:
 
 Examples:
   logLevel INFO                  // set loglevel to INFO
-  loglevel \'org.arl\', ALL        // set loglevel for logger org.arl to ALL
+  logLevel \'org.arl\', ALL        // set loglevel for logger org.arl to ALL
 '''
 doc['subscribe'] = '''\
 subscribe - subscribe to notifications from a named topic
