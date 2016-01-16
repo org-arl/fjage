@@ -47,11 +47,13 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
     LogHandlerProxy.install(this, log);
   }
 
+  @Deprecated
   @Override
   public void setPort(int port) {
     throw new UnsupportedOperationException(getClass().getName()+" does not support RMI");
   }
 
+  @Deprecated
   @Override
   public int getPort() {
     throw new UnsupportedOperationException(getClass().getName()+" does not support RMI");

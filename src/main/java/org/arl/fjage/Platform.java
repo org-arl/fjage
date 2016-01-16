@@ -181,9 +181,12 @@ public abstract class Platform implements TimestampProvider {
    * Sets the TCP/IP port for platforms supporting remote connections. This
    * defaults to 1099, the Java RMI port.
    *
+   * @deprecated As of release 1.4, RMI support has been deprecated.
+   *
    * @param port TCP/IP port number.
    * @throws java.lang.UnsupportedOperationException if remote connections are not supported.
    */
+  @Deprecated
   public void setPort(int port) {
     this.port = port;
   }
@@ -192,9 +195,12 @@ public abstract class Platform implements TimestampProvider {
    * Gets the TCP/IP port for platforms supporting remote connections. This
    * defaults to 1099, the Java RMI port.
    *
+   * @deprecated As of release 1.4, RMI support has been deprecated.
+   *
    * @return TCP/IP port number
    * @throws java.lang.UnsupportedOperationException if remote connections are not supported.
    */
+  @Deprecated
   public int getPort() {
     return port;
   }
