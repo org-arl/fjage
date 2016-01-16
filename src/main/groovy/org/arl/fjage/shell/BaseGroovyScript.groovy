@@ -45,13 +45,6 @@ abstract class BaseGroovyScript extends Script {
   }
 
   /**
-   * Clean up after the script.  Currently does nothing.
-   */
-  void _cleanup_() {
-    // do nothing
-  }
-  
-  /**
    * Update list of default import classes/packages.
    *
    * @param name name of class or package to import.

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2013, Mandar Chitre
+Copyright (c) 2016, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -13,6 +13,7 @@ package org.arl.fjage.shell;
 import java.io.*;
 import java.util.*;
 import java.util.logging.*;
+import java.util.concurrent.*;
 import groovy.lang.*;
 import groovy.transform.ThreadInterrupt;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -27,17 +28,8 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
 
   private GroovyShell groovy;
   private Binding binding;
-  private Shell out = null;
-  private String cmd = null;
-  private File script = null;
-  private Script gscript = null;
-  private Reader reader = null;
-  private String readerName = null;
-  private List<String> args = null;
-  private Object result = null;
-  private boolean busy = false;
-  private boolean quit = false;
-  private Object done = new Object();
+  private ExecutorService executor = Executors.newSingleThreadExecutor();
+  private Future<?> last = null;
   private Logger log = Logger.getLogger(getClass().getName());
   
   ////// constructor
@@ -65,240 +57,224 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
     groovy = new GroovyShell(gcl, binding, compiler);
     binding.setVariable("groovy", groovy);
     groovy.evaluate("_init_()");
-    setDaemon(true);
-    setName(getClass().getSimpleName());
-    start();
   }
   
-  ////// thread implementation
-
-  public void run() {
-    while (!quit) {
-      try {
-        synchronized (this) {
-          if (!busy) wait();
-        }
-        if (cmd != null) {
-          cmd = cmd.trim();
-          if (cmd.startsWith("help ")) cmd = "help '"+cmd.substring(5)+"'";
-          else if (cmd.startsWith("import ")) cmd = "shellImport '"+cmd.substring(7)+"'";
-          else if (cmd.startsWith("<")) {
-            if (cmd.contains(" ")) cmd = "run('"+cmd.substring(1).replaceFirst(" ","',")+");";
-            else cmd = "run('"+cmd.substring(1)+"');";
-          }
-          log.info("EVAL: "+cmd);
-          result = groovy.evaluate(cmd);
-          if (result != null && result instanceof Closure && !cmd.endsWith("}") && !cmd.endsWith("};")) {
-            // try calling returned closures with no arguments
-            Closure<?> c = (Closure<?>)result;
-            result = c.call();
-          }
-          binding.setVariable("ans", result);
-          if (result != null && !cmd.endsWith(";")) {
-            // convert ans to String, unless it is a message
-            // retain messages for possible GUI logging
-            println(groovy.evaluate("(ans instanceof org.arl.fjage.Message)?ans:(ans?.toString())"));
-          }
-        } else if (script != null) {
-          if (args == null) args = new ArrayList<String>();
-          log.info("RUN: "+script.getAbsolutePath());
-          groovy.getClassLoader().clearCache();
-          binding.setVariable("script", script.getAbsoluteFile());
-          result = groovy.run(script, args);
-        } else if (gscript != null) {
-          log.info("RUN: cls://"+gscript.getClass().getName());
-          binding.setVariable("script", gscript.getClass().getName());
-          binding.setVariable("args", (args == null) ? new String[0] : args);
-          gscript.setBinding(binding);
-          gscript.run();
-        } else if (reader != null) {
-          if (args == null) args = new ArrayList<String>();
-          log.info("RUN: "+readerName);
-          groovy.getClassLoader().clearCache();
-          String[] argsArr = new String[args.size()];
-          int i = 0;
-          for (String s: args) argsArr[i++] = s;
-          binding.setVariable("script", readerName);
-          result = groovy.run(reader, readerName, argsArr);
-        }
-      } catch (InterruptedException ex) {
-        try {
-          if (out != null) out.println("Aborted!", OutputType.ERROR);
-        } catch (Throwable ex1) {
-          // ignore          
-        }
-      } catch (Throwable ex) {
-        error(ex);
-      } finally {
-        binding.setVariable("script", null);
-      }
-      cmd = null;
-      script = null;
-      gscript = null;
-      reader = null;
-      readerName = null;
-      args = null;
-      busy = false;
-      synchronized (done) {
-        done.notifyAll();
-      }
-    }
-    groovy.evaluate("_cleanup_()");
-  }
-
   ////// script engine methods
   
   @Override
-  public synchronized boolean exec(String cmd, Shell out) {
-    if (busy) return false;
-    binding.setVariable("script", null);
-    this.cmd = cmd;
-    result = null;
-    binding.setVariable("out", out);
-    this.out = out;
-    busy = true;
-    notify();
+  public boolean exec(final String cmd1, final Shell out) {
+    if (isBusy()) return false;
+    last = executor.submit(new Callable<Object>() {
+      @Override
+      public Object call() {
+        String cmd = cmd1.trim();
+        if (cmd.startsWith("help ")) cmd = "help '"+cmd.substring(5)+"'";
+        else if (cmd.startsWith("import ")) cmd = "shellImport '"+cmd.substring(7)+"'";
+        else if (cmd.startsWith("<")) {
+          if (cmd.contains(" ")) cmd = "run('"+cmd.substring(1).replaceFirst(" ","',")+");";
+          else cmd = "run('"+cmd.substring(1)+"');";
+        }
+        log.info("EVAL: "+cmd);
+        Object rv = null;
+        synchronized(binding) {
+          try {
+            if (binding.hasVariable(cmd)) {
+              rv = binding.getVariable(cmd);
+              if (rv instanceof Closure) {
+                Closure<?> cl = (Closure<?>)rv;
+                try {
+                  rv = cl.call();
+                } catch (MissingMethodException ex) {
+                  // do nothing, as it's probably a closure that needs at least one argument
+                }
+              }
+            } else {
+              binding.setVariable("out", out);
+              binding.setVariable("script", null);
+              binding.setVariable("args", null);
+              rv = groovy.evaluate(cmd);
+              if (rv instanceof Class) {
+                // if a script is also on the classpath, it can return the class loaded by a wrong classloader
+                // in that case, we try to find the original file and execute it
+                String name = ((Class)rv).getName();
+                if (name.equals(cmd)) {
+                  String folder = binding.hasVariable("scripts") ? (String)binding.getVariable("scripts") : null;
+                  File f = new File(folder, name+".groovy");
+                  if (f.exists() && f.isFile()) {
+                    execFromFile(f, new ArrayList<String>(), out);
+                    rv = null;
+                  }
+                }
+              }
+            }
+            if (rv != null && !cmd.endsWith(";")) println(out, rv);
+          } catch (Exception ex) {
+            error(out, ex);
+          } finally {
+            binding.setVariable("out", null);
+            binding.setVariable("ans", rv);
+          }
+        }
+        return rv;
+      }
+    });
     return true;
   }
 
   @Override
-  public synchronized boolean exec(File script, Shell out) {
-    if (busy) return false;
-    this.script = script;
-    args = null;
-    result = null;
-    binding.setVariable("out", out);
-    this.out = out;
-    busy = true;
-    notify();
+  public boolean exec(final File script, final Shell out) {
+    return exec(script, new ArrayList<String>(), out);
+  }
+
+  @Override
+  public boolean exec(final File script, final List<String> args, final Shell out) {
+    if (isBusy()) return false;
+    execFromFile(script, args, out);
     return true;
   }
 
   @Override
-  public synchronized boolean exec(File script, List<String> args, Shell out) {
-    if (busy) return false;
-    this.script = script;
-    this.args = args;
-    result = null;
-    binding.setVariable("out", out);
-    this.out = out;
-    busy = true;
-    notify();
+  public boolean exec(final Class<?> script, final Shell out) {
+    return exec(script, new ArrayList<String>(), out);
+  }
+
+  @Override
+  public boolean exec(final Class<?> script, final List<String> args, final Shell out) {
+    if (isBusy()) return false;
+    last = executor.submit(new Callable<Object>() {
+      @Override
+      public Object call() {
+        log.info("RUN: "+script.getName());
+        synchronized(binding) {
+          try {
+            binding.setVariable("out", out);
+            binding.setVariable("script", script.getName());
+            binding.setVariable("args", args);
+            Script gs = (Script)script.newInstance();
+            gs.setBinding(binding);
+            gs.run();
+          } catch (Exception ex) {
+            error(out, ex);
+          } finally {
+            binding.setVariable("out", null);
+            binding.setVariable("script", null);
+          }
+        }
+        return null;
+      }
+    });
     return true;
   }
 
   @Override
-  public synchronized boolean exec(Class<?> script, Shell out) {
-    if (busy) return false;
-    try {
-      this.gscript = (Script)script.newInstance();
-    } catch (Exception ex) {
-      log.warning("Exec failed: "+ex.toString());
-      return false;
-    }
-    this.args = null;
-    result = null;
-    binding.setVariable("out", out);
-    this.out = out;
-    busy = true;
-    notify();
-    return true;
+  public boolean exec(final Reader reader, final String name, final Shell out) {
+    return exec(reader, name, new ArrayList<String>(), out);
   }
 
   @Override
-  public synchronized boolean exec(Class<?> script, List<String> args, Shell out) {
-    if (busy) return false;
-    try {
-      this.gscript = (Script)script.newInstance();
-    } catch (Exception ex) {
-      log.warning("Exec failed: "+ex.toString());
-      return false;
-    }
-    this.args = args;
-    result = null;
-    binding.setVariable("out", out);
-    this.out = out;
-    busy = true;
-    notify();
-    return true;
-  }
-
-  @Override
-  public synchronized boolean exec(Reader reader, String name, Shell out) {
-    if (busy) return false;
-    this.reader = reader;
-    readerName = name;
-    args = null;
-    result = null;
-    binding.setVariable("out", out);
-    this.out = out;
-    busy = true;
-    notify();
-    return true;
-  }
-
-  @Override
-  public synchronized boolean exec(Reader reader, String name, List<String> args, Shell out) {
-    if (busy) return false;
-    this.reader = reader;
-    readerName = name;
-    this.args = args;
-    result = null;
-    binding.setVariable("out", out);
-    this.out = out;
-    busy = true;
-    notify();
+  public boolean exec(final Reader reader, final String name, final List<String> args, final Shell out) {
+    if (isBusy()) return false;
+    last = executor.submit(new Callable<Object>() {
+      @Override
+      public Object call() {
+        log.info("RUN: "+name);
+        synchronized(binding) {
+          try {
+            binding.setVariable("out", out);
+            binding.setVariable("script", name);
+            binding.setVariable("args", null);
+            groovy.getClassLoader().clearCache();
+            groovy.run(reader, name, args);
+          } catch (Exception ex) {
+            error(out, ex);
+          } finally {
+            binding.setVariable("out", null);
+            binding.setVariable("script", null);
+          }
+        }
+        return null;
+      }
+    });
     return true;
   }
 
   @Override
   public boolean isBusy() {
-    return busy;
+    if (last == null) return false;
+    if (last.isCancelled() || last.isDone()) return false;
+    return true;
   }
 
   @Override
   public void abort() {
-    log.info("ABORT");
-    if (busy) interrupt();
+    if (isBusy()) last.cancel(true);
   }
 
   @Override
   public void waitUntilCompletion() {
-    synchronized (done) {
-      try {
-        done.wait();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
+    try {
+      if (last != null) last.get();
+      last = null;
+    } catch (Exception ex) {
+      // do nothing
     }
   }
 
   @Override
-  public synchronized Object getResult() {
-    Object rv = result;
-    result = null;
-    return rv;
+  public Object getResult() {
+    if (isBusy()) return null;
+    return getVariable("ans");
   }
 
   @Override
   public void setVariable(String name, Object value) {
-    binding.setVariable(name, value);
+    // blocks until executing task finishes!
+    synchronized(binding) {
+      binding.setVariable(name, value);
+    }
   }
   
   @Override
   public Object getVariable(String name) {
-    return binding.getVariable(name);
+    // blocks until executing task finishes!
+    synchronized(binding) {
+      return binding.getVariable(name);
+    }
   }
 
   @Override
-  public synchronized void shutdown() {
-    quit = true;
-    notify();
+  public void shutdown() {
+    executor.shutdown();
+    abort();
   }
 
   ////// private methods
+
+  private void execFromFile(final File script, final List<String> args, final Shell out) {
+    last = executor.submit(new Callable<Object>() {
+      @Override
+      public Object call() {
+        log.info("RUN: "+script.getAbsolutePath());
+        synchronized(binding) {
+          try {
+            binding.setVariable("out", out);
+            binding.setVariable("script", script.getAbsoluteFile());
+            binding.setVariable("args", null);
+            groovy.getClassLoader().clearCache();
+            groovy.run(script, args);
+          } catch (Throwable ex) {
+            error(out, ex);
+          } finally {
+            binding.setVariable("out", null);
+            binding.setVariable("script", null);
+          }
+        }
+        return null;
+      }
+    });
+  }
   
-  private void println(Object s) {
+  private void println(Shell out, Object s) {
     String str = s.toString();
     log.info("RESULT: "+str);
     // Mostly log the String version, but for messages, log it so that GUI can display details
@@ -306,10 +282,9 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
     if (out != null) out.println((s instanceof org.arl.fjage.Message)?s:str, OutputType.OUTPUT);
   }
 
-  private void error(Throwable ex) {
+  private void error(Shell out, Throwable ex) {
     log.log(Level.WARNING, "Exception in Groovy script", ex);
     if (out != null) out.println(ex, OutputType.ERROR);
   }
 
 }
-
