@@ -17,7 +17,7 @@ import groovy.lang.*;
  * be disabled by explicitly setting 'protection = false'. The behavior also does
  * not apply to a special variable named 'ans'.
  */
-public class ProtectedBinding extends Binding {
+public class ProtectedBinding extends ConcurrentBinding {
   
   private boolean protection = true;
 

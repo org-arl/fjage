@@ -18,6 +18,7 @@ import groovy.lang.*;
 import groovy.transform.ThreadInterrupt;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.*;
+import org.arl.fjage.Message;
 
 /**
  * Groovy scripting engine.
@@ -35,7 +36,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   ////// constructor
 
   public GroovyScriptEngine() {
-    binding = new Binding();
+    binding = new ConcurrentBinding();
     init();
   }
 
@@ -76,45 +77,44 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
         }
         log.info("EVAL: "+cmd);
         Object rv = null;
-        synchronized(binding) {
-          try {
-            if (binding.hasVariable(cmd)) {
-              rv = binding.getVariable(cmd);
-              if (rv instanceof Closure) {
-                Closure<?> cl = (Closure<?>)rv;
-                try {
-                  rv = cl.call();
-                } catch (MissingMethodException ex) {
-                  // do nothing, as it's probably a closure that needs at least one argument
-                }
+        try {
+          if (binding.hasVariable(cmd)) {
+            rv = binding.getVariable(cmd);
+            if (rv instanceof Closure) {
+              Closure<?> cl = (Closure<?>)rv;
+              try {
+                rv = cl.call();
+              } catch (MissingMethodException ex) {
+                // do nothing, as it's probably a closure that needs at least one argument
               }
-            } else {
-              binding.setVariable("out", out);
-              binding.setVariable("script", null);
-              binding.setVariable("args", null);
-              rv = groovy.evaluate(cmd);
-              if (rv instanceof Class) {
-                // if a script is also on the classpath, it can return the class loaded by a wrong classloader
-                // in that case, we try to find the original file and execute it
-                String name = ((Class)rv).getName();
-                if (name.equals(cmd)) {
-                  String folder = binding.hasVariable("scripts") ? (String)binding.getVariable("scripts") : null;
-                  File f = new File(folder, name+".groovy");
-                  if (f.exists() && f.isFile()) {
-                    execFromFile(f, new ArrayList<String>(), out);
-                    rv = null;
-                  }
+            }
+          } else {
+            binding.setVariable("out", out);
+            binding.setVariable("script", null);
+            binding.setVariable("args", null);
+            rv = groovy.evaluate(cmd);
+            if (rv instanceof Class) {
+              // if a script is also on the classpath, it can return the class loaded by a wrong classloader
+              // in that case, we try to find the original file and execute it
+              String name = ((Class)rv).getName();
+              if (name.equals(cmd)) {
+                String folder = binding.hasVariable("scripts") ? (String)binding.getVariable("scripts") : null;
+                File f = new File(folder, name+".groovy");
+                if (f.exists() && f.isFile()) {
+                  execFromFile(f, new ArrayList<String>(), out);
+                  rv = null;
                 }
               }
             }
-            if (rv != null && !cmd.endsWith(";")) println(out, rv);
-          } catch (Exception ex) {
-            error(out, ex);
-          } finally {
-            binding.setVariable("out", null);
-            binding.setVariable("ans", rv);
           }
+        } catch (Exception ex) {
+          error(out, ex);
+        } finally {
+          binding.setVariable("out", null);
+          binding.setVariable("ans", rv);
         }
+        if (rv != null && !cmd.endsWith(";"))
+          println(out, (rv instanceof Message) ? rv : groovy.evaluate("ans.toString()"));
         return rv;
       }
     });
@@ -145,20 +145,18 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
       @Override
       public Object call() {
         log.info("RUN: "+script.getName());
-        synchronized(binding) {
-          try {
-            binding.setVariable("out", out);
-            binding.setVariable("script", script.getName());
-            binding.setVariable("args", args);
-            Script gs = (Script)script.newInstance();
-            gs.setBinding(binding);
-            gs.run();
-          } catch (Exception ex) {
-            error(out, ex);
-          } finally {
-            binding.setVariable("out", null);
-            binding.setVariable("script", null);
-          }
+        try {
+          binding.setVariable("out", out);
+          binding.setVariable("script", script.getName());
+          binding.setVariable("args", args);
+          Script gs = (Script)script.newInstance();
+          gs.setBinding(binding);
+          gs.run();
+        } catch (Exception ex) {
+          error(out, ex);
+        } finally {
+          binding.setVariable("out", null);
+          binding.setVariable("script", null);
         }
         return null;
       }
@@ -178,19 +176,17 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
       @Override
       public Object call() {
         log.info("RUN: "+name);
-        synchronized(binding) {
-          try {
-            binding.setVariable("out", out);
-            binding.setVariable("script", name);
-            binding.setVariable("args", null);
-            groovy.getClassLoader().clearCache();
-            groovy.run(reader, name, args);
-          } catch (Exception ex) {
-            error(out, ex);
-          } finally {
-            binding.setVariable("out", null);
-            binding.setVariable("script", null);
-          }
+        try {
+          binding.setVariable("out", out);
+          binding.setVariable("script", name);
+          binding.setVariable("args", null);
+          groovy.getClassLoader().clearCache();
+          groovy.run(reader, name, args);
+        } catch (Exception ex) {
+          error(out, ex);
+        } finally {
+          binding.setVariable("out", null);
+          binding.setVariable("script", null);
         }
         return null;
       }
@@ -228,18 +224,12 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
 
   @Override
   public void setVariable(String name, Object value) {
-    // blocks until executing task finishes!
-    synchronized(binding) {
-      binding.setVariable(name, value);
-    }
+    binding.setVariable(name, value);
   }
   
   @Override
   public Object getVariable(String name) {
-    // blocks until executing task finishes!
-    synchronized(binding) {
-      return binding.getVariable(name);
-    }
+    return binding.getVariable(name);
   }
 
   @Override
@@ -255,19 +245,17 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
       @Override
       public Object call() {
         log.info("RUN: "+script.getAbsolutePath());
-        synchronized(binding) {
-          try {
-            binding.setVariable("out", out);
-            binding.setVariable("script", script.getAbsoluteFile());
-            binding.setVariable("args", null);
-            groovy.getClassLoader().clearCache();
-            groovy.run(script, args);
-          } catch (Throwable ex) {
-            error(out, ex);
-          } finally {
-            binding.setVariable("out", null);
-            binding.setVariable("script", null);
-          }
+        try {
+          binding.setVariable("out", out);
+          binding.setVariable("script", script.getAbsoluteFile());
+          binding.setVariable("args", null);
+          groovy.getClassLoader().clearCache();
+          groovy.run(script, args);
+        } catch (Throwable ex) {
+          error(out, ex);
+        } finally {
+          binding.setVariable("out", null);
+          binding.setVariable("script", null);
         }
         return null;
       }
@@ -279,7 +267,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
     log.info("RESULT: "+str);
     // Mostly log the String version, but for messages, log it so that GUI can display details
     // Be careful not to ever log AgentIDs otherwise the toString() extensions can get called too often by GUI!
-    if (out != null) out.println((s instanceof org.arl.fjage.Message)?s:str, OutputType.OUTPUT);
+    if (out != null) out.println((s instanceof Message)?s:str, OutputType.OUTPUT);
   }
 
   private void error(Shell out, Throwable ex) {
