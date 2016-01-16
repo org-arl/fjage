@@ -124,6 +124,9 @@ abstract class BaseGroovyScript extends Script {
       for (AgentID aid: agentIDs) {
         if (!first) s.append('\n');
         s.append(aid);
+        Agent a1 = c.getAgent(aid);
+        if (a1) s.append(": ${a1.class.name} - ${a1.state}");
+        else s.append(': REMOTE');
         first = false;
       }
       return s.toString();
