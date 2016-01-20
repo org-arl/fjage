@@ -14,7 +14,7 @@ import java.util.*;
 
 /**
  * A platform that runs the agents in its containers in real-time.  The notion
- * of time in this platform is that or elapsed time in the real world, and hence
+ * of time in this platform is that of elapsed time in the real world, and hence
  * this is a suitable platform for most applications.
  * <p>
  * Typical use of this platform is shown below:
