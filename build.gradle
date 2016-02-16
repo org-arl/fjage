@@ -33,6 +33,10 @@ dependencies {
 //  options.compilerArgs << "-Xlint:unchecked" 
 //}
 
+tasks.withType(Javadoc) {
+  options.addStringOption('Xdoclint:none', '-quiet')
+}
+
 jar {
   manifest {
     attributes 'Build-Owner': System.getenv().USER, 'Build-Timestamp': new Date().format('d-MM-yyyy_HH:mm:ss'), 'Build-Version': version
