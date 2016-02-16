@@ -18,6 +18,7 @@ import groovy.lang.*;
 import groovy.transform.ThreadInterrupt;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.*;
+import org.codehaus.groovy.GroovyBugError;
 import org.arl.fjage.Message;
 
 /**
@@ -271,8 +272,28 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   }
 
   private void error(Shell out, Throwable ex) {
-    log.log(Level.WARNING, "Exception in Groovy script", ex);
+    if (ex instanceof GroovyBugError) ex = resolveGroovyBug(ex);
+    log.log(Level.WARNING, "Groovy script execution failed", ex);
     if (out != null) out.println(ex, OutputType.ERROR);
+  }
+
+  private Throwable resolveGroovyBug(Throwable ex) {
+    String s = ex.toString();
+    if (s.contains("BUG! exception in phase 'semantic analysis'")) {
+      int ndx1 = s.indexOf("The lookup for ");
+      int ndx2 = s.indexOf(" caused a failed compilaton");
+      if (ndx1 >= 0 && ndx2 >= ndx1) {
+        String offendingClass = s.substring(ndx1+15, ndx2);
+        String offendingGroovyScript = offendingClass.replace(".","/")+".groovy";
+        try {
+          InputStream in = groovy.getClassLoader().getResourceAsStream(offendingGroovyScript);
+          groovy.parse(new InputStreamReader(in), offendingGroovyScript);
+        } catch (Throwable ex1) {
+          ex = ex1;
+        }
+      }
+    }
+    return ex;
   }
 
 }
