@@ -76,6 +76,16 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
           if (cmd.contains(" ")) cmd = "run('"+cmd.substring(1).replaceFirst(" ","',")+");";
           else cmd = "run('"+cmd.substring(1)+"');";
         }
+        else {
+          String sname = cmd;
+          int ndx = sname.indexOf(' ');
+          if (ndx > 0) sname = sname.substring(0,ndx);
+          String folder = binding.hasVariable("scripts") ? (String)binding.getVariable("scripts") : null;
+          File f = new File(folder, sname+".groovy");
+          if (f.exists() && f.isFile())
+            if (ndx > 0) cmd = "run('"+sname+"',"+cmd.substring(ndx+1)+");";
+            else cmd = "run('"+cmd+"');";
+        }
         log.info("EVAL: "+cmd);
         Object rv = null;
         try {
@@ -94,19 +104,6 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
             binding.setVariable("script", null);
             binding.setVariable("args", null);
             rv = groovy.evaluate(cmd);
-            if (rv instanceof Class) {
-              // if a script is also on the classpath, it can return the class loaded by a wrong classloader
-              // in that case, we try to find the original file and execute it
-              String name = ((Class)rv).getName();
-              if (name.equals(cmd)) {
-                String folder = binding.hasVariable("scripts") ? (String)binding.getVariable("scripts") : null;
-                File f = new File(folder, name+".groovy");
-                if (f.exists() && f.isFile()) {
-                  execFromFile(f, new ArrayList<String>(), out);
-                  rv = null;
-                }
-              }
-            }
           }
         } catch (Exception ex) {
           error(out, ex);
