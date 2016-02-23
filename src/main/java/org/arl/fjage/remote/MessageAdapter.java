@@ -29,7 +29,11 @@ import com.google.gson.*;
 class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Message> {
 
   private static ClassLoader classloader = null;
-  private static Gson gson = new GsonBuilder().registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter()).create();
+  private static Gson gson = new GsonBuilder()
+                                  .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
+                                  .serializeSpecialFloatingPointValues()
+                                  .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
+                                  .create();
 
   static {
     try {
