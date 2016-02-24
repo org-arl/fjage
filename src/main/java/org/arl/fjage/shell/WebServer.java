@@ -51,7 +51,7 @@ public class WebServer {
    * Gets an instance of a web server running on the specified port. If an instance is not
    * already available, a new one is created.
    *
-   * @param port HTTP port number.
+   * @param port HTTP port number, or 0 to randomly assign one.
    */
   public static WebServer getInstance(int port) {
     synchronized (servers) {
@@ -69,8 +69,8 @@ public class WebServer {
   private int port;
 
   private WebServer(int port) {
-    log.info("Starting web server on port "+port);
     server = new Server(port);
+    if (port > 0) servers.put(port, this);
     contexts = new ContextHandlerCollection();
     server.setHandler(contexts);
     started = false;
@@ -104,7 +104,7 @@ public class WebServer {
     try {
       server.start();
       port = server.getConnectors()[0].getLocalPort();
-      servers.put(port, this);
+      log.info("Started web server on port "+port);
       started = true;
     } catch (Exception ex) {
       log.warning(ex.toString());
