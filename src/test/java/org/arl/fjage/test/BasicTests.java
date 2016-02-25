@@ -217,10 +217,10 @@ public class BasicTests {
       agent.add(tb[i]);
     }
     platform.start();
-    platform.delay(tickDelay*ticks);
+    platform.delay(tickDelay*ticks+1000);
     platform.shutdown();
     for (int i = 0; i < nAgents; i++)
-      assertTrue(tb[i].getTickCount() == ticks);
+      assertTrue("ticks = "+tb[i].getTickCount()+", expected "+ticks, tb[i].getTickCount() == ticks);
   }
 
   @Test

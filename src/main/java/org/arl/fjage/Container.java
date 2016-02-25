@@ -548,7 +548,7 @@ public class Container {
         synchronized (this) {
           while (!agents.isEmpty()) {
             try {
-              wait();   // wait for all agents to kill themselves
+              wait(100);   // wait for all agents to kill themselves
             } catch (InterruptedException ex) {
               // do nothing, try again
             }
