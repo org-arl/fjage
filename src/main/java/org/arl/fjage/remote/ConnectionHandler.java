@@ -166,16 +166,16 @@ class ConnectionHandler extends Thread {
           respond(rq, container.getLocalAgents());
           break;
         case CONTAINS_AGENT:
-          respond(rq, container.containsAgent(rq.agentID));
+          respond(rq, rq.agentID != null ? container.containsAgent(rq.agentID) : false);
           break;
         case SERVICES:
           respond(rq, container.getLocalServices());
           break;
         case AGENT_FOR_SERVICE:
-          respond(rq, container.localAgentForService(rq.service));
+          respond(rq, rq.service != null ? container.localAgentForService(rq.service) : null);
           break;
         case AGENTS_FOR_SERVICE:
-          respond(rq, container.localAgentsForService(rq.service));
+          respond(rq, rq.service != null ? container.localAgentsForService(rq.service) : null);
           break;
         case SEND:
           if (rq.relay != null) container.send(rq.message, rq.relay);
