@@ -106,7 +106,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
               binding.setVariable("args", null);
               rv = groovy.evaluate(cmd);
             }
-          } catch (Exception ex) {
+          } catch (Throwable ex) {
             error(out, ex);
           } finally {
             binding.setVariable("out", null);
@@ -154,7 +154,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
             Script gs = (Script)script.newInstance();
             gs.setBinding(binding);
             gs.run();
-          } catch (Exception ex) {
+          } catch (Throwable ex) {
             error(out, ex);
           } finally {
             binding.setVariable("out", null);
@@ -188,7 +188,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
             binding.setVariable("args", null);
             groovy.getClassLoader().clearCache();
             groovy.run(reader, name, args);
-          } catch (Exception ex) {
+          } catch (Throwable ex) {
             error(out, ex);
           } finally {
             binding.setVariable("out", null);
