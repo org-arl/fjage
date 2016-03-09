@@ -154,6 +154,25 @@ public class FSMBehavior extends Behavior {
     setNextState(FINAL);
   }
 
+  /**
+   * Trigger an event on the FSM.
+   *
+   * @param event an object naming the event.
+   */
+  public void trigger(Object event) {
+    state.onEvent(event, null);
+  }
+
+  /**
+   * Trigger an event on the FSM.
+   *
+   * @param event an object naming the event.
+   * @param eventInfo an object providing extra information on the event.
+   */
+  public void trigger(Object event, Object eventInfo) {
+    state.onEvent(event, eventInfo);
+  }
+
   /////////// Public class: FSM State
 
   /**
@@ -211,6 +230,16 @@ public class FSMBehavior extends Behavior {
      * This method is called when the state is exited.
      */
     public void onExit() {
+      // do nothing
+    }
+
+    /**
+     * This method is called when an event is triggered.
+     *
+     * @param event an object naming the event.
+     * @param eventInfo an object providing extra information on the event.
+     */
+    public void onEvent(Object event, Object eventInfo) {
       // do nothing
     }
 
@@ -288,4 +317,3 @@ public class FSMBehavior extends Behavior {
   }
 
 }
-
