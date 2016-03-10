@@ -43,6 +43,7 @@ public class FSMBehavior extends Behavior {
 
   private final static State INIT = new State("#INIT#");
   private final static State FINAL = new State("#FINAL#");
+  private final static State REENTER = new State("#REENTER#");
 
   private Map<Object,State> states = new HashMap<Object,State>();
   private State initial = FINAL;
@@ -58,6 +59,7 @@ public class FSMBehavior extends Behavior {
     if (state == INIT) state = initial;
     if (old == state) state.action();
     else {
+      if (state == REENTER) state = next = old;
       old.onExit();
       state.onEnter();
     }
@@ -135,6 +137,15 @@ public class FSMBehavior extends Behavior {
     State state = (name instanceof State) ? (State)name : states.get(name);
     if (state == null) throw new FjageError("Unknown state: "+name);
     next = state;
+    restart();
+  }
+
+  /**
+   * Request re-entry of the current state in the FSM. This causes the state
+   * to be exited, and re-entered.
+   */
+  public void reenterState() {
+    next = REENTER;
     restart();
   }
 
