@@ -35,6 +35,7 @@ Support
 Binary Releases
 ---------------
 
+* [fjage-1.4.jar](https://oss.sonatype.org/service/local/repositories/releases/content/com/github/org-arl/fjage/1.4/fjage-1.4.jar), released Mar 4, 2016 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/9yZuVZWQSfY))
 * [fjage-1.3.4.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3.4/fjage-1.3.4.jar), released Jul 23, 2015 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/7d5CZB82QCc))
 * [fjage-1.3.3.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3.3/fjage-1.3.3.jar), released Jul 21, 2014 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/_9p7w8eES9Q))
 * [fjage-1.3.2.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3.2/fjage-1.3.2.jar), released Oct 21, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/RdAidaBDlNQ))
@@ -47,7 +48,7 @@ Binary Releases
     <dependency>
       <groupId>com.github.org-arl</groupId>
       <artifactId>fjage</artifactId>
-      <version>1.3.4</version>
+      <version>1.4</version>
     </dependency>
 
 License
