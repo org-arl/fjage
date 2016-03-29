@@ -289,7 +289,7 @@ public class MasterContainer extends RemoteContainer {
   private void openSocket(int port) throws IOException {
     listener = new ServerSocket(port);
     log.info("Listening on "+listener.getLocalSocketAddress());
-    new Thread() {
+    new Thread("fjage-master") {
       @Override
       public void run() {
         try {
