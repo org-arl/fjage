@@ -33,6 +33,7 @@ class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Messag
                                   .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
                                   .serializeSpecialFloatingPointValues()
                                   .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
+                                  .enableComplexMapKeySerialization()
                                   .create();
 
   static {
@@ -79,6 +80,8 @@ class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Messag
       rv.putAll((Map<?,?>)gson.fromJson(jsonObj.get("map"), Map.class));
       return rv;
     } catch (Exception e) {
+      Logger log = Logger.getLogger(MessageAdapter.class.getName());
+      log.info(e.toString());
       return gson.fromJson(json, typeOfT);
     }
   }

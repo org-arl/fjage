@@ -25,12 +25,12 @@ dependencies {
   compile 'org.eclipse.jetty:jetty-server:8.0.4.v20111024'
   compile 'org.eclipse.jetty:jetty-servlet:8.0.4.v20111024'
   compile 'org.eclipse.jetty:jetty-eventsource-servlet:1.0.0'
-  compile 'com.google.code.gson:gson:2.3.1'
+  compile 'com.google.code.gson:gson:2.7'
   testCompile 'junit:junit:4.11'
 }
 
-//tasks.withType(Compile) { 
-//  options.compilerArgs << "-Xlint:unchecked" 
+//tasks.withType(Compile) {
+//  options.compilerArgs << "-Xlint:unchecked"
 //}
 
 tasks.withType(Javadoc) {
@@ -62,7 +62,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
   classifier = 'javadoc'
   from javadoc.destinationDir
 }
- 
+
 task sourcesJar(type: Jar) {
   classifier = 'sources'
   from sourceSets.main.allSource
