@@ -26,15 +26,15 @@ import com.google.gson.*;
  * The adapter also adds special support for {@link org.arl.fjage.GenericMessage} messages
  * so that the map key-value pairs are correctly retained in JSON.
  */
-class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Message> {
+public class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Message> {
 
   private static ClassLoader classloader = null;
-  private static Gson gson = new GsonBuilder()
-                                  .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
-                                  .serializeSpecialFloatingPointValues()
-                                  .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
-                                  .enableComplexMapKeySerialization()
-                                  .create();
+  private static GsonBuilder gsonBuilder = new GsonBuilder()
+                                                .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
+                                                .serializeSpecialFloatingPointValues()
+                                                .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
+                                                .enableComplexMapKeySerialization();
+  private static Gson gson = gsonBuilder.create();
 
   static {
     try {
@@ -45,6 +45,11 @@ class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer<Messag
     } catch (Exception ex) {
       // do nothing
     }
+  }
+
+  public static void addTypeHierarchyAdapter(Class<?> cls, Object adapter) {
+    gsonBuilder.registerTypeHierarchyAdapter(cls, adapter);
+    gson = gsonBuilder.create();
   }
 
   @Override public JsonElement serialize(Message src, Type typeOfSrc, JsonSerializationContext context) {
