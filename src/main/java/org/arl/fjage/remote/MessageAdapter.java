@@ -33,6 +33,10 @@ public class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer
                                                 .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
                                                 .serializeSpecialFloatingPointValues()
                                                 .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
+                                                .registerTypeHierarchyAdapter(byte[].class, new ByteArrayAdapter())
+                                                .registerTypeHierarchyAdapter(int[].class, new IntegerArrayAdapter())
+                                                .registerTypeHierarchyAdapter(float[].class, new FloatArrayAdapter())
+                                                .registerTypeHierarchyAdapter(double[].class, new DoubleArrayAdapter())
                                                 .enableComplexMapKeySerialization();
   private static Gson gson = gsonBuilder.create();
 
