@@ -34,10 +34,8 @@ class JsonMessage {
                                   .serializeSpecialFloatingPointValues()
                                   .registerTypeHierarchyAdapter(Message.class, new MessageAdapter())
                                   .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
-                                  .registerTypeHierarchyAdapter(byte[].class, new ByteArrayAdapter())
-                                  .registerTypeHierarchyAdapter(int[].class, new IntegerArrayAdapter())
-                                  .registerTypeHierarchyAdapter(float[].class, new FloatArrayAdapter())
-                                  .registerTypeHierarchyAdapter(double[].class, new DoubleArrayAdapter())
+                                  .registerTypeAdapterFactory(new ArrayAdapterFactory())
+                                  .enableComplexMapKeySerialization()
                                   .create();
 
   static JsonMessage fromJson(String s) {

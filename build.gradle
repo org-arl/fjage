@@ -25,10 +25,13 @@ dependencies {
   compile 'org.eclipse.jetty:jetty-server:8.0.4.v20111024'
   compile 'org.eclipse.jetty:jetty-servlet:8.0.4.v20111024'
   compile 'org.eclipse.jetty:jetty-eventsource-servlet:1.0.0'
-  compile 'com.google.code.gson:gson:2.7'
+  compile 'com.google.code.gson:gson:2.8.2'
   testCompile 'junit:junit:4.11'
 }
 
+compileJava {
+  options.compilerArgs += "-Xlint:unchecked"
+}
 //tasks.withType(Compile) {
 //  options.compilerArgs << "-Xlint:unchecked"
 //}
@@ -50,9 +53,11 @@ task jars(dependsOn: jar, type: Copy) {
 
 jars.outputs.upToDateWhen { false }
 
-task doc << {
-  ant.exec(executable: 'make', dir: '.', failonerror: true) {
-    arg(line: 'html')
+task doc {
+  doLast {
+    ant.exec(executable: 'make', dir: '.', failonerror: true) {
+      arg(line: 'html')
+    }
   }
 }
 

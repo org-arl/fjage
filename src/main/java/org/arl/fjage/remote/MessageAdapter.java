@@ -33,10 +33,7 @@ public class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer
                                                 .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
                                                 .serializeSpecialFloatingPointValues()
                                                 .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
-                                                .registerTypeHierarchyAdapter(byte[].class, new ByteArrayAdapter())
-                                                .registerTypeHierarchyAdapter(int[].class, new IntegerArrayAdapter())
-                                                .registerTypeHierarchyAdapter(float[].class, new FloatArrayAdapter())
-                                                .registerTypeHierarchyAdapter(double[].class, new DoubleArrayAdapter())
+                                                .registerTypeAdapterFactory(new ArrayAdapterFactory())
                                                 .enableComplexMapKeySerialization();
   private static Gson gson = gsonBuilder.create();
 
@@ -67,7 +64,7 @@ public class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer
         rvObj = rv.getAsJsonObject();
         rvObj.add("map", map);
       }
-      rvObj.addProperty("msgType", cls.getName());
+      rvObj.addProperty("clazz", cls.getName());
     }
     return rv;
   }
@@ -75,7 +72,7 @@ public class MessageAdapter implements JsonSerializer<Message>, JsonDeserializer
   @Override public Message deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
     try {
       JsonObject jsonObj =  json.getAsJsonObject();
-      JsonPrimitive prim = (JsonPrimitive)jsonObj.get("msgType");
+      JsonPrimitive prim = (JsonPrimitive)jsonObj.get("clazz");
       String className = prim.getAsString();
       Class<?> cls = classloader != null ? Class.forName(className, true, classloader) : Class.forName(className);
       if (cls != GenericMessage.class) return (Message)gson.fromJson(jsonObj, cls);
