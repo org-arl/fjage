@@ -13,7 +13,6 @@ package org.arl.fjage.remote;
 import java.io.IOException;
 import java.nio.*;
 import java.util.Base64;
-//import java.lang.reflect.Type;
 import com.google.gson.*;
 import com.google.gson.stream.*;
 import com.google.gson.reflect.TypeToken;
@@ -37,6 +36,7 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
         !compType.equals(short.class) && !compType.equals(long.class) &&
         !compType.equals(float.class) && !compType.equals(double.class)) return null;
     return new TypeAdapter<T>() {
+
       @Override
       public void write(JsonWriter out, T value) throws IOException {
         if (value == null) out.nullValue();
@@ -63,64 +63,50 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
             }
             data = buf.array();
           }
-          out.beginObject();
-          out.name("clazz").value(rawType.getName());
-          out.name("data").value(Base64.getEncoder().encodeToString(data));
-          out.endObject();
+          out.value(Base64.getEncoder().encodeToString(data));
         }
       }
+
       @Override
-      public T read(JsonReader reader) throws IOException {
-        if (reader.peek() == JsonToken.NULL) {
-          reader.nextNull();
+      public T read(JsonReader in) throws IOException {
+        if (in.peek() == JsonToken.NULL) {
+          in.nextNull();
           return null;
         }
         T rv = null;
-        reader.beginObject();
-        while (reader.hasNext()) {
-          String name = reader.nextName();
-          if (!name.equals("data")) reader.skipValue();
-          else {
-            String s = reader.nextString();
-            byte[] data = Base64.getDecoder().decode(s);
-            if (compType.equals(byte.class)) return (T)data;
-            ByteBuffer buf = ByteBuffer.wrap(data);
-            if (compType.equals(int.class)) {
-              IntBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asIntBuffer();
-              int[] array = new int[buf2.limit()];
-              buf2.get(array);
-              rv = (T)array;
-              break;
-            } else if (compType.equals(short.class)) {
-              ShortBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asShortBuffer();
-              short[] array = new short[buf2.limit()];
-              buf2.get(array);
-              rv = (T)array;
-              break;
-            } else if (compType.equals(long.class)) {
-              LongBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asLongBuffer();
-              long[] array = new long[buf2.limit()];
-              buf2.get(array);
-              rv = (T)array;
-              break;
-            } else if (compType.equals(float.class)) {
-              FloatBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asFloatBuffer();
-              float[] array = new float[buf2.limit()];
-              buf2.get(array);
-              rv = (T)array;
-              break;
-            } else if (compType.equals(double.class)) {
-              DoubleBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asDoubleBuffer();
-              double[] array = new double[buf2.limit()];
-              buf2.get(array);
-              rv = (T)array;
-              break;
-            }
-          }
+        String s = in.nextString();
+        byte[] data = Base64.getDecoder().decode(s);
+        if (compType.equals(byte.class)) return (T)data;
+        ByteBuffer buf = ByteBuffer.wrap(data);
+        if (compType.equals(int.class)) {
+          IntBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asIntBuffer();
+          int[] array = new int[buf2.limit()];
+          buf2.get(array);
+          rv = (T)array;
+        } else if (compType.equals(short.class)) {
+          ShortBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asShortBuffer();
+          short[] array = new short[buf2.limit()];
+          buf2.get(array);
+          rv = (T)array;
+        } else if (compType.equals(long.class)) {
+          LongBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asLongBuffer();
+          long[] array = new long[buf2.limit()];
+          buf2.get(array);
+          rv = (T)array;
+        } else if (compType.equals(float.class)) {
+          FloatBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asFloatBuffer();
+          float[] array = new float[buf2.limit()];
+          buf2.get(array);
+          rv = (T)array;
+        } else if (compType.equals(double.class)) {
+          DoubleBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asDoubleBuffer();
+          double[] array = new double[buf2.limit()];
+          buf2.get(array);
+          rv = (T)array;
         }
-        reader.endObject();
         return rv;
       }
+
     };
   }
 
