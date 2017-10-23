@@ -32,8 +32,8 @@ class JsonMessage {
   private static Gson gson = new GsonBuilder()
                                   .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
                                   .serializeSpecialFloatingPointValues()
-                                  .registerTypeHierarchyAdapter(Message.class, new MessageAdapter())
                                   .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
+                                  .registerTypeAdapterFactory(new MessageAdapterFactory())
                                   .registerTypeAdapterFactory(new ArrayAdapterFactory())
                                   .enableComplexMapKeySerialization()
                                   .create();
