@@ -45,6 +45,9 @@ class MessageAdapterFactory implements TypeAdapterFactory {
     final Class<T> rawType = (Class<T>)type.getRawType();
     if (!Message.class.isAssignableFrom(rawType)) return null;
     final TypeAdapter<T> delegate = gson.getDelegateAdapter(this, type);
+    final TypeAdapter<Performative> perfDelegate = gson.getAdapter(TypeToken.get(Performative.class));
+    final TypeAdapter<AgentID> aidDelegate = gson.getAdapter(TypeToken.get(AgentID.class));
+    final TypeAdapter<GenericValue> gvDelegate = gson.getAdapter(TypeToken.get(GenericValue.class));
     final MessageAdapterFactory parent = this;
     return new TypeAdapter<T>() {
 
@@ -55,7 +58,22 @@ class MessageAdapterFactory implements TypeAdapterFactory {
           out.beginObject();
           out.name("clazz").value(value.getClass().getName());
           out.name("data");
-          delegate.write(out, value);
+          if (value instanceof GenericMessage) {
+            GenericMessage msg = (GenericMessage)value;
+            out.beginObject();
+            out.name("msgID").value(msg.getMessageID());
+            out.name("inReplyTo").value(msg.getInReplyTo());
+            out.name("perf");
+            perfDelegate.write(out, msg.getPerformative());
+            out.name("recipient");
+            aidDelegate.write(out, msg.getRecipient());
+            out.name("sender");
+            aidDelegate.write(out, msg.getSender());
+            out.name("map");
+            delegate.write(out, value);
+            out.endObject();
+          }
+          else delegate.write(out, value);
           out.endObject();
         }
       }
@@ -80,25 +98,32 @@ class MessageAdapterFactory implements TypeAdapterFactory {
             }
           } else if (name.equals("data")) {
             if (cls == null) rv = delegate.read(in);
-            else {
+            else if (cls.equals(GenericMessage.class)) {
+              GenericMessage msg = new GenericMessage();
+              in.beginObject();
+              while (in.hasNext()) {
+                String fname = in.nextName();
+                if (fname.equals("msgID")) msg.setMessageID(in.nextString());
+                else if (fname.equals("inReplyTo")) msg.setInReplyTo(in.nextString());
+                else if (fname.equals("perf")) msg.setPerformative(perfDelegate.read(in));
+                else if (fname.equals("recipient")) msg.setRecipient(aidDelegate.read(in));
+                else if (fname.equals("sender")) msg.setSender(aidDelegate.read(in));
+                else if (fname.equals("map")) {
+                  in.beginObject();
+                  while (in.hasNext()) {
+                    String key = in.nextName();
+                    GenericValue value = gvDelegate.read(in);
+                    msg.put(key, value);
+                  }
+                  in.endObject();
+                }
+                else in.skipValue();
+              }
+              in.endObject();
+              rv = (T) msg;
+            } else {
               TypeAdapter<?> delegate1 = gson.getDelegateAdapter(parent, TypeToken.get(cls));
               rv = (T)delegate1.read(in);
-              if (rv instanceof Map) {
-                try {
-                  Map<?,Object> map = (Map<?,Object>)rv;
-                  for (Map.Entry<?,Object> entry: map.entrySet()) {
-                    Object v = entry.getValue();
-                    if (v != null && v instanceof Map) {
-                      String className2 = (String)((Map)v).get("clazz");
-                      Class<?> cls2 = classloader != null ? Class.forName(className2, true, classloader) : Class.forName(className2);
-                      String data = (String)((Map)v).get("data");
-                      entry.setValue(gson.fromJson("{\"data\":\""+data+"\"}", cls2));
-                    }
-                  }
-                } catch (Exception ex) {
-                  // do nothing
-                }
-              }
             }
           } else in.skipValue();
         }

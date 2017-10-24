@@ -23,7 +23,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
 
   //////////// Private attributes
 
-  private Map<Object,Object> map = new HashMap<Object,Object>();
+  private Map<Object,GenericValue> map = new HashMap<Object,GenericValue>();
 
   //////////// Interface methods
 
@@ -95,12 +95,18 @@ public class GenericMessage extends Message implements Map<Object,Object> {
 
   @Override
   public boolean containsValue(Object value) {
-    return map.containsValue(value);
+    return map.containsValue(new GenericValue(value));
   }
 
   @Override
-  public Set<java.util.Map.Entry<Object, Object>> entrySet() {
-    return map.entrySet();
+  public Set<Map.Entry<Object,Object>> entrySet() {
+    Set<Map.Entry<Object,Object>> set = new HashSet<Map.Entry<Object,Object>>();
+    for (Map.Entry<Object,GenericValue> entry: map.entrySet()) {
+      Object k = entry.getKey();
+      GenericValue v = entry.getValue();
+      set.add(new AbstractMap.SimpleEntry<Object,Object>(k, v));
+    }
+    return set;
   }
 
   @Override
@@ -126,7 +132,8 @@ public class GenericMessage extends Message implements Map<Object,Object> {
     if (key.equals("sender")) return getSender();
     if (key.equals("messageID")) return getMessageID();
     if (key.equals("inReplyTo")) return getInReplyTo();
-    return map.put(key, value);
+    if (value instanceof GenericValue) return map.put(key, (GenericValue)value);
+    return map.put(key, new GenericValue(value));
   }
 
   @Override
@@ -136,12 +143,19 @@ public class GenericMessage extends Message implements Map<Object,Object> {
     if (key.equals("sender")) return getSender();
     if (key.equals("messageID")) return getMessageID();
     if (key.equals("inReplyTo")) return getInReplyTo();
-    return map.get(key);
+    GenericValue v = map.get(key);
+    if (v == null) return null;
+    return v.getValue();
   }
 
   @Override
   public void putAll(Map<? extends Object, ? extends Object> map) {
-    this.map.putAll(map);
+    for (Map.Entry<? extends Object, ? extends Object> entry: map.entrySet()) {
+      Object k = entry.getKey();
+      Object v = entry.getValue();
+      if (v instanceof GenericValue) this.map.put(k, (GenericValue)v);
+      else this.map.put(k, new GenericValue(v));
+    }
   }
 
   @Override
@@ -156,7 +170,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
 
   @Override
   public Collection<Object> values() {
-    return map.values();
+    return Collections.unmodifiableCollection((Collection<? extends Object>)map.values());
   }
 
   /////////////// Special getters

@@ -35,6 +35,7 @@ public class JsonMessage {
                                                .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
                                                .registerTypeAdapterFactory(new MessageAdapterFactory())
                                                .registerTypeAdapterFactory(new ArrayAdapterFactory())
+                                               .registerTypeAdapterFactory(new GenericValueAdapterFactory())
                                                .enableComplexMapKeySerialization();
   private static Gson gson = gsonBuilder.create();
 
