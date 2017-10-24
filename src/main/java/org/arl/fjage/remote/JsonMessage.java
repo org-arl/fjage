@@ -16,7 +16,7 @@ import com.google.gson.*;
 /**
  * Class representing a JSON request/response message.
  */
-class JsonMessage {
+public class JsonMessage {
 
   String id;
   Action action;
@@ -29,14 +29,19 @@ class JsonMessage {
   Message message;
   Boolean relay;
 
-  private static Gson gson = new GsonBuilder()
-                                  .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
-                                  .serializeSpecialFloatingPointValues()
-                                  .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
-                                  .registerTypeAdapterFactory(new MessageAdapterFactory())
-                                  .registerTypeAdapterFactory(new ArrayAdapterFactory())
-                                  .enableComplexMapKeySerialization()
-                                  .create();
+  private static GsonBuilder gsonBuilder = new GsonBuilder()
+                                               .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
+                                               .serializeSpecialFloatingPointValues()
+                                               .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
+                                               .registerTypeAdapterFactory(new MessageAdapterFactory())
+                                               .registerTypeAdapterFactory(new ArrayAdapterFactory())
+                                               .enableComplexMapKeySerialization();
+  private static Gson gson = gsonBuilder.create();
+
+  public static void addTypeHierarchyAdapter(Class<?> cls, Object adapter) {
+    gsonBuilder.registerTypeHierarchyAdapter(cls, adapter);
+    gson = gsonBuilder.create();
+  }
 
   static JsonMessage fromJson(String s) {
     return gson.fromJson(s, JsonMessage.class);

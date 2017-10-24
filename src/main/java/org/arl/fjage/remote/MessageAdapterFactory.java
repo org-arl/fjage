@@ -25,7 +25,7 @@ import com.google.gson.reflect.TypeToken;
  * representing the fully qualified message class name. This enables the message to
  * be unmarshalled into the appropriate message class at the destination.
  */
-public class MessageAdapterFactory implements TypeAdapterFactory {
+class MessageAdapterFactory implements TypeAdapterFactory {
 
   private static ClassLoader classloader = null;
 
