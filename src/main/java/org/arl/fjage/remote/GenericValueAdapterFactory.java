@@ -40,6 +40,10 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
           return;
         }
         Class type = ((GenericValue)value).getType();
+        if (type == null) {
+          out.nullValue();
+          return;
+        }
         if (Number.class.isAssignableFrom(type)) out.value((Number)((GenericValue)value).getValue());
         else if (type.equals(String.class)) out.value((String)((GenericValue)value).getValue());
         else if (type.equals(Boolean.class)) out.value((Boolean)((GenericValue)value).getValue());
