@@ -383,7 +383,8 @@ class Gateway:
                 return False
 
             try:
-                self.subscribers.remove(new_topic.name)
+                # self.subscribers.remove(new_topic.name)
+                self.subscribers.remove(topic.name)
             except:
                 self.logger.critical("Exception: No such topic subscribed: " + new_topic.name)
 
