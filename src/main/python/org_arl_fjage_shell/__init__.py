@@ -1,14 +1,6 @@
-"""Shell: Support for interactive shell and command scripts.
+from org_arl_fjage import Message
+from org_arl_fjage import Performative
 
-Copyright (c) 2016, Manu Ignatius
-
-This file is part of fjage which is released under Simplified BSD License.
-See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
-for full license details.
-
-"""
-from fjage import Message
-from fjage import Performative
 
 class ShellExecReq(Message):
     """Request to execute shell command/script.

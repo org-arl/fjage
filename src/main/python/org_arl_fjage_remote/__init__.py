@@ -1,15 +1,3 @@
-"""Remote: Support for gateway interface for remote containers using JSON over TCP/IP.
-
-Copyright (c) 2016, Manu Ignatius
-
-This file is part of fjage which is released under Simplified BSD License.
-See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
-for full license details.
-
-TODO:
-    * Resolve TODOs in the code
-
-"""
 import os as _os
 import sys as _sys
 import json as _json
@@ -20,20 +8,23 @@ import threading as _td
 import logging as _log
 
 from collections import OrderedDict
-from fjage import AgentID
-from fjage import Message
-from fjage import GenericMessage
+from org_arl_fjage import AgentID
+from org_arl_fjage import Message
+from org_arl_fjage import GenericMessage
 
-current_time_millis = lambda: int(round(_time.time() * 1000))
+
+def current_time_millis(): return int(round(_time.time() * 1000))
+
 
 class Action:
-    AGENTS              = "agents"
-    CONTAINS_AGENT      = "containsAgent"
-    SERVICES            = "services"
-    AGENT_FOR_SERVICE   = "agentForService"
-    AGENTS_FOR_SERVICE  = "agentsForService"
-    SEND                = "send"
-    SHUTDOWN            = "shutdown"
+    AGENTS = "agents"
+    CONTAINS_AGENT = "containsAgent"
+    SERVICES = "services"
+    AGENT_FOR_SERVICE = "agentForService"
+    AGENTS_FOR_SERVICE = "agentsForService"
+    SEND = "send"
+    SHUTDOWN = "shutdown"
+
 
 class Gateway:
     """Gateway to communicate with agents from python.
@@ -55,7 +46,7 @@ class Gateway:
     NON_BLOCKING = 0
     BLOCKING = -1
 
-    def __init__(self, hostname, port, name = None):
+    def __init__(self, hostname, port, name=None):
         """NOTE: Developer must make sure a duplicate name is not assigned to the Gateway."""
 
         # Mapping LogLevels between fjage.py and fjage
@@ -69,7 +60,7 @@ class Gateway:
 
         try:
             if name == None:
-                self.name = "PythonGW-"+str(_uuid.uuid4())
+                self.name = "PythonGW-" + str(_uuid.uuid4())
             else:
                 try:
                     self.name = name
@@ -86,7 +77,7 @@ class Gateway:
             self.recv_thread = _td.Thread(target=self.__recv_proc, args=(self.q, self.subscribers, ))
             self.recv_thread.daemon = True
 
-            self.logger.info("Connecting to "+str(hostname)+":"+str(port))
+            self.logger.info("Connecting to " + str(hostname) + ":" + str(port))
             self.socket.connect((hostname, port))
             self.socket_file = self.socket.makefile('r', 65536)
 
@@ -114,42 +105,42 @@ class Gateway:
                 # self.logger.debug("ACTION: " + Action.AGENTS)
 
                 rsp["inResponseTo"] = req["action"]
-                rsp["id"]           = str(req["id"])
-                rsp["agentIDs"]     = [self.name]
+                rsp["id"] = str(req["id"])
+                rsp["agentIDs"] = [self.name]
                 self.socket.sendall((_json.dumps(rsp) + '\n').encode())
 
             elif req["action"] == Action.CONTAINS_AGENT:
                 # self.logger.debug("ACTION: " + Action.CONTAINS_AGENT)
                 rsp["inResponseTo"] = req["action"]
-                rsp["id"]           = str(req["id"])
+                rsp["id"] = str(req["id"])
                 answer = False
                 if req["agentID"]:
                     if req["agentID"] == self.name:
                         answer = True
-                rsp["answer"]       = answer
+                rsp["answer"] = answer
                 self.socket.sendall((_json.dumps(rsp) + '\n').encode())
 
             elif req["action"] == Action.SERVICES:
                 # self.logger.debug("ACTION: " + Action.SERVICES)
 
                 rsp["inResponseTo"] = req["action"]
-                rsp["id"]           = str(req["id"])
-                rsp["services"]     = []
+                rsp["id"] = str(req["id"])
+                rsp["services"] = []
                 self.socket.sendall((_json.dumps(rsp) + '\n').encode())
 
             elif req["action"] == Action.AGENT_FOR_SERVICE:
                 # self.logger.debug("ACTION: " + Action.AGENT_FOR_SERVICE)
 
                 rsp["inResponseTo"] = req["action"]
-                rsp["id"]           = str(req["id"])
-                rsp["agentID"]      = ""
+                rsp["id"] = str(req["id"])
+                rsp["agentID"] = ""
                 self.socket.sendall((_json.dumps(rsp) + '\n').encode())
 
             elif req["action"] == Action.AGENTS_FOR_SERVICE:
                 # self.logger.debug("ACTION: " + Action.AGENTS_FOR_SERVICE)
                 rsp["inResponseTo"] = req["action"]
-                rsp["id"]           = str(req["id"])
-                rsp["agentIDs"]     = []
+                rsp["id"] = str(req["id"])
+                rsp["agentIDs"] = []
                 self.socket.sendall((_json.dumps(rsp) + '\n').encode())
 
             elif req["action"] == Action.SEND:
@@ -167,7 +158,7 @@ class Gateway:
                         self.cv.release()
 
                     if self._is_topic(msg["data"]["recipient"]):
-                        if self.subscribers.count(msg["data"]["recipient"].replace("#","")):
+                        if self.subscribers.count(msg["data"]["recipient"].replace("#", "")):
                             q.append(msg)
                             self.cv.acquire()
                             self.cv.notify()
@@ -183,10 +174,10 @@ class Gateway:
             else:
                 self.logger.warning("Invalid message, discarding")
         else:
-            if "id" in req :
-                if req['id'] in self.pending :
+            if "id" in req:
+                if req['id'] in self.pending:
                     tup = self.pending[req["id"]]
-                    self.pending[req["id"]] = (tup[0],req)
+                    self.pending[req["id"]] = (tup[0], req)
                     tup[0].set()
         return True
 
@@ -203,7 +194,7 @@ class Gateway:
                 if not rmsg:
                     self.logger.critical("Exception: Socket Closed")
 
-                self.logger.debug(str(name[0])+ ":" + str(name[1])+" <<< "+rmsg)
+                self.logger.debug(str(name[0]) + ":" + str(name[1]) + " <<< " + rmsg)
                 # Parse and dispatch incoming messages
                 self._parse_dispatch(rmsg, q)
             except:
@@ -238,7 +229,8 @@ class Gateway:
         # m_dict = self._to_json(msg)
         d_dict = self._to_json(msg)
         # m_dict["msgType"] = "org.arl."+msg.__module__+"."+msg.__class__.__name__
-        m_dict["clazz"] = "org.arl."+msg.__module__+"."+msg.__class__.__name__
+        # m_dict["clazz"] = "org.arl." + msg.__module__ + "." + msg.__class__.__name__
+        m_dict["clazz"] = msg.__module__.replace("_", ".") + "." + msg.__class__.__name__
         m_dict["data"] = d_dict
         j_dict["message"] = m_dict
         # check for GenericMessage class and add "map" separately
@@ -247,7 +239,7 @@ class Gateway:
 
         json_str = _json.dumps(j_dict)
         name = self.socket.getpeername()
-        self.logger.debug(str(name[0])+ ":" + str(name[1]) + " >>> "+json_str)
+        self.logger.debug(str(name[0]) + ":" + str(name[1]) + " >>> " + json_str)
 
         self.socket.sendall((json_str + '\n').encode())
 
@@ -268,7 +260,7 @@ class Gateway:
                             try:
                                 rmsg = self.q.pop(self.q.index(i))
                             except Exception as e:
-                                self.logger.critical("Error: Getting item from list - " +  str(e))
+                                self.logger.critical("Error: Getting item from list - " + str(e))
 
             # If filter is a class, look for a Message of that class.
             elif type(filter) == type(Message):
@@ -277,20 +269,20 @@ class Gateway:
                         try:
                             rmsg = self.q.pop(self.q.index(i))
                         except Exception as e:
-                            self.logger.critical("Error: Getting item from list - " +  str(e))
+                            self.logger.critical("Error: Getting item from list - " + str(e))
 
             # If filter is a lambda, look for a Message that on which the
             # lambda returns True.
-            elif isinstance(filter, type(lambda:0)):
+            elif isinstance(filter, type(lambda: 0)):
                 for i in self.q:
                     if filter(i):
                         try:
                             rmsg = self.q.pop(self.q.index(i))
                         except Exception as e:
-                            self.logger.critical("Error: Getting item from list - " +  str(e))
+                            self.logger.critical("Error: Getting item from list - " + str(e))
 
         except Exception as e:
-            self.logger.critical("Error: Queue empty/timeout - " +  str(e))
+            self.logger.critical("Error: Queue empty/timeout - " + str(e))
 
         return rmsg
 
@@ -308,7 +300,7 @@ class Gateway:
                 elif timeout > 0:
                     self.cv.acquire()
                     t = deadline - current_time_millis()
-                    self.cv.wait(t/1000)
+                    self.cv.wait(t / 1000)
                     self.cv.release()
 
                 rmsg = self._retrieveFromQueue(filter)
@@ -349,16 +341,16 @@ class Gateway:
         elif isinstance(topic, AgentID):
             if topic.is_topic:
                 return topic
-            return AgentID(topic.name+"__ntf", True)
+            return AgentID(topic.name + "__ntf", True)
 
         else:
-            return AgentID(topic.__class__.__name__+"."+str(topic), True)
+            return AgentID(topic.__class__.__name__ + "." + str(topic), True)
 
     def subscribe(self, topic):
         """Subscribes the gateway to receive all messages sent to the given topic."""
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
-                new_topic = AgentID(topic.name+"__ntf", True)
+                new_topic = AgentID(topic.name + "__ntf", True)
             else:
                 new_topic = topic
 
@@ -377,7 +369,7 @@ class Gateway:
         """Unsubscribes the gateway from a given topic."""
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
-                new_topic = AgentID(topic.name+"__ntf", True)
+                new_topic = AgentID(topic.name + "__ntf", True)
 
             if len(self.subscribers) == 0:
                 return False
@@ -403,11 +395,11 @@ class Gateway:
         if isinstance(service, str):
             j_dict["service"] = service
         else:
-            j_dict["service"] = service.__class__.__name__+"."+str(service)
+            j_dict["service"] = service.__class__.__name__ + "." + str(service)
         self.socket.sendall((_json.dumps(j_dict) + '\n').encode())
 
         res_event = _td.Event()
-        self.pending[req_id] = (res_event,None)
+        self.pending[req_id] = (res_event, None)
         ret = res_event.wait(timeout)
         if not ret:
             return None
@@ -425,11 +417,11 @@ class Gateway:
         if isinstance(service, str):
             j_dict["service"] = service
         else:
-            j_dict["service"] = service.__class__.__name__+"."+str(service)
+            j_dict["service"] = service.__class__.__name__ + "." + str(service)
         self.socket.sendall((_json.dumps(j_dict) + '\n').encode())
 
         res_event = _td.Event()
-        self.pending[req_id] = (res_event,None)
+        self.pending[req_id] = (res_event, None)
         ret = res_event.wait(timeout)
         if not ret:
             return None
@@ -452,7 +444,7 @@ class Gateway:
             if key == 'map':
                 dt.pop(key)
 
-            #TODO: Any attribute ending with "_", remove it
+            # TODO: Any attribute ending with "_", remove it
         return dt
 
     def _from_json(self, dt):
@@ -465,9 +457,7 @@ class Gateway:
             class_name = dt['clazz'].split(".")[-1]
             module_name = dt['clazz'].split(".")
             module_name.remove(module_name[-1])
-            module_name.remove("org")
-            module_name.remove("arl")
-            module_name = ".".join(module_name)
+            module_name = "_".join(module_name)
 
             try:
                 module = __import__(module_name)
@@ -493,13 +483,13 @@ class Gateway:
     def _is_duplicate(self):
         req_id = _uuid.uuid4()
         req = dict()
-        req["action"]   = Action.CONTAINS_AGENT
-        req["id"]       = str(req_id)
-        req["agentID"]  = self.name
+        req["action"] = Action.CONTAINS_AGENT
+        req["id"] = str(req_id)
+        req["agentID"] = self.name
         self.socket.sendall((_json.dumps(req) + '\n').encode())
 
         res_event = _td.Event()
-        self.pending[req_id] = (res_event,None)
+        self.pending[req_id] = (res_event, None)
         ret = res_event.wait(self.DEFAULT_TIMEOUT)
         if not ret:
             return True

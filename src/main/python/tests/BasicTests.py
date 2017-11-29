@@ -3,13 +3,24 @@ import fjage
 from fjage import remote
 from fjage import shell
 
+
 class MyTestCase(unittest.TestCase):
 
     global g
-    g = fjage.remote.Gateway('localhost', 5081, "PythonGW")
+    g = fjage.remote.Gateway('localhost', 1100, "PythonGW")
 
     def test_gateway_connection(self):
+        ''' Things to test:
+             - Gateway object created
+        '''
         self.assertIsInstance(g, fjage.remote.Gateway)
+
+    def test_topic(self):
+        ''' Things to test:
+             - Whether returns an object of class AgentID representing named topic
+             - Topic can be a string or instance of AgentID
+        '''
+        g.topic("xyz")
 
     def test_subscribe_unsubscribe(self):
         g.subscribe(g.topic("abc"))
@@ -29,6 +40,7 @@ class MyTestCase(unittest.TestCase):
         self.assertIsInstance(m, fjage.Message)
         self.assertTrue(g.send(m))
     #
+
     def test_send_receive_Message(self):
         m = fjage.Message()
         m.recipient = '#abc'
@@ -44,6 +56,7 @@ class MyTestCase(unittest.TestCase):
     #     a = g.topic("testtopic")
     #     self.assertEqual(a.name, "testtopic")
     #     self.assertEqual(a.is_topic, True)
+
 
 if __name__ == "__main__":
     unittest.main()
