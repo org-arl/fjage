@@ -6,7 +6,6 @@ import time as _time
 import socket as _socket
 import threading as _td
 import logging as _log
-
 from collections import OrderedDict
 from org_arl_fjage import AgentID
 from org_arl_fjage import Message
@@ -17,6 +16,11 @@ def current_time_millis(): return int(round(_time.time() * 1000))
 
 
 class Action:
+    """
+    JSON message actions.
+
+    """
+
     AGENTS = "agents"
     CONTAINS_AGENT = "containsAgent"
     SERVICES = "services"
@@ -27,19 +31,10 @@ class Action:
 
 
 class Gateway:
-    """Gateway to communicate with agents from python.
+    """ Gateway to communicate with agents from Python. Creates a gateway connecting to a specified master container.
 
-    Supported JSON keys:
-        id
-        action
-        inResponseTo
-        agentID
-        agentIDs
-        service
-        services
-        answer
-        message
-        relay
+        :param hostname: hostname to connect to.
+        :param port: TCP port to connect to.
     """
 
     DEFAULT_TIMEOUT = 1000
@@ -49,13 +44,6 @@ class Gateway:
     def __init__(self, hostname, port, name=None):
         """NOTE: Developer must make sure a duplicate name is not assigned to the Gateway."""
 
-        # Mapping LogLevels between fjage.py and fjage
-        # CRITICAL:50 - SEVERE (highest value)
-        # ERROR:40
-        # WARNING:30 WARNING
-        # INFO:20 INFO
-        # DEBUG:10 FINE/FINER/FINEST
-        # NOTSET:0
         self.logger = _log.getLogger('org.arl.fjage')
 
         try:
@@ -94,6 +82,7 @@ class Gateway:
 
     def _parse_dispatch(self, rmsg, q):
         """Parse incoming messages and respond to them or dispatch them."""
+
         req = _json.loads(rmsg)
         rsp = dict()
         if "id" in req:
@@ -208,7 +197,7 @@ class Gateway:
             self.logger.critical("Exception: " + str(e))
 
     def shutdown(self):
-        """Shutdown master container."""
+        """ Closes the gateway. The gateway functionality may not longer be accessed after this method is called."""
 
         j_dict = dict()
         j_dict["action"] = Action.SHUTDOWN
@@ -287,7 +276,13 @@ class Gateway:
         return rmsg
 
     def receive(self, filter=None, timeout=0):
-        """Returns a message received by the gateway and matching the given filter."""
+        """
+        Returns a message received by the gateway and matching the given filter. This method blocks until timeout if no message available.
+
+        :param filter: message filter.
+        :param timeout: timeout in milliseconds.
+        :returns: received message matching the filter, null on timeout.
+        """
         rmsg = self._retrieveFromQueue(filter)
         if (rmsg == None and timeout != self.NON_BLOCKING):
             deadline = current_time_millis() + timeout
@@ -329,12 +324,23 @@ class Gateway:
         return rsp
 
     def request(self, msg, timeout=1000):
-        """Return received response message, null if none available."""
+        """Sends a request and waits for a response. This method blocks until timeout if no response is received.
+
+        :param msg: message to send.
+        :param timeout: timeout in milliseconds.
+        :returns: received response message, null on timeout.
+        """
+
         self.send(msg)
         return self.receive(msg, timeout)
 
     def topic(self, topic):
-        """Returns an object representing the named topic."""
+        """Returns an object representing the named topic.
+
+        :param topic: name of the topic.
+        :returns: object representing the topic.
+        """
+
         if isinstance(topic, str):
             return AgentID(topic, True)
 
@@ -347,7 +353,11 @@ class Gateway:
             return AgentID(topic.__class__.__name__ + "." + str(topic), True)
 
     def subscribe(self, topic):
-        """Subscribes the gateway to receive all messages sent to the given topic."""
+        """Subscribes the gateway to receive all messages sent to the given topic.
+
+        :param topic: the topic to subscribe to.
+        """
+
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
                 new_topic = AgentID(topic.name + "__ntf", True)
@@ -366,7 +376,12 @@ class Gateway:
             self.logger.critical("Invalid AgentID")
 
     def unsubscribe(self, topic):
-        """Unsubscribes the gateway from a given topic."""
+        """Unsubscribes the gateway from a given topic.
+
+        :param topic: the topic to unsubscribe.
+
+        """
+
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
                 new_topic = AgentID(topic.name + "__ntf", True)
@@ -387,6 +402,9 @@ class Gateway:
     def agentForService(self, service, timeout=1000):
         """ Finds an agent that provides a named service. If multiple agents are registered
             to provide a given service, any of the agents' id may be returned.
+
+        :param service: the named service of interest.
+        :returns: an agent id for an agent that provides the service.
         """
         req_id = _uuid.uuid4()
         j_dict = dict()
@@ -408,7 +426,11 @@ class Gateway:
             return tup[1]["agentID"] if "agentID" in tup[1] else None
 
     def agentsForService(self, service, timeout=1000):
-        """Finds all agents that provides a named service."""
+        """Finds all agents that provides a named service.
+
+        :param service: the named service of interest.
+        :returns: a list of agent ids representing all agent that provide the service.
+        """
 
         req_id = _uuid.uuid4()
         j_dict = dict()
@@ -431,6 +453,7 @@ class Gateway:
 
     def _to_json(self, inst):
         """Convert the object attributes to a dict."""
+
         dt = inst.__dict__.copy()
 
         for key in list(dt):

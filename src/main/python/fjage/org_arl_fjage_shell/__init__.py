@@ -5,10 +5,9 @@ from org_arl_fjage import Performative
 class ShellExecReq(Message):
     """Request to execute shell command/script.
 
-    Attributes:
-        cmd
-        script
-        args
+    :param cmd: command to execute.
+    :param script: script file to execute.
+    :param args: arguments to pass to script.
 
     Guidelines for directly operating on the attributes are as follows:
     1. IMPORTANT: ShellExecReq can either have a command or script, but not both
