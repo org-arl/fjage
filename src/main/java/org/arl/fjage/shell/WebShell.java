@@ -116,7 +116,7 @@ public class WebShell implements Shell {
    * Sets the HTML code to be served.
    *
    * @param body HTML body code.
-   */   
+   */
   public void setHtmlBody(String body) {
     this.body = body;
     bare = false;
@@ -126,7 +126,7 @@ public class WebShell implements Shell {
    * Sets the HTML code to be served.
    *
    * @param body HTML body code.
-   */   
+   */
   public void setHtml(String body) {
     this.body = body;
     bare = true;
@@ -173,7 +173,7 @@ public class WebShell implements Shell {
   public void println(Object obj, OutputType type) {
     if (obj == null) return;
     String s = obj.toString();
-    s = s.replace("\n","<br/>");
+    s = s.replace("&","&amp;").replace(">","&gt;").replace("<","&lt;").replace(" ","&nbsp;").replace("\n","<br/>");
     switch(type) {
       case INPUT:
         s = "<span class='input'>"+s+"</span>";
@@ -243,7 +243,7 @@ public class WebShell implements Shell {
           } else if (s.length() > 0) {
             if (engine.isBusy()) println("BUSY", OutputType.ERROR);
             else {
-              println("&gt; "+s, OutputType.INPUT);
+              println("> "+s, OutputType.INPUT);
               boolean ok = engine.exec(s, WebShell.this);
               if (!ok) println("ERROR", OutputType.ERROR);
             }
