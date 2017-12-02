@@ -6,6 +6,9 @@ import time as _time
 import socket as _socket
 import threading as _td
 import logging as _log
+import fjagepy
+import base64
+import struct
 from collections import OrderedDict
 from fjagepy.org_arl_fjage import AgentID
 from fjagepy.org_arl_fjage import Message
@@ -245,7 +248,7 @@ class Gateway:
             elif isinstance(filter, Message):
                 if filter.msgID:
                     for i in self.q:
-                        if "inReplyTo" in i and filter.msgID == i["inReplyTo"]:
+                        if "inReplyTo" in i["data"] and filter.msgID == i["data"]["inReplyTo"]:
                             try:
                                 rmsg = self.q.pop(self.q.index(i))
                             except Exception as e:
@@ -482,23 +485,41 @@ class Gateway:
             module_name.remove(module_name[-1])
             module_name = "_".join(module_name)
 
-            try:
-                module = __import__(module_name)
-            except Exception as e:
-                self.logger.critical("Exception in from_json, module: " + str(e))
-                return dt
-            try:
-                class_ = getattr(module, class_name)
-            except Exception as e:
-                self.logger.critical("Exception in from_json, class: " + str(e))
-                return dt
+            # try:
+            #     module = __import__('fjagepy.org_arl_fjage')
+            # except Exception as e:
+            #     self.logger.critical("Exception in from_json, module: " + str(e))
+            #     return dt
+            # try:
+            #     class_ = getattr(module, class_name)
+            # except Exception as e:
+            #     self.logger.critical("Exception in from_json, class: " + str(e))
+            #     return dt
             # args = dict((key.encode('ascii'), value.encode('ascii')) for key, value in dt.items())
             # args = dict((key.encode('ascii'), value if (isinstance(value, int) or isinstance(value, float)) else value.encode('ascii')) for key, value in dt.items())
             args = dict()
             for key, value in dt["data"].items():
                 args[key] = value
 
-            inst = class_(**args)
+            if 'signal' in args.keys():
+                type_ = args['signal']['clazz']
+                x_ = base64.standard_b64decode(args['signal']['data'])
+                count = len(x_) // 4
+                print(x_)
+                if 'F' in type_:
+                    x_ = struct.unpack('<{0}f'.format(count), x_)
+                elif 'I' in type_:
+                    x_ = struct.unpack('<{0}i'.format(count), x_)
+                elif 'D' in type_:
+                    x_ = struct.unpack('<{0}d'.format(count), x_)
+                elif 'J' in type_:
+                    x_ = struct.unpack('<{0}l'.format(count), x_)
+
+                args["signal"]["data"] = list(x_)
+                del args["signal"]["clazz"]
+                args["signal"] = args["signal"]["data"]
+
+            inst = fjagepy.org_arl_fjage.Message(**args)
         else:
             inst = dt
         return inst
