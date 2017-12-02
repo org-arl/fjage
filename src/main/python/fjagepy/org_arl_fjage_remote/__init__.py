@@ -222,7 +222,11 @@ class Gateway:
         d_dict = self._to_json(msg)
         # m_dict["msgType"] = "org.arl."+msg.__module__+"."+msg.__class__.__name__
         # m_dict["clazz"] = "org.arl." + msg.__module__ + "." + msg.__class__.__name__
-        m_dict["clazz"] = msg.__module__.replace("_", ".") + "." + msg.__class__.__name__
+        if "unetpy" in msg.__module__:
+            module_ = msg.__module__
+            m_dict["clazz"] = module_.split('.')[-1].replace("_", ".") + "." + msg.__class__.__name__
+        else:
+            m_dict["clazz"] = msg.__module__.replace("_", ".") + "." + msg.__class__.__name__
         m_dict["data"] = d_dict
         j_dict["message"] = m_dict
         # check for GenericMessage class and add "map" separately
@@ -483,18 +487,21 @@ class Gateway:
             class_name = dt['clazz'].split(".")[-1]
             module_name = dt['clazz'].split(".")
             module_name.remove(module_name[-1])
-            module_name = "_".join(module_name)
+            if "fjage" in module_name:
+                module_name = "fjagepy." + "_".join(module_name)
+            else:
+                module_name = "unetpy." + "_".join(module_name)
 
-            # try:
-            #     module = __import__('fjagepy.org_arl_fjage')
-            # except Exception as e:
-            #     self.logger.critical("Exception in from_json, module: " + str(e))
-            #     return dt
-            # try:
-            #     class_ = getattr(module, class_name)
-            # except Exception as e:
-            #     self.logger.critical("Exception in from_json, class: " + str(e))
-            #     return dt
+            try:
+                module = __import__(module_name)
+            except Exception as e:
+                self.logger.critical("Exception in from_json, module: " + str(e))
+                return dt
+            try:
+                class_ = getattr(module, class_name)
+            except Exception as e:
+                self.logger.critical("Exception in from_json, class: " + str(e))
+                return dt
             # args = dict((key.encode('ascii'), value.encode('ascii')) for key, value in dt.items())
             # args = dict((key.encode('ascii'), value if (isinstance(value, int) or isinstance(value, float)) else value.encode('ascii')) for key, value in dt.items())
             args = dict()
@@ -505,7 +512,6 @@ class Gateway:
                 type_ = args['signal']['clazz']
                 x_ = base64.standard_b64decode(args['signal']['data'])
                 count = len(x_) // 4
-                print(x_)
                 if 'F' in type_:
                     x_ = struct.unpack('<{0}f'.format(count), x_)
                 elif 'I' in type_:
@@ -519,7 +525,7 @@ class Gateway:
                 del args["signal"]["clazz"]
                 args["signal"] = args["signal"]["data"]
 
-            inst = fjagepy.org_arl_fjage.Message(**args)
+            inst = class_(**args)
         else:
             inst = dt
         return inst
