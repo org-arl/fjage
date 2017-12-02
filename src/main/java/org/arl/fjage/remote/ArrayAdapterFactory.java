@@ -28,7 +28,7 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
   private boolean bare;
 
   public ArrayAdapterFactory() {
-    bare = true;
+    bare = false;
   }
 
   public ArrayAdapterFactory(boolean bare) {
