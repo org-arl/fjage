@@ -218,15 +218,9 @@ class Gateway:
         j_dict["action"] = Action.SEND
         j_dict["relay"] = relay
         msg.sender = self.name
-        # m_dict = self._to_json(msg)
         d_dict = self._to_json(msg)
-        # m_dict["msgType"] = "org.arl."+msg.__module__+"."+msg.__class__.__name__
-        # m_dict["clazz"] = "org.arl." + msg.__module__ + "." + msg.__class__.__name__
-        if "unetpy" in msg.__module__:
-            module_ = msg.__module__
-            m_dict["clazz"] = module_.split('.')[-1].replace("_", ".") + "." + msg.__class__.__name__
-        else:
-            m_dict["clazz"] = msg.__module__.replace("_", ".") + "." + msg.__class__.__name__
+        module_ = msg.__module__
+        m_dict["clazz"] = module_.split('.')[-1].replace("_", ".") + "." + msg.__class__.__name__
         m_dict["data"] = d_dict
         j_dict["message"] = m_dict
         # check for GenericMessage class and add "map" separately
