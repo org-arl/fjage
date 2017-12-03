@@ -1,25 +1,16 @@
 import unittest
-import fjage
-from fjage import remote
-from fjage import shell
+from fjagepy import *
 
 
 class MyTestCase(unittest.TestCase):
 
     global g
-    g = fjage.remote.Gateway('localhost', 1100, "PythonGW")
+    g = org_arl_fjage_remote.Gateway('localhost', 1101, "PythonGW")
 
     def test_gateway_connection(self):
-        ''' Things to test:
-             - Gateway object created
-        '''
-        self.assertIsInstance(g, fjage.remote.Gateway)
+        self.assertIsInstance(g, org_arl_fjage_remote.Gateway)
 
     def test_topic(self):
-        ''' Things to test:
-             - Whether returns an object of class AgentID representing named topic
-             - Topic can be a string or instance of AgentID
-        '''
         g.topic("xyz")
 
     def test_subscribe_unsubscribe(self):
@@ -35,27 +26,27 @@ class MyTestCase(unittest.TestCase):
         self.assertNotIn("def", g.subscribers)
 
     def test_send_Message(self):
-        m = fjage.Message()
+        m = org_arl_fjage.Message()
         m.recipient = '#abc'
-        self.assertIsInstance(m, fjage.Message)
+        self.assertIsInstance(m, org_arl_fjage.Message)
         self.assertTrue(g.send(m))
     #
 
     def test_send_receive_Message(self):
-        m = fjage.Message()
+        m = org_arl_fjage.Message()
         m.recipient = '#abc'
-        g.subscribe(fjage.AgentID("abc", True))
+        g.subscribe(org_arl_fjage.AgentID("abc", True))
         g.send(m)
-        self.assertTrue(g.receive(fjage.Message, 1000), True)
-        self.assertEqual(g.receive(fjage.Message, 1000).recipient, '#abc')
+        self.assertTrue(g.receive(org_arl_fjage.Message, 1000), True)
+        self.assertEqual(g.receive(org_arl_fjage.Message, 1000).recipient, '#abc')
 
-    # def test_agentForService(self):
-    #     self.assertEqual(g.agentForService("org.arl.fjage.shell.Services.SHELL"), 'shell')
-    #
-    # def test_AgentID(self):
-    #     a = g.topic("testtopic")
-    #     self.assertEqual(a.name, "testtopic")
-    #     self.assertEqual(a.is_topic, True)
+    def test_agentForService(self):
+        self.assertEqual(g.agentForService("org.arl.fjage.shell.Services.SHELL"), 'shell2')
+
+    def test_AgentID(self):
+        a = g.topic("testtopic")
+        self.assertEqual(a.name, "testtopic")
+        self.assertEqual(a.is_topic, True)
 
 
 if __name__ == "__main__":
