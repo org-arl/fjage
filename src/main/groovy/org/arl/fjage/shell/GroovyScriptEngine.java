@@ -25,7 +25,7 @@ import org.arl.fjage.Message;
  * Groovy scripting engine.
  */
 public class GroovyScriptEngine extends Thread implements ScriptEngine {
-  
+
   ////// private attributes
 
   private GroovyShell groovy;
@@ -33,7 +33,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   private ExecutorService executor = Executors.newSingleThreadExecutor();
   private Future<?> last = null;
   private Logger log = Logger.getLogger(getClass().getName());
-  
+
   ////// constructor
 
   public GroovyScriptEngine() {
@@ -45,7 +45,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
     binding = protect ? new ProtectedBinding() : new Binding();
     init();
   }
-  
+
   private void init() {
     CompilerConfiguration compiler = new CompilerConfiguration();
     compiler.setScriptBaseClass(BaseGroovyScript.class.getName());
@@ -60,9 +60,9 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
     binding.setVariable("groovy", groovy);
     groovy.evaluate("_init_()");
   }
-  
+
   ////// script engine methods
-  
+
   @Override
   public boolean exec(final String cmd1, final Shell out) {
     if (isBusy()) return false;
@@ -95,6 +95,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
               if (rv instanceof Closure) {
                 Closure<?> cl = (Closure<?>)rv;
                 try {
+                  binding.setVariable("out", out);
                   rv = cl.call();
                 } catch (MissingMethodException ex) {
                   // do nothing, as it's probably a closure that needs at least one argument
@@ -235,7 +236,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
   public void setVariable(String name, Object value) {
     binding.setVariable(name, value);
   }
-  
+
   @Override
   public Object getVariable(String name) {
     return binding.getVariable(name);
@@ -275,7 +276,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
     }
     return true;
   }
-  
+
   private void println(Shell out, Object s) {
     String str = s.toString();
     log.info("RESULT: "+str);
