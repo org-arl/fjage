@@ -3,9 +3,13 @@ from setuptools import setup, find_packages
 with open('README.rst') as f:
     readme = f.read()
 
+with open('../../../VERSION') as f:
+    ver = f.read()
+    ver = ver.split('-')[0] + 'b1'
+
 setup(
     name='fjagepy',
-    version='1.0.0b1',
+    version=ver,
     description='Fjage Python Gateway',
     long_description=readme,
     author='Subnero Pte. Ltd.',
