@@ -9,8 +9,8 @@ General modules
 The following modules provide all the functionalities needed to interact with the fjage agents running remotely:
 
     * `fjagepy.org_arl_fjage`
-    * `fjagepy.org_arl_fjage.remote`
-    * `fjagepy.org_arl_fjage.shell`
+    * `fjagepy.org_arl_fjage_remote`
+    * `fjagepy.org_arl_fjage_shell`
 
 
 Usage
