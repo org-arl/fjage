@@ -30,11 +30,19 @@ dependencies {
 }
 
 compileJava {
-  options.compilerArgs += "-Xlint:unchecked"
+  options.compilerArgs << "-Xlint:all"
+  options.compilerArgs << "-Xlint:-options"
 }
-//tasks.withType(Compile) {
-//  options.compilerArgs << "-Xlint:unchecked"
-//}
+
+compileTestJava {
+  options.compilerArgs << "-Xlint:all"
+  options.compilerArgs << "-Xlint:-options"
+}
+
+compileGroovy {
+  options.compilerArgs << "-Xlint:all"
+  options.compilerArgs << "-Xlint:-options"
+}
 
 tasks.withType(Javadoc) {
   options.addStringOption('Xdoclint:none', '-quiet')
