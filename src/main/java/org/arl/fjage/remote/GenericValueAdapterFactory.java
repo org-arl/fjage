@@ -24,9 +24,9 @@ import org.arl.fjage.GenericValue;
  * Numeric arrays are compressed into a base 64 notation for quick transmission
  * over a network.
  */
+@SuppressWarnings({"unchecked", "rawtypes"})
 class GenericValueAdapterFactory implements TypeAdapterFactory {
 
-  @SuppressWarnings("unchecked")
   public <T> TypeAdapter<T> create(final Gson gson, TypeToken<T> type) {
     final Class<T> rawType = (Class<T>)type.getRawType();
     if (!rawType.equals(GenericValue.class)) return null;
@@ -84,7 +84,7 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
           String name = in.nextName();
           if (name.equals("clazz")) {
             try {
-              Class cls = Class.forName(in.nextString());
+              Class<?> cls = Class.forName(in.nextString());
               tt = TypeToken.get(cls);
             } catch (Exception ex) {
               // do nothing

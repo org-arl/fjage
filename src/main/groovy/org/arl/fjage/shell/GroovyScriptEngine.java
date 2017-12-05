@@ -126,7 +126,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
 
   @Override
   public boolean exec(final File script, final Shell out) {
-    return exec(script, new ArrayList<String>(), out);
+    return exec(script, null, out);
   }
 
   @Override
@@ -137,7 +137,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
 
   @Override
   public boolean exec(final Class<?> script, final Shell out) {
-    return exec(script, new ArrayList<String>(), out);
+    return exec(script, null, out);
   }
 
   @Override
@@ -172,7 +172,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
 
   @Override
   public boolean exec(final Reader reader, final String name, final Shell out) {
-    return exec(reader, name, new ArrayList<String>(), out);
+    return exec(reader, name, null, out);
   }
 
   @Override
@@ -188,7 +188,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
             binding.setVariable("script", name);
             binding.setVariable("args", null);
             groovy.getClassLoader().clearCache();
-            groovy.run(reader, name, args);
+            groovy.run(reader, name, args!=null?args:new ArrayList<String>());
           } catch (Throwable ex) {
             error(out, ex);
           } finally {
@@ -261,7 +261,7 @@ public class GroovyScriptEngine extends Thread implements ScriptEngine {
             binding.setVariable("script", script.getAbsoluteFile());
             binding.setVariable("args", null);
             groovy.getClassLoader().clearCache();
-            groovy.run(script, args);
+            groovy.run(script, args!=null?args:new ArrayList<String>());
           } catch (Throwable ex) {
             error(out, ex);
           } finally {

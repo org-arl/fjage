@@ -21,6 +21,8 @@ import java.util.logging.Logger;
  */
 public class AgentLocalRandom extends Random {
 
+  private static final long serialVersionUID = 1L;
+
   //// static stuff
 
   private static Logger log = Logger.getLogger(AgentLocalRandom.class.getName());

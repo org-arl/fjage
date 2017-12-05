@@ -19,6 +19,7 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
  *
  * @author Mandar Chitre
  */
+@SuppressWarnings("rawtypes")
 abstract class BaseGroovyScript extends Script {
 
   // Log levels
@@ -30,7 +31,7 @@ abstract class BaseGroovyScript extends Script {
   static final Level WARNING = Level.WARNING;
   static final Level SEVERE = Level.SEVERE;
   static final Level OFF = Level.OFF;
-  
+
   /**
    * Initializes the script.  Creates a 'log' variable to allow logging from the
    * script. Also creates a 'doc' hash map in suppport of 'help' commands.
@@ -152,7 +153,7 @@ abstract class BaseGroovyScript extends Script {
     }
     return new AgentID(name);
   }
-  
+
   /**
    * Lists all the services, along with a list of agents that provide them.
    *
@@ -202,7 +203,7 @@ abstract class BaseGroovyScript extends Script {
     }
     return null;
   }
-  
+
   /**
    * Returns agent identifiers for a specified service.
    *
@@ -220,7 +221,7 @@ abstract class BaseGroovyScript extends Script {
 
  /**
   * Represents a topic for a specified agent or a named topic.
-  * 
+  *
   * @param s name of topic or agent identifier.
   * @return topic.
   */
@@ -236,7 +237,7 @@ abstract class BaseGroovyScript extends Script {
  /**
   * Represents a named notification topic for a specified agent.
   *
-  * @param aid agent identifier. 
+  * @param aid agent identifier.
   * @param s name of the notification topic.
   * @return topic.
   */
@@ -287,7 +288,7 @@ abstract class BaseGroovyScript extends Script {
 
   /**
    * Lists variables in current binding.
-   * 
+   *
    * @return string representation of all variables.
    */
   String who() {
@@ -299,15 +300,15 @@ abstract class BaseGroovyScript extends Script {
     }
     return s.toString();
   }
-  
+
   String getWho() {
     return who();
   }
-  
+
   /**
    * Display on console. This method clears the current line
    * and displays output on it, followed by a newline.
-   * 
+   *
    * @param s object to display.
    */
   void println(def x) {
@@ -321,7 +322,7 @@ abstract class BaseGroovyScript extends Script {
   /**
    * Display on console. This method clears the current line
    * and displays output on it, followed by a newline.
-   * 
+   *
    * @param s object to display.
    * @param type type of output to display.
    */
@@ -342,7 +343,7 @@ abstract class BaseGroovyScript extends Script {
 
   /**
    * Run a nested Groovy script.
-   * 
+   *
    * @param name filename of the script to run.
    * @param args arguments to pass to the script.
    */
@@ -385,10 +386,10 @@ abstract class BaseGroovyScript extends Script {
       binding.setVariable('args', oldArgs);
     }
   }
-  
+
   /**
    * Run a nested Groovy script.
-   * 
+   *
    * @param reader reader to obtain the script from.
    * @param name name of the script to run.
    * @param args arguments to pass to the script.
@@ -401,10 +402,10 @@ abstract class BaseGroovyScript extends Script {
       groovy.run(reader, name, args as String[]);
     }
   }
-  
+
   /**
    * Show help on a given Groovy object, if available in the documentation database.
-   * 
+   *
    * @param obj Groovy object to get help on.
    * @return help text, or null if none available.
    */
@@ -421,7 +422,7 @@ abstract class BaseGroovyScript extends Script {
 
   /**
    * Show brief help on all Groovy objects available in the documentation database.
-   * 
+   *
    * @return help text, or null if none available.
    */
   String getHelp() {
@@ -443,7 +444,7 @@ abstract class BaseGroovyScript extends Script {
   /**
    * Show brief help on Groovy objects with given prefix available in the
    * documentation database.
-   * 
+   *
    * @param prefix prefix to look for.
    * @return help text, or null if none available.
    */
@@ -464,10 +465,10 @@ abstract class BaseGroovyScript extends Script {
     }
     return null;
   }
-  
+
   /**
    * Send an agent message.
-   * 
+   *
    * @param msg message to send.
    * @return true on success, false on failure.
    */
@@ -495,7 +496,7 @@ abstract class BaseGroovyScript extends Script {
      }
      return null;
    }
-  
+
   /**
    * Receives an agent message.
    *
@@ -601,7 +602,7 @@ abstract class BaseGroovyScript extends Script {
     try {
       run(name, args)
     } catch (FileNotFoundException ex) {
-      throw new MissingMethodException(name, getClass(), args)    
+      throw new MissingMethodException(name, getClass(), args)
     }
   }
 

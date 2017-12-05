@@ -205,6 +205,7 @@ public class WebShell implements Shell {
     context = new ServletContextHandler(ServletContextHandler.SESSIONS);
     context.setContextPath(path);
     context.addServlet(new ServletHolder(new EventSourceServlet() {
+      private static final long serialVersionUID = 1L;
       protected EventSource newEventSource(final HttpServletRequest req) {
         return new EventSource() {
           private Emitter emitter;
@@ -229,6 +230,7 @@ public class WebShell implements Shell {
       }
     }), "/out");
     context.addServlet(new ServletHolder(new HttpServlet() {
+      private static final long serialVersionUID = 1L;
       public void doGet(HttpServletRequest request, HttpServletResponse response) {
         response.setContentType("text/plain");
         response.setStatus(HttpServletResponse.SC_OK);
@@ -254,6 +256,7 @@ public class WebShell implements Shell {
       }
     }), "/exec");
     context.addServlet(new ServletHolder(new HttpServlet() {
+      private static final long serialVersionUID = 1L;
       public void doGet(HttpServletRequest request, HttpServletResponse response) {
         response.setContentType("text/html");
         response.setStatus(HttpServletResponse.SC_OK);
