@@ -94,8 +94,17 @@ public class Gateway {
         }
       }
     };
-    container.add("GatewayAgent@"+hashCode(), agent);
+    container.add(getAgentID().getName(), agent);
     platform.start();
+  }
+
+  /**
+   * Gets the agent ID associated with the gateway.
+   *
+   * @return agent ID
+   */
+  public AgentID getAgentID() {
+    return new AgentID("GatewayAgent@"+hashCode());
   }
 
   /**
