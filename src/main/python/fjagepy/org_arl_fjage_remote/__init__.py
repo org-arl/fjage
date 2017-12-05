@@ -410,6 +410,10 @@ class Gateway:
             tup = self.pending.pop(req_id)
             return tup[1]["agentIDs"] if "agentIDs" in tup[1] else None
 
+    def getAgentID(self):
+        """ Returns the gateway Agent ID."""
+        return self.name
+
     def _to_json(self, inst):
         """Convert the object attributes to a dict."""
 
