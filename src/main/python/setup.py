@@ -12,7 +12,7 @@ setup(
     version=ver,
     description='Fjage Python Gateway',
     long_description=readme,
-    author='Subnero Pte. Ltd.',
+    author='Prasad Anjangi',
     author_email='prasad@subnero.com',
     url='https://github.com/org-arl/fjage/tree/dev/src/main/python',
     license='BSD (3-clause)',
