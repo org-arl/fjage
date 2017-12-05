@@ -63,3 +63,25 @@ To generate the developer's guide and related documentation in HTML format:
 The guide is available at `htdocs/doc/html/index.html`.
 
 The Gradle build script simply executes a `make html` command in turn calls Sphinx build script to generate the documentation. The Gradle build script suppresses the output of Sphinx. In case of any problems, it may be useful to look at the output by directly invoking `make html`.
+
+Publishing fjagepy package to PyPI
+----------------------------------
+
+Follow the steps below to publish the fjagepy python package to [PyPI](https://pypi.python.org/pypi)
+
+1. Install "twine":
+    `pip install twine`
+
+2. Install "wheel":
+    `pip install wheel`
+
+3. Create a source distribution:
+    `python src/main/python/setup.py sdist`
+
+4. Create a wheel for the project:
+    `python src/main/python/setup.py bdist_wheel`
+
+5. Create an account on [PyPI](https://pypi.python.org/pypi)
+
+6. Once you have an account, you can upload your distribution to PyPI using twine:
+    `twine upload src/main/python/dist/*`

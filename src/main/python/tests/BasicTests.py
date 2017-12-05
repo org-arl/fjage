@@ -5,7 +5,7 @@ from fjagepy import *
 class MyTestCase(unittest.TestCase):
 
     global g
-    g = org_arl_fjage_remote.Gateway('localhost', 1101, "PythonGW")
+    g = org_arl_fjage_remote.Gateway('localhost', 5081, "PythonGW")
 
     def test_gateway_connection(self):
         self.assertIsInstance(g, org_arl_fjage_remote.Gateway)
@@ -30,7 +30,6 @@ class MyTestCase(unittest.TestCase):
         m.recipient = '#abc'
         self.assertIsInstance(m, org_arl_fjage.Message)
         self.assertTrue(g.send(m))
-    #
 
     def test_send_receive_Message(self):
         m = org_arl_fjage.Message()
@@ -41,7 +40,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(g.receive(org_arl_fjage.Message, 1000).recipient, '#abc')
 
     def test_agentForService(self):
-        self.assertEqual(g.agentForService("org.arl.fjage.shell.Services.SHELL"), 'shell2')
+        self.assertEqual(g.agentForService("org.arl.fjage.shell.Services.SHELL"), 'shell')
 
     def test_AgentID(self):
         a = g.topic("testtopic")
