@@ -15,6 +15,7 @@ Table of Contents
    remote
    shell
    simulation
+   pythongw
    faq
 
 Useful Links
