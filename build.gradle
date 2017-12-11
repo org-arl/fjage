@@ -10,8 +10,8 @@ group = 'com.github.org-arl'
 version = new File('VERSION').text.trim()
 docsDirName = '../htdocs'
 
-targetCompatibility = 1.7
-sourceCompatibility = 1.7
+targetCompatibility = 1.8
+sourceCompatibility = 1.8
 
 repositories {
   mavenCentral()
