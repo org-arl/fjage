@@ -104,50 +104,7 @@ static char* msg_append(fjage_msg_t msg, int n) {
   return m->data+p;
 }
 
-static void msg_write_json(fjage_msg_t msg, int fd) {
-  if (msg == NULL) return;
-  _fjage_msg_t* m = msg;
-  if (m->data == NULL) return;
-  writes(fd, "{\"clazz\": \"");
-  writes(fd, m->clazz);
-  writes(fd, "\", data: { \"msgID\": \"");
-  writes(fd, m->id);
-  writes(fd, "\", ");
-  switch (m->perf) {
-    case FJAGE_REQUEST:         writes(fd, "\"perf\": \"REQUEST\", ");         break;
-    case FJAGE_AGREE:           writes(fd, "\"perf\": \"AGREE\", ");           break;
-    case FJAGE_REFUSE:          writes(fd, "\"perf\": \"REFUSE\", ");          break;
-    case FJAGE_FAILURE:         writes(fd, "\"perf\": \"FAILURE\", ");         break;
-    case FJAGE_INFORM:          writes(fd, "\"perf\": \"INFORM\", ");          break;
-    case FJAGE_CONFIRM:         writes(fd, "\"perf\": \"CONFIRM\", ");         break;
-    case FJAGE_DISCONFIRM:      writes(fd, "\"perf\": \"DISCONFIRM\", ");      break;
-    case FJAGE_QUERY_IF:        writes(fd, "\"perf\": \"QUERY_IF\", ");        break;
-    case FJAGE_NOT_UNDERSTOOD:  writes(fd, "\"perf\": \"NOT_UNDERSTOOD\", ");  break;
-    case FJAGE_CFP:             writes(fd, "\"perf\": \"CFP\", ");             break;
-    case FJAGE_PROPOSE:         writes(fd, "\"perf\": \"PROPOSE\", ");         break;
-    case FJAGE_CANCEL:          writes(fd, "\"perf\": \"CANCEL\", ");          break;
-    case FJAGE_NONE:                                                           break;
-  }
-  if (m->sender != NULL) {
-    writes(fd, "\"sender\": \"");
-    writes(fd, m->sender);
-    writes(fd, "\", ");
-  }
-  if (m->recipient != NULL) {
-    writes(fd, "\"recipient\": \"");
-    writes(fd, m->recipient);
-    writes(fd, "\", ");
-  }
-  if (m->in_reply_to[0]) {
-    writes(fd, "\"inReplyTo\": \"");
-    writes(fd, m->in_reply_to);
-    writes(fd, "\", ");
-  }
-  write(fd, m->data, strlen(m->data)-2);
-  writes(fd, "}}");
-}
-
-static void msg_from_json(fjage_msg_t msg, const char* s) {
+static void msg_read_json(fjage_msg_t msg, const char* s) {
   if (msg == NULL) return;
   _fjage_msg_t* m = msg;
   if (m->tokens != NULL || m->data != NULL) return;
@@ -202,14 +159,48 @@ static void msg_from_json(fjage_msg_t msg, const char* s) {
   }
 }
 
-// void msg_dump(fjage_msg_t msg) {
-//   if (msg == NULL) return;
-//   _fjage_msg_t* m = msg;
-//   for (int i = 1; i < m->ntokens; i+=2) {
-//     if (m->tokens[i].type == 3)
-//       printf("%.*s: %.*s\n", m->tokens[i].end-m->tokens[i].start, m->data + m->tokens[i].start, m->tokens[i+1].end-m->tokens[i+1].start, m->data + m->tokens[i+1].start);
-//   }
-// }
+void fjage_msg_write_json(fjage_msg_t msg, int fd) {
+  if (msg == NULL) return;
+  _fjage_msg_t* m = msg;
+  if (m->data == NULL) return;
+  writes(fd, "{\"clazz\": \"");
+  writes(fd, m->clazz);
+  writes(fd, "\", data: { \"msgID\": \"");
+  writes(fd, m->id);
+  writes(fd, "\", ");
+  switch (m->perf) {
+    case FJAGE_REQUEST:         writes(fd, "\"perf\": \"REQUEST\", ");         break;
+    case FJAGE_AGREE:           writes(fd, "\"perf\": \"AGREE\", ");           break;
+    case FJAGE_REFUSE:          writes(fd, "\"perf\": \"REFUSE\", ");          break;
+    case FJAGE_FAILURE:         writes(fd, "\"perf\": \"FAILURE\", ");         break;
+    case FJAGE_INFORM:          writes(fd, "\"perf\": \"INFORM\", ");          break;
+    case FJAGE_CONFIRM:         writes(fd, "\"perf\": \"CONFIRM\", ");         break;
+    case FJAGE_DISCONFIRM:      writes(fd, "\"perf\": \"DISCONFIRM\", ");      break;
+    case FJAGE_QUERY_IF:        writes(fd, "\"perf\": \"QUERY_IF\", ");        break;
+    case FJAGE_NOT_UNDERSTOOD:  writes(fd, "\"perf\": \"NOT_UNDERSTOOD\", ");  break;
+    case FJAGE_CFP:             writes(fd, "\"perf\": \"CFP\", ");             break;
+    case FJAGE_PROPOSE:         writes(fd, "\"perf\": \"PROPOSE\", ");         break;
+    case FJAGE_CANCEL:          writes(fd, "\"perf\": \"CANCEL\", ");          break;
+    case FJAGE_NONE:                                                           break;
+  }
+  if (m->sender != NULL) {
+    writes(fd, "\"sender\": \"");
+    writes(fd, m->sender);
+    writes(fd, "\", ");
+  }
+  if (m->recipient != NULL) {
+    writes(fd, "\"recipient\": \"");
+    writes(fd, m->recipient);
+    writes(fd, "\", ");
+  }
+  if (m->in_reply_to[0]) {
+    writes(fd, "\"inReplyTo\": \"");
+    writes(fd, m->in_reply_to);
+    writes(fd, "\", ");
+  }
+  write(fd, m->data, strlen(m->data)-2);
+  writes(fd, "}}");
+}
 
 fjage_msg_t fjage_msg_create(const char* clazz, fjage_perf_t perf) {
   _fjage_msg_t* m = malloc(sizeof(_fjage_msg_t));
@@ -226,6 +217,13 @@ fjage_msg_t fjage_msg_create(const char* clazz, fjage_perf_t perf) {
   m->tokens = NULL;
   m->ntokens = 0;
   return m;
+}
+
+fjage_msg_t fjage_msg_from_json(const char* json) {
+  fjage_msg_t msg = fjage_msg_create(NULL, FJAGE_NONE);
+  if (msg == NULL) return NULL;
+  msg_read_json(msg, json);
+  return msg;
 }
 
 const char* fjage_msg_get_id(fjage_msg_t msg) {
@@ -287,12 +285,53 @@ void fjage_msg_set_in_reply_to(fjage_msg_t msg, const char* id) {
   m->in_reply_to[UUID_LEN] = 0;
 }
 
-const char* fjage_msg_get_string(fjage_msg_t msg, const char* key);
-int fjage_msg_get_int(fjage_msg_t msg, const char* key, int defval);
-float fjage_msg_get_float(fjage_msg_t msg, const char* key, float defval);
-bool fjage_msg_get_bool(fjage_msg_t msg, const char* key, bool defval);
-int fjage_msg_get_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int maxlen);
-int fjage_msg_get_float_array(fjage_msg_t msg, const char* key, float* value, int maxlen);
+const char* fjage_msg_get_string(fjage_msg_t msg, const char* key) {
+  if (msg == NULL) return NULL;
+  _fjage_msg_t* m = msg;
+  for (int i = 1; i < m->ntokens-1; i += 2) {
+    char* t = m->data + m->tokens[i].start;
+    if (m->tokens[i].type == JSMN_STRING && (m->tokens[i+1].type == JSMN_STRING || m->tokens[i+1].type == JSMN_PRIMITIVE) && !strcmp(key, t)) {
+      t = m->data + m->tokens[i+1].start;
+      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
+      return t;
+    }
+  }
+  return NULL;
+}
+
+int fjage_msg_get_int(fjage_msg_t msg, const char* key, int defval) {
+  const char* t = fjage_msg_get_string(msg, key);
+  if (t == NULL) return defval;
+  int x = defval;
+  sscanf(t, "%d", &x);
+  return x;
+}
+
+float fjage_msg_get_float(fjage_msg_t msg, const char* key, float defval) {
+  const char* t = fjage_msg_get_string(msg, key);
+  if (t == NULL) return defval;
+  float x = defval;
+  sscanf(t, "%f", &x);
+  return x;
+}
+
+bool fjage_msg_get_bool(fjage_msg_t msg, const char* key, bool defval) {
+  const char* t = fjage_msg_get_string(msg, key);
+  if (t == NULL) return defval;
+  if (!strcmp(t, "true")) return true;
+  else if (!strcmp(t, "false")) return false;
+  else return defval;
+}
+
+int fjage_msg_get_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int maxlen) {
+  // TODO
+  return 0;
+}
+
+int fjage_msg_get_float_array(fjage_msg_t msg, const char* key, float* value, int maxlen) {
+  // TODO
+  return 0;
+}
 
 void fjage_msg_add_string(fjage_msg_t msg, const char* key, const char* value) {
   char* s = msg_append(msg, strlen(key)+strlen(value)+9);
