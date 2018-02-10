@@ -21,6 +21,10 @@ for full license details.
 #include "fjage.h"
 #include "jsmn.h"
 
+//// prototypes
+
+void fjage_msg_write_json(fjage_msg_t msg, int fd);
+
 //// utilities
 
 #define UUID_LEN        36
@@ -49,27 +53,94 @@ typedef struct {
   char sublist[SUBLIST_LEN];
   char buf[BUFLEN];
   int head;
+  int aid_count;
+  fjage_aid_t* aids;
 } _fjage_gw_t;
 
-static void process_sentence(char* json) {
-  printf("%s\n", json);
+static jsmntok_t* json_parse(char* json) {
   jsmn_parser parser;
   jsmn_init(&parser);
   int n = jsmn_parse(&parser, json, strlen(json), NULL, 0);
-  if (n < 0) return;
+  if (n < 0) return NULL;
   jsmntok_t* tokens = malloc(n*sizeof(jsmntok_t));
-  if (tokens == NULL) return;
+  if (tokens == NULL) return NULL;
   jsmn_init(&parser);
   jsmn_parse(&parser, json, strlen(json), tokens, n);
-  for (int i = 1; i < n; i+=2) {
+  for (int i = 0; i < n; i++) {
     char* t = json + tokens[i].start;
     t[tokens[i].end-tokens[i].start] = 0;
-    printf("  %s\n", t);
   }
-  free(tokens);
+  return tokens;
 }
 
-static void read_sentences(fjage_gw_t gw) {
+static int json_get(const char* json, const jsmntok_t* tokens, const char* key) {
+  if (tokens == NULL || key == NULL) return -1;
+  int n = tokens[0].size;
+  int i = 1;
+  while (n > 0) {
+    const char* t = json + tokens[i].start;
+    if (!strcmp(t, key)) return i+1;
+    int skip = tokens[i].size;
+    while (skip > 0)
+      skip += tokens[++i].size - 1;
+    i++;
+    n--;
+  }
+  return -1;
+}
+
+static const char* json_gets(const char* json, const jsmntok_t* tokens, const char* key) {
+  int i = json_get(json, tokens, key);
+  if (i < 0) return NULL;
+  return json + tokens[i].start;
+}
+
+static bool json_process(fjage_gw_t gw, char* json, const char* id) {
+  if (gw == NULL) return false;
+  _fjage_gw_t* fgw = gw;
+  jsmntok_t* tokens = json_parse(json);
+  if (tokens == NULL) return false;
+  bool rv = false;
+  const char* action = json_gets(json, tokens, "action");
+  if (action == NULL) {
+    const char* id1 = json_gets(json, tokens, "id");
+    if (id != NULL && !strcmp(id, id1)) {
+      action = json_gets(json, tokens, "inResponseTo");
+      if (!strcmp(action, "agentForService")) {
+        const char* s = json_gets(json, tokens, "agentID");
+        if (s != NULL && fgw->aid_count == 0) {
+          fgw->aid_count = 1;
+          fgw->aids = (fjage_aid_t*)fjage_aid_create(s);
+          rv = true;
+        }
+      } else if (!strcmp(action, "agentsForService")) {
+        int i = json_get(json, tokens, "agentIDs");
+        if (i >= 0) {
+          int n = tokens[i].size;
+          fgw->aids = malloc(n*sizeof(fjage_aid_t));
+          if (fgw->aids != NULL) {
+            fgw->aid_count = n;
+            for (int j = 0; j < n; j++)
+              fgw->aids[j] = fjage_aid_create(json+tokens[i+j+1].start);
+            rv = true;
+          }
+        }
+      }
+    }
+  } else {
+    if (!strcmp(action, "send")) {
+      // TODO
+    } else {
+      char s[256];
+      sprintf(s, "{\"id\": \"%s\", \"inResponseTo\": \"%s\", \"answer\": false}\n", json_gets(json, tokens, "id"), action);
+      writes(fgw->sockfd, s);
+    }
+  }
+  free(tokens);
+  return rv;
+}
+
+static void json_reader(fjage_gw_t gw, const char* id, int timeout) {
   if (gw == NULL) return;
   _fjage_gw_t* fgw = gw;
   struct pollfd fds;
@@ -79,12 +150,13 @@ static void read_sentences(fjage_gw_t gw) {
   int rv = poll(&fds, 1, 1000);
   if (rv <= 0) return;
   int n;
+  bool done = false;
   while ((n = read(fgw->sockfd, fgw->buf + fgw->head, BUFLEN - fgw->head)) > 0) {
     int bol = 0;
     for (int i = fgw->head; i < fgw->head + n; i++) {
       if (fgw->buf[i] == '\n') {
         fgw->buf[i] = 0;
-        process_sentence(fgw->buf + bol);
+        done = json_process(fgw, fgw->buf + bol, id);
         bol = i+1;
       }
     }
@@ -94,8 +166,9 @@ static void read_sentences(fjage_gw_t gw) {
       memmove(fgw->buf, fgw->buf + bol, fgw->head - bol);
       fgw->head -= bol;
     }
-    rv = poll(&fds, 1, 1000);
-    if (rv <= 0) return;
+    if (done) break;
+    rv = poll(&fds, 1, timeout);
+    if (rv <= 0) break;
   }
 }
 
@@ -189,19 +262,59 @@ fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
   _fjage_gw_t* fgw = gw;
   char uuid[UUID_LEN+1];
   generate_uuid(uuid);
-  writes(fgw->sockfd, "{ \"action\": \"agentForService\", \"id\": \"");
+  writes(fgw->sockfd, "{\"action\": \"agentForService\", \"id\": \"");
   writes(fgw->sockfd, uuid);
   writes(fgw->sockfd, "\", \"service\": \"");
   writes(fgw->sockfd, service);
-  writes(fgw->sockfd, "\" }\n");
-  read_sentences(fgw);
+  writes(fgw->sockfd, "\"}\n");
+  fgw->aid_count = 0;
+  fgw->aids = NULL;
+  json_reader(fgw, uuid, 1000);
+  if (fgw->aid_count == 0) return NULL;
+  return (fjage_aid_t)(fgw->aids);
+}
+
+int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* agents, int max) {
+  if (gw == NULL) return -1;
+  _fjage_gw_t* fgw = gw;
+  char uuid[UUID_LEN+1];
+  generate_uuid(uuid);
+  writes(fgw->sockfd, "{\"action\": \"agentsForService\", \"id\": \"");
+  writes(fgw->sockfd, uuid);
+  writes(fgw->sockfd, "\", \"service\": \"");
+  writes(fgw->sockfd, service);
+  writes(fgw->sockfd, "\"}\n");
+  fgw->aid_count = 0;
+  fgw->aids = NULL;
+  json_reader(fgw, uuid, 1000);
+  if (fgw->aid_count == 0) return 0;
+  for (int i = 0; i < fgw->aid_count; i++) {
+    if (i < max) agents[i] = fgw->aids[i];
+    else fjage_aid_destroy(fgw->aids[i]);
+  }
+  free(fgw->aids);
+  return fgw->aid_count;
+}
+
+int fjage_send(fjage_gw_t gw, const fjage_msg_t msg) {
+  if (gw == NULL) return -1;
+  _fjage_gw_t* fgw = gw;
+  writes(fgw->sockfd, "{\"action\": \"send\", \"relay\": true, \"message\": ");
+  fjage_msg_write_json(msg, fgw->sockfd);
+  writes(fgw->sockfd, "}\n");
+  fjage_msg_destroy(msg);
+  return 0;
+}
+
+fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const fjage_msg_t request, long timeout) {
+  // TODO
   return NULL;
 }
 
-int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* agents, int max);
-int fjage_send(fjage_gw_t gw, const fjage_msg_t msg);
-fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const fjage_msg_t request, long timeout);
-fjage_msg_t fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout);
+fjage_msg_t fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout) {
+  // TODO
+  return NULL;
+}
 
 //// agent ID API
 

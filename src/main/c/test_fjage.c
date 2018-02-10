@@ -47,16 +47,12 @@ int main() {
   fjage_msg_add_int(msg, "to", 27);
   fjage_msg_add_float(msg, "metric", 45.0);
   fjage_msg_add_string(msg, "data", "boo");
-
   int fd = open("test_fjage.json", O_CREAT|O_WRONLY|O_TRUNC);
   if (fd <= 0) return error("unable to write file");
   fjage_msg_write_json(msg, fd);
   off_t fsize = lseek(fd, 0, SEEK_END);
   close(fd);
-
   fjage_msg_destroy(msg);
-  fjage_aid_destroy(sender);
-  fjage_aid_destroy(recipient);
 
   // message parsing
 
@@ -83,9 +79,17 @@ int main() {
 
   fjage_msg_destroy(msg);
 
-  fjage_gw_t gw = fjage_tcp_open("localhost", 5081);
+  fjage_gw_t gw = fjage_tcp_open("localhost", 1100 /*5081*/);
   if (gw == NULL) return error("unable to connect to host");
-  fjage_agent_for_service(gw, "org.arl.fjage.shell.Services.SHELL");
+  printf("%s\n", fjage_agent_for_service(gw, "org.arl.fjage.shell.Services.SHELL"));
+  printf("%d\n", fjage_agents_for_service(gw, "org.arl.fjage.shell.Services.SHELL", NULL, 0));
+  msg = fjage_msg_create("org.arl.unet.phy.TxFrameReq", FJAGE_REQUEST);
+  fjage_msg_set_sender(msg, fjage_aid_create("myagent"));
+  fjage_msg_set_recipient(msg, fjage_aid_create("phy"));
+  fjage_msg_add_int(msg, "type", 1);
+  fjage_msg_add_int(msg, "from", 42);
+  fjage_msg_add_int(msg, "to", 27);
+  fjage_send(gw, msg);
   fjage_close(gw);
 
   test_summary();
