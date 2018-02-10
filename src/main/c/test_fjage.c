@@ -60,7 +60,7 @@ int main() {
 
   // message parsing
 
-  char* buf = malloc(fsize+1);
+  char* buf = calloc(1, fsize+1);
   if (buf == NULL) return error("out of memeory");
   fd = open("test_fjage.json", O_RDONLY);
   if (fd <= 0) return error("unable to read file");
@@ -83,9 +83,9 @@ int main() {
 
   fjage_msg_destroy(msg);
 
-  fjage_gw_t gw = fjage_tcp_open("localhost", 1100);
+  fjage_gw_t gw = fjage_tcp_open("localhost", 5081);
   if (gw == NULL) return error("unable to connect to host");
-  fjage_agent_for_service(gw, "org.arl.unet.Services.PHYSICAL");
+  fjage_agent_for_service(gw, "org.arl.fjage.shell.Services.SHELL");
   fjage_close(gw);
 
   test_summary();

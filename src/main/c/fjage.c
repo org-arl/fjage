@@ -16,6 +16,7 @@ for full license details.
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/poll.h>
 #include <netinet/in.h>
 #include "fjage.h"
 #include "jsmn.h"
@@ -40,21 +41,61 @@ static int writes(int fd, const char* s) {
 //// gateway API
 
 #define SUBLIST_LEN       1024
+#define BUFLEN            65536
 
 typedef struct {
   int sockfd;
   fjage_aid_t aid;
   char sublist[SUBLIST_LEN];
+  char buf[BUFLEN];
+  int head;
 } _fjage_gw_t;
 
-static void process_responses(fjage_gw_t gw) {
+static void process_sentence(char* json) {
+  printf("%s\n", json);
+  jsmn_parser parser;
+  jsmn_init(&parser);
+  int n = jsmn_parse(&parser, json, strlen(json), NULL, 0);
+  if (n < 0) return;
+  jsmntok_t* tokens = malloc(n*sizeof(jsmntok_t));
+  if (tokens == NULL) return;
+  jsmn_init(&parser);
+  jsmn_parse(&parser, json, strlen(json), tokens, n);
+  for (int i = 1; i < n; i+=2) {
+    char* t = json + tokens[i].start;
+    t[tokens[i].end-tokens[i].start] = 0;
+    printf("  %s\n", t);
+  }
+  free(tokens);
+}
+
+static void read_sentences(fjage_gw_t gw) {
   if (gw == NULL) return;
   _fjage_gw_t* fgw = gw;
-  char buf[1024];
+  struct pollfd fds;
+  memset(&fds, 0, sizeof(fds));
+  fds.fd = fgw->sockfd;
+  fds.events = POLLIN;
+  int rv = poll(&fds, 1, 1000);
+  if (rv <= 0) return;
   int n;
-  while ((n = read(fgw->sockfd, buf, sizeof(buf)-1)) > 0) {
-    buf[n] = 0;
-    printf("[%s]\n", buf);
+  while ((n = read(fgw->sockfd, fgw->buf + fgw->head, BUFLEN - fgw->head)) > 0) {
+    int bol = 0;
+    for (int i = fgw->head; i < fgw->head + n; i++) {
+      if (fgw->buf[i] == '\n') {
+        fgw->buf[i] = 0;
+        process_sentence(fgw->buf + bol);
+        bol = i+1;
+      }
+    }
+    fgw->head += n;
+    if (fgw->head >= BUFLEN) fgw->head = 0;
+    if (bol > 0) {
+      memmove(fgw->buf, fgw->buf + bol, fgw->head - bol);
+      fgw->head -= bol;
+    }
+    rv = poll(&fds, 1, 1000);
+    if (rv <= 0) return;
   }
 }
 
@@ -97,6 +138,7 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
   char s[64];
   sprintf(s, "CGatewayAgent@%08x", rand());
   fgw->aid = fjage_aid_create(s);
+  fgw->head = 0;
   return fgw;
 }
 
@@ -152,8 +194,7 @@ fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
   writes(fgw->sockfd, "\", \"service\": \"");
   writes(fgw->sockfd, service);
   writes(fgw->sockfd, "\" }\n");
-  sleep(1);
-  process_responses(fgw);
+  read_sentences(fgw);
   return NULL;
 }
 
