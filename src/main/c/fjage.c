@@ -12,10 +12,25 @@ for full license details.
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include "fjage.h"
 #include "jsmn.h"
 
-//// utility functions
+//// utilities
+
+#define UUID_LEN        36
+
+static char* base64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static void generate_uuid(char* uuid) {
+  for (int i = 0; i < UUID_LEN; i++)
+    uuid[i] = base64[rand()%64];
+  uuid[UUID_LEN] = 0;
+}
 
 static int writes(int fd, const char* s) {
   int n = strlen(s);
@@ -24,12 +39,124 @@ static int writes(int fd, const char* s) {
 
 //// gateway API
 
-fjage_gw_t fjage_tcp_open(const char* hostname, int port);
-int fjage_close(fjage_gw_t gw);
-fjage_aid_t fjage_get_agent_id(fjage_gw_t gw);
-int fjage_subscribe(fjage_gw_t gw, const fjage_aid_t topic);
-int fjage_unsubscribe(fjage_gw_t gw, const fjage_aid_t topic);
-fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service);
+#define SUBLIST_LEN       1024
+
+typedef struct {
+  int sockfd;
+  fjage_aid_t aid;
+  char sublist[SUBLIST_LEN];
+} _fjage_gw_t;
+
+static void process_responses(fjage_gw_t gw) {
+  if (gw == NULL) return;
+  _fjage_gw_t* fgw = gw;
+  char buf[1024];
+  int n;
+  while ((n = read(fgw->sockfd, buf, sizeof(buf)-1)) > 0) {
+    buf[n] = 0;
+    printf("[%s]\n", buf);
+  }
+}
+
+bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic) {
+  if (gw == NULL) return false;
+  _fjage_gw_t* fgw = gw;
+  int i = 0;
+  while (fgw->sublist[i]) {
+    if (!strcmp(fgw->sublist+i, topic)) return true;
+    i += strlen(fgw->sublist+i)+1;
+  }
+  return false;
+}
+
+fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
+  _fjage_gw_t* fgw = calloc(1, sizeof(_fjage_gw_t));
+  if (fgw == NULL) return NULL;
+  fgw->sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (fgw->sockfd < 0) {
+    free(fgw);
+    return NULL;
+  }
+  struct hostent* server = gethostbyname(hostname);
+  if (server == NULL) {
+    close(fgw->sockfd);
+    free(fgw);
+    return NULL;
+  }
+  struct sockaddr_in serv_addr;
+  memset(&serv_addr, 0, sizeof(serv_addr));
+  serv_addr.sin_family = AF_INET;
+  memcpy(server->h_addr, &serv_addr.sin_addr.s_addr, server->h_length);
+  serv_addr.sin_port = htons(port);
+  if (connect(fgw->sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+    close(fgw->sockfd);
+    free(fgw);
+    return NULL;
+  }
+  fcntl(fgw->sockfd, F_SETFL, O_NONBLOCK);
+  char s[64];
+  sprintf(s, "CGatewayAgent@%08x", rand());
+  fgw->aid = fjage_aid_create(s);
+  return fgw;
+}
+
+int fjage_close(fjage_gw_t gw) {
+  if (gw == NULL) return -1;
+  _fjage_gw_t* fgw = gw;
+  close(fgw->sockfd);
+  fjage_aid_destroy(fgw->aid);
+  free(fgw);
+  return 0;
+}
+
+fjage_aid_t fjage_get_agent_id(fjage_gw_t gw) {
+  if (gw == NULL) return NULL;
+  _fjage_gw_t* fgw = gw;
+  return fgw->aid;
+}
+
+int fjage_subscribe(fjage_gw_t gw, const fjage_aid_t topic) {
+  if (gw == NULL) return -1;
+  _fjage_gw_t* fgw = gw;
+  int i = 0;
+  while (fgw->sublist[i])
+    i += strlen(fgw->sublist+i)+1;
+  if (i+strlen(topic)+1 > SUBLIST_LEN) return -1;
+  strcpy(fgw->sublist+i, topic);
+  return 0;
+}
+
+int fjage_unsubscribe(fjage_gw_t gw, const fjage_aid_t topic) {
+  if (gw == NULL) return -1;
+  _fjage_gw_t* fgw = gw;
+  int i = 0;
+  while (fgw->sublist[i]) {
+    if (!strcmp(fgw->sublist+i, topic)) {
+      int n = strlen(fgw->sublist+i);
+      memmove(fgw->sublist+i, fgw->sublist+i+n+1, SUBLIST_LEN-(i+n+1));
+      memset(fgw->sublist+SUBLIST_LEN-(n+1), 0, n+1);
+      return 0;
+    }
+    i += strlen(fgw->sublist+i)+1;
+  }
+  return -1;
+}
+
+fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
+  if (gw == NULL) return NULL;
+  _fjage_gw_t* fgw = gw;
+  char uuid[UUID_LEN+1];
+  generate_uuid(uuid);
+  writes(fgw->sockfd, "{ \"action\": \"agentForService\", \"id\": \"");
+  writes(fgw->sockfd, uuid);
+  writes(fgw->sockfd, "\", \"service\": \"");
+  writes(fgw->sockfd, service);
+  writes(fgw->sockfd, "\" }\n");
+  sleep(1);
+  process_responses(fgw);
+  return NULL;
+}
+
 int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* agents, int max);
 int fjage_send(fjage_gw_t gw, const fjage_msg_t msg);
 fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const fjage_msg_t request, long timeout);
@@ -63,7 +190,6 @@ static fjage_aid_t clone_aid(fjage_aid_t aid) {
 
 //// message API
 
-#define UUID_LEN        36
 #define CLAZZ_LEN       128
 #define DATA_BLK_LEN    4096
 
@@ -79,14 +205,6 @@ typedef struct {
   jsmntok_t* tokens;
   int ntokens;
 } _fjage_msg_t;
-
-static char* base64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-static void generate_uuid(char* uuid) {
-  for (int i = 0; i < UUID_LEN; i++)
-    uuid[i] = base64[rand()%64];
-  uuid[UUID_LEN] = 0;
-}
 
 static char* msg_append(fjage_msg_t msg, int n) {
   if (msg == NULL) return NULL;

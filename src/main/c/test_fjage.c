@@ -8,6 +8,7 @@
 // function prototypes
 fjage_msg_t fjage_msg_from_json(const char* json);
 void fjage_msg_write_json(fjage_msg_t msg, int fd);
+bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic);
 
 static int passed = 0;
 static int failed = 0;
@@ -81,6 +82,11 @@ int main() {
   test_assert("data",       !strcmp(fjage_msg_get_string(msg, "data"), "boo"));
 
   fjage_msg_destroy(msg);
+
+  fjage_gw_t gw = fjage_tcp_open("localhost", 1100);
+  if (gw == NULL) return error("unable to connect to host");
+  fjage_agent_for_service(gw, "org.arl.unet.Services.PHYSICAL");
+  fjage_close(gw);
 
   test_summary();
   return failed;
