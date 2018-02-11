@@ -21,6 +21,7 @@ for full license details.
 #include <netinet/in.h>
 #include "fjage.h"
 #include "jsmn.h"
+#include "b64.h"
 
 //// prototypes
 
@@ -691,13 +692,23 @@ bool fjage_msg_get_bool(fjage_msg_t msg, const char* key, bool defval) {
 }
 
 int fjage_msg_get_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int maxlen) {
-  // TODO
-  return 0;
+  const char* s = fjage_msg_get_string(msg, key);
+  if (s == NULL) return -1;
+  size_t buflen;
+  unsigned char* buf = b64_decode_ex(s, strlen(s), &buflen);
+  if (buf == NULL) return -1;
+  if (buflen <= maxlen) memcpy(value, buf, buflen);
+  return buflen;
 }
 
 int fjage_msg_get_float_array(fjage_msg_t msg, const char* key, float* value, int maxlen) {
-  // TODO
-  return 0;
+  const char* s = fjage_msg_get_string(msg, key);
+  if (s == NULL) return -1;
+  size_t buflen;
+  unsigned char* buf = b64_decode_ex(s, strlen(s), &buflen);
+  if (buf == NULL) return -1;
+  if (buflen <= maxlen*sizeof(float)) memcpy(value, buf, buflen);
+  return buflen/sizeof(float);
 }
 
 void fjage_msg_add_string(fjage_msg_t msg, const char* key, const char* value) {
@@ -721,11 +732,17 @@ void fjage_msg_add_bool(fjage_msg_t msg, const char* key, bool value) {
 }
 
 void fjage_msg_add_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int len) {
-  // TODO
+  char* s = b64_encode((unsigned char*)value, len);
+  if (s == NULL) return;
+  fjage_msg_add_string(msg, key, s);
+  free(s);
 }
 
 void fjage_msg_add_float_array(fjage_msg_t msg, const char* key, float* value, int len) {
-  // TODO
+  char* s = b64_encode((unsigned char*)value, len*sizeof(float));
+  if (s == NULL) return;
+  fjage_msg_add_string(msg, key, s);
+  free(s);
 }
 
 void fjage_msg_destroy(fjage_msg_t msg) {

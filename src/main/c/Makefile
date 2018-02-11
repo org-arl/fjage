@@ -2,10 +2,10 @@ CFLAGS=-std=c99 -Wall -O2
 
 all: libfjage.a
 
-libfjage.a: fjage.o jsmn.o
+libfjage.a: fjage.o jsmn.o encode.o decode.o
 	$(AR) rc $@ $^
 
-%.o: %.c fjage.h jsmn.h
+%.o: %.c fjage.h jsmn.h b64.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
 test: libfjage.a
