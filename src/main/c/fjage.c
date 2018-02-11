@@ -14,6 +14,7 @@ for full license details.
 #include <unistd.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/poll.h>
@@ -31,6 +32,7 @@ void fjage_msg_write_json(fjage_msg_t msg, int fd);
 #define UUID_LEN        36
 
 static char* base64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static time_t _t0 = 0;
 
 static void generate_uuid(char* uuid) {
   for (int i = 0; i < UUID_LEN; i++)
@@ -41,6 +43,13 @@ static void generate_uuid(char* uuid) {
 static int writes(int fd, const char* s) {
   int n = strlen(s);
   return write(fd, s, n);
+}
+
+static long get_time_ms(void) {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  if (_t0 == 0) _t0 = tv.tv_sec;
+  return (long)(tv.tv_sec-_t0)*1000 + (long)(tv.tv_usec)/1000;
 }
 
 //// gateway API
@@ -65,7 +74,6 @@ typedef struct {
 static void mqueue_put(fjage_gw_t gw, fjage_msg_t msg) {
   if (gw == NULL) return;
   _fjage_gw_t* fgw = gw;
-  printf("ADD: %s\n", fjage_msg_get_id(msg));
   fgw->mqueue[fgw->mqueue_head] = msg;
   fgw->mqueue_head = (fgw->mqueue_head+1) % QUEUE_LEN;
   if (fgw->mqueue_head == fgw->mqueue_tail) {
@@ -78,7 +86,6 @@ static void mqueue_put(fjage_gw_t gw, fjage_msg_t msg) {
 static fjage_msg_t mqueue_get(fjage_gw_t gw, const char* clazz, const char* id) {
   if (gw == NULL) return NULL;
   _fjage_gw_t* fgw = gw;
-  printf("GET!\n");
   fjage_msg_t msg = NULL;
   for (int i = fgw->mqueue_tail; i != fgw->mqueue_head && msg == NULL; i++) {
     if (fgw->mqueue[i] != NULL) {
@@ -88,7 +95,6 @@ static fjage_msg_t mqueue_get(fjage_gw_t gw, const char* clazz, const char* id) 
       }
       if (id != NULL) {
         const char* id1 = fjage_msg_get_in_reply_to(fgw->mqueue[i]);
-        printf("id: %s, id1: %s\n", id, id1);
         if (strcmp(id, id1)) continue;
       }
       msg = fgw->mqueue[i];
@@ -96,7 +102,6 @@ static fjage_msg_t mqueue_get(fjage_gw_t gw, const char* clazz, const char* id) 
       if (i == fgw->mqueue_tail) fgw->mqueue_tail = (fgw->mqueue_tail+1) % QUEUE_LEN;
     }
   }
-  printf("GET: %s\n", msg == NULL ? "null" : "msg");
   return msg;
 }
 
@@ -177,6 +182,7 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
       const char* json_msg = json_gets(json, tokens, "message");
       fjage_msg_t msg = fjage_msg_from_json(json_msg);
       mqueue_put(gw, msg);
+      if (id == NULL) rv = true;
     } else {
       char s[256];
       sprintf(s, "{\"id\": \"%s\", \"inResponseTo\": \"%s\", \"answer\": false}\n", json_gets(json, tokens, "id"), action);
@@ -190,6 +196,7 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
 static void json_reader(fjage_gw_t gw, const char* id, long timeout) {
   if (gw == NULL) return;
   _fjage_gw_t* fgw = gw;
+  long t0 = get_time_ms();
   struct pollfd fds;
   memset(&fds, 0, sizeof(fds));
   fds.fd = fgw->sockfd;
@@ -214,7 +221,9 @@ static void json_reader(fjage_gw_t gw, const char* id, long timeout) {
       fgw->head -= bol;
     }
     if (done) break;
-    rv = poll(&fds, 1, timeout);
+    long timeout1 = t0+timeout - get_time_ms();
+    if (timeout1 <= 0) break;
+    rv = poll(&fds, 1, timeout1);
     if (rv <= 0) break;
   }
 }
@@ -354,9 +363,14 @@ int fjage_send(fjage_gw_t gw, const fjage_msg_t msg) {
 }
 
 fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long timeout) {
-  json_reader(gw, NULL, timeout);
-  fjage_msg_t msg = mqueue_get(gw, clazz, id);
-  // TODO
+  long t0 = get_time_ms();
+  long timeout1 = timeout;
+  fjage_msg_t msg = NULL;
+  while (msg == NULL && timeout1 > 0) {
+    json_reader(gw, NULL, timeout1);
+    msg = mqueue_get(gw, clazz, id);
+    if (msg == NULL) timeout1 = t0+timeout - get_time_ms();
+  }
   return msg;
 }
 
