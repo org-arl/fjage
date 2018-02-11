@@ -23,6 +23,7 @@ for full license details.
 
 //// prototypes
 
+fjage_msg_t fjage_msg_from_json(const char* json);
 void fjage_msg_write_json(fjage_msg_t msg, int fd);
 
 //// utilities
@@ -45,6 +46,7 @@ static int writes(int fd, const char* s) {
 //// gateway API
 
 #define SUBLIST_LEN       1024
+#define QUEUE_LEN         1024
 #define BUFLEN            65536
 
 typedef struct {
@@ -55,9 +57,49 @@ typedef struct {
   int head;
   int aid_count;
   fjage_aid_t* aids;
+  fjage_msg_t mqueue[QUEUE_LEN];
+  int mqueue_head;
+  int mqueue_tail;
 } _fjage_gw_t;
 
-static jsmntok_t* json_parse(char* json) {
+static void mqueue_put(fjage_gw_t* gw, fjage_msg_t msg) {
+  if (gw == NULL) return;
+  _fjage_gw_t* fgw = gw;
+  fgw->mqueue[fgw->mqueue_head] = msg;
+  fgw->mqueue_head = (fgw->mqueue_head+1) % QUEUE_LEN;
+  if (fgw->mqueue_head == fgw->mqueue_tail) {
+    fgw->mqueue_tail = (fgw->mqueue_tail+1) % QUEUE_LEN;
+    fjage_msg_destroy(fgw->mqueue[fgw->mqueue_head]);
+    fgw->mqueue[fgw->mqueue_head] = NULL;
+  }
+}
+
+static fjage_msg_t mqueue_get(fjage_gw_t* gw, const char* clazz, const fjage_msg_t request) {
+  if (gw == NULL) return;
+  _fjage_gw_t* fgw = gw;
+  int i = fgw->mqueue_tail;
+  const char* id = NULL;
+  fjage_msg_t msg = NULL;
+  if (request != NULL) id = fjage_msg_get_id(request);
+  while (i != fgw->mqueue_head && msg == NULL) {
+    if (fgw->mqueue[i] != NULL) {
+      if (clazz != NULL) {
+        const char* clazz1 = fjage_msg_get_clazz(fgw->mqueue[i]);
+        if (strcmp(clazz, clazz1)) continue;
+      }
+      if (id != NULL) {
+        const char* id1 = fjage_msg_get_in_reply_to(fgw->mqueue[i]);
+        if (strcmp(id, id1)) continue;
+      }
+      msg = fgw->mqueue[i];
+      fgw->mqueue[i] = NULL;
+      if (i == fgw->mqueue_tail) fgw->mqueue_tail = (fgw->mqueue_tail+1) % QUEUE_LEN;
+    }
+  }
+  return msg;
+}
+
+static jsmntok_t* json_parse(const char* json) {
   jsmn_parser parser;
   jsmn_init(&parser);
   int n = jsmn_parse(&parser, json, strlen(json), NULL, 0);
@@ -66,19 +108,16 @@ static jsmntok_t* json_parse(char* json) {
   if (tokens == NULL) return NULL;
   jsmn_init(&parser);
   jsmn_parse(&parser, json, strlen(json), tokens, n);
-  for (int i = 0; i < n; i++) {
-    char* t = json + tokens[i].start;
-    t[tokens[i].end-tokens[i].start] = 0;
-  }
   return tokens;
 }
 
-static int json_get(const char* json, const jsmntok_t* tokens, const char* key) {
+static int json_get(char* json, const jsmntok_t* tokens, const char* key) {
   if (tokens == NULL || key == NULL) return -1;
   int n = tokens[0].size;
   int i = 1;
   while (n > 0) {
-    const char* t = json + tokens[i].start;
+    char* t = json + tokens[i].start;
+    t[tokens[i].end-tokens[i].start] = 0;
     if (!strcmp(t, key)) return i+1;
     int skip = tokens[i].size;
     while (skip > 0)
@@ -89,14 +128,16 @@ static int json_get(const char* json, const jsmntok_t* tokens, const char* key) 
   return -1;
 }
 
-static const char* json_gets(const char* json, const jsmntok_t* tokens, const char* key) {
+static const char* json_gets(char* json, const jsmntok_t* tokens, const char* key) {
   int i = json_get(json, tokens, key);
   if (i < 0) return NULL;
-  return json + tokens[i].start;
+  char* t = json + tokens[i].start;
+  t[tokens[i].end-tokens[i].start] = 0;
+  return t;
 }
 
-static bool json_process(fjage_gw_t gw, char* json, const char* id) {
-  if (gw == NULL) return false;
+static bool json_process(fjage_gw_t* gw, char* json, const char* id) {
+  if (gw == NULL) return;
   _fjage_gw_t* fgw = gw;
   jsmntok_t* tokens = json_parse(json);
   if (tokens == NULL) return false;
@@ -120,8 +161,11 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
           fgw->aids = malloc(n*sizeof(fjage_aid_t));
           if (fgw->aids != NULL) {
             fgw->aid_count = n;
-            for (int j = 0; j < n; j++)
-              fgw->aids[j] = fjage_aid_create(json+tokens[i+j+1].start);
+            for (int j = 0; j < n; j++) {
+              char* t = json+tokens[i+j+1].start;
+              t[tokens[i+j+1].end-tokens[i+j+1].start] = 0;
+              fgw->aids[j] = fjage_aid_create(t);
+            }
             rv = true;
           }
         }
@@ -129,7 +173,9 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
     }
   } else {
     if (!strcmp(action, "send")) {
-      // TODO
+      const char* json_msg = json_gets(json, tokens, "message");
+      fjage_msg_t msg = fjage_msg_from_json(json_msg);
+      mqueue_put(msg);
     } else {
       char s[256];
       sprintf(s, "{\"id\": \"%s\", \"inResponseTo\": \"%s\", \"answer\": false}\n", json_gets(json, tokens, "id"), action);
@@ -140,14 +186,14 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
   return rv;
 }
 
-static void json_reader(fjage_gw_t gw, const char* id, int timeout) {
+static void json_reader(fjage_gw_t gw, const char* id, long timeout) {
   if (gw == NULL) return;
   _fjage_gw_t* fgw = gw;
   struct pollfd fds;
   memset(&fds, 0, sizeof(fds));
   fds.fd = fgw->sockfd;
   fds.events = POLLIN;
-  int rv = poll(&fds, 1, 1000);
+  int rv = poll(&fds, 1, timeout);
   if (rv <= 0) return;
   int n;
   bool done = false;
@@ -269,7 +315,7 @@ fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
   writes(fgw->sockfd, "\"}\n");
   fgw->aid_count = 0;
   fgw->aids = NULL;
-  json_reader(fgw, uuid, 1000);
+  json_reader(gw, uuid, 1000);
   if (fgw->aid_count == 0) return NULL;
   return (fjage_aid_t)(fgw->aids);
 }
@@ -286,7 +332,7 @@ int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* ag
   writes(fgw->sockfd, "\"}\n");
   fgw->aid_count = 0;
   fgw->aids = NULL;
-  json_reader(fgw, uuid, 1000);
+  json_reader(gw, uuid, 1000);
   if (fgw->aid_count == 0) return 0;
   for (int i = 0; i < fgw->aid_count; i++) {
     if (i < max) agents[i] = fgw->aids[i];
@@ -307,12 +353,16 @@ int fjage_send(fjage_gw_t gw, const fjage_msg_t msg) {
 }
 
 fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const fjage_msg_t request, long timeout) {
+  json_reader(gw, NULL, timeout);
+  fjage_msg_t msg = mqueue_get(gw, clazz, request);
   // TODO
   return NULL;
 }
 
 fjage_msg_t fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout) {
+  fjage_send(gw, request);
   // TODO
+  json_reader(gw, NULL, timeout);
   return NULL;
 }
 

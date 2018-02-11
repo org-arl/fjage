@@ -89,7 +89,7 @@ int main() {
   fjage_msg_add_int(msg, "type", 1);
   fjage_msg_add_int(msg, "from", 42);
   fjage_msg_add_int(msg, "to", 27);
-  fjage_send(gw, msg);
+  fjage_request(gw, msg, 2000);
   fjage_close(gw);
 
   test_summary();
