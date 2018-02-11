@@ -24,8 +24,9 @@ for full license details.
 
 //// prototypes
 
-fjage_msg_t fjage_msg_from_json(const char* json);
-void fjage_msg_write_json(fjage_msg_t msg, int fd);
+static fjage_msg_t fjage_msg_from_json(const char* json);
+static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg);
+static void fjage_msg_set_sender(fjage_msg_t msg, fjage_aid_t aid);
 
 //// utilities
 
@@ -181,8 +182,13 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
     if (!strcmp(action, "send")) {
       const char* json_msg = json_gets(json, tokens, "message");
       fjage_msg_t msg = fjage_msg_from_json(json_msg);
-      mqueue_put(gw, msg);
-      if (id == NULL) rv = true;
+      if (msg != NULL) {
+        fjage_aid_t rcpt = fjage_msg_get_recipient(msg);
+        if (rcpt != NULL && (!strcmp(rcpt, fgw->aid) || fjage_is_subscribed(fgw, rcpt))) {
+          mqueue_put(gw, msg);
+          if (id == NULL) rv = true;
+        }
+      }
     } else {
       char s[256];
       sprintf(s, "{\"id\": \"%s\", \"inResponseTo\": \"%s\", \"answer\": false}\n", json_gets(json, tokens, "id"), action);
@@ -353,10 +359,13 @@ int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* ag
 }
 
 int fjage_send(fjage_gw_t gw, const fjage_msg_t msg) {
-  if (gw == NULL) return -1;
+  if (gw == NULL) {
+    fjage_msg_destroy(msg);
+    return -1;
+  }
   _fjage_gw_t* fgw = gw;
   writes(fgw->sockfd, "{\"action\": \"send\", \"relay\": true, \"message\": ");
-  fjage_msg_write_json(msg, fgw->sockfd);
+  fjage_msg_write_json(gw, msg);
   writes(fgw->sockfd, "}\n");
   fjage_msg_destroy(msg);
   return 0;
@@ -376,8 +385,13 @@ fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long
 
 fjage_msg_t fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout) {
   char id[UUID_LEN+1];
-  strcpy(id, fjage_msg_get_id(request));
-  fjage_send(gw, request);
+  const char* id1 = fjage_msg_get_id(request);
+  if (id1 == NULL) {
+    fjage_msg_destroy(request);
+    return NULL;
+  }
+  strcpy(id, id1);
+  if (fjage_send(gw, request) < 0) return NULL;
   return fjage_receive(gw, NULL, id, timeout);
 }
 
@@ -512,10 +526,12 @@ static void msg_read_json(fjage_msg_t msg, const char* s) {
   }
 }
 
-void fjage_msg_write_json(fjage_msg_t msg, int fd) {
-  if (msg == NULL) return;
+static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg) {
+  if (msg == NULL || gw == NULL) return;
+  _fjage_gw_t* fgw = gw;
   _fjage_msg_t* m = msg;
   if (m->data == NULL) return;
+  int fd = fgw->sockfd;
   writes(fd, "{\"clazz\": \"");
   writes(fd, m->clazz);
   writes(fd, "\", data: { \"msgID\": \"");
@@ -536,11 +552,9 @@ void fjage_msg_write_json(fjage_msg_t msg, int fd) {
     case FJAGE_CANCEL:          writes(fd, "\"perf\": \"CANCEL\", ");          break;
     case FJAGE_NONE:                                                           break;
   }
-  if (m->sender != NULL) {
-    writes(fd, "\"sender\": \"");
-    writes(fd, m->sender);
-    writes(fd, "\", ");
-  }
+  writes(fd, "\"sender\": \"");
+  writes(fd, fgw->aid);
+  writes(fd, "\", ");
   if (m->recipient != NULL) {
     writes(fd, "\"recipient\": \"");
     writes(fd, m->recipient);
@@ -562,8 +576,8 @@ fjage_msg_t fjage_msg_create(const char* clazz, fjage_perf_t perf) {
   memset(m->clazz, 0, CLAZZ_LEN+1);
   if (clazz != NULL) strncpy(m->clazz, clazz, CLAZZ_LEN);
   m->perf = perf;
-  m->sender = NULL;
   m->recipient = NULL;
+  m->sender = NULL;
   m->in_reply_to[0] = 0;
   m->data = NULL;
   m->data_len = 0;
@@ -572,7 +586,7 @@ fjage_msg_t fjage_msg_create(const char* clazz, fjage_perf_t perf) {
   return m;
 }
 
-fjage_msg_t fjage_msg_from_json(const char* json) {
+static fjage_msg_t fjage_msg_from_json(const char* json) {
   fjage_msg_t msg = fjage_msg_create(NULL, FJAGE_NONE);
   if (msg == NULL) return NULL;
   msg_read_json(msg, json);
@@ -623,7 +637,7 @@ void fjage_msg_set_recipient(fjage_msg_t msg, fjage_aid_t aid) {
   m->recipient = clone_aid(aid);
 }
 
-void fjage_msg_set_sender(fjage_msg_t msg, fjage_aid_t aid) {
+static void fjage_msg_set_sender(fjage_msg_t msg, fjage_aid_t aid) {
   if (msg == NULL) return;
   _fjage_msg_t* m = msg;
   free(m->sender);
