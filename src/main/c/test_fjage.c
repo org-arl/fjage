@@ -89,7 +89,10 @@ int main() {
   fjage_msg_add_int(msg, "type", 1);
   fjage_msg_add_int(msg, "from", 42);
   fjage_msg_add_int(msg, "to", 27);
-  fjage_request(gw, msg, 2000);
+  fjage_msg_t rsp = fjage_request(gw, msg, 2000);
+  if (rsp == NULL) printf("null response\n");
+  else printf("response: %d\n", fjage_msg_get_performative(rsp));
+  fjage_msg_destroy(rsp);
   fjage_close(gw);
 
   test_summary();

@@ -16,7 +16,7 @@ int           fjage_unsubscribe(fjage_gw_t gw, const fjage_aid_t topic);
 fjage_aid_t   fjage_agent_for_service(fjage_gw_t gw, const char* service);
 int           fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* agents, int max);
 int           fjage_send(fjage_gw_t gw, const fjage_msg_t msg);
-fjage_msg_t   fjage_receive(fjage_gw_t gw, const char* clazz, const fjage_msg_t request, long timeout);
+fjage_msg_t   fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long timeout);
 fjage_msg_t   fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout);
 
 fjage_aid_t   fjage_aid_create(const char* name);

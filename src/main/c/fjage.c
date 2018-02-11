@@ -62,9 +62,10 @@ typedef struct {
   int mqueue_tail;
 } _fjage_gw_t;
 
-static void mqueue_put(fjage_gw_t* gw, fjage_msg_t msg) {
+static void mqueue_put(fjage_gw_t gw, fjage_msg_t msg) {
   if (gw == NULL) return;
   _fjage_gw_t* fgw = gw;
+  printf("ADD: %s\n", fjage_msg_get_id(msg));
   fgw->mqueue[fgw->mqueue_head] = msg;
   fgw->mqueue_head = (fgw->mqueue_head+1) % QUEUE_LEN;
   if (fgw->mqueue_head == fgw->mqueue_tail) {
@@ -74,14 +75,12 @@ static void mqueue_put(fjage_gw_t* gw, fjage_msg_t msg) {
   }
 }
 
-static fjage_msg_t mqueue_get(fjage_gw_t* gw, const char* clazz, const fjage_msg_t request) {
-  if (gw == NULL) return;
+static fjage_msg_t mqueue_get(fjage_gw_t gw, const char* clazz, const char* id) {
+  if (gw == NULL) return NULL;
   _fjage_gw_t* fgw = gw;
-  int i = fgw->mqueue_tail;
-  const char* id = NULL;
+  printf("GET!\n");
   fjage_msg_t msg = NULL;
-  if (request != NULL) id = fjage_msg_get_id(request);
-  while (i != fgw->mqueue_head && msg == NULL) {
+  for (int i = fgw->mqueue_tail; i != fgw->mqueue_head && msg == NULL; i++) {
     if (fgw->mqueue[i] != NULL) {
       if (clazz != NULL) {
         const char* clazz1 = fjage_msg_get_clazz(fgw->mqueue[i]);
@@ -89,6 +88,7 @@ static fjage_msg_t mqueue_get(fjage_gw_t* gw, const char* clazz, const fjage_msg
       }
       if (id != NULL) {
         const char* id1 = fjage_msg_get_in_reply_to(fgw->mqueue[i]);
+        printf("id: %s, id1: %s\n", id, id1);
         if (strcmp(id, id1)) continue;
       }
       msg = fgw->mqueue[i];
@@ -96,6 +96,7 @@ static fjage_msg_t mqueue_get(fjage_gw_t* gw, const char* clazz, const fjage_msg
       if (i == fgw->mqueue_tail) fgw->mqueue_tail = (fgw->mqueue_tail+1) % QUEUE_LEN;
     }
   }
+  printf("GET: %s\n", msg == NULL ? "null" : "msg");
   return msg;
 }
 
@@ -136,8 +137,8 @@ static const char* json_gets(char* json, const jsmntok_t* tokens, const char* ke
   return t;
 }
 
-static bool json_process(fjage_gw_t* gw, char* json, const char* id) {
-  if (gw == NULL) return;
+static bool json_process(fjage_gw_t gw, char* json, const char* id) {
+  if (gw == NULL) return false;
   _fjage_gw_t* fgw = gw;
   jsmntok_t* tokens = json_parse(json);
   if (tokens == NULL) return false;
@@ -175,7 +176,7 @@ static bool json_process(fjage_gw_t* gw, char* json, const char* id) {
     if (!strcmp(action, "send")) {
       const char* json_msg = json_gets(json, tokens, "message");
       fjage_msg_t msg = fjage_msg_from_json(json_msg);
-      mqueue_put(msg);
+      mqueue_put(gw, msg);
     } else {
       char s[256];
       sprintf(s, "{\"id\": \"%s\", \"inResponseTo\": \"%s\", \"answer\": false}\n", json_gets(json, tokens, "id"), action);
@@ -202,7 +203,7 @@ static void json_reader(fjage_gw_t gw, const char* id, long timeout) {
     for (int i = fgw->head; i < fgw->head + n; i++) {
       if (fgw->buf[i] == '\n') {
         fgw->buf[i] = 0;
-        done = json_process(fgw, fgw->buf + bol, id);
+        done = json_process(gw, fgw->buf + bol, id);
         bol = i+1;
       }
     }
@@ -352,18 +353,18 @@ int fjage_send(fjage_gw_t gw, const fjage_msg_t msg) {
   return 0;
 }
 
-fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const fjage_msg_t request, long timeout) {
+fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long timeout) {
   json_reader(gw, NULL, timeout);
-  fjage_msg_t msg = mqueue_get(gw, clazz, request);
+  fjage_msg_t msg = mqueue_get(gw, clazz, id);
   // TODO
-  return NULL;
+  return msg;
 }
 
 fjage_msg_t fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout) {
+  char id[UUID_LEN+1];
+  strcpy(id, fjage_msg_get_id(request));
   fjage_send(gw, request);
-  // TODO
-  json_reader(gw, NULL, timeout);
-  return NULL;
+  return fjage_receive(gw, NULL, id, timeout);
 }
 
 //// agent ID API
@@ -476,6 +477,22 @@ static void msg_read_json(fjage_msg_t msg, const char* s) {
       t = m->data + m->tokens[i+1].start;
       t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
       fjage_msg_set_recipient(msg, (fjage_aid_t)t);
+      m->tokens[i].type = 0;
+    } else if (!strcmp(t, "perf")) {
+      t = m->data + m->tokens[i+1].start;
+      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
+      if (!strcmp(t, "REQUEST")) ((_fjage_msg_t*)msg)->perf = FJAGE_REQUEST;
+      else if (!strcmp(t, "AGREE")) ((_fjage_msg_t*)msg)->perf = FJAGE_AGREE;
+      else if (!strcmp(t, "REFUSE")) ((_fjage_msg_t*)msg)->perf = FJAGE_REFUSE;
+      else if (!strcmp(t, "FAILURE")) ((_fjage_msg_t*)msg)->perf = FJAGE_FAILURE;
+      else if (!strcmp(t, "INFORM")) ((_fjage_msg_t*)msg)->perf = FJAGE_INFORM;
+      else if (!strcmp(t, "CONFIRM")) ((_fjage_msg_t*)msg)->perf = FJAGE_CONFIRM;
+      else if (!strcmp(t, "DISCONFIRM")) ((_fjage_msg_t*)msg)->perf = FJAGE_DISCONFIRM;
+      else if (!strcmp(t, "QUERY_IF")) ((_fjage_msg_t*)msg)->perf = FJAGE_QUERY_IF;
+      else if (!strcmp(t, "NOT_UNDERSTOOD")) ((_fjage_msg_t*)msg)->perf = FJAGE_NOT_UNDERSTOOD;
+      else if (!strcmp(t, "CFP")) ((_fjage_msg_t*)msg)->perf = FJAGE_CFP;
+      else if (!strcmp(t, "PROPOSE")) ((_fjage_msg_t*)msg)->perf = FJAGE_PROPOSE;
+      else if (!strcmp(t, "CANCEL")) ((_fjage_msg_t*)msg)->perf = FJAGE_CANCEL;
       m->tokens[i].type = 0;
     }
   }
