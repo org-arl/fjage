@@ -93,11 +93,11 @@ static fjage_msg_t mqueue_get(fjage_gw_t gw, const char* clazz, const char* id) 
     if (fgw->mqueue[i] != NULL) {
       if (clazz != NULL) {
         const char* clazz1 = fjage_msg_get_clazz(fgw->mqueue[i]);
-        if (strcmp(clazz, clazz1)) continue;
+        if (clazz1 == NULL || strcmp(clazz, clazz1)) continue;
       }
       if (id != NULL) {
         const char* id1 = fjage_msg_get_in_reply_to(fgw->mqueue[i]);
-        if (strcmp(id, id1)) continue;
+        if (id1 == NULL || strcmp(id, id1)) continue;
       }
       msg = fgw->mqueue[i];
       fgw->mqueue[i] = NULL;
@@ -531,11 +531,10 @@ static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg) {
   if (msg == NULL || gw == NULL) return;
   _fjage_gw_t* fgw = gw;
   _fjage_msg_t* m = msg;
-  if (m->data == NULL) return;
   int fd = fgw->sockfd;
   writes(fd, "{\"clazz\": \"");
   writes(fd, m->clazz);
-  writes(fd, "\", data: { \"msgID\": \"");
+  writes(fd, "\", \"data\": { \"msgID\": \"");
   writes(fd, m->id);
   writes(fd, "\", ");
   switch (m->perf) {
@@ -553,9 +552,6 @@ static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg) {
     case FJAGE_CANCEL:          writes(fd, "\"perf\": \"CANCEL\", ");          break;
     case FJAGE_NONE:                                                           break;
   }
-  writes(fd, "\"sender\": \"");
-  writes(fd, fgw->aid);
-  writes(fd, "\", ");
   if (m->recipient != NULL) {
     writes(fd, "\"recipient\": \"");
     writes(fd, m->recipient);
@@ -566,7 +562,13 @@ static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg) {
     writes(fd, m->in_reply_to);
     writes(fd, "\", ");
   }
-  write(fd, m->data, strlen(m->data)-2);
+  writes(fd, "\"sender\": \"");
+  writes(fd, fgw->aid);
+  writes(fd, "\"");
+  if (m->data != NULL) {
+    writes(fd, ", ");
+    write(fd, m->data, strlen(m->data)-2);
+  }
   writes(fd, "}}");
 }
 
