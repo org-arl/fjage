@@ -1,3 +1,27 @@
+/******************************************************************************
+
+Copyright (c) 2018, Mandar Chitre
+
+This file is part of fjage which is released under Simplified BSD License.
+See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
+for full license details.
+
+******************************************************************************/
+
+////////////////////////////////////////////////////////////////////
+//
+// To run tests, first run the fjage container and then the tests:
+//
+// In one terminal window:
+// $ gradle
+// $ ./fjage
+//
+// In another terminal window:
+// $ cd fjage/main/c
+// $ make test
+//
+////////////////////////////////////////////////////////////////////
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -5,11 +29,6 @@
 #include <string.h>
 #include <math.h>
 #include "fjage.h"
-
-// function prototypes
-fjage_msg_t fjage_msg_from_json(const char* json);
-void fjage_msg_write_json(fjage_msg_t msg, int fd);
-bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic);
 
 static int passed = 0;
 static int failed = 0;

@@ -120,7 +120,8 @@ int fjage_send(fjage_gw_t gw, const fjage_msg_t msg);
 /// NULL, only messages that are in response to the message specified by the id are received.
 ///
 /// Recevied messages are open in read-only mode, where the getter fjage_msg_get_* functions may
-/// be called, but not the setters.
+/// be called, but not the setters. Messages of class org.arl.fjage.GenericMessage are currently
+/// unsupported.
 ///
 /// @param gw             Gateway
 /// @param clazz          Fully qualified name of message class, or NULL
@@ -135,7 +136,8 @@ fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long
 /// it should be freed by the caller using fjage_msg_destroy().
 ///
 /// Recevied messages are open in read-only mode, where the getter fjage_msg_get_* functions may
-/// be called, but not the setters.
+/// be called, but not the setters. Messages of class org.arl.fjage.GenericMessage are currently
+/// unsupported.
 ///
 /// @param gw             Gateway
 /// @param request        Request message to send
@@ -171,6 +173,8 @@ void fjage_aid_destroy(fjage_aid_t aid);
 /// Getters of the message should not be called. Only fjage_msg_set_* and fjage_msg_add_*
 /// functions should be called on the message. If the message is eventually not
 /// sent, it may be destroyed using fjage_msg_destroy().
+///
+/// Messages of class org.arl.fjage.GenericMessage are currently unsupported.
 ///
 /// @param clazz          Fully qualified message class
 /// @param perf           Performative of the message
