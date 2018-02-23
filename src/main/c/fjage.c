@@ -479,7 +479,7 @@ static void msg_read_json(fjage_msg_t msg, const char* s) {
   for (int i = 1; i < m->ntokens; i+=2) {
     char* t = m->data + m->tokens[i].start;
     t[m->tokens[i].end-m->tokens[i].start] = 0;
-    if (!strcmp(t, "clazz")) {
+    if (!strcmp(t, "clazz") && m->clazz[0] == 0) {
       t = m->data + m->tokens[i+1].start;
       t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
       strncpy(m->clazz, t, CLAZZ_LEN);
@@ -669,6 +669,27 @@ const char* fjage_msg_get_string(fjage_msg_t msg, const char* key) {
   return NULL;
 }
 
+static const char* fjage_msg_get_data(fjage_msg_t msg, const char* key) {
+  if (msg == NULL) return NULL;
+  _fjage_msg_t* m = msg;
+  int n = -1;
+  for (int i = 1; i < m->ntokens-1; i += 2) {
+    char* t = m->data + m->tokens[i].start;
+    if (n < 0) {
+      if (m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_OBJECT && !strcmp(t, key)) n = m->tokens[i+1].size;
+    } else {
+      n--;
+      if (n < 0) return NULL;
+      if (m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_STRING && !strcmp(t, "data")) {
+        t = m->data + m->tokens[i+1].start;
+        t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
+        return t;
+      }
+    }
+  }
+  return NULL;
+}
+
 int fjage_msg_get_int(fjage_msg_t msg, const char* key, int defval) {
   const char* t = fjage_msg_get_string(msg, key);
   if (t == NULL) return defval;
@@ -695,6 +716,7 @@ bool fjage_msg_get_bool(fjage_msg_t msg, const char* key, bool defval) {
 
 int fjage_msg_get_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int maxlen) {
   const char* s = fjage_msg_get_string(msg, key);
+  if (s == NULL) s = fjage_msg_get_data(msg, key);
   if (s == NULL) return -1;
   size_t buflen;
   unsigned char* buf = b64_decode_ex(s, strlen(s), &buflen);
@@ -705,6 +727,7 @@ int fjage_msg_get_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, i
 
 int fjage_msg_get_float_array(fjage_msg_t msg, const char* key, float* value, int maxlen) {
   const char* s = fjage_msg_get_string(msg, key);
+  if (s == NULL) s = fjage_msg_get_data(msg, key);
   if (s == NULL) return -1;
   size_t buflen;
   unsigned char* buf = b64_decode_ex(s, strlen(s), &buflen);
