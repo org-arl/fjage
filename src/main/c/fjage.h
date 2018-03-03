@@ -11,6 +11,10 @@ for full license details.
 #ifndef _FJAGE_H_
 #define _FJAGE_H_
 
+//////////////////////////////////////////
+//  NOTE: This API is NOT thread-safe   //
+//////////////////////////////////////////
+
 #include <stdbool.h>
 #include <stdint.h>
 
