@@ -323,6 +323,17 @@ int fjage_subscribe(fjage_gw_t gw, const fjage_aid_t topic) {
   return 0;
 }
 
+int fjage_subscribe_agent(fjage_gw_t gw, const fjage_aid_t aid) {
+  if (gw == NULL) return -1;
+  if (aid == NULL) return -1;
+  fjage_aid_t topic = malloc(strlen(aid)+7);
+  if (topic == NULL) return -1;
+  sprintf(topic, "#%s__ntf", aid);
+  int rv = fjage_subscribe(gw, topic);
+  free(topic);
+  return rv;
+}
+
 int fjage_unsubscribe(fjage_gw_t gw, const fjage_aid_t topic) {
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
@@ -724,6 +735,14 @@ int fjage_msg_get_int(fjage_msg_t msg, const char* key, int defval) {
   return x;
 }
 
+long fjage_msg_get_long(fjage_msg_t msg, const char* key, long defval) {
+  const char* t = fjage_msg_get_string(msg, key);
+  if (t == NULL) return defval;
+  long x = defval;
+  sscanf(t, "%ld", &x);
+  return x;
+}
+
 float fjage_msg_get_float(fjage_msg_t msg, const char* key, float defval) {
   const char* t = fjage_msg_get_string(msg, key);
   if (t == NULL) return defval;
@@ -770,6 +789,11 @@ void fjage_msg_add_string(fjage_msg_t msg, const char* key, const char* value) {
 void fjage_msg_add_int(fjage_msg_t msg, const char* key, int value) {
   char* s = msg_append(msg, strlen(key)+16);
   if (s != NULL) sprintf(s, "\"%s\": %d, ", key, value);
+}
+
+void fjage_msg_add_long(fjage_msg_t msg, const char* key, long value) {
+  char* s = msg_append(msg, strlen(key)+16);
+  if (s != NULL) sprintf(s, "\"%s\": %ld, ", key, value);
 }
 
 void fjage_msg_add_float(fjage_msg_t msg, const char* key, float value) {

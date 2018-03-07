@@ -101,6 +101,7 @@ int main() {
   fjage_msg_set_recipient(msg, myaid);
   fjage_msg_add_string(msg, "mystring", "myvalue");
   fjage_msg_add_int(msg, "myint", 7);
+  fjage_msg_add_long(msg, "mylong", 77);
   fjage_msg_add_float(msg, "myfloat", 2.7);
   fjage_msg_add_bool(msg, "mytbool", true);
   fjage_msg_add_bool(msg, "myfbool", false);
@@ -117,6 +118,7 @@ int main() {
   const char* s = fjage_msg_get_string(msg, "mystring");
   test_assert("msg_get_string", s != NULL && !strcmp(s, "myvalue"));
   test_assert("msg_get_int", fjage_msg_get_int(msg, "myint", -1) == 7);
+  test_assert("msg_get_long", fjage_msg_get_long(msg, "mylong", -1) == 77);
   test_assert("msg_get_float", fabs(fjage_msg_get_float(msg, "myfloat", 0)-2.7) < 0.01);
   test_assert("msg_get_bool", fjage_msg_get_bool(msg, "mytbool", false) && !fjage_msg_get_bool(msg, "myfbool", true));
   test_assert("msg_get_byte_array (len)", fjage_msg_get_byte_array(msg, "mydata", NULL, 0) == 7);

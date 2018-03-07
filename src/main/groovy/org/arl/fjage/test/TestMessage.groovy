@@ -16,6 +16,7 @@ package org.arl.fjage.test
 class TestMessage extends org.arl.fjage.Message {
   String mystring
   int myint
+  long mylong
   float myfloat
   boolean mytbool
   boolean myfbool

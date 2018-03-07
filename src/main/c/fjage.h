@@ -72,6 +72,14 @@ fjage_aid_t fjage_get_agent_id(fjage_gw_t gw);
 
 int fjage_subscribe(fjage_gw_t gw, const fjage_aid_t topic);
 
+/// Subscribe to an agent's default topic.
+///
+/// @param gw             Gateway
+/// @param topic          AgentID
+/// @return               0 on success, error code otherwise
+
+int fjage_subscribe_agent(fjage_gw_t gw, const fjage_aid_t aid);
+
 /// Unsubscribe from a topic.
 ///
 /// @param gw             Gateway
@@ -230,6 +238,14 @@ void fjage_msg_add_string(fjage_msg_t msg, const char* key, const char* value);
 
 void fjage_msg_add_int(fjage_msg_t msg, const char* key, int value);
 
+/// Add a long value to a message.
+///
+/// @param msg            Message in write-only mode
+/// @param key            Key
+/// @param value          Value
+
+void fjage_msg_add_long(fjage_msg_t msg, const char* key, long value);
+
 /// Add a floating point value to a message.
 ///
 /// @param msg            Message in write-only mode
@@ -333,6 +349,14 @@ const char* fjage_msg_get_string(fjage_msg_t msg, const char* key);
 /// @return               Integer value
 
 int fjage_msg_get_int(fjage_msg_t msg, const char* key, int defval);
+
+/// Get a long value.
+///
+/// @param msg            Message in read-only mode
+/// @param key            Key
+/// @return               Long value
+
+long fjage_msg_get_long(fjage_msg_t msg, const char* key, long defval);
 
 /// Get a floating point value.
 ///
