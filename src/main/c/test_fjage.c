@@ -28,6 +28,8 @@ for full license details.
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
+#include <pthread.h>
+#include <sys/time.h>
 #include "fjage.h"
 
 static int passed = 0;
@@ -50,6 +52,19 @@ static void test_summary(void) {
 static int error(const char* msg) {
   printf("\n*** ERROR: %s\n\n", msg);
   return -1;
+}
+
+static double current_time(void) {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return tv.tv_sec + tv.tv_usec/1e6;
+}
+
+static void* intr_thread(void* p) {
+  fjage_gw_t gw = (fjage_gw_t)p;
+  usleep(500000);
+  fjage_interrupt(gw);
+  return NULL;
 }
 
 int main() {
@@ -113,6 +128,21 @@ int main() {
   test_assert("msg_get_byte_array", data[0] == 7 && data[1] == 6 && data[2] == 5 && data[3] == 4 && data[4] == 3 && data[5] == 2 && data[6] == 1);
   test_assert("msg_get_float_array", signal[0] == 3 && signal[1] == 1 && signal[2] == 4 && signal[3] == 1 && signal[4] == 5 && signal[5] == 9 && signal[6] == 2);
   fjage_msg_destroy(msg);
+  double t0 = current_time();
+  msg = fjage_receive(gw, NULL, NULL, 1000);
+  test_assert("receive (timeout 1)", msg == NULL && current_time()-t0 > 0.9);
+  t0 = current_time();
+  fjage_interrupt(gw);
+  msg = fjage_receive(gw, NULL, NULL, 1000);
+  test_assert("receive (interrupt 1)", msg == NULL && current_time()-t0 < 0.9);
+  pthread_t tid;
+  pthread_create(&tid, NULL, intr_thread, gw);
+  t0 = current_time();
+  msg = fjage_receive(gw, NULL, NULL, 1000);
+  test_assert("receive (interrupt 2)", msg == NULL && current_time()-t0 < 0.9);
+  t0 = current_time();
+  msg = fjage_receive(gw, NULL, NULL, 1000);
+  test_assert("receive (timeout 2)", msg == NULL && current_time()-t0 > 0.9);
   msg = fjage_msg_create("org.arl.fjage.test.TestMessage", FJAGE_INFORM);
   fjage_msg_set_recipient(msg, myaid);
   fjage_send(gw, msg);

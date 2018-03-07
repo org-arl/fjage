@@ -62,6 +62,7 @@ static long get_time_ms(void) {
 
 typedef struct {
   int sockfd;
+  int intfd[2];       // self-pipe used to break the poll on sockfd
   fjage_aid_t aid;
   char sublist[SUBLIST_LEN];
   char buf[BUFLEN];
@@ -200,39 +201,49 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
   return rv;
 }
 
-static void json_reader(fjage_gw_t gw, const char* id, long timeout) {
-  if (gw == NULL) return;
+static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
+  if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
   long t0 = get_time_ms();
-  struct pollfd fds;
-  memset(&fds, 0, sizeof(fds));
-  fds.fd = fgw->sockfd;
-  fds.events = POLLIN;
-  int rv = poll(&fds, 1, timeout);
-  if (rv <= 0) return;
-  int n;
-  bool done = false;
-  while ((n = read(fgw->sockfd, fgw->buf + fgw->head, BUFLEN - fgw->head)) > 0) {
-    int bol = 0;
-    for (int i = fgw->head; i < fgw->head + n; i++) {
-      if (fgw->buf[i] == '\n') {
-        fgw->buf[i] = 0;
-        done = json_process(gw, fgw->buf + bol, id);
-        bol = i+1;
+  struct pollfd fds[2];
+  memset(fds, 0, sizeof(fds));
+  fds[0].fd = fgw->sockfd;
+  fds[0].events = POLLIN;
+  fds[1].fd = fgw->intfd[0];
+  fds[1].events = POLLIN;
+  int rv = poll(fds, 2, timeout);
+  if (rv <= 0) return 0;
+  if ((fds[1].revents & POLLIN) == 0) {
+    int n;
+    bool done = false;
+    while ((n = read(fgw->sockfd, fgw->buf + fgw->head, BUFLEN - fgw->head)) > 0) {
+      int bol = 0;
+      for (int i = fgw->head; i < fgw->head + n; i++) {
+        if (fgw->buf[i] == '\n') {
+          fgw->buf[i] = 0;
+          done = json_process(gw, fgw->buf + bol, id);
+          bol = i+1;
+        }
       }
+      fgw->head += n;
+      if (fgw->head >= BUFLEN) fgw->head = 0;
+      if (bol > 0) {
+        memmove(fgw->buf, fgw->buf + bol, fgw->head - bol);
+        fgw->head -= bol;
+      }
+      if (done) break;
+      long timeout1 = t0+timeout - get_time_ms();
+      if (timeout1 <= 0) break;
+      rv = poll(fds, 2, timeout1);
+      if (rv <= 0) break;
+      if ((fds[1].revents & POLLIN) != 0) break;
     }
-    fgw->head += n;
-    if (fgw->head >= BUFLEN) fgw->head = 0;
-    if (bol > 0) {
-      memmove(fgw->buf, fgw->buf + bol, fgw->head - bol);
-      fgw->head -= bol;
-    }
-    if (done) break;
-    long timeout1 = t0+timeout - get_time_ms();
-    if (timeout1 <= 0) break;
-    rv = poll(&fds, 1, timeout1);
-    if (rv <= 0) break;
   }
+  rv = 0;
+  uint8_t dummy;
+  while (read(fgw->intfd[0], &dummy, 1) > 0)
+    rv = -1;
+  return rv;
 }
 
 bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic) {
@@ -270,7 +281,13 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
     free(fgw);
     return NULL;
   }
+  if (pipe(fgw->intfd) < 0) {
+    close(fgw->sockfd);
+    free(fgw);
+    return NULL;
+  }
   fcntl(fgw->sockfd, F_SETFL, O_NONBLOCK);
+  fcntl(fgw->intfd[0], F_SETFL, O_NONBLOCK);
   char s[64];
   sprintf(s, "CGatewayAgent@%08x", rand());
   fgw->aid = fjage_aid_create(s);
@@ -282,6 +299,8 @@ int fjage_close(fjage_gw_t gw) {
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
   close(fgw->sockfd);
+  close(fgw->intfd[0]);
+  close(fgw->intfd[1]);
   fjage_aid_destroy(fgw->aid);
   free(fgw);
   return 0;
@@ -377,7 +396,7 @@ fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long
   long timeout1 = timeout;
   fjage_msg_t msg = NULL;
   while (msg == NULL && timeout1 > 0) {
-    json_reader(gw, NULL, timeout1);
+    if (json_reader(gw, NULL, timeout1) < 0) break;
     msg = mqueue_get(gw, clazz, id);
     if (msg == NULL) timeout1 = t0+timeout - get_time_ms();
   }
@@ -394,6 +413,13 @@ fjage_msg_t fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout
   strcpy(id, id1);
   if (fjage_send(gw, request) < 0) return NULL;
   return fjage_receive(gw, NULL, id, timeout);
+}
+
+void fjage_interrupt(fjage_gw_t gw) {
+  if (gw == NULL) return;
+  _fjage_gw_t* fgw = gw;
+  uint8_t dummy = 1;
+  write(fgw->intfd[1], &dummy, 1);
 }
 
 //// agent ID API

@@ -150,6 +150,13 @@ fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long
 
 fjage_msg_t fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout);
 
+/// Abort a fjage_receive() or fjage_request() operation before the timeout. This function may be
+/// called from another thread to abort an ongoing blocking reception.
+///
+/// @param gw             Gateway
+
+void fjage_interrupt(fjage_gw_t gw);
+
 /// Create an AgentID. The AgentID created using this function should be freed using
 /// fjage_aid_destroy().
 ///

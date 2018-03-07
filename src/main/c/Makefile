@@ -9,7 +9,7 @@ libfjage.a: fjage.o jsmn.o encode.o decode.o
 	$(CC) $(CFLAGS) -c $< -o $@
 
 test_fjage: test_fjage.o libfjage.a
-	$(CC) -o test_fjage test_fjage.o libfjage.a
+	$(CC) -o test_fjage test_fjage.o libfjage.a -lpthread
 
 test: test_fjage
 	./test_fjage
