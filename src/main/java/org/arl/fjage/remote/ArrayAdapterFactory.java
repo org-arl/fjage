@@ -57,19 +57,19 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
           else {
             ByteBuffer buf = null;
             if (compType.equals(int.class)) {
-              buf = ByteBuffer.allocate(Integer.SIZE/Byte.SIZE*((int[])value).length);
+              buf = ByteBuffer.allocate(Integer.SIZE/Byte.SIZE*((int[])value).length).order(ByteOrder.LITTLE_ENDIAN);
               buf.asIntBuffer().put((int[])value);
             } else if (compType.equals(short.class)) {
-              buf = ByteBuffer.allocate(Short.SIZE/Byte.SIZE*((short[])value).length);
+              buf = ByteBuffer.allocate(Short.SIZE/Byte.SIZE*((short[])value).length).order(ByteOrder.LITTLE_ENDIAN);
               buf.asShortBuffer().put((short[])value);
             } else if (compType.equals(long.class)) {
-              buf = ByteBuffer.allocate(Long.SIZE/Byte.SIZE*((long[])value).length);
+              buf = ByteBuffer.allocate(Long.SIZE/Byte.SIZE*((long[])value).length).order(ByteOrder.LITTLE_ENDIAN);
               buf.asLongBuffer().put((long[])value);
             } else if (compType.equals(float.class)) {
-              buf = ByteBuffer.allocate(Float.SIZE/Byte.SIZE*((float[])value).length);
+              buf = ByteBuffer.allocate(Float.SIZE/Byte.SIZE*((float[])value).length).order(ByteOrder.LITTLE_ENDIAN);
               buf.asFloatBuffer().put((float[])value);
             } else if (compType.equals(double.class)) {
-              buf = ByteBuffer.allocate(Double.SIZE/Byte.SIZE*((double[])value).length);
+              buf = ByteBuffer.allocate(Double.SIZE/Byte.SIZE*((double[])value).length).order(ByteOrder.LITTLE_ENDIAN);
               buf.asDoubleBuffer().put((double[])value);
             }
             data = buf.array();
@@ -110,31 +110,31 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
         if (compType.equals(byte.class)) return (T)data;
         ByteBuffer buf = ByteBuffer.wrap(data);
         if (compType.equals(int.class)) {
-          IntBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asIntBuffer();
+          IntBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
           int[] array = new int[buf2.limit()];
           buf2.get(array);
           return (T)array;
         }
         if (compType.equals(short.class)) {
-          ShortBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asShortBuffer();
+          ShortBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
           short[] array = new short[buf2.limit()];
           buf2.get(array);
           return (T)array;
         }
         if (compType.equals(long.class)) {
-          LongBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asLongBuffer();
+          LongBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).order(ByteOrder.LITTLE_ENDIAN).asLongBuffer();
           long[] array = new long[buf2.limit()];
           buf2.get(array);
           return (T)array;
         }
         if (compType.equals(float.class)) {
-          FloatBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asFloatBuffer();
+          FloatBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer();
           float[] array = new float[buf2.limit()];
           buf2.get(array);
           return (T)array;
         }
         if (compType.equals(double.class)) {
-          DoubleBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).asDoubleBuffer();
+          DoubleBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).order(ByteOrder.LITTLE_ENDIAN).asDoubleBuffer();
           double[] array = new double[buf2.limit()];
           buf2.get(array);
           return (T)array;
