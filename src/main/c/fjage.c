@@ -13,6 +13,7 @@ for full license details.
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <netdb.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -604,7 +605,18 @@ static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg) {
   writes(fd, "\"");
   if (m->data != NULL) {
     writes(fd, ", ");
-    write(fd, m->data, strlen(m->data)-2);
+    char* p = m->data;
+    int n = strlen(m->data)-2;
+    while (n > 0) {
+      int rv = write(fd, p, n);
+      if (rv < 0) {
+        if (errno == EAGAIN) usleep(10000);
+        else break;
+      } else {
+        p += rv;
+        n -= rv;
+      }
+    }
   }
   writes(fd, "}}");
 }
