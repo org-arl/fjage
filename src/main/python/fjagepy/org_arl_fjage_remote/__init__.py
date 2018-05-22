@@ -172,7 +172,7 @@ class Gateway:
                 self.logger.debug(str(name[0]) + ":" + str(name[1]) + " <<< " + rmsg)
                 # Parse and dispatch incoming messages
                 self._parse_dispatch(rmsg, q)
-            except:
+            except Exception as e:
                 self.logger.critical("Exception: " + str(e))
                 pass
 
@@ -301,21 +301,27 @@ class Gateway:
         self.send(msg)
         return self.receive(msg, timeout)
 
-    def topic(self, topic):
+    def topic(self, topic, topic2=None):
         """Returns an object representing the named topic.
 
-        :param topic: name of the topic.
+        :param topic: name of the agent/topic.
+        :param topic2: named topic for a given agent.
         :returns: object representing the topic.
         """
 
-        if isinstance(topic, str):
-            return AgentID(topic, True)
-        elif isinstance(topic, AgentID):
-            if topic.is_topic:
-                return topic
-            return AgentID(topic.name + "__ntf", True)
+        if topic2 is None:
+            if isinstance(topic, str):
+                return AgentID(topic, True)
+            elif isinstance(topic, AgentID):
+                if topic.is_topic:
+                    return topic
+                return AgentID(topic.name + "__ntf", True)
+            else:
+                return AgentID(topic.__class__.__name__ + "." + str(topic), True)
         else:
-            return AgentID(topic.__class__.__name__ + "." + str(topic), True)
+            if not isinstance(topic2, str):
+                topic2 = topic2.__class__.__name__ + "." + str(topic2)
+            return AgentID(topic.name + "__" + topic2 + "__ntf", True)
 
     def subscribe(self, topic):
         """Subscribes the gateway to receive all messages sent to the given topic.
@@ -360,8 +366,8 @@ class Gateway:
             self.logger.critical("Invalid AgentID")
 
     def agentForService(self, service, timeout=1000):
-        """ Finds an agent that provides a named service. If multiple agents are registered
-            to provide a given service, any of the agents' id may be returned.
+        """Finds an agent that provides a named service. If multiple agents are registered
+        to provide a given service, any of the agents' id may be returned.
 
         :param service: the named service of interest.
         :returns: an agent id for an agent that provides the service.

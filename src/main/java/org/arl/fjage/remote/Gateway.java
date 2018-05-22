@@ -265,6 +265,28 @@ public class Gateway {
   }
 
   /**
+   * Returns an object representing a named notification topic for an agent.
+   *
+   * @param aid agent to get notification topic for.
+   * @param topic name for the notification topic.
+   * @return object representing the topic.
+   */
+  public AgentID topic(AgentID aid, String topic) {
+    return agent.topic(aid, topic);
+  }
+
+  /**
+   * Returns an object representing a named notification topic for an agent.
+   *
+   * @param aid agent to get notification topic for.
+   * @param topic name for the notification topic.
+   * @return object representing the topic.
+   */
+  public AgentID topic(AgentID aid, Enum<?> topic) {
+    return agent.topic(aid, topic);
+  }
+
+  /**
    * Subscribes the gateway to receive all messages sent to the given topic.
    *
    * @param topic the topic to subscribe to.
