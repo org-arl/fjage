@@ -3,17 +3,17 @@ from setuptools import setup, find_packages
 with open('README.rst') as f:
     readme = f.read()
 
-with open('../../../VERSION') as f:
-    ver = f.read()
-    ver = ver.split('-')[0] + 'b1'
+# with open('../../../VERSION') as f:
+#     ver = f.read()
+#     ver = ver.split('-')[0] + 'b1'
 
 setup(
     name='fjagepy',
-    version=ver,
+    version='1.4.2-b2',
     description='Fjage Python Gateway',
     long_description=readme,
-    author='Prasad Anjangi',
-    author_email='prasad@subnero.com',
+    author='Prasad Anjangi, Mandar Chitre, Chinmay Pendharkar',
+    author_email='prasad@subnero.com, mandar@arl.nus.edu.sg, chinmay@subnero.com',
     url='https://github.com/org-arl/fjage/tree/dev/src/main/python',
     license='BSD (3-clause)',
     python_requires='>=3',
