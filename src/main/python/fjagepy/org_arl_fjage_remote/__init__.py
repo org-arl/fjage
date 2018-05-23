@@ -144,7 +144,7 @@ class Gateway:
                             self.cv.release()
                 except Exception as e:
                     self.logger.critical("Exception: Error adding to queue - " + str(e))
-            elif value == Action.SHUTDOWN:
+            elif req["action"] == Action.SHUTDOWN:
                 self.logger.debug("ACTION: " + Action.SHUTDOWN)
                 return None
             else:
