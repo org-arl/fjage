@@ -472,6 +472,21 @@ class Gateway:
                 args["signal"]["data"] = list(x_)
                 del args["signal"]["clazz"]
                 args["signal"] = args["signal"]["data"]
+            elif 'data' in args.keys():
+                type_ = args['data']['clazz']
+                x_ = base64.standard_b64decode(args['data']['data'])
+                count = len(x_) // 4
+                if 'F' in type_:
+                    x_ = struct.unpack('<{0}f'.format(count), x_)
+                elif 'I' in type_:
+                    x_ = struct.unpack('<{0}i'.format(count), x_)
+                elif 'D' in type_:
+                    x_ = struct.unpack('<{0}d'.format(count), x_)
+                elif 'J' in type_:
+                    x_ = struct.unpack('<{0}l'.format(count), x_)
+                args["data"]["data"] = list(x_)
+                del args["data"]["clazz"]
+                args["data"] = args["data"]["data"]
             inst = class_(**args)
         else:
             inst = dt
