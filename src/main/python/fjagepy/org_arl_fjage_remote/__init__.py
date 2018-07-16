@@ -9,6 +9,7 @@ import logging as _log
 import fjagepy
 import base64
 import struct
+import numpy
 from collections import OrderedDict
 from fjagepy.org_arl_fjage import AgentID
 from fjagepy.org_arl_fjage import Message
@@ -431,6 +432,10 @@ class Gateway:
         """Convert the object attributes to a dict."""
 
         dt = inst.__dict__.copy()
+        for i in list(dt):
+            if i == 'data' or i == 'signal':
+                if type(dt[i]) == numpy.ndarray:
+                    dt[i] = dt[i].tolist()
         for key in list(dt):
             if dt[key] == None:
                 dt.pop(key)
