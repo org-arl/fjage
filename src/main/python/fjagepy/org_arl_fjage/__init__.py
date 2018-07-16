@@ -95,4 +95,4 @@ def _initLogging():
 
 
 # Start logging
-_initLogging()
+# _initLogging()
