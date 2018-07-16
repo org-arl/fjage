@@ -76,7 +76,7 @@ class Gateway:
 
             if self._is_duplicate():
                 self.logger.critical("Duplicate Gateway found. Shutting down.")
-                self.socket.close
+                self.socket.close()
                 raise Exception('DuplicateGatewayException')
 
         except Exception as e:
@@ -183,11 +183,18 @@ class Gateway:
             self.logger.critical("Exception: " + str(e))
 
     def shutdown(self):
-        """ Closes the gateway. The gateway functionality may not longer be accessed after this method is called."""
+        """ Shutdown the platform."""
 
         j_dict = dict()
         j_dict["action"] = Action.SHUTDOWN
         self.socket.sendall((_json.dumps(j_dict) + '\n').encode())
+
+    def close(self):
+        """ Closes the gateway. The gateway functionality may not longer be accessed after this method is called."""
+
+        print('The connection is closed!')
+        self.socket.shutdown(_socket.SHUT_RDWR)
+        self.socket.close()
 
     def send(self, msg, relay=True):
         """Sends a message to the recipient indicated in the message. The recipient may be an agent or a topic."""
