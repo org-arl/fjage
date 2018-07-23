@@ -168,7 +168,8 @@ class Gateway:
             try:
                 rmsg = self.socket_file.readline()
                 if not rmsg:
-                    self.logger.critical("Exception: Socket Closed")
+                    print('The remote connection is closed!')
+                    break
 
                 self.logger.debug(str(name[0]) + ":" + str(name[1]) + " <<< " + rmsg)
                 # Parse and dispatch incoming messages
@@ -176,10 +177,11 @@ class Gateway:
             except Exception as e:
                 self.logger.critical("Exception: " + str(e))
                 pass
+        self.close()
 
     def __del__(self):
         try:
-            self.socket.close
+            self.socket.close()
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
 
@@ -193,9 +195,11 @@ class Gateway:
     def close(self):
         """ Closes the gateway. The gateway functionality may not longer be accessed after this method is called."""
 
-        print('The connection is closed!')
-        self.socket.shutdown(_socket.SHUT_RDWR)
-        self.socket.close()
+        try:
+            self.socket.close()
+        except Exception as e:
+            self.logger.critical("Exception: " + str(e))
+        print('The gateway connection is closed!')
 
     def send(self, msg, relay=True):
         """Sends a message to the recipient indicated in the message. The recipient may be an agent or a topic."""
