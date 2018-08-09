@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Usage:
-#   ./fjage.sh [-gui] [-nocolor]
+#   ./fjage.sh [-gui] [-port port] [-baud baud] [-rs232 devname]
 
 CLASSPATH=.`find build/libs -name *.jar -exec /bin/echo -n :'{}' \;`
 export CLASSPATH=$CLASSPATH:samples
@@ -18,10 +18,17 @@ OPT1=
 while [[ $1 == -* ]]
 do
   OPT=$1
-  if [ $OPT = "-gui" ]
-  then
-    shift
+  if [ $OPT = "-gui" ]; then
     GUI=true
+  elif [ $OPT = "-port" ]; then
+    shift
+    OPT1="$OPT1 -Dfjage.port=$1"
+  elif [ $OPT = "-baud" ]; then
+    shift
+    OPT1="$OPT1 -Dfjage.baud=$1"
+  elif [ $OPT = "-rs232" ]; then
+    shift
+    OPT1="$OPT1 -Dfjage.devname=$1"
   else
     shift
     OPT1="$OPT1 $OPT"
