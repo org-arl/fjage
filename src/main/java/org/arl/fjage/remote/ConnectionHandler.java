@@ -23,6 +23,9 @@ import com.fazecast.jSerialComm.SerialPort;
  */
 class ConnectionHandler extends Thread {
 
+  private final String ALIVE = "{}";
+  private final String SIGN_OFF = "//";
+
   private Socket sock;
   private SerialPort com;
   private DataOutputStream out;
@@ -30,6 +33,7 @@ class ConnectionHandler extends Thread {
   private Logger log = Logger.getLogger(getClass().getName());
   private RemoteContainer container;
   private String name;
+  private boolean alive;
 
   public ConnectionHandler(Socket sock, RemoteContainer container) {
     this.sock = sock;
@@ -45,7 +49,8 @@ class ConnectionHandler extends Thread {
     this.container = container;
     name = com.getDescriptivePortName();
     setName(name);
-    com.setComPortTimeouts(SerialPort.TIMEOUT_READ_BLOCKING, 100, 0);
+    com.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+    alive = false;
   }
 
   @Override
@@ -54,6 +59,7 @@ class ConnectionHandler extends Thread {
     try {
       BufferedReader in = new BufferedReader(new InputStreamReader(sock != null ? sock.getInputStream() : com.getInputStream()));
       out = new DataOutputStream(sock != null ? sock.getOutputStream() : com.getOutputStream());
+      if (com != null) println(ALIVE);
       while (sock != null || com != null) {
         String s = null;
         try {
@@ -61,30 +67,42 @@ class ConnectionHandler extends Thread {
         } catch(IOException ex) {
           // do nothing
         }
-        if (sock != null && s == null) break;
-        if (s == null) log.fine(name+" <<< (null)");
-        else {
-          log.fine(name+" <<< "+s);
-          try {
-            JsonMessage rq = JsonMessage.fromJson(s);
-            if (rq.action == null) {
-              if (rq.id != null) {
-                // response to some request
-                Object obj = pending.get(rq.id);
-                if (obj != null) {
-                  pending.put(rq.id, rq);
-                  synchronized(obj) {
-                    obj.notify();
-                  }
+        if (s == null) break;
+        log.fine(name+" <<< "+s);
+        if (com != null) {
+          // additional alive/sign-off logic on RS232 ports to avoid waiting for RS232 slaves when none present
+          if (!alive) {
+            alive = true;
+            log.fine("RS232 connection alive");
+          } else if (s.equals(SIGN_OFF)) {
+            alive = false;
+            log.fine("RS232 peer signed off");
+            continue;
+          }
+          if (s.equals(ALIVE)) {
+            if (container instanceof SlaveContainer) println(ALIVE);
+            continue;
+          }
+        }
+        try {
+          JsonMessage rq = JsonMessage.fromJson(s);
+          if (rq.action == null) {
+            if (rq.id != null) {
+              // response to some request
+              Object obj = pending.get(rq.id);
+              if (obj != null) {
+                pending.put(rq.id, rq);
+                synchronized(obj) {
+                  obj.notify();
                 }
               }
-            } else {
-              // new request
-              pool.execute(new RemoteTask(rq));
             }
-          } catch(Exception ex) {
-            log.warning("Bad JSON request: "+ex.toString());
+          } else {
+            // new request
+            pool.execute(new RemoteTask(rq));
           }
+        } catch(Exception ex) {
+          log.warning("Bad JSON request: "+ex.toString());
         }
       }
     } catch(IOException ex) {
@@ -140,12 +158,13 @@ class ConnectionHandler extends Thread {
       }
     } catch(IOException ex) {
       log.warning("Write failed: "+ex.toString());
-      close();
+      if (sock != null) close();
     }
   }
 
   JsonMessage getResponse(String id, long timeout) {
     if (sock == null && com == null) return null;
+    if (com != null && !alive && container instanceof MasterContainer) return null;
     pending.put(id, id);
     try {
       synchronized(id) {
@@ -157,6 +176,10 @@ class ConnectionHandler extends Thread {
     Object rv = pending.get(id);
     pending.remove(id);
     if (rv instanceof JsonMessage) return (JsonMessage)rv;
+    if (com != null && alive) {
+      alive = false;
+      log.fine("RS232 connection dead");
+    }
     return null;
   }
 
@@ -168,6 +191,7 @@ class ConnectionHandler extends Thread {
         sock = null;
       }
       if (com != null) {
+        if (container instanceof SlaveContainer) println(SIGN_OFF);
         com.closePort();
         com = null;
       }

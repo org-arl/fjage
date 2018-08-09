@@ -118,7 +118,7 @@ public class MasterContainer extends RemoteContainer {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public MasterContainer(Platform platform, int port, String name, String devname, int baud, String settings) throws IOException {
+  public MasterContainer(Platform platform, int port, String devname, int baud, String settings) throws IOException {
     super(platform);
     if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
     openSocket(port);
