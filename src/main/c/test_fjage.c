@@ -67,10 +67,16 @@ static void* intr_thread(void* p) {
   return NULL;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
   printf("\n");
-  fjage_gw_t gw = fjage_tcp_open("localhost", 5081);
-  if (gw == NULL) return error("Could not connect to fjage master container on localhost:5081");
+  fjage_gw_t gw;
+  if (argc > 1) {
+    gw = fjage_rs232_open(argv[1], 9600, "N81");
+    if (gw == NULL) return error("Could not connect to fjage master container on serial port");
+  } else {
+    gw = fjage_tcp_open("localhost", 5081);
+    if (gw == NULL) return error("Could not connect to fjage master container on localhost:5081");
+  }
   fjage_aid_t myaid = fjage_get_agent_id(gw);
   if (myaid != NULL) printf("get_agent_id> %s\n", myaid);
   test_assert("get_agent_id", myaid != NULL);

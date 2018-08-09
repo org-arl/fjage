@@ -47,6 +47,15 @@ typedef enum {
 
 fjage_gw_t fjage_tcp_open(const char* hostname, int port);
 
+/// Open a gateway to a fjåge master container via RS232.
+///
+/// @param devname        Device name
+/// @param baud           Baud rate
+/// @param settings       RS232 settings (NULL or "N81")
+/// @return               Gateway
+
+fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings);
+
 /// Close a gateway to a fjåge master container. Once a gateway is closed,
 /// the gateway object is invalid and should no longer be used.
 ///

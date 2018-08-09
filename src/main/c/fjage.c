@@ -15,6 +15,7 @@ for full license details.
 #include <fcntl.h>
 #include <errno.h>
 #include <netdb.h>
+#include <termios.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -288,6 +289,58 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
     return NULL;
   }
   fcntl(fgw->sockfd, F_SETFL, O_NONBLOCK);
+  fcntl(fgw->intfd[0], F_SETFL, O_NONBLOCK);
+  char s[64];
+  sprintf(s, "CGatewayAgent@%08x", rand());
+  fgw->aid = fjage_aid_create(s);
+  fgw->head = 0;
+  return fgw;
+}
+
+fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings) {
+  if (settings != NULL && strcmp(settings, "N81")) return NULL;
+  switch (baud) {
+    case 50:      baud = B50;     break;
+    case 75:      baud = B75;     break;
+    case 110:     baud = B110;    break;
+    case 134:     baud = B134;    break;
+    case 150:     baud = B150;    break;
+    case 200:     baud = B200;    break;
+    case 300:     baud = B300;    break;
+    case 600:     baud = B600;    break;
+    case 1200:    baud = B1200;   break;
+    case 1800:    baud = B1800;   break;
+    case 2400:    baud = B2400;   break;
+    case 4800:    baud = B4800;   break;
+    case 9600:    baud = B9600;   break;
+    case 19200:   baud = B19200;  break;
+    case 38400:   baud = B38400;  break;
+    case 57600:   baud = B57600;  break;
+    case 115200:  baud = B115200; break;
+    case 230400:  baud = B230400; break;
+    default:      return NULL;
+  }
+  _fjage_gw_t* fgw = calloc(1, sizeof(_fjage_gw_t));
+  if (fgw == NULL) return NULL;
+  fgw->sockfd = open(devname, O_RDWR|O_NOCTTY|O_NONBLOCK);
+  if (fgw->sockfd < 0) {
+    free(fgw);
+    return NULL;
+  }
+  struct termios options;
+  tcgetattr(fgw->sockfd, &options);
+  cfmakeraw(&options);
+  options.c_cflag = CS8|CREAD|CLOCAL;   // UART Config : N81
+  options.c_cc[VMIN] = 1;
+  options.c_cc[VTIME] = 1;
+  cfsetspeed(&options, baud);
+  tcsetattr(fgw->sockfd, TCSANOW, &options);
+  tcflush(fgw->sockfd, TCIOFLUSH);
+  if (pipe(fgw->intfd) < 0) {
+    close(fgw->sockfd);
+    free(fgw);
+    return NULL;
+  }
   fcntl(fgw->intfd[0], F_SETFL, O_NONBLOCK);
   char s[64];
   sprintf(s, "CGatewayAgent@%08x", rand());

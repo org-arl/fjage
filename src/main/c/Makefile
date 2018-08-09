@@ -12,7 +12,7 @@ test_fjage: test_fjage.o libfjage.a
 	$(CC) -o test_fjage test_fjage.o libfjage.a -lpthread
 
 test: test_fjage
-	./test_fjage
+	./test_fjage $(DEVICE)
 
 clean:
 	rm -f libfjage.a *.o test_fjage
