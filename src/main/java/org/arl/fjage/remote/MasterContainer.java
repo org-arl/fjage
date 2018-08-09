@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2015, Mandar Chitre
+Copyright (c) 2015-2018, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -14,6 +14,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import org.arl.fjage.*;
+import com.fazecast.jSerialComm.SerialPort;
 
 /**
  * Master container supporting multiple remote slave containers. Agents in linked
@@ -37,7 +38,7 @@ public class MasterContainer extends RemoteContainer {
 
   /**
    * Creates a master container, runs its TCP server on an automatically selected port.
-   * 
+   *
    * @param platform platform on which the container runs.
    */
   public MasterContainer(Platform platform) throws IOException {
@@ -47,7 +48,7 @@ public class MasterContainer extends RemoteContainer {
 
   /**
    * Creates a master container, runs its TCP server on a specified port.
-   * 
+   *
    * @param platform platform on which the container runs.
    * @param port port on which the container's TCP server runs.
    */
@@ -58,7 +59,7 @@ public class MasterContainer extends RemoteContainer {
 
   /**
    * Creates a named master container, runs its TCP server on an automatically selected port.
-   * 
+   *
    * @param platform platform on which the container runs.
    * @param name name of the container.
    */
@@ -69,7 +70,7 @@ public class MasterContainer extends RemoteContainer {
 
   /**
    * Creates a named master container, runs its TCP server on a specified port.
-   * 
+   *
    * @param platform platform on which the container runs.
    * @param name of the container.
    * @param port port on which the container's TCP server runs.
@@ -77,6 +78,68 @@ public class MasterContainer extends RemoteContainer {
   public MasterContainer(Platform platform, String name, int port) throws IOException {
     super(platform, name);
     openSocket(port);
+  }
+
+  /**
+   * Creates a master container running a RS232 server.
+   *
+   * @param platform platform on which the container runs.
+   * @param devname device name of the RS232 port.
+   * @param baud baud rate for the RS232 port.
+   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
+   */
+  public MasterContainer(Platform platform, String devname, int baud, String settings) {
+    super(platform);
+    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
+    openRS232(devname, baud);
+  }
+
+  /**
+   * Creates a named master container running a RS232 server.
+   *
+   * @param platform platform on which the container runs.
+   * @param name of the container.
+   * @param devname device name of the RS232 port.
+   * @param baud baud rate for the RS232 port.
+   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
+   */
+  public MasterContainer(Platform platform, String name, String devname, int baud, String settings) {
+    super(platform);
+    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
+    openRS232(devname, baud);
+  }
+
+  /**
+   * Creates a master container running a RS232 server and a TCP server.
+   *
+   * @param platform platform on which the container runs.
+   * @param port port on which the container's TCP server runs (0 to select port automatically).
+   * @param devname device name of the RS232 port.
+   * @param baud baud rate for the RS232 port.
+   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
+   */
+  public MasterContainer(Platform platform, int port, String name, String devname, int baud, String settings) throws IOException {
+    super(platform);
+    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
+    openSocket(port);
+    openRS232(devname, baud);
+  }
+
+  /**
+   * Creates a named master container running a RS232 server and a TCP server.
+   *
+   * @param platform platform on which the container runs.
+   * @param name of the container.
+   * @param port port on which the container's TCP server runs (0 to select port automatically).
+   * @param devname device name of the RS232 port.
+   * @param baud baud rate for the RS232 port.
+   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
+   */
+  public MasterContainer(Platform platform, String name, int port, String devname, int baud, String settings) throws IOException {
+    super(platform);
+    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
+    openSocket(port);
+    openRS232(devname, baud);
   }
 
   /**
@@ -89,7 +152,7 @@ public class MasterContainer extends RemoteContainer {
   }
 
   /////////////// Container interface methods to override
-  
+
   @Override
   protected boolean isDuplicate(AgentID aid) {
     if (super.isDuplicate(aid)) return true;
@@ -307,6 +370,18 @@ public class MasterContainer extends RemoteContainer {
         }
       }
     }.start();
+  }
+
+  private void openRS232(String devname, int baud) {
+    log.info("Listening on "+devname+"@"+baud);
+    SerialPort com = SerialPort.getCommPort(devname);
+    com.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
+    com.openPort();
+    ConnectionHandler t = new ConnectionHandler(com, MasterContainer.this);
+    synchronized(slaves) {
+      slaves.add(t);
+    }
+    t.start();
   }
 
   private void cleanupSlaves() {

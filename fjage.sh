@@ -30,4 +30,4 @@ do
 done
 
 mkdir -p logs
-java -cp "$CLASSPATH" -Dfjage.gui=$GUI $TERMOPT org.arl.fjage.shell.GroovyBoot $@ etc/initrc.groovy
+java -cp "$CLASSPATH" -Dfjage.gui=$GUI $TERMOPT $OPT1 org.arl.fjage.shell.GroovyBoot $@ etc/initrc.groovy

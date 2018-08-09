@@ -7,3 +7,4 @@ htdocs
 *.o
 *.a
 test_fjage
+*.pyc

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2015, Mandar Chitre
+Copyright (c) 2015-2018, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 import org.arl.fjage.*;
+import com.fazecast.jSerialComm.SerialPort;
 
 /**
  * Handles a JSON/TCP connection with remote container.
@@ -23,6 +24,7 @@ import org.arl.fjage.*;
 class ConnectionHandler extends Thread {
 
   private Socket sock;
+  private SerialPort com;
   private DataOutputStream out;
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
   private Logger log = Logger.getLogger(getClass().getName());
@@ -31,44 +33,62 @@ class ConnectionHandler extends Thread {
 
   public ConnectionHandler(Socket sock, RemoteContainer container) {
     this.sock = sock;
+    this.com = null;
     this.container = container;
     name = sock.getRemoteSocketAddress().toString();
     setName(name);
+  }
+
+  public ConnectionHandler(SerialPort com, RemoteContainer container) {
+    this.sock = null;
+    this.com = com;
+    this.container = container;
+    name = com.getDescriptivePortName();
+    setName(name);
+    com.setComPortTimeouts(SerialPort.TIMEOUT_READ_BLOCKING, 100, 0);
   }
 
   @Override
   public void run() {
     ExecutorService pool = Executors.newSingleThreadExecutor();
     try {
-      BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-      out = new DataOutputStream(sock.getOutputStream());
-      while (true) {
-        String s = in.readLine();
-        if (s == null) break;
-        log.fine(name+" <<< "+s);
+      BufferedReader in = new BufferedReader(new InputStreamReader(sock != null ? sock.getInputStream() : com.getInputStream()));
+      out = new DataOutputStream(sock != null ? sock.getOutputStream() : com.getOutputStream());
+      while (sock != null || com != null) {
+        String s = null;
         try {
-          JsonMessage rq = JsonMessage.fromJson(s);
-          if (rq.action == null) {
-            if (rq.id != null) {
-              // response to some request
-              Object obj = pending.get(rq.id);
-              if (obj != null) {
-                pending.put(rq.id, rq);
-                synchronized(obj) {
-                  obj.notify();
+          s = in.readLine();
+        } catch(IOException ex) {
+          // do nothing
+        }
+        if (sock != null && s == null) break;
+        if (s == null) log.fine(name+" <<< (null)");
+        else {
+          log.fine(name+" <<< "+s);
+          try {
+            JsonMessage rq = JsonMessage.fromJson(s);
+            if (rq.action == null) {
+              if (rq.id != null) {
+                // response to some request
+                Object obj = pending.get(rq.id);
+                if (obj != null) {
+                  pending.put(rq.id, rq);
+                  synchronized(obj) {
+                    obj.notify();
+                  }
                 }
               }
+            } else {
+              // new request
+              pool.execute(new RemoteTask(rq));
             }
-          } else {
-            // new request
-            pool.execute(new RemoteTask(rq));
+          } catch(Exception ex) {
+            log.warning("Bad JSON request: "+ex.toString());
           }
-        } catch(Exception ex) {
-          log.warning("Bad JSON request: "+ex.toString());
         }
       }
     } catch(IOException ex) {
-      // do nothing
+      log.warning(ex.toString());
     }
     close();
     pool.shutdown();
@@ -111,6 +131,13 @@ class ConnectionHandler extends Thread {
     try {
       out.writeBytes(s+"\n");
       log.fine(name+" >>> "+s);
+      while (com != null && com.bytesAwaitingWrite​() > 0) {
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException ex) {
+          // do nothing
+        }
+      }
     } catch(IOException ex) {
       log.warning("Write failed: "+ex.toString());
       close();
@@ -118,7 +145,7 @@ class ConnectionHandler extends Thread {
   }
 
   JsonMessage getResponse(String id, long timeout) {
-    if (sock == null) return null;
+    if (sock == null && com == null) return null;
     pending.put(id, id);
     try {
       synchronized(id) {
@@ -134,10 +161,16 @@ class ConnectionHandler extends Thread {
   }
 
   void close() {
-    if (sock == null) return;
+    if (sock == null && com == null) return;
     try {
-      sock.close();
-      sock = null;
+      if (sock != null) {
+        sock.close();
+        sock = null;
+      }
+      if (com != null) {
+        com.closePort();
+        com = null;
+      }
       out = null;
       container.connectionClosed(this);
     } catch (IOException ex) {
@@ -146,7 +179,7 @@ class ConnectionHandler extends Thread {
   }
 
   boolean isClosed() {
-    return sock == null;
+    return sock == null && com == null;
   }
 
   //////// Private inner class representing task to run

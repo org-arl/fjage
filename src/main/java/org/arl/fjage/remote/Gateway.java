@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2016, Mandar Chitre
+Copyright (c) 2016-2018, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -43,7 +43,7 @@ public class Gateway {
   /////////// Interface methods
 
   /**
-   * Creates a gateway connecting to a specified master container. The platform specified
+   * Creates a gateway connecting to a specified master container over TCP/IP. The platform specified
    * in this call should not be started previously, and will be automatically started
    * by the gateway.
    *
@@ -52,22 +52,55 @@ public class Gateway {
    * @param port TCP port to connect to.
    */
   public Gateway(Platform platform, String hostname, int port) throws IOException {
-    init(platform, hostname, port);
+    container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
+    init();
+    platform.start();
   }
 
   /**
-   * Creates a gateway connecting to a specified master container.
+   * Creates a gateway connecting to a specified master container over TCP/IP.
    *
    * @param hostname hostname to connect to.
    * @param port TCP port to connect to.
    */
   public Gateway(String hostname, int port) throws IOException {
     Platform platform = new RealTimePlatform();
-    init(platform, hostname, port);
+    container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
+    init();
+    platform.start();
   }
 
-  private void init(Platform platform, String hostname, int port) throws IOException {
-    container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
+  /**
+   * Creates a gateway connecting to a specified master container over RS232. The platform specified
+   * in this call should not be started previously, and will be automatically started
+   * by the gateway.
+   *
+   * @param platform platform to use
+   * @param devname device name of the RS232 port.
+   * @param baud baud rate for the RS232 port.
+   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
+   */
+  public Gateway(Platform platform, String devname, int baud, String settings) {
+    container = new SlaveContainer(platform, "Gateway@"+hashCode(), devname, baud, settings);
+    init();
+    platform.start();
+  }
+
+  /**
+   * Creates a gateway connecting to a specified master container over RS232.
+   *
+   * @param devname device name of the RS232 port.
+   * @param baud baud rate for the RS232 port.
+   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
+   */
+  public Gateway(String devname, int baud, String settings) {
+    Platform platform = new RealTimePlatform();
+    container = new SlaveContainer(platform, "Gateway@"+hashCode(), devname, baud, settings);
+    init();
+    platform.start();
+  }
+
+  private void init() {
     agent = new Agent() {
       private Message rsp;
       private Object sync = new Object();
@@ -95,7 +128,6 @@ public class Gateway {
       }
     };
     container.add(getAgentID().getName(), agent);
-    platform.start();
   }
 
   /**

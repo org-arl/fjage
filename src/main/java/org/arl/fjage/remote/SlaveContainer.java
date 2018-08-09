@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2015, Mandar Chitre
+Copyright (c) 2015-2018, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -14,6 +14,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import org.arl.fjage.*;
+import com.fazecast.jSerialComm.SerialPort;
 
 /**
  * Slave container attached to a master container. Agents in linked
@@ -31,15 +32,15 @@ public class SlaveContainer extends RemoteContainer {
 
   private ConnectionHandler master;
   private String hostname;
-  private int port;
+  private int port, baud;
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
   private boolean quit = false;
 
   ////////////// Constructors
 
   /**
-   * Creates a slave container.
-   * 
+   * Creates a slave container connecting over a TCP socket.
+   *
    * @param platform platform on which the container runs.
    * @param hostname hostname of the master container.
    * @param port port on which the master container's TCP server runs.
@@ -48,12 +49,13 @@ public class SlaveContainer extends RemoteContainer {
     super(platform);
     this.hostname = hostname;
     this.port = port;
+    this.baud = -1;
     connectToMaster();
   }
-  
+
   /**
-   * Creates a named slave container.
-   * 
+   * Creates a named slave container connecting over a TCP socket.
+   *
    * @param platform platform on which the container runs.
    * @param name name of the container.
    * @param hostname hostname of the master container.
@@ -63,6 +65,44 @@ public class SlaveContainer extends RemoteContainer {
     super(platform, name);
     this.hostname = hostname;
     this.port = port;
+    this.baud = -1;
+    connectToMaster();
+  }
+
+  /**
+   * Creates a slave container connecting over a RS232 port.
+   *
+   * @param platform platform on which the container runs.
+   * @param devname device name of the RS232 port.
+   * @param baud baud rate for the RS232 port.
+   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
+   */
+  public SlaveContainer(Platform platform, String devname, int baud, String settings) {
+    super(platform);
+    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
+    this.hostname = devname;
+    this.port = -1;
+    this.baud = baud;
+    connectToMaster();
+  }
+
+  /**
+   * Creates a named slave container connecting over a RS232 port.
+   *
+   * The RS232 port is assumed to be working with 8 data bits, 1 stop bit and no parity.
+   *
+   * @param platform platform on which the container runs.
+   * @param name name of the container.
+   * @param devname device name of the RS232 port.
+   * @param baud baud rate for the RS232 port.
+   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
+   */
+  public SlaveContainer(Platform platform, String name, String devname, int baud, String settings) {
+    super(platform, name);
+    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
+    this.hostname = devname;
+    this.port = -1;
+    this.baud = baud;
     connectToMaster();
   }
 
@@ -199,8 +239,8 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public String getState() {
     if (!running) return "Not running";
-    if (master == null) return "Running, connecting to "+hostname+":"+port+"...";
-    return "Running, connected to "+hostname+":"+port;
+    if (master == null) return "Running, connecting to "+hostname+(port>=0?":"+port:"@"+baud)+"...";
+    return "Running, connected to "+hostname+(port>=0?":"+port:"@"+baud);
   }
 
   @Override
@@ -224,12 +264,19 @@ public class SlaveContainer extends RemoteContainer {
         try {
           while (!quit) {
             try {
-              log.info("Connecting to "+hostname+":"+port);
-              Socket conn = new Socket(hostname, port);
-              master = new ConnectionHandler(conn, SlaveContainer.this);
+              log.info("Connecting to "+hostname+":"+(port>=0?":"+port:"@"+baud));
+              if (port >= 0) {
+                Socket conn = new Socket(hostname, port);
+                master = new ConnectionHandler(conn, SlaveContainer.this);
+              } else {
+                SerialPort com = SerialPort.getCommPort(hostname);
+                com.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
+                com.openPort();
+                master = new ConnectionHandler(com, SlaveContainer.this);
+              }
               master.start();
               master.join();
-              log.info("Connection to "+hostname+" lost");
+              log.info("Connection to "+hostname+(port>=0?":"+port:"@"+baud)+" lost");
               master = null;
             } catch (IOException ex) {
               log.warning("Connection failed: "+ex.toString());
