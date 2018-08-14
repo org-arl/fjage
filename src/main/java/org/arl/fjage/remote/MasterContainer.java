@@ -164,8 +164,7 @@ public class MasterContainer extends RemoteContainer {
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
-        slave.println(json);
-        JsonMessage rsp = slave.getResponse(rq.id, TIMEOUT);
+        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
         if (rsp != null && rsp.answer) return true;
       }
     }
@@ -210,8 +209,7 @@ public class MasterContainer extends RemoteContainer {
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
-        slave.println(json);
-        JsonMessage rsp = slave.getResponse(rq.id, TIMEOUT);
+        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
         if (rsp != null && rsp.agentIDs != null) {
           for (int i = 0; i < rsp.agentIDs.length; i++)
             rv.add(rsp.agentIDs[i]);
@@ -234,8 +232,7 @@ public class MasterContainer extends RemoteContainer {
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
-        slave.println(json);
-        JsonMessage rsp = slave.getResponse(rq.id, TIMEOUT);
+        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
         if (rsp != null && rsp.services != null) {
           for (int i = 0; i < rsp.services.length; i++)
             rv.add(rsp.services[i]);
@@ -257,8 +254,7 @@ public class MasterContainer extends RemoteContainer {
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
-        slave.println(json);
-        JsonMessage rsp = slave.getResponse(rq.id, TIMEOUT);
+        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
         if (rsp != null && rsp.agentID != null) return rsp.agentID;
       }
     }
@@ -280,8 +276,7 @@ public class MasterContainer extends RemoteContainer {
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
-        slave.println(json);
-        JsonMessage rsp = slave.getResponse(rq.id, TIMEOUT);
+        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
         if (rsp != null && rsp.agentIDs != null) {
           for (int i = 0; i < rsp.agentIDs.length; i++)
             rv.add(rsp.agentIDs[i]);

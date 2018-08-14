@@ -117,8 +117,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.agentID = aid;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    master.println(json);
-    JsonMessage rsp = master.getResponse(rq.id, TIMEOUT);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp != null && rsp.answer) return true;
     return false;
   }
@@ -163,8 +162,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.action = Action.AGENTS;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    master.println(json);
-    JsonMessage rsp = master.getResponse(rq.id, TIMEOUT);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
     return rsp.agentIDs;
   }
@@ -176,8 +174,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.action = Action.SERVICES;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    master.println(json);
-    JsonMessage rsp = master.getResponse(rq.id, TIMEOUT);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
     return rsp.services;
   }
@@ -190,8 +187,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.service = service;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    master.println(json);
-    JsonMessage rsp = master.getResponse(rq.id, TIMEOUT);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
     return rsp.agentID;
   }
@@ -204,8 +200,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.service = service;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    master.println(json);
-    JsonMessage rsp = master.getResponse(rq.id, TIMEOUT);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
     return rsp.agentIDs;
   }

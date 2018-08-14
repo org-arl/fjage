@@ -162,12 +162,13 @@ class ConnectionHandler extends Thread {
     }
   }
 
-  JsonMessage getResponse(String id, long timeout) {
+  JsonMessage printlnAndGetResponse(String s, String id, long timeout) {
     if (sock == null && com == null) return null;
     if (com != null && !alive && container instanceof MasterContainer) return null;
     pending.put(id, id);
     try {
       synchronized(id) {
+        println(s);
         id.wait(timeout);
       }
     } catch (InterruptedException ex) {
