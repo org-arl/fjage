@@ -9,7 +9,7 @@ with open('README.rst') as f:
 
 setup(
     name='fjagepy',
-    version='1.4.2b3',
+    version='1.4.2b4',
     description='Fjage Python Gateway',
     long_description=readme,
     author='Prasad Anjangi, Mandar Chitre, Chinmay Pendharkar',
