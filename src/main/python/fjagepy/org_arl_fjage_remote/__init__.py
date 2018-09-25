@@ -503,23 +503,41 @@ class Gateway:
                 args["data"]["data"] = list(x_)
                 del args["data"]["clazz"]
                 args["data"] = args["data"]["data"]
-            elif 'values' in args.keys():
-                for i, j in args["values"].items():
-                    if isinstance(j, dict):
-                        if 'clazz' in j and '[' in j['clazz']:
-                            type_ = j['data']['clazz']
-                            if 'F' in type_:
-                                x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data']['data'], 'utf-8')), dtype=numpy.float32)
-                                args["values"][i] = list(x_)
-                            elif 'I' in type_:
-                                x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data']['data'], 'utf-8')), dtype=numpy.int16)
-                                args["values"][i] = list(x_)
-                            elif 'D' in type_:
-                                x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data']['data'], 'utf-8')), dtype=numpy.float64)
-                                args["values"][i] = list(x_)
-                            elif 'J' in type_:
-                                x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data']['data'], 'utf-8')), dtype=numpy.int32)
-                                args["values"][i] = list(x_)
+            elif 'values' or 'value' in args.keys():
+                if 'values' in args.keys():
+                    for i, j in args["values"].items():
+                        if isinstance(j, dict):
+                            if 'clazz' in j and '[' in j['clazz']:
+                                type_ = j['data']['clazz']
+                                if 'F' in type_:
+                                    x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data']['data'], 'utf-8')), dtype=numpy.float32)
+                                    args["values"][i] = list(x_)
+                                elif 'I' in type_:
+                                    x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data']['data'], 'utf-8')), dtype=numpy.int16)
+                                    args["values"][i] = list(x_)
+                                elif 'D' in type_:
+                                    x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data']['data'], 'utf-8')), dtype=numpy.float64)
+                                    args["values"][i] = list(x_)
+                                elif 'J' in type_:
+                                    x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data']['data'], 'utf-8')), dtype=numpy.int32)
+                                    args["values"][i] = list(x_)
+                elif 'value' in args.keys():
+                    for i, j in args["value"].items():
+                        if isinstance(j, dict):
+                            if 'clazz' in j and '[' in j['clazz']:
+                                type_ = j['clazz']
+                                if 'F' in type_:
+                                    x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data'], 'utf-8')), dtype=numpy.float32)
+                                    args["value"] = list(x_)
+                                elif 'I' in type_:
+                                    x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data'], 'utf-8')), dtype=numpy.int16)
+                                    args["value"] = list(x_)
+                                elif 'D' in type_:
+                                    x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data'], 'utf-8')), dtype=numpy.float64)
+                                    args["value"] = list(x_)
+                                elif 'J' in type_:
+                                    x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data'], 'utf-8')), dtype=numpy.int32)
+                                    args["value"] = list(x_)
             inst = class_(**args)
         else:
             inst = dt
