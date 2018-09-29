@@ -521,7 +521,7 @@ class Gateway:
                                 elif 'J' in type_:
                                     x_ = numpy.frombuffer(base64.decodestring(bytearray(j['data']['data'], 'utf-8')), dtype=numpy.int32)
                                     args["values"][i] = list(x_)
-                elif 'value' in args.keys():
+                elif 'value' in args.keys() and type(args["value"]) == dict:
                     for i, j in args["value"].items():
                         if isinstance(j, dict):
                             if 'clazz' in j and '[' in j['clazz']:
