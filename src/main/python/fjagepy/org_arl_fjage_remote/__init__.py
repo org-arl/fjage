@@ -196,7 +196,8 @@ class Gateway:
         """ Closes the gateway. The gateway functionality may not longer be accessed after this method is called."""
 
         try:
-            self.socket.close()
+            self.socket.shutdown(_socket.SHUT_RDWR)
+            # self.socket.close()
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
         print('The gateway connection is closed!')
