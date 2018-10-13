@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2013, Mandar Chitre
+Copyright (c) 2018, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -11,32 +11,46 @@ for full license details.
 package org.arl.fjage.shell;
 
 /**
- * An interface to be implemented by all shells.
+ * Any shell input/output driver should implement this interface.
  */
 public interface Shell {
-  
-  /**
-   * Bind the shell using the specified script engine.
-   * 
-   * @param engine script engine to use.
-   */
-  public void bind(ScriptEngine engine);
 
   /**
-   * Start the shell.
+   * Initialize the shell.
    */
-  public void start();
+  public void init();
 
   /**
-   * Display a message on the shell.
-   * 
-   * @param obj object to display.
-   * @param type message type.
+   * Display script output.
    */
-  public void println(Object obj, OutputType type);
+  public void println(Object obj);
 
   /**
-   * Stops the shell.
+   * Display unsolicited notification.
+   */
+  public void notify(Object obj);
+
+  /**
+   * Display error.
+   */
+  public void error(Object obj);
+
+  /**
+   * Alert the user.
+   */
+  public void alert();
+
+  /**
+   * Read a line from the shell.
+   *
+   * @param prompt prompt to display, null if none.
+   * @param line input text to edit, null if blank.
+   * @return input string or null on abort.
+   */
+  public String readLine(String prompt, String line);
+
+  /**
+   * Shutdown the shell.
    */
   public void shutdown();
 

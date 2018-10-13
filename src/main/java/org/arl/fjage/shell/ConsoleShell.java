@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2013, Mandar Chitre
+Copyright (c) 2018, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -10,204 +10,133 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import java.io.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.util.logging.Logger;
+import java.io.IOException;
+import jline.Terminal;
 import jline.console.ConsoleReader;
+import jline.console.UserInterruptException;
 
 /**
- * Console shell with line editing. Use three ESC to abort running processes
- * rather than ^C supported on the TcpShell.
+ * Shell input/output driver for console devices.
  */
-public class ConsoleShell extends Thread implements Shell {
-  
-  ////////// Private attributes
+public class ConsoleShell implements Shell {
 
-  private ScriptEngine engine = null;
-  private Term term = new Term();
+  public static final String ESC = "\033[";
+  public static final String RESET = ESC+"0m";
+  public static final String BLACK = ESC+"30m";
+  public static final String RED = ESC+"31m";
+  public static final String GREEN = ESC+"32m";
+  public static final String YELLOW = ESC+"33m";
+  public static final String BLUE = ESC+"34m";
+  public static final String MAGENTA = ESC+"35m";
+  public static final String CYAN = ESC+"36m";
+  public static final String WHITE = ESC+"37m";
+  public static final String HOME = ESC+"0G";
+  public static final String UP = ESC+"A";
+  public static final String CLREOL = ESC+"0K";
+
+  /**
+   * Color of println output on terminals supporting ANSI sequences.
+   */
+  public String PROMPT = BLUE;
+
+  /**
+   * Color of println output on terminals supporting ANSI sequences.
+   */
+  public String OUTPUT = GREEN;
+
+  /**
+   * Color of notifications on terminals supporting ANSI sequences.
+   */
+  public String NOTIFY = BLUE;
+
+  /**
+   * Color of errors on terminals supporting ANSI sequences.
+   */
+  public String ERROR = RED;
+
   private ConsoleReader console = null;
-  private Logger log = Logger.getLogger(getClass().getName());
-  private boolean quit = false;
-  private boolean shutdownOnExit = true;
+  private boolean ansiEnable = false;
 
-  ////////// Methods
-
-  /**
-   * Binds the console command shell to the script engine and activates it.
-   *
-   * @param engine script engine to use.
-   */
-  @Override
-  public void bind(ScriptEngine engine) {
-    this.engine = engine;
-    setName(getClass().getSimpleName());
-    setDaemon(true);
+  private String ansi(String t, String s) {
+    if (s == null) s = "";
+    if (!ansiEnable) return s;
+    return t + s + RESET;
   }
 
-  @Override
-  public void shutdown() {
-    quit = true;
+  private String ansi(String t) {
+    return ansi(t, null);
   }
 
-  /**
-   * Set whether to shutdown platform when console shell is terminated.
-   *
-   * @param value true to initiate shutdown, false otherwise.
-   */
-  public void setShutdownOnExit(boolean value) {
-    shutdownOnExit = value;
-  }
-
-  /**
-   * Thread implementation.
-   *
-   * @see java.lang.Runnable#run()
-   */
-  @Override
-  public void run() {
-    if (engine == null) return;
+  public void init() {
     try {
-      OutputStream out = System.out;
-      InputStream in = System.in;
-      console = new ConsoleReader(in, out);
+      console = new ConsoleReader(System.in, System.out);
+      console.setHandleUserInterrupt(true);
+      console.setHistoryEnabled(true);
       try {
-        console.getTerminal().init();
+        Terminal t = console.getTerminal();
+        t.init();
+        ansiEnable = t.isAnsiSupported();
       } catch (Exception ex) {
         // do nothing
       }
-      if (!console.getTerminal().isAnsiSupported()) term.disable();
-      console.setExpandEvents(false);
-      console.addTriggeredAction((char)27, new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent arg0) {
-          try {
-            console.redrawLine();
-          } catch (IOException ex) {
-            // do nothing
-          }
-        }
-      });
-      StringBuffer sb = new StringBuffer();
-      boolean nest = false;
-      try {
-        // wait a short while to let fshrc execution progress
-        Thread.sleep(500);
-      } catch (InterruptedException ex) {
-        // do nothing
-      }
-      while (!quit) {
-        int esc = 0;
-        while (engine.isBusy()) {
-          if (in.available() > 0) {
-            int c = in.read();
-            if (c == 27) esc += 10;
-            if (esc > 20) {
-              log.info("ABORT");
-              engine.abort();
-            }
-          } else if (esc > 0) esc--;
-          try {
-            sleep(100);
-          } catch (InterruptedException ex) {
-            interrupt();
-          }
-        }
-        if (sb.length() > 0) console.setPrompt(term.prompt("- "));
-        else console.setPrompt(term.prompt("> "));
-        String s1 = console.readLine();
-        if (s1 == null) {
-          if (shutdownOnExit) engine.exec("shutdown", null);
-          break;
-        }
-        sb.append(s1);
-        String s = sb.toString();
-        nest = nested(s);
-        if (nest) sb.append('\n');
-        else if (s.length() > 0) {
-          sb = new StringBuffer();
-          log.info("> "+s);
-          if (s.trim().equals("exit")) {
-            if (shutdownOnExit) engine.exec("shutdown", null);
-            break;
-          }
-          boolean ok = engine.exec(s, this);
-          if (!ok) {
-            console.println(term.error("BUSY"));
-            log.info("BUSY");
-          }
-        }
-      }
     } catch (IOException ex) {
-      log.warning(ex.toString());
-    }
-  }
-  
-  @Override
-  public void println(Object obj, OutputType type) {
-    if (obj == null) return;
-    String s = obj.toString();
-    try {
-      if (console != null) {
-        switch(type) {
-          case INPUT:
-            console.println(s);
-            break;
-          case OUTPUT:
-            console.println(term.response(s));
-            break;
-          case ERROR:
-            console.println(term.error(s));
-            break;
-          case NOTIFY:
-            console.println(term.notification(s));
-            break;
-          default:
-            return;
-        }
-        if (term.isEnabled()) console.redrawLine();
-        console.flush();
-      }
-    } catch (Exception ex) {
-      log.warning("println: "+ex.toString());
+      System.err.println(ex.toString());
+      console = null;
     }
   }
 
-  private boolean nested(String s) {
-    int nest1 = 0;
-    int nest2 = 0;
-    int nest3 = 0;
-    int quote1 = 0;
-    int quote2 = 0;
-    for (int i = 0; i < s.length(); i++) {
-      switch (s.charAt(i)) {
-        case '{':
-          nest1++;
-          break;
-        case '}':
-          if (nest1 > 0) nest1--;
-          break;
-        case '(':
-          nest2++;
-          break;
-        case ')':
-          if (nest2 > 0) nest2--;
-          break;
-        case '[':
-          nest3++;
-          break;
-        case ']':
-          if (nest3 > 0) nest3--;
-          break;
-        case '\'':
-          quote1 = 1-quote1;
-          break;
-        case '"':
-          quote2 = 1-quote2;
-          break;
-      }
+  private void output(String s) {
+    if (console == null) return;
+    try {
+      console.println(s);
+    } catch(IOException ex) {
+      System.err.println(ex.toString());
+      console = null;
     }
-    return nest1+nest2+nest3+quote1+quote2 > 0;
+  }
+
+  public void println(Object obj) {
+    if (obj == null) return;
+    output(ansi(HOME+OUTPUT, obj.toString()));
+  }
+
+  public void notify(Object obj) {
+    if (obj == null) return;
+    output(ansi(HOME+NOTIFY, obj.toString()));
+  }
+
+  public void error(Object obj) {
+    if (obj == null) return;
+    output(ansi(HOME+ERROR, obj.toString()));
+  }
+
+  public void alert() {
+    console.bell();
+  }
+
+  public String readLine(String prompt, String line) {
+    if (console == null) return null;
+    try {
+      if (line != null) console.print(ansi(UP));
+      console.print(ansi(HOME+CLREOL));
+      console.setPrompt(ansi(HOME+PROMPT, prompt));
+      if (line != null) {
+        console.putString(line);
+        console.setCursorPosition(0);
+      }
+      console.drawLine();
+      return console.readLine();
+    } catch (IOException ex) {
+      System.err.println(ex.toString());
+      console = null;
+      return null;
+    } catch (UserInterruptException ex) {
+      return null;
+    }
+  }
+
+  public void shutdown() {
+    console = null;
   }
 
 }
