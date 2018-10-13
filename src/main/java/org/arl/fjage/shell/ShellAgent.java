@@ -10,7 +10,7 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import java.io.File;
+import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.concurrent.Callable;
@@ -25,6 +25,28 @@ public class ShellAgent extends Agent {
 
   public static final String ABORT = ".abort";
 
+  ////// private classes
+
+  protected class InitScript {
+    String name;
+    File file;
+    Reader reader;
+    Class<?> cls;
+    InitScript(File file) {
+      this.name = null;
+      this.file = file;
+      this.reader = null;
+    }
+    InitScript(String name, Reader reader) {
+      this.name = name;
+      this.file = null;
+      this.reader = reader;
+    }
+    InitScript(Class<?> cls) {
+      this.cls = cls;
+    }
+  }
+
   ////// private attributes
 
   protected Shell shell = null;
@@ -32,6 +54,7 @@ public class ShellAgent extends Agent {
   protected Callable<Void> exec = null;
   protected CyclicBehavior executor = null;
   protected List<MessageListener> listeners = new ArrayList<MessageListener>();
+  protected List<InitScript> initScripts = new ArrayList<InitScript>();
 
   ////// interface methods
 
@@ -55,8 +78,7 @@ public class ShellAgent extends Agent {
           try {
             exec.call();
           } catch (Exception ex) {
-            log.log(Level.WARNING, "Exception in script", ex);
-            if (shell != null) shell.error(ex.toString());
+            // do nothing - should never happen
           }
           exec = null;
         }
@@ -137,6 +159,20 @@ public class ShellAgent extends Agent {
       }
     });
 
+    // behavior to manage init scripts
+    add(new OneShotBehavior() {
+      @Override
+      public void action() {
+        for (InitScript script: initScripts) {
+          if (engine.isBusy()) engine.waitUntilCompletion();
+          if (script.file != null) engine.exec(script.file);
+          else if (script.reader != null) engine.exec(script.reader, script.name);
+          else if (script.cls != null) engine.exec(script.cls);
+        }
+        if (engine.isBusy()) engine.waitUntilCompletion();
+      }
+    });
+
   }
 
   @Override
@@ -147,6 +183,86 @@ public class ShellAgent extends Agent {
   }
 
   ////// public methods
+
+  /**
+   * Sets the name of the initialization script to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   *
+   * @param script script name.
+   */
+  public void setInitrc(String script) {
+    initScripts.clear();
+    addInitrc(script);
+  }
+
+  /**
+   * Sets the initialization script file to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   *
+   * @param script script file.
+   */
+  public void setInitrc(File script) {
+    initScripts.clear();
+    addInitrc(script);
+  }
+
+  /**
+   * Sets the initialization script from a reader to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   *
+   * @param name name of the reader.
+   * @param reader script reader.
+   */
+  public void setInitrc(String name, Reader reader) {
+    initScripts.clear();
+    addInitrc(name, reader);
+  }
+
+  /**
+   * Adds a name of the initialization script to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   *
+   * @param script script name.
+   */
+  public void addInitrc(String script) {
+    if (script.startsWith("res:/")) {
+      InputStream inp = getClass().getResourceAsStream(script.substring(5));
+      if (inp == null) {
+        log.warning(script+" not found");
+        return;
+      }
+      addInitrc(script, new InputStreamReader(inp));
+    } else if (script.startsWith("cls://")) {
+      try {
+        initScripts.add(new InitScript(Class.forName(script.substring(6))));
+      } catch (ClassNotFoundException ex) {
+        log.warning(script+" not found");
+      }
+    } else {
+      initScripts.add(new InitScript(new File(script)));
+    }
+  }
+
+  /**
+   * Adds a initialization script file to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   *
+   * @param script script file.
+   */
+  public void addInitrc(File script) {
+    initScripts.add(new InitScript(script));
+  }
+
+  /**
+   * Adds a initialization script from a reader to setup the console environment. This
+   * method should only be called before the agent is added to a running container.
+   *
+   * @param name name of the reader.
+   * @param reader script reader.
+   */
+  public void addInitrc(String name, Reader reader) {
+    initScripts.add(new InitScript(name, reader));
+  }
 
   /**
    * Adds a message monitor for displayed messages.
