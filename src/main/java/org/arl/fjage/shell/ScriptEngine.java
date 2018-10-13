@@ -44,75 +44,68 @@ public interface ScriptEngine {
   public boolean isComplete(String cmd);
 
   /**
-   * Execute a command. The method does not wait for execution to be completed
-   * but returns immediately.
+   * Execute a command. The method waits for execution to be completed.
    *
    * @param cmd command to execute.
-   * @return true if accepted for execution, false if busy.
+   * @return true if executed successfully, false if busy or error.
    */
   public boolean exec(String cmd);
 
   /**
-   * Execute a script file. The method does not wait for execution to be completed
-   * but returns immediately.
+   * Execute a script file. The method waits for execution to be completed.
    *
    * @param script script file to execute.
-   * @return true if accepted for execution, false if busy.
+   * @return true if executed successfully, false if busy or error.
    */
   public boolean exec(File script);
 
   /**
-   * Execute a script file. The method does not wait for execution to be completed
-   * but returns immediately.
+   * Execute a script file. The method waits for execution to be completed.
    *
    * @param script script file to execute.
    * @param args arguments to pass to script.
-   * @return true if accepted for execution, false if busy.
+   * @return true if executed successfully, false if busy or error.
    */
   public boolean exec(File script, List<String> args);
 
   /**
-   * Execute a precompiled script. The method does not wait for execution to be completed
-   * but returns immediately.
+   * Execute a precompiled script. The method waits for execution to be completed.
    *
    * @param script script class to execute.
-   * @return true if accepted for execution, false if busy or unable to instantiate class.
+   * @return true if executed successfully, false if busy or error or unable to instantiate class.
    */
   public boolean exec(Class<?> script);
 
   /**
-   * Execute a precomplied script. The method does not wait for execution to be completed
-   * but returns immediately.
+   * Execute a precomplied script. The method waits for execution to be completed.
    *
    * @param script script class to execute.
    * @param args arguments to pass to script.
-   * @return true if accepted for execution, false if busy or unable to instantiate class.
+   * @return true if executed successfully, false if busy or error or unable to instantiate class.
    */
   public boolean exec(Class<?> script, List<String> args);
 
   /**
-   * Execute a script from a reader. The method does not wait for execution to be completed
-   * but returns immediately.
+   * Execute a script from a reader. The method waits for execution to be completed.
    *
    * @param reader reader to read script from.
    * @param name reader name for logging.
-   * @return true if accepted for execution, false if busy.
+   * @return true if executed successfully, false if busy or error.
    */
   public boolean exec(Reader reader, String name);
 
   /**
-   * Execute a script from a reader. The method does not wait for execution to be completed
-   * but returns immediately.
+   * Execute a script from a reader. The method waits for execution to be completed.
    *
    * @param reader reader to read script from.
    * @param name reader name for logging.
    * @param args arguments to pass to script.
-   * @return true if accepted for execution, false if busy.
+   * @return true if executed successfully, false if busy or error.
    */
   public boolean exec(Reader reader, String name, List<String> args);
 
   /**
-   * Deliver message to user.
+   * Deliver message to user, typically by displaying it on the shell in an appropriate format.
    *
    * @param msg message to deliver.
    */
@@ -127,11 +120,6 @@ public interface ScriptEngine {
    * Abort currently running script.
    */
   public void abort();
-
-  /**
-   * Wait for script/command execution to complete.
-   */
-  public void waitUntilCompletion();
 
   /**
    * Bind script variable.

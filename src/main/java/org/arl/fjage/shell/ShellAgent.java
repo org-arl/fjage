@@ -50,6 +50,7 @@ public class ShellAgent extends Agent {
   ////// private attributes
 
   protected Shell shell = null;
+  protected Thread consoleThread = null;
   protected ScriptEngine engine = null;
   protected Callable<Void> exec = null;
   protected CyclicBehavior executor = null;
@@ -78,7 +79,7 @@ public class ShellAgent extends Agent {
           try {
             exec.call();
           } catch (Exception ex) {
-            // do nothing - should never happen
+            log.warning("Exec failure: "+ex.toString());
           }
           exec = null;
         }
@@ -89,7 +90,7 @@ public class ShellAgent extends Agent {
 
     // behavior to manage user interaction
     if (shell != null) {
-      Thread t = new Thread(getName()+":console") {
+      consoleThread = new Thread(getName()+":console") {
         @Override
         public void run() {
           String s = null;
@@ -141,8 +142,7 @@ public class ShellAgent extends Agent {
           }
         }
       };
-      t.setDaemon(true);
-      t.start();
+      consoleThread.setDaemon(true);
     }
 
     // behavior to manage incoming messages
@@ -163,13 +163,16 @@ public class ShellAgent extends Agent {
     add(new OneShotBehavior() {
       @Override
       public void action() {
-        for (InitScript script: initScripts) {
-          if (engine.isBusy()) engine.waitUntilCompletion();
-          if (script.file != null) engine.exec(script.file);
-          else if (script.reader != null) engine.exec(script.reader, script.name);
-          else if (script.cls != null) engine.exec(script.cls);
+        try {
+          for (InitScript script: initScripts) {
+            if (script.file != null) engine.exec(script.file);
+            else if (script.reader != null) engine.exec(script.reader, script.name);
+            else if (script.cls != null) engine.exec(script.cls);
+          }
+        } catch (Exception ex) {
+          log.warning("Init script failure: "+ex.toString());
         }
-        if (engine.isBusy()) engine.waitUntilCompletion();
+        if (consoleThread != null) consoleThread.start();
       }
     });
 

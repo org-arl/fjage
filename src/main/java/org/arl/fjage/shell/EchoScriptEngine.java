@@ -82,10 +82,6 @@ public class EchoScriptEngine implements ScriptEngine {
     // do nothing
   }
 
-  public void waitUntilCompletion() {
-    // do nothing
-  }
-
   public void setVariable(String name, Object value) {
     // do nothing
   }
