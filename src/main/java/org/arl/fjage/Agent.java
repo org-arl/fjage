@@ -58,9 +58,9 @@ public class Agent implements Runnable, TimestampProvider {
    * Agent methods that take a timeout parameter.
    */
   public static final long BLOCKING = -1;
-  
+
   /////////////////////// Log levels
-  
+
   protected static final Level ALL = Level.ALL;
   protected static final Level FINEST = Level.FINEST;
   protected static final Level FINER = Level.FINER;
@@ -110,14 +110,14 @@ public class Agent implements Runnable, TimestampProvider {
   protected void shutdown() {
     // do nothing
   }
-  
+
   /**
    * Called by the container if the agent terminates abnormally. This method may
    * be optionally overridden to provide special handling of malfunctioning agents.
    * This method is called before the shutdown() method is called to terminate
    * the agent. The behaviors of the agent are no longer active once this method
    * is called.
-   * 
+   *
    * @param ex exception that caused the agent to die.
    */
   protected void die(Throwable ex) {
@@ -134,7 +134,7 @@ public class Agent implements Runnable, TimestampProvider {
   public AgentID getAgentID() {
     return aid;
   }
-  
+
   /**
    * Gets the name of the agent.
    *
@@ -160,6 +160,7 @@ public class Agent implements Runnable, TimestampProvider {
    * {@link #wake()} method.
    */
   protected synchronized void block() {
+    if (state == AgentState.FINISHING) return;
     if (!unblocked) {
       unblocked = true;
       if (restartBehaviors) return;
@@ -311,7 +312,7 @@ public class Agent implements Runnable, TimestampProvider {
 
   /**
    * Convenience method to create agent id for the named agent.
-   * 
+   *
    * @return agent id for the named agent.
    */
   public AgentID agent(String name) {
@@ -672,7 +673,7 @@ public class Agent implements Runnable, TimestampProvider {
 
   /**
    * Log a message at an INFO level.
-   * 
+   *
    * @param msg message to log.
    */
   public void println(Object msg) {

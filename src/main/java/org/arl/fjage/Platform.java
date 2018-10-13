@@ -109,10 +109,16 @@ public abstract class Platform implements TimestampProvider {
    * Terminates all containers on the platform.
    */
   public void shutdown() {
-    for (Container c: containers) {
-      if (c != null) c.shutdown();
-    }
-    running = false;
+    Thread t = new Thread() {
+      @Override
+      public void run() {
+        for (Container c: containers) {
+          if (c != null) c.shutdown();
+        }
+        running = false;
+      }
+    };
+    t.start();
   }
 
   /**
@@ -152,7 +158,7 @@ public abstract class Platform implements TimestampProvider {
 
   /**
    * Gets a network interface that the platform is bound to.
-   * 
+   *
    * @return bound network interface, null if no binding.
    */
   public NetworkInterface getNetworkInterface() {
@@ -161,16 +167,16 @@ public abstract class Platform implements TimestampProvider {
 
   /**
    * Sets the network interface to bind to.
-   * 
+   *
    * @param name name of the network interface.
    */
   public void setNetworkInterface(String name) throws SocketException {
     nif = NetworkInterface.getByName(name);
   }
-  
+
   /**
    * Sets the network interface to bind to.
-   * 
+   *
    * @param nif network interface.
    */
   public void setNetworkInterface(NetworkInterface nif) {
