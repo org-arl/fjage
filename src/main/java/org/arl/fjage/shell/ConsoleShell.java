@@ -11,127 +11,66 @@ for full license details.
 package org.arl.fjage.shell;
 
 import java.io.IOException;
-import jline.Terminal;
-import jline.console.ConsoleReader;
-import jline.console.UserInterruptException;
+import org.jline.reader.*;
+import org.jline.utils.*;
 
 /**
  * Shell input/output driver for console devices.
  */
 public class ConsoleShell implements Shell {
 
-  public static final String ESC = "\033[";
-  public static final String RESET = ESC+"0m";
-  public static final String BLACK = ESC+"30m";
-  public static final String RED = ESC+"31m";
-  public static final String GREEN = ESC+"32m";
-  public static final String YELLOW = ESC+"33m";
-  public static final String BLUE = ESC+"34m";
-  public static final String MAGENTA = ESC+"35m";
-  public static final String CYAN = ESC+"36m";
-  public static final String WHITE = ESC+"37m";
-  public static final String HOME = ESC+"0G";
-  public static final String UP = ESC+"A";
-  public static final String CLREOL = ESC+"0K";
+  private LineReader console = null;
+  private ScriptEngine scriptEngine = null;
+  private AttributedStyle outputStyle = null;
+  private AttributedStyle notifyStyle = null;
+  private AttributedStyle errorStyle = null;
 
-  /**
-   * Color of println output on terminals supporting ANSI sequences.
-   */
-  public String PROMPT = BLUE;
-
-  /**
-   * Color of println output on terminals supporting ANSI sequences.
-   */
-  public String OUTPUT = GREEN;
-
-  /**
-   * Color of notifications on terminals supporting ANSI sequences.
-   */
-  public String NOTIFY = BLUE;
-
-  /**
-   * Color of errors on terminals supporting ANSI sequences.
-   */
-  public String ERROR = RED;
-
-  private ConsoleReader console = null;
-  private boolean ansiEnable = false;
-
-  private String ansi(String t, String s) {
-    if (s == null) s = "";
-    if (!ansiEnable) return s;
-    return t + s + RESET;
-  }
-
-  private String ansi(String t) {
-    return ansi(t, null);
-  }
-
-  public void init() {
-    try {
-      console = new ConsoleReader(System.in, System.out);
-      console.setHandleUserInterrupt(true);
-      console.setHistoryEnabled(true);
-      try {
-        Terminal t = console.getTerminal();
-        t.init();
-        ansiEnable = t.isAnsiSupported();
-      } catch (Exception ex) {
-        // do nothing
-      }
-    } catch (IOException ex) {
-      System.err.println(ex.toString());
-      console = null;
+  public void init(ScriptEngine engine) {
+    scriptEngine = engine;
+    if (scriptEngine == null) console = LineReaderBuilder.builder().build();
+    else {
+      Parser parser = new Parser() {
+        @Override
+        public ParsedLine parse(String s, int cursor) {
+          if (!scriptEngine.isComplete(s)) throw new EOFError(0, cursor, "Incomplete sentence");
+          return null;
+        }
+        @Override
+        public ParsedLine parse(String s, int cursor, Parser.ParseContext context) {
+          return parse(s, cursor);
+        }
+      };
+      console = LineReaderBuilder.builder().parser(parser).build();
     }
-  }
-
-  private void output(String s) {
-    if (console == null) return;
-    try {
-      console.println(s);
-    } catch(IOException ex) {
-      System.err.println(ex.toString());
-      console = null;
-    }
+    AttributedStyle style = new AttributedStyle();
+    outputStyle = style.foreground(AttributedStyle.GREEN);
+    notifyStyle = style.foreground(AttributedStyle.BLUE);
+    errorStyle = style.foreground(AttributedStyle.RED);
   }
 
   public void println(Object obj) {
-    if (obj == null) return;
-    output(ansi(HOME+OUTPUT, obj.toString()));
+    if (obj == null || console == null) return;
+    console.printAbove(new AttributedString(obj.toString(), outputStyle));
   }
 
   public void notify(Object obj) {
-    if (obj == null) return;
-    output(ansi(HOME+NOTIFY, obj.toString()));
+    if (obj == null || console == null) return;
+    console.printAbove(new AttributedString(obj.toString(), notifyStyle));
   }
 
   public void error(Object obj) {
-    if (obj == null) return;
-    output(ansi(HOME+ERROR, obj.toString()));
-  }
-
-  public void alert() {
-    console.bell();
+    if (obj == null || console == null) return;
+    console.printAbove(new AttributedString(obj.toString(), errorStyle));
   }
 
   public String readLine(String prompt, String line) {
     if (console == null) return null;
     try {
-      if (line != null) console.print(ansi(UP));
-      console.print(ansi(HOME+CLREOL));
-      console.setPrompt(ansi(HOME+PROMPT, prompt));
-      if (line != null) {
-        console.putString(line);
-        console.setCursorPosition(0);
-      }
-      console.drawLine();
-      return console.readLine();
-    } catch (IOException ex) {
-      System.err.println(ex.toString());
-      console = null;
+      return console.readLine(prompt, null, (Character)null, line);
+    } catch (EndOfFileException ex) {
       return null;
     } catch (UserInterruptException ex) {
-      return null;
+      return ABORT;
     }
   }
 

@@ -13,6 +13,7 @@ package org.arl.fjage.shell;
 import java.io.File;
 import java.io.Reader;
 import java.util.List;
+import org.arl.fjage.Message;
 
 /**
  * An interface representing a scripting engine.
@@ -109,6 +110,13 @@ public interface ScriptEngine {
    * @return true if accepted for execution, false if busy.
    */
   public boolean exec(Reader reader, String name, List<String> args);
+
+  /**
+   * Deliver message to user.
+   *
+   * @param msg message to deliver.
+   */
+  public void deliver(Message msg);
 
   /**
    * Check if script is currently being executed.

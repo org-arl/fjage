@@ -16,9 +16,17 @@ package org.arl.fjage.shell;
 public interface Shell {
 
   /**
-   * Initialize the shell.
+   * Abort string returned when user presses ^C.
    */
-  public void init();
+  public static final String ABORT = "\003";
+
+  /**
+   * Initialize the shell.
+   *
+   * @param engine script engine to use for sentence completion check,
+   *               or null to disable.
+   */
+  public void init(ScriptEngine engine);
 
   /**
    * Display script output.
@@ -36,16 +44,11 @@ public interface Shell {
   public void error(Object obj);
 
   /**
-   * Alert the user.
-   */
-  public void alert();
-
-  /**
    * Read a line from the shell.
    *
    * @param prompt prompt to display, null if none.
    * @param line input text to edit, null if blank.
-   * @return input string or null on abort.
+   * @return input string, null on EOF, or ABORT on ^C.
    */
   public String readLine(String prompt, String line);
 

@@ -13,6 +13,8 @@ package org.arl.fjage.shell;
 import java.io.File;
 import java.io.Reader;
 import java.util.List;
+import org.arl.fjage.Message;
+
 
 /**
  * Implements a simple script engine that simply echoes whatever is sent to it.
@@ -66,6 +68,10 @@ public class EchoScriptEngine implements ScriptEngine {
 
   public boolean exec(Reader reader, String name, List<String> args) {
     return false;
+  }
+
+  public void deliver(Message msg) {
+    if (shell != null) shell.notify(msg.getSender().getName() + " >> " + msg.toString());
   }
 
   public boolean isBusy() {
