@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.shell;
 
 import java.io.File;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.concurrent.Callable;
 import org.arl.fjage.*;
@@ -30,8 +31,9 @@ public class ShellAgent extends Agent {
   protected ScriptEngine engine = null;
   protected Callable<Void> exec = null;
   protected CyclicBehavior executor = null;
+  protected List<MessageListener> listeners = new ArrayList<MessageListener>();
 
-  ////// public methods
+  ////// interface methods
 
   public ShellAgent(Shell shell, ScriptEngine engine) {
     this.shell = shell;
@@ -129,6 +131,8 @@ public class ShellAgent extends Agent {
         else {
           log.info(msg.getSender()+" > "+msg.toString());
           if (engine != null) engine.deliver(msg);
+          for (MessageListener ml: listeners)
+            ml.onReceive(msg);
         }
       }
     });
@@ -140,6 +144,33 @@ public class ShellAgent extends Agent {
     log.info("Agent "+getName()+" shutdown");
     if (shell != null) shell.shutdown();
     if (engine != null) engine.shutdown();
+  }
+
+  ////// public methods
+
+  /**
+   * Adds a message monitor for displayed messages.
+   *
+   * @param ml message listener.
+   */
+  public void addMessageMonitor(MessageListener ml) {
+    listeners.add(ml);
+  }
+
+  /**
+   * Removes a message monitor.
+   *
+   * @param ml message listener.
+   */
+  public void removeMessageMonitor(MessageListener ml) {
+    listeners.remove(ml);
+  }
+
+  /**
+   * Removes all message monitors.
+   */
+  public void clearMessageMonitors() {
+    listeners.clear();
   }
 
   ////// private methods
