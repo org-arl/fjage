@@ -70,6 +70,7 @@ public class ConsoleShell implements Shell {
     } catch (UserInterruptException ex) {
       return ABORT;
     } catch (Exception ex) {
+      Thread.interrupted();
       return null;
     }
   }

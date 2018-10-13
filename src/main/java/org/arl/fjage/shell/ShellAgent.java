@@ -116,18 +116,16 @@ public class ShellAgent extends Agent {
               }
               if (aborted) {
                 log.info("ABORT");
-                shell.error("ABORT");
               }
               s = null;
             } else {
               if (engine == null) s = null;
               else {
                 final String cmd = s.trim();
-                if (cmd.length() == 0) s = null;
-                else {
+                s = null;
+                if (cmd.length() > 0) {
                   if (exec != null || engine.isBusy()) shell.error("BUSY");
                   else {
-                    s = null;
                     synchronized(executor) {
                       exec = new Callable<Void>() {
                         @Override
@@ -187,6 +185,7 @@ public class ShellAgent extends Agent {
   public void shutdown() {
     log.info("Agent "+getName()+" shutdown");
     quit = true;
+    if (consoleThread != null) consoleThread.interrupt();
     if (engine != null) engine.shutdown();
     if (shell != null) shell.shutdown();
   }

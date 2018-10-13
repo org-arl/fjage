@@ -29,18 +29,22 @@ public class EchoScriptEngine implements ScriptEngine {
     if (shell != null) shell.println(s);
   }
 
+  @Override
   public String getPrompt() {
     return "# ";
   }
 
+  @Override
   public boolean isComplete(String cmd) {
     return true;
   }
 
+  @Override
   public void bind(Shell shell) {
     this.shell = shell;
   }
 
+  @Override
   public boolean exec(String cmd) {
     if (busy) return false;
     busy = true;
@@ -56,52 +60,64 @@ public class EchoScriptEngine implements ScriptEngine {
     return true;
   }
 
+  @Override
   public boolean exec(File script) {
     return false;
   }
 
+  @Override
   public boolean exec(File script, List<String> args) {
     return false;
   }
 
+  @Override
   public boolean exec(Class<?> script) {
     return false;
   }
 
+  @Override
   public boolean exec(Class<?> script, List<String> args) {
     return false;
   }
 
+  @Override
   public boolean exec(Reader reader, String name) {
     return false;
   }
 
+  @Override
   public boolean exec(Reader reader, String name, List<String> args) {
     return false;
   }
 
+  @Override
   public void deliver(Message msg) {
     if (shell != null) shell.notify(msg.getSender().getName() + " >> " + msg.toString());
   }
 
+  @Override
   public boolean isBusy() {
     return busy;
   }
 
+  @Override
   public void abort() {
     synchronized(this) {
       notify();
     }
   }
 
+  @Override
   public void setVariable(String name, Object value) {
     // do nothing
   }
 
+  @Override
   public Object getVariable(String name) {
     return null;
   }
 
+  @Override
   public void shutdown() {
     // do nothing
   }
