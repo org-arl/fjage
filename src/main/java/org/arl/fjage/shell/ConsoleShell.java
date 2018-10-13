@@ -67,10 +67,10 @@ public class ConsoleShell implements Shell {
     if (console == null) return null;
     try {
       return console.readLine(prompt, null, (Character)null, line);
-    } catch (EndOfFileException ex) {
-      return null;
     } catch (UserInterruptException ex) {
       return ABORT;
+    } catch (Exception ex) {
+      return null;
     }
   }
 

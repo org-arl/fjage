@@ -56,6 +56,7 @@ public class ShellAgent extends Agent {
   protected CyclicBehavior executor = null;
   protected List<MessageListener> listeners = new ArrayList<MessageListener>();
   protected List<InitScript> initScripts = new ArrayList<InitScript>();
+  protected boolean quit = false;
 
   ////// interface methods
 
@@ -94,13 +95,13 @@ public class ShellAgent extends Agent {
         @Override
         public void run() {
           String s = null;
-          while (true) {
+          while (!quit) {
             String prompt = null;
             if (engine != null) prompt = engine.getPrompt();
             s = shell.readLine(prompt, s);
             if (s == null) {
               shutdownPlatform();
-              return;
+              break;
             } else if (s.equals(Shell.ABORT)) {
               boolean aborted = true;
               if (engine != null && engine.isBusy()) {
@@ -121,25 +122,29 @@ public class ShellAgent extends Agent {
             } else {
               if (engine == null) s = null;
               else {
-                if (exec != null || engine.isBusy()) shell.error("BUSY");
+                final String cmd = s.trim();
+                if (cmd.length() == 0) s = null;
                 else {
-                  final String cmd = s.trim();
-                  synchronized(executor) {
-                    exec = new Callable<Void>() {
-                      @Override
-                      public Void call() {
-                        log.info("> "+cmd);
-                        engine.exec(cmd);
-                        return null;
-                      }
-                    };
-                    executor.restart();
+                  if (exec != null || engine.isBusy()) shell.error("BUSY");
+                  else {
+                    s = null;
+                    synchronized(executor) {
+                      exec = new Callable<Void>() {
+                        @Override
+                        public Void call() {
+                          log.info("> "+cmd);
+                          engine.exec(cmd);
+                          return null;
+                        }
+                      };
+                      executor.restart();
+                    }
                   }
-                  s = null;
                 }
               }
             }
           }
+          shell.shutdown();
         }
       };
       consoleThread.setDaemon(true);
@@ -181,8 +186,9 @@ public class ShellAgent extends Agent {
   @Override
   public void shutdown() {
     log.info("Agent "+getName()+" shutdown");
-    if (shell != null) shell.shutdown();
+    quit = true;
     if (engine != null) engine.shutdown();
+    if (shell != null) shell.shutdown();
   }
 
   ////// public methods

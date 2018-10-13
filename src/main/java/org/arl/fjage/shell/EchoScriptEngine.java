@@ -23,6 +23,7 @@ import org.arl.fjage.Message;
 public class EchoScriptEngine implements ScriptEngine {
 
   protected Shell shell = null;
+  protected boolean busy = false;
 
   protected void println(String s) {
     if (shell != null) shell.println(s);
@@ -33,7 +34,6 @@ public class EchoScriptEngine implements ScriptEngine {
   }
 
   public boolean isComplete(String cmd) {
-    if (cmd == null || cmd.length() == 0) return false;
     return true;
   }
 
@@ -42,7 +42,17 @@ public class EchoScriptEngine implements ScriptEngine {
   }
 
   public boolean exec(String cmd) {
+    if (busy) return false;
+    busy = true;
     println(cmd);
+    try {
+      synchronized(this) {
+        wait(500);
+      }
+    } catch (InterruptedException ex) {
+      // do nothing
+    }
+    busy = false;
     return true;
   }
 
@@ -75,11 +85,13 @@ public class EchoScriptEngine implements ScriptEngine {
   }
 
   public boolean isBusy() {
-    return false;
+    return busy;
   }
 
   public void abort() {
-    // do nothing
+    synchronized(this) {
+      notify();
+    }
   }
 
   public void setVariable(String name, Object value) {
