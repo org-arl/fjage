@@ -64,7 +64,10 @@ public class ShellAgent extends Agent {
     this.shell = shell;
     this.engine = engine;
     if (shell != null) shell.init(engine);
-    if (engine != null) engine.bind(shell);
+    if (engine != null) {
+      engine.bind(shell);
+      engine.setVariable("agent", this);
+    }
   }
 
   @Override

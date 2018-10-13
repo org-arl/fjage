@@ -22,7 +22,7 @@ if (devname != null) {
 platform = new RealTimePlatform()
 if (devname == null) container = new MasterContainer(platform, port)
 else container = new MasterContainer(platform, port, devname, baud, 'N81')
-if (gui) shell = new ShellAgent(new SwingShell(), new GroovyScriptEngine())
-else shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
+shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
+shell.addInitrc("cls://org.arl.fjage.shell.fshrc");
 container.add 'shell', shell
 platform.start()
