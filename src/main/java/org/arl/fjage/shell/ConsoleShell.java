@@ -61,6 +61,26 @@ public class ConsoleShell implements Shell {
     }
   }
 
+  /**
+   * Create a console shell attached to a specified transport.
+   *
+   * @param transport input/output streams.
+   * @param dump true for a basic dumb terminal, false otherwise.
+   */
+  public ConsoleShell(Transport transport, boolean dumb) {
+    try {
+      InputStream in = transport.getInputStream();
+      OutputStream out = transport.getOutputStream();
+      if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
+      else {
+        term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
+        setupStyles();
+      }
+    } catch (IOException ex) {
+      log.warning("Unable to open terminal: "+ex.toString());
+    }
+  }
+
   private void setupStyles() {
     AttributedStyle style = new AttributedStyle();
     outputStyle = style.foreground(AttributedStyle.GREEN);
