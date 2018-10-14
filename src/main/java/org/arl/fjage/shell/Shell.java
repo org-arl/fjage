@@ -46,11 +46,12 @@ public interface Shell {
   /**
    * Read a line from the shell.
    *
-   * @param prompt prompt to display, null if none.
+   * @param prompt1 prompt to display on first line, null if none.
+   * @param prompt2 prompt to display on continuation line, null if none.
    * @param line input text to edit, null if blank.
    * @return input string, null on EOF, or ABORT on ^C.
    */
-  public String readLine(String prompt, String line);
+  public String readLine(String prompt1, String prompt2, String line);
 
   /**
    * Shutdown the shell.

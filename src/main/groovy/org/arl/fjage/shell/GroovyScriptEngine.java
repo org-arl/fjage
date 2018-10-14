@@ -69,13 +69,19 @@ public class GroovyScriptEngine implements ScriptEngine {
   }
 
   @Override
-  public String getPrompt() {
-    return "> ";
+  public String getPrompt(boolean cont) {
+    return cont ? "- " : "> ";
   }
 
   @Override
   public boolean isComplete(String cmd) {
-    return true;
+    if (cmd == null || cmd.trim().length() == 0) return true;
+    try {
+      groovy.parse(cmd);
+      return true;
+    } catch (Exception ex) {
+      return false;
+    }
   }
 
   @Override

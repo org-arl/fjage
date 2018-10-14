@@ -28,11 +28,12 @@ public interface ScriptEngine {
   public void bind(Shell shell);
 
   /**
-   * Get the current prompt.
+   * Get the command prompt.
    *
+   * @param cont true if continuation line, false if first line.
    * @return prompt string or null to let shell choose prompt.
    */
-  public String getPrompt();
+  public String getPrompt(boolean cont);
 
   /**
    * Checks if a string is a complete command. This can be used by a shell to determine

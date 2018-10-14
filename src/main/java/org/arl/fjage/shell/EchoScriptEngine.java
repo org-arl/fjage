@@ -30,7 +30,7 @@ public class EchoScriptEngine implements ScriptEngine {
   }
 
   @Override
-  public String getPrompt() {
+  public String getPrompt(boolean cont) {
     return "# ";
   }
 

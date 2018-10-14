@@ -99,9 +99,13 @@ public class ShellAgent extends Agent {
         public void run() {
           String s = null;
           while (!quit) {
-            String prompt = null;
-            if (engine != null) prompt = engine.getPrompt();
-            s = shell.readLine(prompt, s);
+            String prompt1 = null;
+            String prompt2 = null;
+            if (engine != null) {
+              prompt1 = engine.getPrompt(false);
+              prompt2 = engine.getPrompt(true);
+            }
+            s = shell.readLine(prompt1, prompt2, s);
             if (s == null) {
               shutdownPlatform();
               break;

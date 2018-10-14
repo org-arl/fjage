@@ -10,8 +10,10 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import java.io.IOException;
+import java.io.*;
+import java.util.logging.*;
 import org.jline.reader.*;
+import org.jline.terminal.*;
 import org.jline.utils.*;
 
 /**
@@ -19,15 +21,44 @@ import org.jline.utils.*;
  */
 public class ConsoleShell implements Shell {
 
+  private Terminal term = null;
   private LineReader console = null;
   private ScriptEngine scriptEngine = null;
   private AttributedStyle outputStyle = null;
   private AttributedStyle notifyStyle = null;
   private AttributedStyle errorStyle = null;
+  private Logger log = Logger.getLogger(getClass().getName());
+
+  public ConsoleShell() {
+    try {
+      term = TerminalBuilder.terminal();
+    } catch (IOException ex) {
+      log.warning("Unable to open terminal: "+ex.toString());
+    }
+    AttributedStyle style = new AttributedStyle();
+    outputStyle = style.foreground(AttributedStyle.GREEN);
+    notifyStyle = style.foreground(AttributedStyle.BLUE);
+    errorStyle = style.foreground(AttributedStyle.RED);
+  }
+
+  public ConsoleShell(InputStream in, OutputStream out, boolean dumb) {
+    try {
+      term = TerminalBuilder.builder().streams(in, out).build();
+    } catch (IOException ex) {
+      log.warning("Unable to open terminal: "+ex.toString());
+    }
+    if (!dumb) {
+      AttributedStyle style = new AttributedStyle();
+      outputStyle = style.foreground(AttributedStyle.GREEN);
+      notifyStyle = style.foreground(AttributedStyle.BLUE);
+      errorStyle = style.foreground(AttributedStyle.RED);
+    }
+  }
 
   public void init(ScriptEngine engine) {
+    if (term == null) return;
     scriptEngine = engine;
-    if (scriptEngine == null) console = LineReaderBuilder.builder().build();
+    if (scriptEngine == null) console = LineReaderBuilder.builder().terminal(term).build();
     else {
       Parser parser = new Parser() {
         @Override
@@ -40,12 +71,8 @@ public class ConsoleShell implements Shell {
           return parse(s, cursor);
         }
       };
-      console = LineReaderBuilder.builder().parser(parser).build();
+      console = LineReaderBuilder.builder().parser(parser).terminal(term).build();
     }
-    AttributedStyle style = new AttributedStyle();
-    outputStyle = style.foreground(AttributedStyle.GREEN);
-    notifyStyle = style.foreground(AttributedStyle.BLUE);
-    errorStyle = style.foreground(AttributedStyle.RED);
   }
 
   public void println(Object obj) {
@@ -63,13 +90,14 @@ public class ConsoleShell implements Shell {
     console.printAbove(new AttributedString(obj.toString(), errorStyle));
   }
 
-  public String readLine(String prompt, String line) {
+  public String readLine(String prompt1, String prompt2, String line) {
     if (console == null) return null;
     try {
-      return console.readLine(prompt, null, (Character)null, line);
+      console.setVariable(LineReader.SECONDARY_PROMPT_PATTERN, prompt2);
+      return console.readLine(prompt1, null, (Character)null, line);
     } catch (UserInterruptException ex) {
       return ABORT;
-    } catch (Exception ex) {
+    } catch (Throwable ex) {
       Thread.interrupted();
       return null;
     }
