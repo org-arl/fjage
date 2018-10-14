@@ -29,32 +29,46 @@ public class ConsoleShell implements Shell {
   private AttributedStyle errorStyle = null;
   private Logger log = Logger.getLogger(getClass().getName());
 
+  /**
+   * Create a console shell attached to the system terminal. This shell supports
+   * line editing and colors.
+   */
   public ConsoleShell() {
     try {
       term = TerminalBuilder.terminal();
+      setupStyles();
     } catch (IOException ex) {
       log.warning("Unable to open terminal: "+ex.toString());
     }
+  }
+
+  /**
+   * Create a console shell attached to a specified input and output stream.
+   *
+   * @param in input stream.
+   * @param out output stream.
+   * @param dump true for a basic dumb terminal, false otherwise.
+   */
+  public ConsoleShell(InputStream in, OutputStream out, boolean dumb) {
+    try {
+      if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
+      else {
+        term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
+        setupStyles();
+      }
+    } catch (IOException ex) {
+      log.warning("Unable to open terminal: "+ex.toString());
+    }
+  }
+
+  private void setupStyles() {
     AttributedStyle style = new AttributedStyle();
     outputStyle = style.foreground(AttributedStyle.GREEN);
     notifyStyle = style.foreground(AttributedStyle.BLUE);
     errorStyle = style.foreground(AttributedStyle.RED);
   }
 
-  public ConsoleShell(InputStream in, OutputStream out, boolean dumb) {
-    try {
-      term = TerminalBuilder.builder().streams(in, out).build();
-    } catch (IOException ex) {
-      log.warning("Unable to open terminal: "+ex.toString());
-    }
-    if (!dumb) {
-      AttributedStyle style = new AttributedStyle();
-      outputStyle = style.foreground(AttributedStyle.GREEN);
-      notifyStyle = style.foreground(AttributedStyle.BLUE);
-      errorStyle = style.foreground(AttributedStyle.RED);
-    }
-  }
-
+  @Override
   public void init(ScriptEngine engine) {
     if (term == null) return;
     scriptEngine = engine;
@@ -75,21 +89,25 @@ public class ConsoleShell implements Shell {
     }
   }
 
+  @Override
   public void println(Object obj) {
     if (obj == null || console == null) return;
     console.printAbove(new AttributedString(obj.toString(), outputStyle));
   }
 
+  @Override
   public void notify(Object obj) {
     if (obj == null || console == null) return;
     console.printAbove(new AttributedString(obj.toString(), notifyStyle));
   }
 
+  @Override
   public void error(Object obj) {
     if (obj == null || console == null) return;
     console.printAbove(new AttributedString(obj.toString(), errorStyle));
   }
 
+  @Override
   public String readLine(String prompt1, String prompt2, String line) {
     if (console == null) return null;
     try {
@@ -103,6 +121,7 @@ public class ConsoleShell implements Shell {
     }
   }
 
+  @Override
   public void shutdown() {
     console = null;
   }
