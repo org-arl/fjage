@@ -34,7 +34,7 @@ public class TcpTransport extends Thread implements Transport {
    *
    * @param port TCP port number.
    */
-  public TcpTransport(int port, boolean charmode) throws IOException {
+  public TcpTransport(int port, boolean charmode) {
     this.port = port;
     this.charmode = charmode;
     setName(getClass().getSimpleName());
