@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 import org.arl.fjage.*;
-import org.arl.fjage.connectors.*;
+import org.arl.fjage.connectors.Connector;
 
 /**
  * Handles a JSON/TCP connection with remote container.
@@ -38,7 +38,7 @@ class ConnectionHandler extends Thread {
     this.container = container;
     setName(conn.toString());
     alive = false;
-    keepAlive = true; //conn instanceof SerialPortConnector;
+    keepAlive = true;
   }
 
   @Override
@@ -132,15 +132,7 @@ class ConnectionHandler extends Thread {
     if (out == null) return;
     try {
       out.writeBytes(s+"\n");
-      if (conn instanceof SerialPortConnector) {
-        while (((SerialPortConnector)conn).getSerialPort().bytesAwaitingWrite​() > 0) {
-          try {
-            Thread.sleep(100);
-          } catch (InterruptedException ex) {
-            // do nothing
-          }
-        }
-      }
+      conn.waitOutputCompletion(1000);
     } catch(IOException ex) {
       log.warning("Write failed: "+ex.toString());
       close();

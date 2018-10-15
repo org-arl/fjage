@@ -72,6 +72,21 @@ public class TcpConnector implements Connector {
   }
 
   @Override
+  public boolean isReliable() {
+    return true;
+  }
+
+  @Override
+  public boolean waitOutputCompletion(long timeout) {
+    try {
+      sock.getOutputStream().flush();
+      return true;
+    } catch (IOException ex) {
+      return false;
+    }
+  }
+
+  @Override
   public String toString() {
     return getName();
   }

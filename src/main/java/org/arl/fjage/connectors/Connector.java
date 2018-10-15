@@ -33,6 +33,21 @@ public interface Connector {
   public OutputStream getOutputStream();
 
   /**
+   * Check if a connection is relaible. A reliable connection
+   * throws an exception if data written to the output stream cannot
+   * be delivered.
+   */
+  public boolean isReliable();
+
+  /**
+   * Wait until the output buffer is empty.
+   *
+   * @param timeout timeout in milliseconds.
+   * @return true if output buffer empty, false on timeout or error.
+   */
+  public boolean waitOutputCompletion(long timeout);
+
+  /**
    * Close the connection.
    */
   public void close();

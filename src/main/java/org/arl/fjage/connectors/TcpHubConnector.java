@@ -80,6 +80,25 @@ public class TcpHubConnector extends Thread implements Connector {
   }
 
   @Override
+  public boolean isReliable() {
+    return true;
+  }
+
+  @Override
+  public boolean waitOutputCompletion(long timeout) {
+    long t = System.currentTimeMillis() + timeout;
+    while (pout.available() > 0) {
+      if (System.currentTimeMillis() > t) return false;
+      try {
+        sleep(10);
+      } catch (InterruptedException ex) {
+        // do nothing
+      }
+    }
+    return true;
+  }
+
+  @Override
   public void run() {
     outThread = new OutputThread();
     outThread.start();

@@ -68,6 +68,25 @@ public class SerialPortConnector implements Connector {
   }
 
   @Override
+  public boolean isReliable() {
+    return false;
+  }
+
+  @Override
+  public boolean waitOutputCompletion(long timeout) {
+    long t = System.currentTimeMillis() + timeout;
+    while (com.bytesAwaitingWrite() > 0) {
+      if (System.currentTimeMillis() > t) return false;
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException ex) {
+        // do nothing
+      }
+    }
+    return true;
+  }
+
+  @Override
   public String toString() {
     return getName();
   }
