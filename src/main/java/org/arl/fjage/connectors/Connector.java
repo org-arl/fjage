@@ -18,6 +18,11 @@ import java.io.*;
 public interface Connector {
 
   /**
+   * Get a string representation of the connection.
+   */
+  public String getName();
+
+  /**
    * Get the input stream to read data over.
    */
   public InputStream getInputStream();
@@ -26,5 +31,10 @@ public interface Connector {
    * Get the output stream to write data to.
    */
   public OutputStream getOutputStream();
+
+  /**
+   * Close the connection.
+   */
+  public void close();
 
 }

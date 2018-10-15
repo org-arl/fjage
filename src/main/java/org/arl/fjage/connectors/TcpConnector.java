@@ -12,193 +12,68 @@ package org.arl.fjage.connectors;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
-import java.util.logging.Logger;
 
 /**
- * TCP server implementation.
+ * TCP client connector.
  */
-public class TcpConnector extends Thread implements Connector {
+public class TcpConnector implements Connector {
 
-  protected int port;
-  protected boolean charmode;
-  protected ServerSocket sock = null;
-  protected OutputThread outThread = null;
-  protected List<ClientThread> clientThreads = Collections.synchronizedList(new ArrayList<ClientThread>());
-  protected Logger log = Logger.getLogger(getClass().getName());
-  protected PseudoInputStream pin = new PseudoInputStream();
-  protected PseudoOutputStream pout = new PseudoOutputStream();
+  protected Socket sock;
 
   /**
-   * Creates a TCP server running on a specified port.
-   *
-   * @param port TCP port number.
-   * @param telnet true to negotiate character mode using telnet protocol,
-   *               false to leave the choice to the client.
+   * Open a TCP client connection to a TCP server.
    */
-  public TcpConnector(int port, boolean telnet) {
-    this.port = port;
-    charmode = telnet;
-    setName(getClass().getSimpleName());
-    setDaemon(true);
-    start();
+  public TcpConnector(String hostname, int port) throws IOException {
+    sock = new Socket(hostname, port);
   }
 
   /**
-   * Shutdown the TCP server.
+   * Create a TCP connector object with an already open socket.
    */
-  public void shutdown() {
-    synchronized(clientThreads) {
-      for (ClientThread t: clientThreads)
-        t.close();
-    }
-    clientThreads.clear();
-    try {
-      ServerSocket s = sock;
-      sock = null;
-      s.close();
-    } catch (Exception ex) {
-      // do nothing
-    }
+  public TcpConnector(Socket sock) {
+    this.sock = sock;
   }
 
   @Override
-  public void run() {
-    outThread = new OutputThread();
-    outThread.start();
-    try {
-      log.info("Listening on port "+port);
-      sock = new ServerSocket(port);
-      while (sock != null) {
-        try {
-          new ClientThread(sock.accept()).start();
-        } catch (IOException ex) {
-          // do nothing
-        }
-      }
-    } catch (IOException ex) {
-      // do nothing
-    }
-    log.info("Stopped listening");
-    outThread.close();
-    outThread = null;
+  public String getName() {
+    if (sock == null) return "tcp:[closed]";
+    return "tcp:[from "+sock.getLocalAddress()+":"+sock.getLocalPort()+" to "+sock.getInetAddress()+":"+sock.getPort()+"]";
   }
 
   @Override
   public InputStream getInputStream() {
-    return pin;
+    if (sock == null) return null;
+    try {
+      return sock.getInputStream();
+    } catch (IOException ex) {
+      return null;
+    }
   }
 
   @Override
   public OutputStream getOutputStream() {
-    return pout;
+    if (sock == null) return null;
+    try {
+      return sock.getOutputStream();
+    } catch (IOException ex) {
+      return null;
+    }
   }
 
-  // thread to monitor incoming data on output stream and write to TCP clients
-
-  private class OutputThread extends Thread {
-
-    OutputThread() {
-      setName(getClass().getSimpleName());
-      setDaemon(true);
+  @Override
+  public void close() {
+    if (sock == null) return;
+    try {
+      sock.close();
+    } catch (IOException ex) {
+      // do nothing
     }
-
-    @Override
-    public void run() {
-      while (true) {
-        int c = pout.read();
-        if (c < 0) break;
-        synchronized(clientThreads) {
-          for (ClientThread t: clientThreads)
-            t.write(c);
-        }
-      }
-    }
-
-    void close() {
-      if (pout != null) pout.close();
-    }
-
+    sock = null;
   }
 
-  // threads to monitor incoming data from TCP clients and write to input stream
-
-  private class ClientThread extends Thread {
-
-    Socket client;
-    OutputStream out = null;
-
-    ClientThread(Socket client) {
-      setName(getClass().getSimpleName());
-      setDaemon(true);
-      this.client = client;
-    }
-
-    @Override
-    public void run() {
-      clientThreads.add(this);
-      String cname = "(unknown)";
-      InputStream in = null;
-      try {
-        cname = client.getInetAddress().toString();
-        log.info("New connection from "+cname);
-        in = client.getInputStream();
-        out = client.getOutputStream();
-        if (charmode) {
-          int[] charmodeBytes = new int[] { 255, 251, 1, 255, 251, 3, 255, 252, 34 };
-          for (int b: charmodeBytes)
-            out.write(b);
-          out.flush();
-        }
-        // ignore initial handshake data
-        try {
-          sleep(100);
-        } catch (InterruptedException ex) {
-          // do nothing
-        }
-        while (in.available() > 0)
-          in.read();
-        // process incoming data
-        while (true) {
-          int c = in.read();
-          if (c < 0 || c == 4) break;
-          if (c > 0) pin.write(c);
-        }
-      } catch (Exception ex) {
-        // do nothing
-      }
-      log.info("Connection from "+cname+" closed");
-      close(in);
-      close(out);
-      close(client);
-      clientThreads.remove(this);
-      client = null;
-      out = null;
-    }
-
-    void write(int c) {
-      try {
-        if (out != null) {
-          out.write(c);
-          out.flush();
-        }
-      } catch (IOException ex) {
-        // do nothing
-      }
-    }
-
-    void close() {
-      close(client);
-    }
-
-    void close(Closeable x) {
-      try {
-        if (x != null) x.close();
-      } catch (IOException ex) {
-        // do nothing
-      }
-    }
-
+  @Override
+  public String toString() {
+    return getName();
   }
 
 }
