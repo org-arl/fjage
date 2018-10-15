@@ -440,7 +440,14 @@ class Gateway:
         for i in list(dt):
             if i == 'data' or i == 'signal':
                 if type(dt[i]) == numpy.ndarray:
-                    dt[i] = dt[i].tolist()
+                    if i == 'data':
+                        dt[i] = dt[i].tolist()
+                    elif i == 'signal':
+                        if dt[i].dtype == 'complex':
+                            dt[i] = numpy.vstack((dt[i].real, dt[i].imag)).reshape((-1,), order='F')
+                            dt[i] = dt[i].tolist()
+                        else:
+                            dt[i] = dt[i].tolist()
         for key in list(dt):
             if dt[key] == None:
                 dt.pop(key)
