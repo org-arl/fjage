@@ -14,7 +14,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import org.arl.fjage.*;
-import com.fazecast.jSerialComm.SerialPort;
+import org.arl.fjage.connectors.*;
 
 /**
  * Slave container attached to a master container. Agents in linked
@@ -31,7 +31,7 @@ public class SlaveContainer extends RemoteContainer {
   private static final long TIMEOUT = 1000;
 
   private ConnectionHandler master;
-  private String hostname;
+  private String hostname, settings;
   private int port, baud;
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
   private boolean quit = false;
@@ -79,10 +79,10 @@ public class SlaveContainer extends RemoteContainer {
    */
   public SlaveContainer(Platform platform, String devname, int baud, String settings) {
     super(platform);
-    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
     this.hostname = devname;
     this.port = -1;
     this.baud = baud;
+    this.settings = settings;
     connectToMaster();
   }
 
@@ -99,10 +99,10 @@ public class SlaveContainer extends RemoteContainer {
    */
   public SlaveContainer(Platform platform, String name, String devname, int baud, String settings) {
     super(platform, name);
-    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
     this.hostname = devname;
     this.port = -1;
     this.baud = baud;
+    this.settings = settings;
     connectToMaster();
   }
 
@@ -260,15 +260,10 @@ public class SlaveContainer extends RemoteContainer {
           while (!quit) {
             try {
               log.info("Connecting to "+hostname+":"+(port>=0?":"+port:"@"+baud));
-              if (port >= 0) {
-                Socket conn = new Socket(hostname, port);
-                master = new ConnectionHandler(conn, SlaveContainer.this);
-              } else {
-                SerialPort com = SerialPort.getCommPort(hostname);
-                com.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
-                com.openPort();
-                master = new ConnectionHandler(com, SlaveContainer.this);
-              }
+              Connector conn;
+              if (port >= 0) conn = new TcpConnector(hostname, port);
+              else conn = new SerialPortConnector(hostname, baud, settings);
+              master = new ConnectionHandler(conn, SlaveContainer.this);
               master.start();
               master.join();
               log.info("Connection to "+hostname+(port>=0?":"+port:"@"+baud)+" lost");

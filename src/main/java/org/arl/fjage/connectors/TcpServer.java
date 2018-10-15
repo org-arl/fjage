@@ -26,9 +26,9 @@ public class TcpServer extends Thread {
   protected Logger log = Logger.getLogger(getClass().getName());
 
   /**
-   * Creates a TCP server running on a specified port.
+   * Create a TCP server running on a specified port.
    *
-   * @param port TCP port number.
+   * @param port TCP port number (0 to autoselect).
    */
   public TcpServer(int port, ConnectionListener listener) {
     this.port = port;
@@ -36,6 +36,13 @@ public class TcpServer extends Thread {
     setName("tcpserver:[listening on port "+port+"]");
     setDaemon(true);
     start();
+  }
+
+  /**
+   * Get the TCP port on which the server listens for connections.
+   */
+  public int getPort() {
+    return port;
   }
 
   /**
@@ -54,8 +61,10 @@ public class TcpServer extends Thread {
   @Override
   public void run() {
     try {
-      log.info("Listening on port "+port);
       sock = new ServerSocket(port);
+      port = sock.getLocalPort();
+      setName("tcpserver:[listening on port "+port+"]");
+      log.info("Listening on port "+port);
       while (sock != null) {
         try {
           listener.connected(new TcpConnector(sock.accept()));

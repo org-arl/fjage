@@ -32,6 +32,14 @@ public class SerialPortConnector implements Connector {
     SerialPort com = SerialPort.getCommPort(devname);
     com.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
     com.openPort();
+    com.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+  }
+
+  /**
+   * Get the underlying serial port.
+   */
+  public SerialPort getSerialPort() {
+    return com;
   }
 
   @Override
