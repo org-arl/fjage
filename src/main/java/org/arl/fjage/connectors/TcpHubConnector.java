@@ -47,6 +47,20 @@ public class TcpHubConnector extends Thread implements Connector {
   }
 
   /**
+   * Get the TCP port on which the server listens for connections.
+   */
+  public synchronized int getPort() {
+    if (port == 0) {
+      try {
+        wait(100);
+      } catch (InterruptedException ex) {
+        // do nothing
+      }
+    }
+    return port;
+  }
+
+  /**
    * Shutdown the TCP server.
    */
   @Override
@@ -70,17 +84,22 @@ public class TcpHubConnector extends Thread implements Connector {
     outThread = new OutputThread();
     outThread.start();
     try {
+      synchronized (this) {
+        sock = new ServerSocket(port);
+        port = sock.getLocalPort();
+        notify();
+      }
+      setName("tcphub:[listening on port "+port+"]");
       log.info("Listening on port "+port);
-      sock = new ServerSocket(port);
       while (sock != null) {
         try {
           new ClientThread(sock.accept()).start();
         } catch (IOException ex) {
-          log.warning("accept failed: "+ex.toString());
+          // do nothing
         }
       }
     } catch (IOException ex) {
-      log.info("socket closed: "+ex.toString());
+      // do nothing
     }
     log.info("Stopped listening");
     outThread.close();

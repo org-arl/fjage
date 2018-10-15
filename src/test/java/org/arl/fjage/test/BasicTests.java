@@ -24,6 +24,7 @@ public class BasicTests {
   private static final int DELAY = 1100;
 
   private Random rnd = new Random();
+  private Logger log = Logger.getLogger(getClass().getName());
 
   @Before
   public void beforeTesting() {
@@ -32,6 +33,7 @@ public class BasicTests {
 
   @Test
   public void testRT() {
+    log.info("testRT");
     Platform platform = new RealTimePlatform();
     Container container = new Container(platform);
     ClientAgent client = new ClientAgent();
@@ -49,6 +51,7 @@ public class BasicTests {
 
   @Test
   public void testSim() {
+    log.info("testSim");
     Platform platform = new DiscreteEventSimulator();
     Container container = new Container(platform);
     ClientAgent client = new ClientAgent();
@@ -66,6 +69,7 @@ public class BasicTests {
 
   @Test
   public void testRemote1() throws IOException {
+    log.info("testRemote1");
     Platform platform = new RealTimePlatform();
     MasterContainer master = new MasterContainer(platform);
     Container slave = new SlaveContainer(platform, "localhost", master.getPort());
@@ -92,6 +96,7 @@ public class BasicTests {
 
   @Test
   public void testRemote2() throws IOException {
+    log.info("testRemote2");
     Platform platform = new RealTimePlatform();
     MasterContainer master = new MasterContainer(platform);
     Container slave = new SlaveContainer(platform, "localhost", master.getPort());
@@ -110,6 +115,7 @@ public class BasicTests {
 
   @Test
   public void testRemote3() throws IOException {
+    log.info("testRemote3");
     Platform platform = new RealTimePlatform();
     MasterContainer master = new MasterContainer(platform);
     Container slave = new SlaveContainer(platform, "localhost", master.getPort());
@@ -128,6 +134,7 @@ public class BasicTests {
 
   @Test
   public void testGateway() throws IOException {
+    log.info("testGateway");
     Platform platform = new RealTimePlatform();
     MasterContainer master = new MasterContainer(platform);
     ServerAgent server = new ServerAgent();
@@ -156,6 +163,7 @@ public class BasicTests {
 
   @Test
   public void testFSM() {
+    log.info("testFSM");
     Platform platform = new RealTimePlatform();
     Container container = new Container(platform);
     Agent agent = new Agent();
@@ -193,6 +201,7 @@ public class BasicTests {
 
   @Test
   public void testTickers() {
+    log.info("testTickers");
     final int nAgents = 10;
     final int tickDelay = 100;
     final int ticks = 6000;
@@ -225,6 +234,7 @@ public class BasicTests {
 
   @Test
   public void testSerialCloner() {
+    log.info("testSerialCloner");
     Platform platform = new DiscreteEventSimulator();
     Container container = new Container(platform);
     container.setCloner(Container.SERIAL_CLONER);
@@ -237,6 +247,7 @@ public class BasicTests {
 
   @Test
   public void testFastCloner() {
+    log.info("testFastCloner");
     Platform platform = new DiscreteEventSimulator();
     Container container = new Container(platform);
     container.setCloner(Container.FAST_CLONER);

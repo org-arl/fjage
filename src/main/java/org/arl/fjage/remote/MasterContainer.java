@@ -333,7 +333,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   @Override
   public void connectionClosed(ConnectionHandler handler) {
-    log.info("Connection to "+handler.getName()+" closed");
+    log.info("Connection "+handler.getName()+" closed");
     needsCleanup = true;
   }
 
@@ -341,7 +341,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   @Override
   public void connected(TcpConnector conn) {
-    log.info("Incoming connection: "+conn.toString());
+    log.info("Incoming connection "+conn.toString());
     ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this);
     synchronized(slaves) {
       slaves.add(t);

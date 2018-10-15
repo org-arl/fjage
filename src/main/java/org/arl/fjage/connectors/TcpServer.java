@@ -41,7 +41,14 @@ public class TcpServer extends Thread {
   /**
    * Get the TCP port on which the server listens for connections.
    */
-  public int getPort() {
+  public synchronized int getPort() {
+    if (port == 0) {
+      try {
+        wait(100);
+      } catch (InterruptedException ex) {
+        // do nothing
+      }
+    }
     return port;
   }
 
@@ -61,19 +68,22 @@ public class TcpServer extends Thread {
   @Override
   public void run() {
     try {
-      sock = new ServerSocket(port);
-      port = sock.getLocalPort();
+      synchronized (this) {
+        sock = new ServerSocket(port);
+        port = sock.getLocalPort();
+        notify();
+      }
       setName("tcpserver:[listening on port "+port+"]");
       log.info("Listening on port "+port);
       while (sock != null) {
         try {
           listener.connected(new TcpConnector(sock.accept()));
         } catch (IOException ex) {
-          log.warning("accept failed: "+ex.toString());
+          // do nothing
         }
       }
     } catch (IOException ex) {
-      log.info("socket closed: "+ex.toString());
+      // do nothing
     }
     log.info("Stopped listening");
   }

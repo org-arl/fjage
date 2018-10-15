@@ -31,13 +31,14 @@ class ConnectionHandler extends Thread {
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
   private Logger log = Logger.getLogger(getClass().getName());
   private RemoteContainer container;
-  private boolean alive;
+  private boolean alive, keepAlive;
 
   public ConnectionHandler(Connector conn, RemoteContainer container) {
     this.conn = conn;
     this.container = container;
     setName(conn.toString());
     alive = false;
+    keepAlive = true; //conn instanceof SerialPortConnector;
   }
 
   @Override
@@ -45,7 +46,7 @@ class ConnectionHandler extends Thread {
     ExecutorService pool = Executors.newSingleThreadExecutor();
     BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
     out = new DataOutputStream(conn.getOutputStream());
-    println(ALIVE);
+    if (keepAlive) println(ALIVE);
     while (conn != null) {
       String s = null;
       try {
@@ -54,18 +55,20 @@ class ConnectionHandler extends Thread {
         // do nothing
       }
       if (s == null) break;
-      // additional alive/sign-off logic needed on serial ports to avoid waiting for slaves when none present
-      if (!alive) {
-        alive = true;
-        log.fine("Connection alive");
-      } else if (s.equals(SIGN_OFF)) {
-        alive = false;
-        log.fine("Peer signed off");
-        continue;
-      }
-      if (s.equals(ALIVE)) {
-        if (container instanceof SlaveContainer) println(ALIVE);
-        continue;
+      if (keepAlive) {
+        // additional alive/sign-off logic needed on serial ports to avoid waiting for slaves when none present
+        if (!alive) {
+          alive = true;
+          log.fine("Connection alive");
+        } else if (s.equals(SIGN_OFF)) {
+          alive = false;
+          log.fine("Peer signed off");
+          continue;
+        }
+        if (s.equals(ALIVE)) {
+          if (container instanceof SlaveContainer) println(ALIVE);
+          continue;
+        }
       }
       // handle JSON messages
       try {
@@ -129,7 +132,6 @@ class ConnectionHandler extends Thread {
     if (out == null) return;
     try {
       out.writeBytes(s+"\n");
-      out.flush();
       if (conn instanceof SerialPortConnector) {
         while (((SerialPortConnector)conn).getSerialPort().bytesAwaitingWrite​() > 0) {
           try {
@@ -147,7 +149,7 @@ class ConnectionHandler extends Thread {
 
   JsonMessage printlnAndGetResponse(String s, String id, long timeout) {
     if (conn == null) return null;
-    if (!alive && container instanceof MasterContainer) return null;
+    if (keepAlive && !alive && container instanceof MasterContainer) return null;
     pending.put(id, id);
     try {
       synchronized(id) {
@@ -160,7 +162,7 @@ class ConnectionHandler extends Thread {
     Object rv = pending.get(id);
     pending.remove(id);
     if (rv instanceof JsonMessage) return (JsonMessage)rv;
-    if (alive) {
+    if (keepAlive && alive) {
       alive = false;
       log.fine("Connection dead");
     }
@@ -169,7 +171,7 @@ class ConnectionHandler extends Thread {
 
   void close() {
     if (conn == null) return;
-    if (container instanceof SlaveContainer) println(SIGN_OFF);
+    if (keepAlive && container instanceof SlaveContainer) println(SIGN_OFF);
     conn.close();
     conn = null;
     out = null;
