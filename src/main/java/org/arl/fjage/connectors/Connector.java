@@ -8,14 +8,14 @@ for full license details.
 
 ******************************************************************************/
 
-package org.arl.fjage.shell;
+package org.arl.fjage.connectors;
 
 import java.io.*;
 
 /**
  * Any data transport service implemets this interface.
  */
-public interface Transport {
+public interface Connector {
 
   /**
    * Get the input stream to read data over.

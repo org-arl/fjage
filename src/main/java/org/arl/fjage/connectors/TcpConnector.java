@@ -8,7 +8,7 @@ for full license details.
 
 ******************************************************************************/
 
-package org.arl.fjage.shell;
+package org.arl.fjage.connectors;
 
 import java.io.*;
 import java.net.*;
@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 /**
  * TCP server implementation.
  */
-public class TcpTransport extends Thread implements Transport {
+public class TcpConnector extends Thread implements Connector {
 
   protected int port;
   protected boolean charmode;
@@ -33,10 +33,12 @@ public class TcpTransport extends Thread implements Transport {
    * Creates a TCP server running on a specified port.
    *
    * @param port TCP port number.
+   * @param telnet true to negotiate character mode using telnet protocol,
+   *               false to leave the choice to the client.
    */
-  public TcpTransport(int port, boolean charmode) {
+  public TcpConnector(int port, boolean telnet) {
     this.port = port;
-    this.charmode = charmode;
+    charmode = telnet;
     setName(getClass().getSimpleName());
     setDaemon(true);
     start();

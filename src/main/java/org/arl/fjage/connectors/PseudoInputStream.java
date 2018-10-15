@@ -8,30 +8,30 @@ for full license details.
 
 ******************************************************************************/
 
-package org.arl.fjage.shell;
+package org.arl.fjage.connectors;
 
 import java.io.*;
 
 /**
- * An output stream backed by a byte buffer that can be read from.
+ * An input stream backed by a byte buffer that can be dynamically written to.
  */
-public class PseudoOutputStream extends OutputStream {
+public class PseudoInputStream extends InputStream {
 
   private byte[] buf;
   private int head, tail, cnt;
 
   /**
-   * Create an output stream with a backing buffer of 1024 bytes.
+   * Create an input stream with a backing buffer of 1024 bytes.
    */
-  public PseudoOutputStream() {
+  public PseudoInputStream() {
     buf = new byte[1024];
     head = tail = cnt = 0;
   }
 
   /**
-   * Create an output stream with a specified backing buffer size.
+   * Create an input stream with a specified backing buffer size.
    */
-  public PseudoOutputStream(int bufsize) {
+  public PseudoInputStream(int bufsize) {
     buf = new byte[bufsize];
     head = tail = cnt = 0;
   }
@@ -43,7 +43,9 @@ public class PseudoOutputStream extends OutputStream {
     head = tail = cnt = 0;
   }
 
-  @Override
+  /**
+   * Write a byte to the stream buffer.
+   */
   public synchronized void write(int c) throws IOException {
     if (buf == null) throw new IOException("Stream is closed");
     if (cnt == buf.length) throw new IOException("Stream buffer full");
@@ -53,15 +55,11 @@ public class PseudoOutputStream extends OutputStream {
     notify();
   }
 
-  /**
-   * Read a byte from the stream buffer. Blocks if none available.
-   *
-   * @return byte read, or -1 on error (if stream is closed).
-   */
+  @Override
   public synchronized int read() {
     if (buf == null) return -1;
     try {
-      if (head == tail) wait();
+      if (cnt == 0) wait();
     } catch (InterruptedException ex) {
       Thread.interrupted();
     }
@@ -73,9 +71,30 @@ public class PseudoOutputStream extends OutputStream {
     return c;
   }
 
-  /**
-   * Get the number of bytes available in stream to read.
-   */
+  @Override
+  public synchronized int read(byte[] buf, int ofs, int len) {
+    if (this.buf == null) return -1;
+    try {
+      if (cnt == 0) wait();
+    } catch (InterruptedException ex) {
+      Thread.interrupted();
+    }
+    if (cnt == 0) return -1;
+    int i = 0;
+    for (i = 0; i < len && cnt > 0; i++) {
+      buf[i] = this.buf[tail];
+      if (++tail >= buf.length) tail = 0;
+      cnt--;
+    }
+    return i;
+  }
+
+  @Override
+  public int read(byte[] buf) {
+    return read(buf, 0, buf.length);
+  }
+
+  @Override
   public synchronized int available() {
     return cnt;
   }

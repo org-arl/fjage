@@ -15,6 +15,7 @@ import java.util.logging.*;
 import org.jline.reader.*;
 import org.jline.terminal.*;
 import org.jline.utils.*;
+import org.arl.fjage.connectors.Connector;
 
 /**
  * Shell input/output driver for console devices.
@@ -30,8 +31,7 @@ public class ConsoleShell implements Shell {
   private Logger log = Logger.getLogger(getClass().getName());
 
   /**
-   * Create a console shell attached to the system terminal. This shell supports
-   * line editing and colors.
+   * Create a console shell attached to the system terminal.
    */
   public ConsoleShell() {
     try {
@@ -47,7 +47,22 @@ public class ConsoleShell implements Shell {
    *
    * @param in input stream.
    * @param out output stream.
-   * @param dump true for a basic dumb terminal, false otherwise.
+   */
+  public ConsoleShell(InputStream in, OutputStream out) {
+    try {
+      term = TerminalBuilder.builder().streams(in, out).build();
+      setupStyles();
+    } catch (IOException ex) {
+      log.warning("Unable to open terminal: "+ex.toString());
+    }
+  }
+
+  /**
+   * Create a console shell attached to a specified input and output stream.
+   *
+   * @param in input stream.
+   * @param out output stream.
+   * @param dump true to force a dumb terminal, false otherwise.
    */
   public ConsoleShell(InputStream in, OutputStream out, boolean dumb) {
     try {
@@ -62,15 +77,31 @@ public class ConsoleShell implements Shell {
   }
 
   /**
-   * Create a console shell attached to a specified transport.
+   * Create a console shell attached to a specified connector.
    *
-   * @param transport input/output streams.
-   * @param dump true for a basic dumb terminal, false otherwise.
+   * @param connector input/output streams.
    */
-  public ConsoleShell(Transport transport, boolean dumb) {
+  public ConsoleShell(Connector connector) {
     try {
-      InputStream in = transport.getInputStream();
-      OutputStream out = transport.getOutputStream();
+      InputStream in = connector.getInputStream();
+      OutputStream out = connector.getOutputStream();
+      term = TerminalBuilder.builder().streams(in, out).build();
+      setupStyles();
+    } catch (IOException ex) {
+      log.warning("Unable to open terminal: "+ex.toString());
+    }
+  }
+
+  /**
+   * Create a console shell attached to a specified connector.
+   *
+   * @param connector input/output streams.
+   * @param dumb true to force a dumb terminal, false otherwise.
+   */
+  public ConsoleShell(Connector connector, boolean dumb) {
+    try {
+      InputStream in = connector.getInputStream();
+      OutputStream out = connector.getOutputStream();
       if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
       else {
         term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
