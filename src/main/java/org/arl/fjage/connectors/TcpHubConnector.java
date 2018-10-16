@@ -77,6 +77,10 @@ public class TcpHubConnector extends Thread implements Connector {
       // do nothing
     }
     sock = null;
+    pin.close();
+    pout.close();
+    pin = null;
+    pout = null;
   }
 
   @Override
