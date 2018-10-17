@@ -17,74 +17,84 @@ import java.io.*;
  */
 public class PseudoOutputStream extends OutputStream {
 
-  private byte[] buf;
-  private int head, tail, cnt;
-
-  /**
-   * Create an output stream with a backing buffer of 1024 bytes.
-   */
-  public PseudoOutputStream() {
-    buf = new byte[1024];
-    head = tail = cnt = 0;
-  }
-
-  /**
-   * Create an output stream with a specified backing buffer size.
-   */
-  public PseudoOutputStream(int bufsize) {
-    buf = new byte[bufsize];
-    head = tail = cnt = 0;
-  }
+  protected BlockingByteQueue q = new BlockingByteQueue();
 
   /**
    * Clear the stream buffer.
    */
-  public synchronized void clear() {
-    head = tail = cnt = 0;
+  public void clear() {
+    if (q != null) q.clear();
   }
 
   @Override
-  public synchronized void write(int c) throws IOException {
-    if (buf == null) throw new IOException("Stream is closed");
-    if (cnt == buf.length) throw new IOException("Stream buffer full");
-    buf[head] = (byte)c;
-    if (++head >= buf.length) head = 0;
-    cnt++;
-    notify();
+  public void write(int c) throws IOException {
+    if (q == null) throw new IOException("Stream is closed");
+    q.write(c);
+  }
+
+  @Override
+  public void write(byte[] buf) throws IOException {
+    if (q == null) throw new IOException("Stream is closed");
+    q.write(buf);
+  }
+
+  @Override
+  public void write(byte[] buf, int ofs, int len) throws IOException {
+    if (q == null) throw new IOException("Stream is closed");
+    if (ofs == 0 && buf.length == len) q.write(buf);
+    else {
+      byte[] tmp = new byte[len];
+      System.arraycopy(buf, ofs, tmp, 0, len);
+      q.write(tmp);
+    }
   }
 
   /**
    * Read a byte from the stream buffer. Blocks if none available.
    *
-   * @return byte read, or -1 on error (if stream is closed).
+   * @return byte read, or -1 on error (if stream is closed or interrupt).
    */
-  public synchronized int read() {
-    if (buf == null) return -1;
-    try {
-      if (head == tail) wait();
-    } catch (InterruptedException ex) {
-      Thread.interrupted();
-    }
-    if (cnt == 0) return -1;
-    int c = buf[tail];
-    if (c < 0) c += 256;
-    if (++tail >= buf.length) tail = 0;
-    cnt--;
-    return c;
+  public int read() {
+    if (q == null) return -1;
+    return q.read();
+  }
+
+  /**
+   * Read a byte buffer from the stream buffer. Blocks if no data available.
+   * May return less data than the buffer size.
+   *
+   * @return number of bytes read, or -1 on error (if stream is closed or interrupt).
+   */
+  public int read(byte[] buf) {
+    if (q == null) return -1;
+    return q.read(buf);
+  }
+
+  /**
+   * Reads all available data from the stream buffer. Blocks if no data available.
+   *
+   * @return bytes array on success, null on failure (if stream is closed or interrupt).
+   */
+  public byte[] readAll() {
+    if (q == null) return null;
+    return q.readAll();
   }
 
   /**
    * Get the number of bytes available in stream to read.
+   *
+   * @return number of bytes available, -1 on error (if stream is closed).
    */
-  public synchronized int available() {
-    return cnt;
+  public int available() {
+    if (q == null) return -1;
+    return q.available();
   }
 
   @Override
-  public synchronized void close() {
-    buf = null;
-    head = tail = cnt = 0;
-    notify();
+  public void close() {
+    if (q == null) return;
+    q.clear();
+    q = null;
   }
 
 }

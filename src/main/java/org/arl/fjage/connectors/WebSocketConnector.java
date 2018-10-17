@@ -115,11 +115,12 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     @Override
     public void run() {
       while (true) {
-        int c = pout.read();
-        if (c < 0) break;
+        byte[] buf = pout.readAll();
+        if (buf == null) break;
+        String s = new String(buf);
         synchronized(wsHandlers) {
           for (WSHandler t: wsHandlers)
-            t.write(c);
+            t.write(s);
         }
       }
     }
@@ -170,12 +171,10 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
       }
     }
 
-    void write(int c) {
+    void write(String s) {
       try {
         if (session != null) {
-          byte[] buf = new byte[1];
-          buf[0] = (byte)c;
-          session.getRemote().sendString(new String(buf));
+          session.getRemote().sendString(s);
         }
       } catch (IOException e) {
         log.warning(e.getMessage());
