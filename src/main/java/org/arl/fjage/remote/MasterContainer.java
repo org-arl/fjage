@@ -88,9 +88,10 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public MasterContainer(Platform platform, String devname, int baud, String settings) {
+  @Deprecated
+  public MasterContainer(Platform platform, String devname, int baud, String settings) throws IOException {
     super(platform);
-    openSerialPort(devname, baud, settings);
+    addConnector(new SerialPortConnector(devname, baud, settings));
   }
 
   /**
@@ -102,9 +103,10 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public MasterContainer(Platform platform, String name, String devname, int baud, String settings) {
+  @Deprecated
+  public MasterContainer(Platform platform, String name, String devname, int baud, String settings) throws IOException {
     super(platform);
-    openSerialPort(devname, baud, settings);
+    addConnector(new SerialPortConnector(devname, baud, settings));
   }
 
   /**
@@ -116,10 +118,11 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
+  @Deprecated
   public MasterContainer(Platform platform, int port, String devname, int baud, String settings) throws IOException {
     super(platform);
     openTcpServer(port);
-    openSerialPort(devname, baud, settings);
+    addConnector(new SerialPortConnector(devname, baud, settings));
   }
 
   /**
@@ -132,10 +135,11 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
+  @Deprecated
   public MasterContainer(Platform platform, String name, int port, String devname, int baud, String settings) throws IOException {
     super(platform);
     openTcpServer(port);
-    openSerialPort(devname, baud, settings);
+    addConnector(new SerialPortConnector(devname, baud, settings));
   }
 
   /**
@@ -146,6 +150,20 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   public int getPort() {
     if (listener == null) return -1;
     return listener.getPort();
+  }
+
+  /**
+   * Adds a connector over which the master container listens.
+   *
+   * @param conn connector.
+   */
+  public void addConnector(Connector conn) {
+    log.info("Listening on "+conn.getName());
+    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this);
+    synchronized(slaves) {
+      slaves.add(t);
+    }
+    t.start();
   }
 
   /////////////// Container interface methods to override
@@ -354,20 +372,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private void openTcpServer(int port) throws IOException {
     listener = new TcpServer(port, this);
     log.info("Listening on port "+listener.getPort());
-  }
-
-  private void openSerialPort(String devname, int baud, String settings) {
-    try {
-      SerialPortConnector conn = new SerialPortConnector(devname, baud, settings);
-      log.info("Listening on "+devname+"@"+baud);
-      ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this);
-      synchronized(slaves) {
-        slaves.add(t);
-      }
-      t.start();
-    } catch (IOException ex) {
-      throw new FjageError(ex.getMessage());
-    }
   }
 
   private void cleanupSlaves() {

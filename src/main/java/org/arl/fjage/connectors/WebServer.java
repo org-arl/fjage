@@ -68,7 +68,7 @@ public class WebServer {
   //////// instance attributes and methods
 
   protected Server server;
-  protected ContextHandlerCollection contexts;
+  protected HandlerCollection contexts;
   protected Map<String,ContextHandler> staticContexts = new HashMap<String,ContextHandler>();
   protected boolean started;
   protected int port;
@@ -77,7 +77,7 @@ public class WebServer {
     this.port = port;
     server = new Server(port);
     if (port > 0) servers.put(port, this);
-    contexts = new ContextHandlerCollection();
+    contexts = new HandlerCollection(true);
     server.setHandler(contexts);
     started = false;
   }
@@ -132,6 +132,11 @@ public class WebServer {
   public void add(ContextHandler handler) {
     log.info("Adding web context: "+handler.getContextPath());
     contexts.addHandler(handler);
+    try {
+      handler.start();
+    } catch (Exception ex) {
+      log.warning("Unable to start context "+handler.getContextPath()+": "+ex.toString());
+    }
   }
 
   /**
@@ -140,6 +145,12 @@ public class WebServer {
    * @param handler context handler to remove.
    */
   public void remove(ContextHandler handler) {
+    log.info("Removing web context: "+handler.getContextPath());
+    try {
+      handler.stop();
+    } catch (Exception ex) {
+      log.warning("Unable to stop context "+handler.getContextPath()+": "+ex.toString());
+    }
     contexts.removeHandler(handler);
     if (contexts.getHandlers().length == 0) stop();
   }

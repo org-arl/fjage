@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.connectors;
 
 import java.util.concurrent.*;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Byte queue that allows streaming of byte data.
@@ -150,7 +151,7 @@ public class BlockingByteQueue {
    *
    * @return bytes array on success, null on failure (interrupt).
    */
-  public synchronized byte[] readAll() {
+  public synchronized byte[] readAvailable() {
     try {
       if (bytes == 0) wait();
     } catch (InterruptedException ex) {
@@ -160,6 +161,29 @@ public class BlockingByteQueue {
     byte[] buf = new byte[bytes];
     read(buf);
     return buf;
+  }
+
+  /**
+   * Reads data from the queue until a delimiter is encountered. Blocks until
+   * delimiter is encountered. The returned data includes the delimiter.
+   *
+   * @param delimiter delimiter byte.
+   * @return bytes array on success, null on failure (interrupt).
+   */
+  public synchronized byte[] readDelimited(byte delimiter) {
+    int c = -1;
+    int d = delimiter;
+    if (d < 0) d += 256;
+    ByteArrayOutputStream baos = new ByteArrayOutputStream(bytes);
+    while (c != d) {
+      c = read();
+      if (c < 0) {
+        if (baos.size() == 0) return null;
+        break;
+      }
+      baos.write(c);
+    }
+    return baos.toByteArray();
   }
 
   /**

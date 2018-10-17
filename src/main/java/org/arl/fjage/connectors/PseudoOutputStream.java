@@ -75,9 +75,19 @@ public class PseudoOutputStream extends OutputStream {
    *
    * @return bytes array on success, null on failure (if stream is closed or interrupt).
    */
-  public byte[] readAll() {
+  public byte[] readAvailable() {
     if (q == null) return null;
-    return q.readAll();
+    return q.readAvailable();
+  }
+
+  /**
+   * Reads a line of text from the stream buffer. Blocks if no data available.
+   *
+   * @return text string on success, null on failure (if stream is closed or interrupt).
+   */
+  public String readLine() {
+    if (q == null) return null;
+    return new String(q.readDelimited((byte)10));
   }
 
   /**

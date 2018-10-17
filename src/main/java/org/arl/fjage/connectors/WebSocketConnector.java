@@ -26,6 +26,7 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 public class WebSocketConnector implements Connector, WebSocketCreator {
 
   protected String name;
+  protected boolean linemode = false;
   protected WebServer server;
   protected ContextHandler handler;
   protected List<WSHandler> wsHandlers = Collections.synchronizedList(new ArrayList<WSHandler>());
@@ -40,6 +41,20 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
    * web server.
    */
   public WebSocketConnector(int port, String context) {
+    init(port, context);
+  }
+
+  /**
+   * Create a web socket connector and add it to a web server running on a
+   * given port. If a web server isn't already created, this will start the
+   * web server.
+   */
+  public WebSocketConnector(int port, String context, boolean linemode) {
+    init(port, context);
+    this.linemode = linemode;
+  }
+
+  protected void init(int port, String context) {
     server = WebServer.getInstance(port);
     handler = new ContextHandler(context);
     handler.setHandler(new WebSocketHandler() {
@@ -115,9 +130,15 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     @Override
     public void run() {
       while (true) {
-        byte[] buf = pout.readAll();
-        if (buf == null) break;
-        String s = new String(buf);
+        String s;
+        if (linemode) {
+          s = pout.readLine();
+          if (s == null) break;
+        } else {
+          byte[] buf = pout.readAvailable();
+          if (buf == null) break;
+          s = new String(buf);
+        }
         synchronized(wsHandlers) {
           for (WSHandler t: wsHandlers)
             t.write(s);
