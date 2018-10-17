@@ -24,6 +24,7 @@ public class ConsoleShell implements Shell {
 
   private Terminal term = null;
   private LineReader console = null;
+  private Connector connector = null;
   private ScriptEngine scriptEngine = null;
   private AttributedStyle outputStyle = null;
   private AttributedStyle notifyStyle = null;
@@ -62,7 +63,7 @@ public class ConsoleShell implements Shell {
    *
    * @param in input stream.
    * @param out output stream.
-   * @param dump true to force a dumb terminal, false otherwise.
+   * @param dumb true to force a dumb terminal, false otherwise.
    */
   public ConsoleShell(InputStream in, OutputStream out, boolean dumb) {
     try {
@@ -85,6 +86,7 @@ public class ConsoleShell implements Shell {
     try {
       InputStream in = connector.getInputStream();
       OutputStream out = connector.getOutputStream();
+      this.connector = connector;
       term = TerminalBuilder.builder().streams(in, out).build();
       setupStyles();
     } catch (IOException ex) {
@@ -102,6 +104,7 @@ public class ConsoleShell implements Shell {
     try {
       InputStream in = connector.getInputStream();
       OutputStream out = connector.getOutputStream();
+      this.connector = connector;
       if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
       else {
         term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
@@ -127,12 +130,13 @@ public class ConsoleShell implements Shell {
     else {
       Parser parser = new Parser() {
         @Override
-        public ParsedLine parse(String s, int cursor) {
+        public CompletingParsedLine parse(String s, int cursor) {
           if (!scriptEngine.isComplete(s)) throw new EOFError(0, cursor, "Incomplete sentence");
+          if (s.contains("\n") && cursor < s.length()) throw new EOFError(0, cursor, "Editing");
           return null;
         }
         @Override
-        public ParsedLine parse(String s, int cursor, Parser.ParseContext context) {
+        public CompletingParsedLine parse(String s, int cursor, Parser.ParseContext context) {
           return parse(s, cursor);
         }
       };
@@ -174,6 +178,18 @@ public class ConsoleShell implements Shell {
 
   @Override
   public void shutdown() {
+    if (term != null) {
+      try {
+        term.close();
+      } catch (IOException ex) {
+        // do nothing
+      }
+      term = null;
+    }
+    if (connector != null) {
+      connector.close();
+      connector = null;
+    }
     console = null;
   }
 

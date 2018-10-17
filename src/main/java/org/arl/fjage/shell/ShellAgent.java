@@ -149,7 +149,6 @@ public class ShellAgent extends Agent {
               }
             }
           }
-          shell.shutdown();
         }
       };
       consoleThread.setDaemon(true);

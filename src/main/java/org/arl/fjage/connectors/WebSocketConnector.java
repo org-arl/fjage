@@ -55,6 +55,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   }
 
   protected void init(int port, String context) {
+    name = "ws:["+port+":"+context+"]";
     server = WebServer.getInstance(port);
     handler = new ContextHandler(context);
     handler.setHandler(new WebSocketHandler() {
@@ -67,7 +68,6 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     server.start();
     outThread = new OutputThread();
     outThread.start();
-    name = "ws:["+port+":"+context+"]";
   }
 
   @Override
@@ -123,7 +123,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   private class OutputThread extends Thread {
 
     OutputThread() {
-      setName(getClass().getSimpleName());
+      setName(getClass().getSimpleName()+":"+name);
       setDaemon(true);
     }
 
@@ -184,6 +184,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
       for (int i = 0; i < buf.length; i++) {
         int c = buf[i];
         if (c < 0) c += 256;
+        if (c == 4) continue;     // ignore ^D
         try {
           pin.write(c);
         } catch (IOException ex) {

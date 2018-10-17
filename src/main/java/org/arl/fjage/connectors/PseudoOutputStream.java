@@ -87,7 +87,9 @@ public class PseudoOutputStream extends OutputStream {
    */
   public String readLine() {
     if (q == null) return null;
-    return new String(q.readDelimited((byte)10));
+    byte[] buf = q.readDelimited((byte)10);
+    if (buf == null) return null;
+    return new String(buf);
   }
 
   /**

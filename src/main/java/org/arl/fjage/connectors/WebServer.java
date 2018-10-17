@@ -65,6 +65,16 @@ public class WebServer {
     }
   }
 
+  /**
+   * Shutdown all web servers.
+   */
+  public static void shutdown() {
+    synchronized (servers) {
+      for (WebServer svr: servers.values())
+        svr.stop();
+    }
+  }
+
   //////// instance attributes and methods
 
   protected Server server;
@@ -76,6 +86,7 @@ public class WebServer {
   protected WebServer(int port) {
     this.port = port;
     server = new Server(port);
+    server.setStopAtShutdown(true);
     if (port > 0) servers.put(port, this);
     contexts = new HandlerCollection(true);
     server.setHandler(contexts);
@@ -98,7 +109,6 @@ public class WebServer {
     if (started) return;
     try {
       server.start();
-      server.setStopAtShutdown(true);
       log.info("Started web server on port "+port);
       started = true;
     } catch (Exception ex) {
@@ -152,7 +162,7 @@ public class WebServer {
       log.warning("Unable to stop context "+handler.getContextPath()+": "+ex.toString());
     }
     contexts.removeHandler(handler);
-    if (contexts.getHandlers().length == 0) stop();
+    if (contexts.getHandlers().length <= staticContexts.size()) stop();
   }
 
   /**
@@ -168,7 +178,6 @@ public class WebServer {
       public void handle(String target, Request baseRequest, HttpServletRequest request,
                          HttpServletResponse response) throws IOException, ServletException {
         if (target.equals("/")) target = "/index.html";
-        log.info("GET "+resource+target);
         InputStream in = getClass().getResourceAsStream(resource+target);
         if (in == null) return;
         String s = new Scanner(in, "UTF8").useDelimiter("\\Z").next();
