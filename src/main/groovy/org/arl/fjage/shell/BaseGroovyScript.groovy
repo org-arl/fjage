@@ -12,7 +12,7 @@ package org.arl.fjage.shell;
 
 import java.util.logging.*;
 import org.arl.fjage.*;
-import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 
 /**
  * Methods and attributes available to Groovy scripts.
@@ -305,25 +305,25 @@ abstract class BaseGroovyScript extends Script {
     return who();
   }
 
-  /**
-   * Display on console. This method clears the current line
-   * and displays output on it, followed by a newline.
-   *
-   * @param s object to display.
-   */
-  void println(def x) {
-    Binding binding = getBinding();
-    if (binding.hasVariable('out')) {
-      def out = binding.getVariable('out');
-      if (out != null) out.println(x.toString());
-    }
+  @Override
+  void println() {
+    println('');
   }
 
-  /**
-   * Do not use print(), use println() only.
-   */
+  @Override
   void print(def x) {
-    throw new FjageError("print() not supported, use println() instead");
+    println(x);
+  }
+
+  @Override
+  void printf(String format, Object value) {
+    println(String.format(format, value));
+  }
+
+  @Override
+  @SuppressWarnings("overrides")
+  void printf(String format, Object[] value) {
+    println(String.format(format, value));
   }
 
   /**
@@ -370,6 +370,18 @@ abstract class BaseGroovyScript extends Script {
       binding.setVariable('script', oldScript);
       binding.setVariable('args', oldArgs);
     }
+  }
+
+  /**
+   * Run a nested Groovy script.
+   *
+   * @param file script to run.
+   * @param args arguments to pass to the script.
+   */
+  @Override
+  @SuppressWarnings("overrides")
+  void run(File file, String... args) {
+    run(file.getAbsolutePath(), args)
   }
 
   /**
