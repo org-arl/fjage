@@ -1,21 +1,11 @@
-const TIMEOUT = 5000;
-const DEBUG = true;
+////// constants
 
-export const Performative = {
-  REQUEST: "REQUEST",               // Request an action to be performed.
-  AGREE: "AGREE",                   // Agree to performing the requested action.
-  REFUSE: "REFUSE",                 // Refuse to perform the requested action.
-  FAILURE: "FAILURE",               // Notification of failure to perform a requested or agreed action.
-  INFORM: "INFORM",                 // Notification of an event.
-  CONFIRM: "CONFIRM",               // Confirm that the answer to a query is true.
-  DISCONFIRM: "DISCONFIRM",         // Confirm that the answer to a query is false.
-  QUERY_IF: "QUERY_IF",             // Query if some statement is true or false.
-  NOT_UNDERSTOOD: "NOT_UNDERSTOOD", // Notification that a message was not understood.
-  CFP: "CFP",                       // Call for proposal.
-  PROPOSE: "PROPOSE",               // Response for CFP.
-  CANCEL: "CANCEL"                  // Cancel pending request.
-}
+const TIMEOUT = 5000;              // ms, timeout to get response from to master container
+const DEBUG = true;                // if set to true, prints debug info on Javascript console
 
+////// private utilities
+
+// generate random ID with length 4*len characters
 function _guid(len) {
   function s4() {
     return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
@@ -24,6 +14,23 @@ function _guid(len) {
   for (var i = 0; i < len-1; i++)
     s += s4();
   return s;
+}
+
+////// interface classes
+
+export const Performative = {
+  REQUEST: "REQUEST",               // Request an action to be performed
+  AGREE: "AGREE",                   // Agree to performing the requested action
+  REFUSE: "REFUSE",                 // Refuse to perform the requested action
+  FAILURE: "FAILURE",               // Notification of failure to perform a requested or agreed action
+  INFORM: "INFORM",                 // Notification of an event
+  CONFIRM: "CONFIRM",               // Confirm that the answer to a query is true
+  DISCONFIRM: "DISCONFIRM",         // Confirm that the answer to a query is false
+  QUERY_IF: "QUERY_IF",             // Query if some statement is true or false
+  NOT_UNDERSTOOD: "NOT_UNDERSTOOD", // Notification that a message was not understood
+  CFP: "CFP",                       // Call for proposal
+  PROPOSE: "PROPOSE",               // Response for CFP
+  CANCEL: "CANCEL"                  // Cancel pending request
 }
 
 export class AgentID {
@@ -51,6 +58,8 @@ export class AgentID {
     return this.toString();
   }
 
+  // TODO
+
 }
 
 export class Message {
@@ -60,6 +69,19 @@ export class Message {
     this.msgID = _guid(8);
   }
 
+  // TODO: support for base64 arrays
+
+  // convert a message into a JSON string
+  serialize() {
+    let clazz = this.__clazz__;
+    let data = JSON.stringify(this, (k,v) => {
+      if (k.startsWith("__")) return undefined;
+      return v;
+    });
+    return '{ "clazz": "'+clazz+'", "data": '+data+' }';
+  }
+
+  // convert a dictionary (usually from decoding JSON) into a message
   static deserialize(obj) {
     if (typeof obj == 'string' || obj instanceof String) obj = JSON.parse(obj);
     let clazz = obj.clazz;
@@ -70,15 +92,6 @@ export class Message {
     return rv;
   }
 
-  serialize() {
-    let clazz = this.__clazz__;
-    let data = JSON.stringify(this, (k,v) => {
-      if (k.startsWith("__")) return undefined;
-      return v;
-    });
-    return '{ "clazz": "'+clazz+'", "data": '+data+' }';
-  }
-
 }
 
 export class GenericMessage extends Message {
@@ -87,50 +100,73 @@ export class GenericMessage extends Message {
 
 export class Gateway {
 
+  // connect back to the master container over a websocket to the server
   constructor() {
-    let pending = {};
-    let aid = "WebGW-"+_guid(4);
-    let subscriptions = {};
-    let listener = {};
-    let queue = [];
-    let sock = new WebSocket("ws://"+window.location.hostname+":"+window.location.port+"/ws/");
-    sock.onopen = (event) => {
-      sock.send("{'alive': true}\n");
-      if ("onOpen" in pending) {
-        pending.onOpen();
-        delete pending.onOpen;
-      }
+    this.pending = {};                    // msgid to callback mapping for pending requests to server
+    this.aid = "WebGW-"+_guid(4);         // gateway agent name
+    this.subscriptions = {};              // hashset for all topics that are subscribed
+    this.listener = {};                   // set of all callbacks that want to listen to incoming messages
+    this.queue = [];                      // incoming message queue
+    let self = this;
+    this.sock = new WebSocket("ws://"+window.location.hostname+":"+window.location.port+"/ws/");
+    this.sock.onopen = (event) => {
+      self._onWebsockOpen();
     };
-    sock.onmessage = (event) => {
-      let obj = JSON.parse(event.data);
-      if (DEBUG) console.log("< "+event.data);
-      if ("id" in obj) {
-        let id = obj.id;
-        if (id in pending) {
-          pending[id](obj);
-        }
-      } else if (obj.action == "send") {
-        let msg = Message.deserialize(obj.message);
-        if (msg.recipient == aid || subscriptions[msg.recipient]) {
-          console.log(msg);
-          queue.push(msg);
-          for (var key in listener) {
-            let cb = listener[key];
-            if (cb(msg)) break;
-          }
-        }
-      }
-      // TODO
-    };
-    this.sock = sock;
-    this.pending = pending;
-    this.aid = aid;
-    this.subscriptions = subscriptions;
-    this.listener = listener;
-    this.queue = queue;
+    this.sock.onmessage = (event) => {
+      self._onWebsockRx(event.data);
+    }
   }
 
-  _send(s) {
+  _onWebsockOpen() {
+    this.sock.send("{'alive': true}\n");
+    if ("onOpen" in this.pending) {       // "onOpen" is a special msgid for a callback
+      this.pending.onOpen();              //   when websock connection is first opened
+      delete this.pending.onOpen;
+    }
+  }
+
+  _onWebsockRx(data) {
+    let obj = JSON.parse(data);
+    if (DEBUG) console.log("< "+data);
+    if ("id" in obj && obj.id in this.pending) {
+      // response to a pending request to master
+      this.pending[id](obj);
+      delete this.pending[id];
+    } else if (obj.action == "send") {
+      // incoming message from master
+      let msg = Message.deserialize(obj.message);
+      if (msg.recipient == this.aid || this.subscriptions[msg.recipient]) {
+        this.queue.push(msg);
+        for (var key in this.listener)        // iterate over all callbacks, until one consumes the message
+          if (this.listener[key]()) break;    // callback returns true if it has consumed the message
+      }
+    } else {
+      // respond to standard requests that every container must
+      let rsp = { id: obj.id, inResponseTo: obj.action };
+      switch (obj.action) {
+        case "agents":
+          rsp.agentIDs = [this.aid];
+          break;
+        case "containsAgent":
+          rsp.answer = (obj.agentID == this.aid);
+          break;
+        case "services":
+          rsp.services = [];
+          break;
+        case "agentForService":
+          rsp.agentID = "";
+          break;
+        case "agentsForService":
+          rsp.agentIDs = [];
+          break;
+        default:
+          rsp = undefined;
+      }
+      if (rsp != undefined) this._websockTx(JSON.stringify(rsp));
+    }
+  }
+
+  _websockTx(s) {
     let sock = this.sock;
     if (sock.readyState == sock.OPEN) {
       if (DEBUG) console.log("> "+s);
@@ -146,28 +182,28 @@ export class Gateway {
     return false;
   }
 
-  _do(rq) {
+  // returns a Promise
+  _websockTxRx(rq) {
     rq.id = _guid(8);
-    let sock = this.sock;
-    let pending = this.pending;
+    let self = this;
     return new Promise((resolve, reject) => {
       let timer = setTimeout(() => {
-        delete pending[rq.id];
+        delete self.pending[rq.id];
         reject();
       }, TIMEOUT);
-      pending[rq.id] = (rsp) => {
+      self.pending[rq.id] = (rsp) => {
         clearTimeout(timer);
         resolve(rsp);
       };
-      if (!_send(JSON.stringify(rq))) {
+      if (!self._websockTx(JSON.stringify(rq))) {
         clearTimeout(timer);
-        delete pending[rq.id];
+        delete self.pending[rq.id];
         reject();
       }
     });
   }
 
-  _get(filter) {
+  _getMessageFromQueue(filter) {
     if (filter == undefined) {
       if (this.queue.length == 0) return undefined;
       return this.queue.shift();
@@ -191,6 +227,7 @@ export class Gateway {
     return undefined;
   }
 
+  // creates a unqualified message class based on a fully qualified name
   import(name) {
     let sname = name.replace(/^.*\./, "");
     window[sname] = class extends Message {
@@ -231,15 +268,17 @@ export class Gateway {
     delete this.subscriptions[topic.toString()];
   }
 
+  // returns a Promise
   async agentForService(service) {
     let rq = { action: 'agentForService', service: service };
-    let rsp = await this._do(rq);
+    let rsp = await this._websockTxRx(rq);
     return new AgentID(rsp.agentID, false, this);
   }
 
+  // returns a Promise
   async agentsForService(service) {
     let rq = { action: 'agentsForService', service: service };
-    let rsp = await this._do(rq);
+    let rsp = await this._websockTxRx(rq);
     let aids = [];
     for (var i = 0; i < rsp.agentIDs.length; i++)
       aids.push(new AgentID(rsp.agentIDs[i], false, this));
@@ -249,21 +288,23 @@ export class Gateway {
   send(msg, relay=true) {
     msg.sender = this.aid;
     let s = '{ "action": "send", "relay": '+relay+', "message": '+msg.serialize()+' }';
-    this._send(s);
+    this._websockTx(s);
   }
 
+  // returns a Promise
   async request(msg, timeout=10000) {
     this.send(msg);
     let rsp = await this.receive(msg.msgID, timeout);
     return rsp;
   }
 
+  // returns a Promise
   receive(filter=undefined, timeout=1000) {
     let queue = this.queue;
     let listener = this.listener;
     let self = this;
     return new Promise((resolve, reject) => {
-      let msg = self._get(filter);
+      let msg = self._getMessageFromQueue(filter);
       if (msg != undefined) {
         resolve(msg);
         return;
@@ -273,8 +314,8 @@ export class Gateway {
         delete listener[lid];
         reject();
       }, timeout);
-      listener[lid] = (msg) => {
-        msg = self._get(filter);
+      listener[lid] = () => {
+        msg = self._getMessageFromQueue(filter);
         if (msg == undefined) return false;
         clearTimeout(timer);
         delete listener[lid];
@@ -285,8 +326,18 @@ export class Gateway {
   }
 
   close() {
-    this.sock.send("{'alive': false}\n");
-    this.sock.close();
+    if (sock.readyState == sock.CONNECTING) {
+      this.pending.onOpen = () => {
+        this.sock.send("{'alive': false}\n");
+        this.sock.close();
+      };
+      return true;
+    } else if (sock.readyState == sock.OPEN) {
+      this.sock.send("{'alive': false}\n");
+      this.sock.close();
+      return true;
+    }
+    return false;
   }
 
   shutdown() {
