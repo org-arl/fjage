@@ -141,6 +141,7 @@ public class ConsoleShell implements Shell {
         }
       };
       console = LineReaderBuilder.builder().parser(parser).terminal(term).build();
+      console.setVariable(LineReader.DISABLE_COMPLETION, true);
     }
   }
 
@@ -171,7 +172,7 @@ public class ConsoleShell implements Shell {
     } catch (UserInterruptException ex) {
       return ABORT;
     } catch (Throwable ex) {
-      Thread.interrupted();
+      log.warning(ex.toString());
       return null;
     }
   }
