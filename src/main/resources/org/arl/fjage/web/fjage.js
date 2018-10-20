@@ -49,6 +49,15 @@ export class AgentID {
     return this.topic;
   }
 
+  send(msg) {
+    this.gw.send(msg);
+  }
+
+  // returns a Promise
+  request(msg, timeout=1000) {
+    return this.gw.request(msg, timeout);
+  }
+
   toString() {
     if (this.topic) return "#"+this.name;
     return this.name;
@@ -58,8 +67,6 @@ export class AgentID {
     return this.toString();
   }
 
-  // TODO
-
 }
 
 export class Message {
@@ -67,12 +74,15 @@ export class Message {
   constructor() {
     this.__clazz__ = "org.arl.fjage.Message";
     this.msgID = _guid(8);
+    this.sender = "";
+    this.recipient = "";
+    this.perf = "";
   }
 
   // TODO: support for base64 arrays
 
   // convert a message into a JSON string
-  serialize() {
+  _serialize() {
     let clazz = this.__clazz__;
     let data = JSON.stringify(this, (k,v) => {
       if (k.startsWith("__")) return undefined;
@@ -81,21 +91,53 @@ export class Message {
     return '{ "clazz": "'+clazz+'", "data": '+data+' }';
   }
 
+  // inflate a data dictionary into the message
+  _inflate(data) {
+    for (var key in data)
+      this[key] = data[key];
+  }
+
   // convert a dictionary (usually from decoding JSON) into a message
-  static deserialize(obj) {
+  static _deserialize(obj) {
     if (typeof obj == 'string' || obj instanceof String) obj = JSON.parse(obj);
     let clazz = obj.clazz;
     clazz = clazz.replace(/^.*\./, "");
     let rv = eval("new "+clazz+"()");
-    for (var key in obj.data)
-      rv[key] = obj.data[key];
+    rv._inflate(obj.data);
     return rv;
   }
 
 }
 
 export class GenericMessage extends Message {
-  // TODO
+
+  constructor() {
+    super();
+    this.__clazz__ = "org.arl.fjage.GenericMessage";
+  }
+
+  _serialize() {
+    let clazz = this.__clazz__;
+    let map = JSON.stringify(this, (k,v) => {
+      if (k.startsWith("__")) return undefined;
+      if (k == "msgID") return undefined;
+      if (k == "recipient") return undefined;
+      if (k == "sender") return undefined;
+      return v;
+    });
+    let data = JSON.stringify({ msgID: this.msgID, recipient: this.recipient, sender: this.sender, map: "###MAP###" });
+    data = data.replace('"###MAP###"', map);
+    return '{ "clazz": "'+clazz+'", "data": '+data+' }';
+  }
+
+  _inflate(data) {
+    this.msgID = data.msgID;
+    this.recipient = data.recipient;
+    this.sender = data.sender;
+    for (var key in data.map)
+      this[key] = data.map[key];
+  }
+
 }
 
 export class Gateway {
@@ -130,11 +172,11 @@ export class Gateway {
     if (DEBUG) console.log("< "+data);
     if ("id" in obj && obj.id in this.pending) {
       // response to a pending request to master
-      this.pending[id](obj);
-      delete this.pending[id];
+      this.pending[obj.id](obj);
+      delete this.pending[obj.id];
     } else if (obj.action == "send") {
       // incoming message from master
-      let msg = Message.deserialize(obj.message);
+      let msg = Message._deserialize(obj.message);
       if (msg.recipient == this.aid || this.subscriptions[msg.recipient]) {
         this.queue.push(msg);
         for (var key in this.listener)        // iterate over all callbacks, until one consumes the message
@@ -162,12 +204,13 @@ export class Gateway {
         default:
           rsp = undefined;
       }
-      if (rsp != undefined) this._websockTx(JSON.stringify(rsp));
+      if (rsp != undefined) this._websockTx(rsp);
     }
   }
 
   _websockTx(s) {
     let sock = this.sock;
+    if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
     if (sock.readyState == sock.OPEN) {
       if (DEBUG) console.log("> "+s);
       sock.send(s+"\n");
@@ -195,7 +238,7 @@ export class Gateway {
         clearTimeout(timer);
         resolve(rsp);
       };
-      if (!self._websockTx(JSON.stringify(rq))) {
+      if (!self._websockTx(rq)) {
         clearTimeout(timer);
         delete self.pending[rq.id];
         reject();
@@ -212,7 +255,7 @@ export class Gateway {
       for (var i = 0; i < this.queue.length; i++) {
         let msg = this.queue[i];
         if ("inReplyTo" in msg && msg.inReplyTo == filter) {
-          delete this.queue[i];
+          this.queue.splice(i, 1);
           return msg;
         }
       }
@@ -220,7 +263,7 @@ export class Gateway {
     for (var i = 0; i < this.queue.length; i++) {
       let msg = this.queue[i];
       if (msg instanceof filter) {
-        delete this.queue[i];
+        this.queue.splice(i, 1);
         return msg;
       }
     }
@@ -287,8 +330,13 @@ export class Gateway {
 
   send(msg, relay=true) {
     msg.sender = this.aid;
-    let s = '{ "action": "send", "relay": '+relay+', "message": '+msg.serialize()+' }';
-    this._websockTx(s);
+    if (msg.perf == "") {
+      if (msg.__clazz__.endsWith("Req")) msg.perf = Performative.REQUEST;
+      else msg.perf = Performative.INFORM;
+    }
+    let rq = JSON.stringify({ action: "send", relay: relay, message: "###MSG###" });
+    rq = rq.replace('"###MSG###"', msg._serialize());
+    this._websockTx(rq);
   }
 
   // returns a Promise
