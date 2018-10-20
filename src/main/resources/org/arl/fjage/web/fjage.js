@@ -157,34 +157,10 @@ export class Message {
 }
 
 export class GenericMessage extends Message {
-
   constructor() {
     super();
     this.__clazz__ = "org.arl.fjage.GenericMessage";
   }
-
-  _serialize() {
-    let clazz = this.__clazz__;
-    let map = JSON.stringify(this, (k,v) => {
-      if (k.startsWith("__")) return undefined;
-      if (k == "msgID") return undefined;
-      if (k == "recipient") return undefined;
-      if (k == "sender") return undefined;
-      return v;
-    });
-    let data = JSON.stringify({ msgID: this.msgID, recipient: this.recipient, sender: this.sender, map: "###MAP###" });
-    data = data.replace('"###MAP###"', map);
-    return '{ "clazz": "'+clazz+'", "data": '+data+' }';
-  }
-
-  _inflate(data) {
-    this.msgID = data.msgID;
-    this.recipient = data.recipient;
-    this.sender = data.sender;
-    for (var key in data.map)
-      this[key] = data.map[key];
-  }
-
 }
 
 export class Gateway {

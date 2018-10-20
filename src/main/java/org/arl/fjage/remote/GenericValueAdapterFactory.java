@@ -12,7 +12,7 @@ package org.arl.fjage.remote;
 
 import java.io.IOException;
 import java.nio.*;
-import java.util.Base64;
+import java.util.*;
 import com.google.gson.*;
 import com.google.gson.stream.*;
 import com.google.gson.reflect.TypeToken;
@@ -73,27 +73,48 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
         }
         if (tok == JsonToken.STRING) return (T) new GenericValue(in.nextString());
         if (tok == JsonToken.BOOLEAN) return (T) new GenericValue(in.nextBoolean());
-        if (tok != JsonToken.BEGIN_OBJECT) return null;
-        TypeToken tt = null;
-        GenericValue rv = null;
-        in.beginObject();
-        while (in.hasNext()) {
-          String name = in.nextName();
-          if (name.equals("clazz")) {
-            try {
-              Class<?> cls = Class.forName(in.nextString());
-              tt = TypeToken.get(cls);
-            } catch (Exception ex) {
-              // do nothing
+        if (tok == JsonToken.BEGIN_OBJECT) {
+          TypeToken tt = null;
+          GenericValue rv = null;
+          in.beginObject();
+          while (in.hasNext()) {
+            String name = in.nextName();
+            if (name.equals("clazz")) {
+              try {
+                Class<?> cls = Class.forName(in.nextString());
+                tt = TypeToken.get(cls);
+              } catch (Exception ex) {
+                // do nothing
+              }
+            } else if (name.equals("data") && tt != null) {
+              TypeAdapter delegate = gson.getAdapter(tt);
+              rv = new GenericValue(delegate.read(in));
             }
-          } else if (name.equals("data") && tt != null) {
-            TypeAdapter delegate = gson.getAdapter(tt);
-            rv = new GenericValue(delegate.read(in));
+            else in.skipValue();
           }
-          else in.skipValue();
+          in.endObject();
+          return (T)rv;
         }
-        in.endObject();
-        return (T)rv;
+        if (tok == JsonToken.BEGIN_ARRAY) {
+          List<Object> list = new ArrayList<Object>();
+          in.beginArray();
+          while (in.hasNext()) {
+            JsonToken tok2 = in.peek();
+            String s = in.nextString();
+            if (tok2 != JsonToken.NUMBER) list.add(s);
+            else {
+              try {
+                if (s.contains(".")) list.add(Double.parseDouble(s));
+                else list.add(Long.parseLong(s));
+              } catch (NumberFormatException ex) {
+                list.add(s);
+              }
+            }
+          }
+          in.endArray();
+          return (T) new GenericValue(list);
+        }
+        return null;
       }
 
     };

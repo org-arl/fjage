@@ -114,9 +114,8 @@ class MessageAdapterFactory implements TypeAdapterFactory {
                 else if (fname.equals("recipient")) msg.setRecipient(aidDelegate.read(in));
                 else if (fname.equals("sender")) msg.setSender(aidDelegate.read(in));
                 else {
-                  // FIXME: bug that doesn't allow base64 encoded arrays to be read
                   GenericValue v = gvDelegate.read(in);
-                  else msg.put(fname, v.getValue());
+                  msg.put(fname, v.getValue());
                 }
               }
               in.endObject();
