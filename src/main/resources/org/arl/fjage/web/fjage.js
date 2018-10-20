@@ -1,7 +1,7 @@
 ////// constants
 
 const TIMEOUT = 5000;              // ms, timeout to get response from to master container
-const DEBUG = true;                // if set to true, prints debug info on Javascript console
+const DEBUG = false;               // if set to true, prints debug info on Javascript console
 
 ////// private utilities
 
@@ -54,6 +54,18 @@ function _b64toArray(base64, dtype, littleEndian=true) {
       return undefined;
   }
   return rv;
+}
+
+// base 64 JSON decoder
+function _decodeBase64(k, d) {
+  if (typeof d == 'object' && 'clazz' in d) {
+    let clazz = d.clazz;
+    if (clazz.startsWith('[') && clazz.length == 2 && 'data' in d) {
+      let x = _b64toArray(d.data, d.clazz);
+      if (x != undefined) d = x;
+    }
+  }
+  return d;
 }
 
 ////// interface classes
@@ -133,14 +145,8 @@ export class Message {
 
   // inflate a data dictionary into the message
   _inflate(data) {
-    for (var key in data) {
-      let d = data[key];
-      if (typeof d == 'object' && "clazz" in d) {
-        let x = _b64toArray(d.data, d.clazz);
-        if (x != undefined) d = x;
-      }
-      this[key] = d;
-    }
+    for (var key in data)
+      this[key] = data[key];
   }
 
   // convert a dictionary (usually from decoding JSON) into a message
@@ -191,7 +197,7 @@ export class Gateway {
   }
 
   _onWebsockRx(data) {
-    let obj = JSON.parse(data);
+    let obj = JSON.parse(data, _decodeBase64);
     if (DEBUG) console.log("< "+data);
     if ("id" in obj && obj.id in this.pending) {
       // response to a pending request to master

@@ -44,6 +44,11 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
         if (Number.class.isAssignableFrom(type)) out.value((Number)((GenericValue)value).getValue());
         else if (type.equals(String.class)) out.value((String)((GenericValue)value).getValue());
         else if (type.equals(Boolean.class)) out.value((Boolean)((GenericValue)value).getValue());
+        else if (List.class.isAssignableFrom(type)) {
+          TypeAdapter delegate = gson.getAdapter(TypeToken.get(type));
+          Object v = ((GenericValue)value).getValue();
+          delegate.write(out, v);
+        }
         else {
           out.beginObject();
           out.name("clazz").value(type.getName());
