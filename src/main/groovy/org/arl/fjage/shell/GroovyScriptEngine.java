@@ -19,7 +19,7 @@ import groovy.transform.ThreadInterrupt;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.*;
 import org.codehaus.groovy.GroovyBugError;
-import org.arl.fjage.Message;
+import org.arl.fjage.*;
 
 /**
  * Groovy scripting engine.
@@ -272,6 +272,8 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   @Override
   public void deliver(Message msg) {
+    if (msg.getPerformative() == Performative.INFORM || msg.getInReplyTo() == null) binding.setVariable("ntf", msg);
+    else binding.setVariable("rsp", msg);
     if (out != null) out.notify(msg.getSender().getName() + " >> " + msg.toString());
   }
 

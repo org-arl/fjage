@@ -39,7 +39,7 @@ public class Message implements Serializable {
    * Creates an empty message.
    */
   public Message() {
-    perf = null;
+    perf = Performative.INFORM;
     recipient = null;
   }
 
