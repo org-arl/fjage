@@ -19,10 +19,7 @@ import com.google.gson.reflect.TypeToken;
 import org.arl.fjage.GenericValue;
 
 /**
- * Array adapter factory for custom JSON representation.
- *
- * Numeric arrays are compressed into a base 64 notation for quick transmission
- * over a network.
+ * Handles conversion of various data types to JSON.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 class GenericValueAdapterFactory implements TypeAdapterFactory {

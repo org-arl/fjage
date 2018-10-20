@@ -25,6 +25,7 @@ import com.google.gson.reflect.TypeToken;
  * representing the fully qualified message class name. This enables the message to
  * be unmarshalled into the appropriate message class at the destination.
  */
+@SuppressWarnings({"unchecked", "rawtypes"})
 class MessageAdapterFactory implements TypeAdapterFactory {
 
   private static ClassLoader classloader = null;
@@ -69,8 +70,12 @@ class MessageAdapterFactory implements TypeAdapterFactory {
             aidDelegate.write(out, msg.getRecipient());
             out.name("sender");
             aidDelegate.write(out, msg.getSender());
-            out.name("map");
-            delegate.write(out, value);
+            for (Object k: msg.keySet()) {
+              out.name(k.toString());
+              Object v = msg.get(k);
+              TypeAdapter delegate = gson.getAdapter(TypeToken.get(v.getClass()));
+              delegate.write(out, v);
+            }
             out.endObject();
           }
           else delegate.write(out, value);
@@ -108,16 +113,11 @@ class MessageAdapterFactory implements TypeAdapterFactory {
                 else if (fname.equals("perf")) msg.setPerformative(perfDelegate.read(in));
                 else if (fname.equals("recipient")) msg.setRecipient(aidDelegate.read(in));
                 else if (fname.equals("sender")) msg.setSender(aidDelegate.read(in));
-                else if (fname.equals("map")) {
-                  in.beginObject();
-                  while (in.hasNext()) {
-                    String key = in.nextName();
-                    GenericValue value = gvDelegate.read(in);
-                    msg.put(key, value);
-                  }
-                  in.endObject();
+                else {
+                  // FIXME: bug that doesn't allow base64 encoded arrays to be read
+                  GenericValue v = gvDelegate.read(in);
+                  else msg.put(fname, v.getValue());
                 }
-                else in.skipValue();
               }
               in.endObject();
               rv = (T) msg;
