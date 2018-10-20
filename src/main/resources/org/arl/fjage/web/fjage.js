@@ -16,6 +16,46 @@ function _guid(len) {
   return s;
 }
 
+// convert from base 64 to array
+function _b64toArray(base64, dtype, littleEndian=true) {
+  let s =  window.atob(base64);
+  let len = s.length;
+  let bytes = new Uint8Array(len);
+  for (var i = 0; i < len; i++)
+    bytes[i] = s.charCodeAt(i);
+  let rv = [];
+  let view = new DataView(bytes.buffer);
+  switch (dtype) {
+    case "[B": // byte array
+      for (var i = 0; i < len; i++)
+        rv.push(view.getUint8(i));
+      break;
+    case "[S": // short array
+      for (var i = 0; i < len; i+=2)
+        rv.push(view.getInt16(i, littleEndian));
+      break;
+    case "[I": // integer array
+      for (var i = 0; i < len; i+=4)
+        rv.push(view.getInt32(i, littleEndian));
+      break;
+    case "[J": // long array
+      for (var i = 0; i < len; i+=8)
+        rv.push(view.getInt64(i, littleEndian));
+      break;
+    case "[F": // float array
+      for (var i = 0; i < len; i+=4)
+        rv.push(view.getFloat32(i, littleEndian));
+      break;
+    case "[D": // double array
+      for (var i = 0; i < len; i+=8)
+        rv.push(view.getFloat64(i, littleEndian));
+      break;
+    default:
+      return undefined;
+  }
+  return rv;
+}
+
 ////// interface classes
 
 export const Performative = {
@@ -79,9 +119,9 @@ export class Message {
     this.perf = "";
   }
 
-  // TODO: support for base64 arrays
-
   // convert a message into a JSON string
+  // NOTE: we don't do any base64 encoding for TX as
+  //       we don't know what data type is intended
   _serialize() {
     let clazz = this.__clazz__;
     let data = JSON.stringify(this, (k,v) => {
@@ -93,16 +133,23 @@ export class Message {
 
   // inflate a data dictionary into the message
   _inflate(data) {
-    for (var key in data)
-      this[key] = data[key];
+    for (var key in data) {
+      let d = data[key];
+      if (typeof d == 'object' && "clazz" in d) {
+        let x = _b64toArray(d.data, d.clazz);
+        if (x != undefined) d = x;
+      }
+      this[key] = d;
+    }
   }
 
   // convert a dictionary (usually from decoding JSON) into a message
   static _deserialize(obj) {
     if (typeof obj == 'string' || obj instanceof String) obj = JSON.parse(obj);
-    let clazz = obj.clazz;
-    clazz = clazz.replace(/^.*\./, "");
-    let rv = eval("new "+clazz+"()");
+    let qclazz = obj.clazz;
+    let clazz = qclazz.replace(/^.*\./, "");
+    let rv = (typeof clazz === 'function') ? eval("new "+clazz+"()") : new Message();
+    rv.__clazz__ = qclazz;
     rv._inflate(obj.data);
     return rv;
   }
