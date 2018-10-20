@@ -60,6 +60,12 @@ public class ShellAgent extends Agent {
 
   ////// interface methods
 
+  public ShellAgent(ScriptEngine engine) {
+    shell = null;
+    this.engine = engine;
+    if (engine != null) engine.setVariable("agent", this);
+  }
+
   public ShellAgent(Shell shell, ScriptEngine engine) {
     this.shell = shell;
     this.engine = engine;
