@@ -1,7 +1,6 @@
-////// constants
+////// settings
 
 const TIMEOUT = 5000;              // ms, timeout to get response from to master container
-const DEBUG = false;               // if set to true, prints debug info on Javascript console
 
 ////// private utilities
 
@@ -26,27 +25,27 @@ function _b64toArray(base64, dtype, littleEndian=true) {
   let rv = [];
   let view = new DataView(bytes.buffer);
   switch (dtype) {
-    case "[B": // byte array
+    case '[B': // byte array
       for (var i = 0; i < len; i++)
         rv.push(view.getUint8(i));
       break;
-    case "[S": // short array
+    case '[S': // short array
       for (var i = 0; i < len; i+=2)
         rv.push(view.getInt16(i, littleEndian));
       break;
-    case "[I": // integer array
+    case '[I': // integer array
       for (var i = 0; i < len; i+=4)
         rv.push(view.getInt32(i, littleEndian));
       break;
-    case "[J": // long array
+    case '[J': // long array
       for (var i = 0; i < len; i+=8)
         rv.push(view.getInt64(i, littleEndian));
       break;
-    case "[F": // float array
+    case '[F': // float array
       for (var i = 0; i < len; i+=4)
         rv.push(view.getFloat32(i, littleEndian));
       break;
-    case "[D": // double array
+    case '[D': // double array
       for (var i = 0; i < len; i+=8)
         rv.push(view.getFloat64(i, littleEndian));
       break;
@@ -71,18 +70,18 @@ function _decodeBase64(k, d) {
 ////// interface classes
 
 export const Performative = {
-  REQUEST: "REQUEST",               // Request an action to be performed
-  AGREE: "AGREE",                   // Agree to performing the requested action
-  REFUSE: "REFUSE",                 // Refuse to perform the requested action
-  FAILURE: "FAILURE",               // Notification of failure to perform a requested or agreed action
-  INFORM: "INFORM",                 // Notification of an event
-  CONFIRM: "CONFIRM",               // Confirm that the answer to a query is true
-  DISCONFIRM: "DISCONFIRM",         // Confirm that the answer to a query is false
-  QUERY_IF: "QUERY_IF",             // Query if some statement is true or false
-  NOT_UNDERSTOOD: "NOT_UNDERSTOOD", // Notification that a message was not understood
-  CFP: "CFP",                       // Call for proposal
-  PROPOSE: "PROPOSE",               // Response for CFP
-  CANCEL: "CANCEL"                  // Cancel pending request
+  REQUEST: 'REQUEST',               // Request an action to be performed
+  AGREE: 'AGREE',                   // Agree to performing the requested action
+  REFUSE: 'REFUSE',                 // Refuse to perform the requested action
+  FAILURE: 'FAILURE',               // Notification of failure to perform a requested or agreed action
+  INFORM: 'INFORM',                 // Notification of an event
+  CONFIRM: 'CONFIRM',               // Confirm that the answer to a query is true
+  DISCONFIRM: 'DISCONFIRM',         // Confirm that the answer to a query is false
+  QUERY_IF: 'QUERY_IF',             // Query if some statement is true or false
+  NOT_UNDERSTOOD: 'NOT_UNDERSTOOD', // Notification that a message was not understood
+  CFP: 'CFP',                       // Call for proposal
+  PROPOSE: 'PROPOSE',               // Response for CFP
+  CANCEL: 'CANCEL'                  // Cancel pending request
 }
 
 export class AgentID {
@@ -102,16 +101,18 @@ export class AgentID {
   }
 
   send(msg) {
+    msg.recipient = this;
     this.gw.send(msg);
   }
 
   // returns a Promise
   request(msg, timeout=1000) {
+    msg.recipient = this;
     return this.gw.request(msg, timeout);
   }
 
   toString() {
-    if (this.topic) return "#"+this.name;
+    if (this.topic) return '#'+this.name;
     return this.name;
   }
 
@@ -124,11 +125,34 @@ export class AgentID {
 export class Message {
 
   constructor() {
-    this.__clazz__ = "org.arl.fjage.Message";
+    this.__clazz__ = 'org.arl.fjage.Message';
     this.msgID = _guid(8);
-    this.sender = "";
-    this.recipient = "";
-    this.perf = "";
+    this.sender = '';
+    this.recipient = '';
+    this.perf = '';
+  }
+
+  toString() {
+    let s = '';
+    let suffix = '';
+    let clazz = this.__clazz__;
+    clazz = clazz.replace(/^.*\./, '');
+    let perf = this.perf;
+    for (var k in this) {
+      if (k.startsWith('__')) continue;
+      if (k == 'sender') continue;
+      if (k == 'recipient') continue;
+      if (k == 'msgID') continue;
+      if (k == 'perf') continue;
+      if (k == 'inReplyTo') continue;
+      if (typeof this[k] == 'object') {
+        suffix = ' ...';
+        continue;
+      }
+      s += ' ' + k + ':' + this[k]
+    }
+    s += suffix;
+    return clazz+':'+perf+'['+s.replace(/^ /, '')+']';
   }
 
   // convert a message into a JSON string
@@ -137,7 +161,7 @@ export class Message {
   _serialize() {
     let clazz = this.__clazz__;
     let data = JSON.stringify(this, (k,v) => {
-      if (k.startsWith("__")) return undefined;
+      if (k.startsWith('__')) return undefined;
       return v;
     });
     return '{ "clazz": "'+clazz+'", "data": '+data+' }';
@@ -153,8 +177,8 @@ export class Message {
   static _deserialize(obj) {
     if (typeof obj == 'string' || obj instanceof String) obj = JSON.parse(obj);
     let qclazz = obj.clazz;
-    let clazz = qclazz.replace(/^.*\./, "");
-    let rv = (typeof clazz === 'function') ? eval("new "+clazz+"()") : new Message();
+    let clazz = qclazz.replace(/^.*\./, '');
+    let rv = eval('try { new '+clazz+'() } catch(ex) { new Message() }');
     rv.__clazz__ = qclazz;
     rv._inflate(obj.data);
     return rv;
@@ -165,7 +189,7 @@ export class Message {
 export class GenericMessage extends Message {
   constructor() {
     super();
-    this.__clazz__ = "org.arl.fjage.GenericMessage";
+    this.__clazz__ = 'org.arl.fjage.GenericMessage';
   }
 }
 
@@ -174,12 +198,14 @@ export class Gateway {
   // connect back to the master container over a websocket to the server
   constructor() {
     this.pending = {};                    // msgid to callback mapping for pending requests to server
-    this.aid = "WebGW-"+_guid(4);         // gateway agent name
+    this.aid = 'WebGW-'+_guid(4);         // gateway agent name
     this.subscriptions = {};              // hashset for all topics that are subscribed
-    this.listener = {};                   // set of all callbacks that want to listen to incoming messages
+    this.listener = {};                   // set of callbacks that want to listen to incoming messages
+    this.observer = undefined;            // external observer wanting to listen incoming messages
     this.queue = [];                      // incoming message queue
+    this.debug = false;                   // debug info to be logged to console?
     let self = this;
-    this.sock = new WebSocket("ws://"+window.location.hostname+":"+window.location.port+"/ws/");
+    this.sock = new WebSocket('ws://'+window.location.hostname+':'+window.location.port+'/ws/');
     this.sock.onopen = (event) => {
       self._onWebsockOpen();
     };
@@ -190,7 +216,7 @@ export class Gateway {
 
   _onWebsockOpen() {
     this.sock.send("{'alive': true}\n");
-    if ("onOpen" in this.pending) {       // "onOpen" is a special msgid for a callback
+    if ('onOpen' in this.pending) {       // 'onOpen' is a special msgid for a callback
       this.pending.onOpen();              //   when websock connection is first opened
       delete this.pending.onOpen;
     }
@@ -198,36 +224,37 @@ export class Gateway {
 
   _onWebsockRx(data) {
     let obj = JSON.parse(data, _decodeBase64);
-    if (DEBUG) console.log("< "+data);
-    if ("id" in obj && obj.id in this.pending) {
+    if (this.debug) console.log('< '+data);
+    if ('id' in obj && obj.id in this.pending) {
       // response to a pending request to master
       this.pending[obj.id](obj);
       delete this.pending[obj.id];
-    } else if (obj.action == "send") {
+    } else if (obj.action == 'send') {
       // incoming message from master
       let msg = Message._deserialize(obj.message);
       if (msg.recipient == this.aid || this.subscriptions[msg.recipient]) {
+        if (this.observer != undefined && this.observer(msg)) return;
         this.queue.push(msg);
-        for (var key in this.listener)        // iterate over all callbacks, until one consumes the message
+        for (var key in this.listener)        // iterate over internal callbacks, until one consumes the message
           if (this.listener[key]()) break;    // callback returns true if it has consumed the message
       }
     } else {
       // respond to standard requests that every container must
       let rsp = { id: obj.id, inResponseTo: obj.action };
       switch (obj.action) {
-        case "agents":
+        case 'agents':
           rsp.agentIDs = [this.aid];
           break;
-        case "containsAgent":
+        case 'containsAgent':
           rsp.answer = (obj.agentID == this.aid);
           break;
-        case "services":
+        case 'services':
           rsp.services = [];
           break;
-        case "agentForService":
-          rsp.agentID = "";
+        case 'agentForService':
+          rsp.agentID = '';
           break;
-        case "agentsForService":
+        case 'agentsForService':
           rsp.agentIDs = [];
           break;
         default:
@@ -241,13 +268,13 @@ export class Gateway {
     let sock = this.sock;
     if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
     if (sock.readyState == sock.OPEN) {
-      if (DEBUG) console.log("> "+s);
-      sock.send(s+"\n");
+      if (this.debug) console.log('> '+s);
+      sock.send(s+'\n');
       return true;
     } else if (sock.readyState == sock.CONNECTING) {
       this.pending.onOpen = () => {
-        if (DEBUG) console.log("> "+s);
-        sock.send(s+"\n");
+        if (this.debug) console.log('> '+s);
+        sock.send(s+'\n');
       };
       return true;
     }
@@ -283,7 +310,7 @@ export class Gateway {
     if (typeof filter == 'string' || filter instanceof String) {
       for (var i = 0; i < this.queue.length; i++) {
         let msg = this.queue[i];
-        if ("inReplyTo" in msg && msg.inReplyTo == filter) {
+        if ('inReplyTo' in msg && msg.inReplyTo == filter) {
           this.queue.splice(i, 1);
           return msg;
         }
@@ -301,7 +328,7 @@ export class Gateway {
 
   // creates a unqualified message class based on a fully qualified name
   import(name) {
-    let sname = name.replace(/^.*\./, "");
+    let sname = name.replace(/^.*\./, '');
     window[sname] = class extends Message {
       constructor() {
         super();
@@ -323,10 +350,10 @@ export class Gateway {
     if (topic2 == undefined) {
       if (topic instanceof AgentID) {
         if (topic.isTopic()) return topic;
-        return new AgentID(topic.getName()+"__ntf", true, this);
+        return new AgentID(topic.getName()+'__ntf', true, this);
       }
     } else {
-      return new AgentID(topic.getName()+"__"+topic2+"__ntf", true, this)
+      return new AgentID(topic.getName()+'__'+topic2+'__ntf', true, this)
     }
   }
 
@@ -359,13 +386,17 @@ export class Gateway {
 
   send(msg, relay=true) {
     msg.sender = this.aid;
-    if (msg.perf == "") {
-      if (msg.__clazz__.endsWith("Req")) msg.perf = Performative.REQUEST;
+    if (msg.perf == '') {
+      if (msg.__clazz__.endsWith('Req')) msg.perf = Performative.REQUEST;
       else msg.perf = Performative.INFORM;
     }
-    let rq = JSON.stringify({ action: "send", relay: relay, message: "###MSG###" });
+    let rq = JSON.stringify({ action: 'send', relay: relay, message: '###MSG###' });
     rq = rq.replace('"###MSG###"', msg._serialize());
     this._websockTx(rq);
+  }
+
+  flush() {
+    this.queue.length = 0;
   }
 
   // returns a Promise
