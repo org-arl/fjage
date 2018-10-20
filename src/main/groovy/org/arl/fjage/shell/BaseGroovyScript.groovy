@@ -155,6 +155,18 @@ abstract class BaseGroovyScript extends Script {
   }
 
   /**
+   * Gets the container in which the shell is running.
+   */
+  Container getContainer() {
+    Binding binding = getBinding();
+    if (binding.hasVariable('agent')) {
+      Agent a = binding.getVariable('agent');
+      return a.getContainer();
+    }
+    return null;
+  }
+
+  /**
    * Lists all the services, along with a list of agents that provide them.
    *
    * @return a string representation of all services.
@@ -381,7 +393,24 @@ abstract class BaseGroovyScript extends Script {
   @Override
   @SuppressWarnings("overrides")
   void run(File file, String... args) {
-    run(file.getAbsolutePath(), args)
+    Binding binding = getBinding();
+    def oldScript = binding.getVariable('script');
+    def oldArgs = binding.getVariable('args');
+    try {
+      if (binding.hasVariable('groovy')) {
+        GroovyShell groovy = binding.getVariable('groovy');
+        groovy.getClassLoader().clearCache();
+        List<?> arglist = new ArrayList<?>();
+        if (args != null && args.length > 0)
+          for (a in args)
+            arglist.add(a.toString());
+        binding.setVariable('script', file.getAbsoluteFile());
+        groovy.run(file, arglist);
+      }
+    } finally {
+      binding.setVariable('script', oldScript);
+      binding.setVariable('args', oldArgs);
+    }
   }
 
   /**
