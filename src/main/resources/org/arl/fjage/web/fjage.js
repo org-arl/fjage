@@ -201,7 +201,7 @@ export class Gateway {
     this.aid = 'WebGW-'+_guid(4);         // gateway agent name
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
-    this.observer = undefined;            // external observer wanting to listen incoming messages
+    this.observers = [];                  // external observers wanting to listen incoming messages
     this.queue = [];                      // incoming message queue
     this.debug = false;                   // debug info to be logged to console?
     let self = this;
@@ -233,7 +233,8 @@ export class Gateway {
       // incoming message from master
       let msg = Message._deserialize(obj.message);
       if (msg.recipient == this.aid || this.subscriptions[msg.recipient]) {
-        if (this.observer != undefined && this.observer(msg)) return;
+        for (var i = 0; i < this.observers.length; i++)
+          if (this.observers[i](msg)) return;
         this.queue.push(msg);
         for (var key in this.listener)        // iterate over internal callbacks, until one consumes the message
           if (this.listener[key]()) break;    // callback returns true if it has consumed the message
@@ -335,6 +336,15 @@ export class Gateway {
         this.__clazz__ = name;
       }
     };
+  }
+
+  addMessageListener(listener) {
+    this.observers.push(listener);
+  }
+
+  removeMessageListener(listener) {
+    let ndx = this.observers.indexOf(listener);
+    if (ndx >= 0) this.observers.splice(ndx, 1);
   }
 
   getAgentID() {
