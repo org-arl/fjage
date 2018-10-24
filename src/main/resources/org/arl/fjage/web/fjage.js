@@ -50,7 +50,7 @@ function _b64toArray(base64, dtype, littleEndian=true) {
         rv.push(view.getFloat64(i, littleEndian));
       break;
     default:
-      return undefined;
+      return;
   }
   return rv;
 }
@@ -61,7 +61,7 @@ function _decodeBase64(k, d) {
     let clazz = d.clazz;
     if (clazz.startsWith('[') && clazz.length == 2 && 'data' in d) {
       let x = _b64toArray(d.data, d.clazz);
-      if (x != undefined) d = x;
+      if (x) d = x;
     }
   }
   return d;
@@ -161,7 +161,7 @@ export class Message {
   _serialize() {
     let clazz = this.__clazz__;
     let data = JSON.stringify(this, (k,v) => {
-      if (k.startsWith('__')) return undefined;
+      if (k.startsWith('__')) return;
       return v;
     });
     return '{ "clazz": "'+clazz+'", "data": '+data+' }';
@@ -204,13 +204,10 @@ export class Gateway {
     this.observers = [];                  // external observers wanting to listen incoming messages
     this.queue = [];                      // incoming message queue
     this.debug = false;                   // debug info to be logged to console?
-    let self = this;
     this.sock = new WebSocket('ws://'+window.location.hostname+':'+window.location.port+'/ws/');
-    this.sock.onopen = (event) => {
-      self._onWebsockOpen();
-    };
+    this.sock.onopen = this._onWebsockOpen.bind(this);
     this.sock.onmessage = (event) => {
-      self._onWebsockRx(event.data);
+      this._onWebsockRx.call(this,event.data);
     }
   }
 
@@ -261,7 +258,7 @@ export class Gateway {
         default:
           rsp = undefined;
       }
-      if (rsp != undefined) this._websockTx(rsp);
+      if (rsp) this._websockTx(rsp);
     }
   }
 
@@ -285,46 +282,39 @@ export class Gateway {
   // returns a Promise
   _websockTxRx(rq) {
     rq.id = _guid(8);
-    let self = this;
     return new Promise((resolve, reject) => {
       let timer = setTimeout(() => {
-        delete self.pending[rq.id];
+        delete this.pending[rq.id];
         reject();
       }, TIMEOUT);
-      self.pending[rq.id] = (rsp) => {
+      this.pending[rq.id] = (rsp) => {
         clearTimeout(timer);
         resolve(rsp);
       };
-      if (!self._websockTx(rq)) {
+      if (!this._websockTx.call(this,rq)) {
         clearTimeout(timer);
-        delete self.pending[rq.id];
+        delete this.pending[rq.id];
         reject();
       }
     });
   }
 
   _getMessageFromQueue(filter) {
-    if (filter == undefined) {
-      if (this.queue.length == 0) return undefined;
-      return this.queue.shift();
-    }
-    if (typeof filter == 'string' || filter instanceof String) {
-      for (var i = 0; i < this.queue.length; i++) {
-        let msg = this.queue[i];
-        if ('inReplyTo' in msg && msg.inReplyTo == filter) {
-          this.queue.splice(i, 1);
-          return msg;
-        }
+    if (!this.queue.length) return;
+    if (!filter) return this.queue.shift();
+
+    var filtMsgs = this.queue.filter((msg, index) => {
+      if (typeof filter == 'string' || filter instanceof String) {
+        return 'inReplyTo' in msg && msg.inReplyTo == filter;
+      }else{
+        return msg instanceof filter;
       }
+    });
+
+    if (filtMsgs){
+      this.queue.splice(this.queue.indexOf(filtMsgs[0]), 1);
+      return filtMsgs[0];
     }
-    for (var i = 0; i < this.queue.length; i++) {
-      let msg = this.queue[i];
-      if (msg instanceof filter) {
-        this.queue.splice(i, 1);
-        return msg;
-      }
-    }
-    return undefined;
   }
 
   // creates a unqualified message class based on a fully qualified name
@@ -357,13 +347,9 @@ export class Gateway {
 
   topic(topic, topic2) {
     if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic, true, this);
-    if (topic2 == undefined) {
-      if (topic instanceof AgentID) {
-        if (topic.isTopic()) return topic;
-        return new AgentID(topic.getName()+'__ntf', true, this);
-      }
-    } else {
-      return new AgentID(topic.getName()+'__'+topic2+'__ntf', true, this)
+    if (topic instanceof AgentID) {
+      if (topic.isTopic()) return topic;
+      return new AgentID(topic.getName()+(topic2 ? topic2 + '__' : '')+'__ntf', true, this)
     }
   }
 
@@ -418,25 +404,22 @@ export class Gateway {
 
   // returns a Promise
   receive(filter=undefined, timeout=1000) {
-    let queue = this.queue;
-    let listener = this.listener;
-    let self = this;
     return new Promise((resolve, reject) => {
-      let msg = self._getMessageFromQueue(filter);
-      if (msg != undefined) {
+      let msg = this._getMessageFromQueue.call(this,filter);
+      if (msg) {
         resolve(msg);
         return;
       }
       let lid = _guid(8);
       let timer = setTimeout(() => {
-        delete listener[lid];
+        delete this.listener[lid];
         reject();
       }, timeout);
-      listener[lid] = () => {
-        msg = self._getMessageFromQueue(filter);
-        if (msg == undefined) return false;
+      this.listener[lid] = () => {
+        msg = this._getMessageFromQueue.call(this,filter);
+        if (!msg) return false;
         clearTimeout(timer);
-        delete listener[lid];
+        delete this.listener[lid];
         resolve(msg);
         return true;
       };
@@ -461,5 +444,4 @@ export class Gateway {
   shutdown() {
     this.close();
   }
-
 }
