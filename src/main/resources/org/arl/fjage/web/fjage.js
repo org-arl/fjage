@@ -198,6 +198,7 @@ export class Gateway {
   // connect back to the master container over a websocket to the server
   constructor() {
     this.pending = {};                    // msgid to callback mapping for pending requests to server
+    this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.aid = 'WebGW-'+_guid(4);         // gateway agent name
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
@@ -213,10 +214,8 @@ export class Gateway {
 
   _onWebsockOpen() {
     this.sock.send("{'alive': true}\n");
-    if ('onOpen' in this.pending) {       // 'onOpen' is a special msgid for a callback
-      this.pending.onOpen();              //   when websock connection is first opened
-      delete this.pending.onOpen;
-    }
+    this.pendingOnOpen.forEach(cb => cb());
+    this.pendingOnOpen.length = 0;
   }
 
   _onWebsockRx(data) {
@@ -270,10 +269,10 @@ export class Gateway {
       sock.send(s+'\n');
       return true;
     } else if (sock.readyState == sock.CONNECTING) {
-      this.pending.onOpen = () => {
+      this.pendingOnOpen.push(() => {
         if (this.debug) console.log('> '+s);
         sock.send(s+'\n');
-      };
+      });
       return true;
     }
     return false;
@@ -428,10 +427,10 @@ export class Gateway {
 
   close() {
     if (sock.readyState == sock.CONNECTING) {
-      this.pending.onOpen = () => {
+      this.pendingOnOpen.push(() => {
         this.sock.send("{'alive': false}\n");
         this.sock.close();
-      };
+      });
       return true;
     } else if (sock.readyState == sock.OPEN) {
       this.sock.send("{'alive': false}\n");
