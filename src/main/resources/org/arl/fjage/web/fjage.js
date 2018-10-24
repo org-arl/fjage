@@ -206,7 +206,7 @@ export class Gateway {
     this.debug = false;                   // debug info to be logged to console?
     this.sock = new WebSocket('ws://'+window.location.hostname+':'+window.location.port+'/ws/');
     this.sock.onopen = this._onWebsockOpen.bind(this);
-    this.sock.onmessage = (event) => {
+    this.sock.onmessage = event => {
       this._onWebsockRx.call(this,event.data);
     }
   }
@@ -287,7 +287,7 @@ export class Gateway {
         delete this.pending[rq.id];
         reject();
       }, TIMEOUT);
-      this.pending[rq.id] = (rsp) => {
+      this.pending[rq.id] = rsp => {
         clearTimeout(timer);
         resolve(rsp);
       };
