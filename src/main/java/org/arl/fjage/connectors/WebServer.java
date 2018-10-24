@@ -172,29 +172,12 @@ public class WebServer {
    * @param resource resource path.
    */
   public void add(String context, String resource) {
+    String staticWebResDir = getClass().getResource(resource).toExternalForm();
     ContextHandler handler = new ContextHandler(context);
-    handler.setHandler(new AbstractHandler() {
-      @Override
-      public void handle(String target, Request baseRequest, HttpServletRequest request,
-                         HttpServletResponse response) throws IOException, ServletException {
-        if (target.equals("/")) target = "/index.html";
-        InputStream in = getClass().getResourceAsStream(resource+target);
-        if (in == null) return;
-        String s = new Scanner(in, "UTF8").useDelimiter("\\Z").next();
-        if (target.endsWith("html")) response.setContentType("text/html;charset=utf-8");
-        else if (target.endsWith("css")) response.setContentType("text/css;charset=utf-8");
-        else if (target.endsWith("js")) response.setContentType("application/javascript;charset=utf-8");
-        else if (target.endsWith("png")) response.setContentType("image/png");
-        else if (target.endsWith("jpg")) response.setContentType("image/jpeg");
-        else if (target.endsWith("gif")) response.setContentType("image/gif");
-        else if (target.endsWith("ico")) response.setContentType("image/x-icon");
-        else if (target.endsWith("pdf")) response.setContentType("application/pdf");
-        else response.setContentType("text/plain;charset=utf-8");
-        response.setStatus(HttpServletResponse.SC_OK);
-        baseRequest.setHandled(true);
-        response.getWriter().println(s);
-      }
-    });
+    ResourceHandler resHandler = new ResourceHandler();
+    resHandler.setResourceBase(staticWebResDir);
+    resHandler.setWelcomeFiles(new String[]{ "index.html" });
+    handler.setHandler(resHandler);
     staticContexts.put(context, handler);
     add(handler);
   }
@@ -207,27 +190,10 @@ public class WebServer {
    */
   public void add(String context, File dir) {
     ContextHandler handler = new ContextHandler(context);
-    handler.setHandler(new AbstractHandler() {
-      @Override
-      public void handle(String target, Request baseRequest, HttpServletRequest request,
-                         HttpServletResponse response) throws IOException, ServletException {
-        if (target.equals("/")) target = "/index.html";
-        try {
-          InputStream in = new FileInputStream(dir.getAbsolutePath()+target);
-          String s = new Scanner(in, "UTF8").useDelimiter("\\Z").next();
-          if (target.endsWith("html")) response.setContentType("text/html;charset=utf-8");
-          else if (target.endsWith("css")) response.setContentType("text/css;charset=utf-8");
-          else if (target.endsWith("js")) response.setContentType("application/javascript;charset=utf-8");
-          else response.setContentType("text/plain;charset=utf-8");
-          response.setStatus(HttpServletResponse.SC_OK);
-          baseRequest.setHandled(true);
-          response.getWriter().println(s);
-          in.close();
-        } catch (Exception ex) {
-          return;
-        }
-      }
-    });
+    ResourceHandler resHandler = new ResourceHandler();
+    resHandler.setResourceBase(dir.getAbsolutePath());
+    resHandler.setWelcomeFiles(new String[]{ "index.html" });
+    handler.setHandler(resHandler);
     staticContexts.put(context, handler);
     add(handler);
   }
