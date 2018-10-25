@@ -67,7 +67,8 @@ typedef struct {
   int intfd[2];       // self-pipe used to break the poll on sockfd
   fjage_aid_t aid;
   char sublist[SUBLIST_LEN];
-  char buf[BUFLEN];
+  int buflen;
+  char* buf;
   int head;
   int aid_count;
   fjage_aid_t* aids;
@@ -218,7 +219,7 @@ static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
   if ((fds[1].revents & POLLIN) == 0) {
     int n;
     bool done = false;
-    while ((n = read(fgw->sockfd, fgw->buf + fgw->head, BUFLEN - fgw->head)) > 0) {
+    while ((n = read(fgw->sockfd, fgw->buf + fgw->head, fgw->buflen - fgw->head)) > 0) {
       int bol = 0;
       for (int i = fgw->head; i < fgw->head + n; i++) {
         if (fgw->buf[i] == '\n') {
@@ -228,7 +229,14 @@ static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
         }
       }
       fgw->head += n;
-      if (fgw->head >= BUFLEN) fgw->head = 0;
+      if (fgw->head >= fgw->buflen) {
+        char* p = realloc(fgw->buf, fgw->buflen+BUFLEN);
+        if (p == NULL) fgw->head = 0; // overwrite old data if no memory
+        else {
+          fgw->buf = p;
+          fgw->buflen += BUFLEN;
+        }
+      }
       if (bol > 0) {
         memmove(fgw->buf, fgw->buf + bol, fgw->head - bol);
         fgw->head -= bol;
@@ -262,14 +270,22 @@ bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic) {
 fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
   _fjage_gw_t* fgw = calloc(1, sizeof(_fjage_gw_t));
   if (fgw == NULL) return NULL;
+  fgw->buf = malloc(BUFLEN);
+  if (fgw->buf == NULL) {
+    free(fgw);
+    return NULL;
+  }
+  fgw->buflen = BUFLEN;
   fgw->sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (fgw->sockfd < 0) {
+    free(fgw->buf);
     free(fgw);
     return NULL;
   }
   struct hostent* server = gethostbyname(hostname);
   if (server == NULL) {
     close(fgw->sockfd);
+    free(fgw->buf);
     free(fgw);
     return NULL;
   }
@@ -280,11 +296,13 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
   serv_addr.sin_port = htons(port);
   if (connect(fgw->sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
     close(fgw->sockfd);
+    free(fgw->buf);
     free(fgw);
     return NULL;
   }
   if (pipe(fgw->intfd) < 0) {
     close(fgw->sockfd);
+    free(fgw->buf);
     free(fgw);
     return NULL;
   }
@@ -322,8 +340,15 @@ fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings)
   }
   _fjage_gw_t* fgw = calloc(1, sizeof(_fjage_gw_t));
   if (fgw == NULL) return NULL;
+  fgw->buf = malloc(BUFLEN);
+  if (fgw->buf == NULL) {
+    free(fgw);
+    return NULL;
+  }
+  fgw->buflen = BUFLEN;
   fgw->sockfd = open(devname, O_RDWR|O_NOCTTY|O_NONBLOCK);
   if (fgw->sockfd < 0) {
+    free(fgw->buf);
     free(fgw);
     return NULL;
   }
@@ -338,6 +363,7 @@ fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings)
   tcflush(fgw->sockfd, TCIOFLUSH);
   if (pipe(fgw->intfd) < 0) {
     close(fgw->sockfd);
+    free(fgw->buf);
     free(fgw);
     return NULL;
   }
@@ -356,6 +382,7 @@ int fjage_close(fjage_gw_t gw) {
   close(fgw->intfd[0]);
   close(fgw->intfd[1]);
   fjage_aid_destroy(fgw->aid);
+  free(fgw->buf);
   free(fgw);
   return 0;
 }
