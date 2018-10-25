@@ -26,27 +26,27 @@ function _b64toArray(base64, dtype, littleEndian=true) {
   let view = new DataView(bytes.buffer);
   switch (dtype) {
     case '[B': // byte array
-      for (var i = 0; i < len; i++)
+      for (i = 0; i < len; i++)
         rv.push(view.getUint8(i));
       break;
     case '[S': // short array
-      for (var i = 0; i < len; i+=2)
+      for (i = 0; i < len; i+=2)
         rv.push(view.getInt16(i, littleEndian));
       break;
     case '[I': // integer array
-      for (var i = 0; i < len; i+=4)
+      for (i = 0; i < len; i+=4)
         rv.push(view.getInt32(i, littleEndian));
       break;
     case '[J': // long array
-      for (var i = 0; i < len; i+=8)
+      for (i = 0; i < len; i+=8)
         rv.push(view.getInt64(i, littleEndian));
       break;
     case '[F': // float array
-      for (var i = 0; i < len; i+=4)
+      for (i = 0; i < len; i+=4)
         rv.push(view.getFloat32(i, littleEndian));
       break;
     case '[D': // double array
-      for (var i = 0; i < len; i+=8)
+      for (i = 0; i < len; i+=8)
         rv.push(view.getFloat64(i, littleEndian));
       break;
     default:
@@ -82,7 +82,7 @@ export const Performative = {
   CFP: 'CFP',                       // Call for proposal
   PROPOSE: 'PROPOSE',               // Response for CFP
   CANCEL: 'CANCEL'                  // Cancel pending request
-}
+};
 
 export class AgentID {
 
@@ -149,7 +149,7 @@ export class Message {
         suffix = ' ...';
         continue;
       }
-      s += ' ' + k + ':' + this[k]
+      s += ' ' + k + ':' + this[k];
     }
     s += suffix;
     return clazz+':'+perf+'['+s.replace(/^ /, '')+']';
@@ -209,7 +209,7 @@ export class Gateway {
     this.sock.onopen = this._onWebsockOpen.bind(this);
     this.sock.onmessage = event => {
       this._onWebsockRx.call(this,event.data);
-    }
+    };
   }
 
   _onWebsockOpen() {
@@ -302,7 +302,7 @@ export class Gateway {
     if (!this.queue.length) return;
     if (!filter) return this.queue.shift();
 
-    var filtMsgs = this.queue.filter((msg, index) => {
+    var filtMsgs = this.queue.filter( msg => {
       if (typeof filter == 'string' || filter instanceof String) {
         return 'inReplyTo' in msg && msg.inReplyTo == filter;
       }else{
@@ -348,7 +348,7 @@ export class Gateway {
     if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic, true, this);
     if (topic instanceof AgentID) {
       if (topic.isTopic()) return topic;
-      return new AgentID(topic.getName()+(topic2 ? topic2 + '__' : '')+'__ntf', true, this)
+      return new AgentID(topic.getName()+(topic2 ? topic2 + '__' : '')+'__ntf', true, this);
     }
   }
 
@@ -426,13 +426,13 @@ export class Gateway {
   }
 
   close() {
-    if (sock.readyState == sock.CONNECTING) {
+    if (this.sock.readyState == this.sock.CONNECTING) {
       this.pendingOnOpen.push(() => {
         this.sock.send("{'alive': false}\n");
         this.sock.close();
       });
       return true;
-    } else if (sock.readyState == sock.OPEN) {
+    } else if (this.sock.readyState == this.sock.OPEN) {
       this.sock.send("{'alive': false}\n");
       this.sock.close();
       return true;
