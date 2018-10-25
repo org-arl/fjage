@@ -139,10 +139,6 @@ int main(int argc, char* argv[]) {
   double t0 = current_time();
   msg = fjage_receive(gw, NULL, NULL, 1000);
   test_assert("receive (timeout 1)", msg == NULL && current_time()-t0 > 0.9);
-  t0 = current_time();
-  fjage_interrupt(gw);
-  msg = fjage_receive(gw, NULL, NULL, 1000);
-  test_assert("receive (interrupt 1)", msg == NULL && current_time()-t0 < 0.9);
   pthread_t tid;
   pthread_create(&tid, NULL, intr_thread, gw);
   t0 = current_time();

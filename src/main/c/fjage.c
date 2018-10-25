@@ -157,7 +157,7 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
   const char* action = json_gets(json, tokens, "action");
   if (action == NULL) {
     const char* id1 = json_gets(json, tokens, "id");
-    if (id != NULL && !strcmp(id, id1)) {
+    if (id != NULL && id1 != NULL && !strcmp(id, id1)) {
       action = json_gets(json, tokens, "inResponseTo");
       if (!strcmp(action, "agentForService")) {
         const char* s = json_gets(json, tokens, "agentID");
@@ -208,6 +208,8 @@ static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
   long t0 = get_time_ms();
+  uint8_t dummy;
+  while (read(fgw->intfd[0], &dummy, 1) > 0);
   struct pollfd fds[2];
   memset(fds, 0, sizeof(fds));
   fds[0].fd = fgw->sockfd;
@@ -250,7 +252,6 @@ static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
     }
   }
   rv = 0;
-  uint8_t dummy;
   while (read(fgw->intfd[0], &dummy, 1) > 0)
     rv = -1;
   return rv;
