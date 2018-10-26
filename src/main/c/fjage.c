@@ -34,6 +34,7 @@ static void fjage_msg_set_sender(fjage_msg_t msg, fjage_aid_t aid);
 //// utilities
 
 #define UUID_LEN        36
+#define h_addr h_addr_list[0] /* for backward compatibility */
 
 static char* base64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static time_t _t0 = 0;
