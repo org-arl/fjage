@@ -28,20 +28,24 @@
 <body>
 <div id='terminal'></div>
 <script>
+  /*global hterm, lib*/
   function setupHterm() {
     const term = new hterm.Terminal();
     term.onTerminalReady = function() {
-      const ws = new WebSocket("ws://"+window.location.hostname+":"+window.location.port+"/shell/ws/");
-      const io = this.io.push();
-      ws.onmessage = function (evt) {
-        io.print(evt.data);
+      const ws = new WebSocket('ws://'+window.location.hostname+':'+window.location.port+'/shell/ws/');
+      ws.onerror = (e) => {console.log('WebSocket error : ' + e.toString());};
+      ws.onopen = () => {
+        const io = this.io.push();
+        ws.onmessage = (evt) => {
+          io.print(evt.data);
+        };
+        io.onVTKeystroke = (string) => {
+          ws.send(string);
+        };
+        io.sendString = io.onVTKeystroke;
+        this.setCursorVisible(true);
+        this.keyboard.characterEncoding = 'raw';
       };
-      io.onVTKeystroke = (string) => {
-        ws.send(string);
-      };
-      io.sendString = io.onVTKeystroke;
-      this.setCursorVisible(true);
-      this.keyboard.characterEncoding = 'raw';
     };
     term.decorate(document.querySelector('#terminal'));
     term.installKeyboard();
