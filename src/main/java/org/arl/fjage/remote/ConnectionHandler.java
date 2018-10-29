@@ -89,7 +89,7 @@ class ConnectionHandler extends Thread {
           pool.execute(new RemoteTask(rq));
         }
       } catch(Exception ex) {
-        log.warning("Bad JSON request: "+ex.toString());
+        log.warning("Bad JSON request: "+ex.toString() + " in " + s);
       }
     }
     close();
