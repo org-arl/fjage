@@ -32,7 +32,9 @@
   function setupHterm() {
     const term = new hterm.Terminal();
     term.onTerminalReady = function() {
-      const ws = new WebSocket('ws://'+window.location.hostname+':'+window.location.port+'/shell/ws/');
+      let params = new URLSearchParams(window.location.search.substring(1));
+      const wsservpath = params.get('wsservpath')|| '/shell/ws/';
+      const ws = new WebSocket('ws://'+window.location.hostname+':'+window.location.port+wsservpath);
       ws.onerror = (e) => {console.log('WebSocket error : ' + e.toString());};
       ws.onopen = () => {
         const io = this.io.push();
