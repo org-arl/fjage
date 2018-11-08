@@ -30,6 +30,25 @@ dependencies {
   testCompile 'junit:junit:4.11'
 }
 
+sourceSets {
+    jsTest {
+        java.srcDir file('src/jsTest/java')
+        resources.srcDir file('src/main/resources')
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+task jsTest(type: Test) {
+    description = 'Runs the JS tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.jsTest.output.classesDirs
+    classpath = sourceSets.jsTest.runtimeClasspath
+    doFirst {
+      println("Starting JS test. Run by opening http://localhost:8080/test/ in your browser.")
+    }
+}
+
 compileJava {
   options.compilerArgs << "-Xlint:all"
   options.compilerArgs << "-Xlint:-options"
