@@ -210,6 +210,15 @@ export class Gateway {
     this.sock.onmessage = event => {
       this._onWebsockRx.call(this,event.data);
     };
+    if (typeof window.fjage === 'undefined') {
+      window.fjage = {};
+      window.fjage.gateways = [];
+      window.fjage.getGateway = function (url){
+        var f = window.fjage.gateways.filter(g => g.sock.url == url)
+        if (f.length ) return f[0];
+      }
+    }
+    window.fjage.gateways.push(this);
   }
 
   _onWebsockOpen() {
