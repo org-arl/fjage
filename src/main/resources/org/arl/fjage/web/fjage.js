@@ -2,6 +2,17 @@
 
 const TIMEOUT = 5000;              // ms, timeout to get response from to master container
 
+////// global
+
+if (typeof window.fjage === 'undefined') {
+  window.fjage = {};
+  window.fjage.gateways = [];
+  window.fjage.getGateway = function (url){
+    var f = window.fjage.gateways.filter(g => g.sock.url == url)
+    if (f.length ) return f[0];
+  }
+}
+
 ////// private utilities
 
 // generate random ID with length 4*len characters
@@ -196,7 +207,10 @@ export class GenericMessage extends Message {
 export class Gateway {
 
   // connect back to the master container over a websocket to the server
-  constructor() {
+  constructor(url) {
+    url = url || 'ws://'+window.location.hostname+':'+window.location.port+'/ws/'
+    let existing = window.fjage.getGateway(url)
+    if (existing) return existing
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.aid = 'WebGW-'+_guid(4);         // gateway agent name
@@ -205,19 +219,11 @@ export class Gateway {
     this.observers = [];                  // external observers wanting to listen incoming messages
     this.queue = [];                      // incoming message queue
     this.debug = false;                   // debug info to be logged to console?
-    this.sock = new WebSocket('ws://'+window.location.hostname+':'+window.location.port+'/ws/');
+    this.sock = new WebSocket(url);
     this.sock.onopen = this._onWebsockOpen.bind(this);
     this.sock.onmessage = event => {
       this._onWebsockRx.call(this,event.data);
     };
-    if (typeof window.fjage === 'undefined') {
-      window.fjage = {};
-      window.fjage.gateways = [];
-      window.fjage.getGateway = function (url){
-        var f = window.fjage.gateways.filter(g => g.sock.url == url)
-        if (f.length ) return f[0];
-      }
-    }
     window.fjage.gateways.push(this);
   }
 
