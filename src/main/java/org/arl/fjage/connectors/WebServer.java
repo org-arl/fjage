@@ -78,7 +78,7 @@ public class WebServer {
   //////// instance attributes and methods
 
   protected Server server;
-  protected HandlerCollection contexts;
+  protected ContextHandlerCollection contexts;
   protected Map<String,ContextHandler> staticContexts = new HashMap<String,ContextHandler>();
   protected boolean started;
   protected int port;
@@ -88,8 +88,10 @@ public class WebServer {
     server = new Server(port);
     server.setStopAtShutdown(true);
     if (port > 0) servers.put(port, this);
-    contexts = new HandlerCollection(true);
-    server.setHandler(contexts);
+    contexts = new ContextHandlerCollection();
+    HandlerCollection handlers = new HandlerCollection();
+    handlers.setHandlers(new Handler[] { contexts, new DefaultHandler() });
+    server.setHandler(handlers);
     started = false;
   }
 
