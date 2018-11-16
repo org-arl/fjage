@@ -13,7 +13,7 @@ package org.arl.fjage.test;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.*;
 import org.arl.fjage.*;
 import org.arl.fjage.remote.*;
@@ -23,7 +23,7 @@ import org.junit.*;
 public class BasicTests {
 
   private static final int TICKS = 100;
-  private static final int DELAY = 1100;
+  private static final int DELAY = 100;
 
   private Random rnd = new Random();
   private Logger log = Logger.getLogger(getClass().getName());
@@ -43,7 +43,8 @@ public class BasicTests {
     container.add("C", client);
     container.add("S", server);
     platform.start();
-    platform.delay(DELAY);
+    while (!client.done)
+      platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -61,7 +62,8 @@ public class BasicTests {
     container.add("C", client);
     container.add("S", server);
     platform.start();
-    platform.delay(DELAY);
+    while (!client.done)
+      platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -88,7 +90,8 @@ public class BasicTests {
     assertTrue(slave.containsAgent(c));
     assertTrue(!slave.containsAgent(s));
     assertTrue(slave.canLocateAgent(s));
-    platform.delay(DELAY);
+    while (!client.done)
+      platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -107,7 +110,8 @@ public class BasicTests {
     master.add("C", client);
     slave.add("S", server);
     platform.start();
-    platform.delay(DELAY);
+    while (!client.done)
+      platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -126,7 +130,8 @@ public class BasicTests {
     slave.add("C", client);
     slave.add("S", server);
     platform.start();
-    platform.delay(DELAY);
+    while (!client.done)
+      platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -171,6 +176,7 @@ public class BasicTests {
     Agent agent = new Agent();
     container.add(agent);
     FSMBehavior fsm = new FSMBehavior();
+    final List<Integer> list = new ArrayList<Integer>();
     fsm.add(new FSMBehavior.State("tick") {
       @Override
       public void onEnter() {
@@ -185,6 +191,7 @@ public class BasicTests {
       int n = 0;
       @Override
       public void onEnter() {
+        list.add(n);
         block(50);
       }
       @Override
@@ -196,9 +203,10 @@ public class BasicTests {
     });
     agent.add(fsm);
     platform.start();
-    platform.delay(DELAY);
-    assertTrue(fsm.done());
+    while (!fsm.done())
+      platform.delay(DELAY);
     platform.shutdown();
+    assertTrue(list.size() == 6);
   }
 
   @Test
@@ -329,6 +337,7 @@ public class BasicTests {
   }
 
   private class ClientAgent extends Agent {
+    public boolean done = false;
     public int requests = 0, nuisance = 0, good = 0, bad = 0;
     @Override
     public void init() {
@@ -337,6 +346,7 @@ public class BasicTests {
         public void onTick() {
           if (getTickCount() > TICKS) {
             stop();
+            done = true;
             return;
           }
           if (rnd.nextBoolean()) {

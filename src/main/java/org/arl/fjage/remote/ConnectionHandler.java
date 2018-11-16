@@ -134,8 +134,10 @@ class ConnectionHandler extends Thread {
       out.writeBytes(s+"\n");
       conn.waitOutputCompletion(1000);
     } catch(IOException ex) {
-      log.warning("Write failed: "+ex.toString());
-      close();
+      if (!s.equals(SIGN_OFF)) {
+        log.warning("Write failed: "+ex.toString());
+        close();
+      }
     }
   }
 
@@ -161,7 +163,7 @@ class ConnectionHandler extends Thread {
     return null;
   }
 
-  void close() {
+  synchronized void close() {
     if (conn == null) return;
     if (keepAlive && container instanceof SlaveContainer) println(SIGN_OFF);
     conn.close();
