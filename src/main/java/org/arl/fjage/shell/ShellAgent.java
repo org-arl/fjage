@@ -164,7 +164,9 @@ public class ShellAgent extends Agent {
     add(new MessageBehavior() {
       @Override
       public void onReceive(Message msg) {
-        if (msg instanceof ShellExecReq) handleReq((ShellExecReq)msg);
+        if (msg instanceof ShellExecReq) handleExecReq((ShellExecReq)msg);
+        else if (msg instanceof ShellGetFileReq) handleGetFileReq((ShellGetFileReq)msg);
+        else if (msg instanceof ShellPutFileReq) handlePutFileReq((ShellPutFileReq)msg);
         else {
           log.info(msg.getSender()+" > "+msg.toString());
           if (engine != null) engine.deliver(msg);
@@ -316,7 +318,7 @@ public class ShellAgent extends Agent {
     stop();
   }
 
-  private void handleReq(final ShellExecReq req) {
+  private void handleExecReq(final ShellExecReq req) {
     Message rsp = null;
     if (engine == null || engine.isBusy()) rsp = new Message(req, Performative.REFUSE);
     else {
@@ -353,6 +355,88 @@ public class ShellAgent extends Agent {
       }
     }
     if (rsp != null) send(rsp);
+  }
+
+  private void handleGetFileReq(final ShellGetFileReq req) {
+    String filename = req.getFilename();
+    if (filename == null) send(new Message(req, Performative.REFUSE));
+    log.info("get "+filename);
+    File f = new File(filename);
+    ShellGetFileRsp rsp = null;
+    InputStream is = null;
+    try {
+      if (f.isDirectory()) {
+        File[] files = f.listFiles();
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < files.length; i++) {
+          sb.append(files[i].getName());
+          sb.append('\t');
+          sb.append(files[i].length());
+          sb.append('\t');
+          sb.append(files[i].lastModified());
+          sb.append('\n');
+        }
+        rsp = new ShellGetFileRsp(req);
+        rsp.setDirectory(true);
+        rsp.setContents(sb.toString().getBytes());
+      } else if (f.canRead()) {
+        long length = f.length();
+        if (length > Integer.MAX_VALUE) throw new IOException("File is too large!");
+        byte[] bytes = new byte[(int)length];
+        int offset = 0;
+        int numRead = 0;
+        is = new FileInputStream(f);
+        while (offset < bytes.length && (numRead = is.read(bytes, offset, bytes.length-offset)) >= 0)
+          offset += numRead;
+        if (offset < bytes.length) throw new IOException("File read incomplete!");
+        rsp = new ShellGetFileRsp(req);
+        rsp.setContents(bytes);
+      }
+    } catch (IOException ex) {
+      log.warning(ex.toString());
+    } finally {
+      if (is != null) {
+        try {
+          is.close();
+        } catch (IOException ex) {
+          // do nothing
+        }
+      }
+    }
+    if (rsp != null) send(rsp);
+    else send(new Message(req, Performative.FAILURE));
+  }
+
+  private void handlePutFileReq(final ShellPutFileReq req) {
+    String filename = req.getFilename();
+    if (filename == null) send(new Message(req, Performative.REFUSE));
+    byte[] contents = req.getContents();
+    File f = new File(filename);
+    Message rsp = null;
+    OutputStream os = null;
+    try {
+      if (contents == null) {
+        log.info("delete "+filename);
+        if (f.delete()) rsp = new Message(req, Performative.AGREE);
+      } else {
+        log.info("put "+filename);
+        os = new FileOutputStream(f);
+        os.write(contents);
+        rsp = new Message(req, Performative.AGREE);
+      }
+    } catch (IOException ex) {
+      log.warning(ex.toString());
+    } finally {
+      if (os != null) {
+        try {
+          os.close();
+        } catch (IOException ex) {
+          // do nothing
+        }
+      }
+    }
+    if (rsp == null) rsp = new Message(req, Performative.FAILURE);
+    send(rsp);
   }
 
 }

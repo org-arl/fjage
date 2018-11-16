@@ -11,11 +11,13 @@ for full license details.
 package org.arl.fjage.test;
 
 import static org.junit.Assert.assertTrue;
+import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 import java.util.logging.*;
 import org.arl.fjage.*;
 import org.arl.fjage.remote.*;
+import org.arl.fjage.shell.*;
 import org.junit.*;
 
 public class BasicTests {
@@ -258,6 +260,25 @@ public class BasicTests {
     assertTrue(s1.x == s2.x);
   }
 
+  @Test
+  public void testShell() {
+    log.info("testShell");
+    Platform platform = new RealTimePlatform();
+    Container container = new Container(platform);
+    container.add("shell", new ShellAgent(new EchoScriptEngine()));
+    ShellTestAgent agent = new ShellTestAgent();
+    container.add("test", agent);
+    platform.start();
+    while (!agent.done)
+      platform.delay(1000);
+    platform.shutdown();
+    assertTrue(agent.exec);
+    assertTrue(agent.put);
+    assertTrue(agent.get);
+    assertTrue(agent.dir);
+    assertTrue(agent.del);
+  }
+
   private static class RequestMessage extends Message {
     private static final long serialVersionUID = 1L;
     public int x;
@@ -345,5 +366,63 @@ public class BasicTests {
     }
   }
 
-}
+  private class ShellTestAgent extends Agent {
+    private final String DIRNAME = "/tmp";
+    private final String FILENAME = "fjage-test.txt";
+    public boolean exec = false, put = false, get = false, del = false, dir = false, done = false;
+    @Override
+    public void init() {
+      add(new OneShotBehavior() {
+        @Override
+        public void action() {
+          AgentID shell = new AgentID("shell");
+          Message req = new ShellExecReq(shell, "boo");
+          Message rsp = request(req);
+          if (rsp != null && rsp.getPerformative() == Performative.AGREE) exec = true;
+          byte[] bytes = "this is a test".getBytes();
+          req = new ShellPutFileReq(shell, DIRNAME+File.separator+FILENAME, bytes);
+          rsp = request(req);
+          log.info("put rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
+            File f = new File(DIRNAME+File.separator+FILENAME);
+            if (f.exists()) put = true;
+          }
+          req = new ShellGetFileReq(shell, DIRNAME+File.separator+FILENAME);
+          rsp = request(req);
+          log.info("get rsp: "+rsp);
+          if (rsp != null && rsp instanceof ShellGetFileRsp) {
+            byte[] contents = ((ShellGetFileRsp)rsp).getContents();
+            log.info("get data len: "+contents.length);
+            if (contents.length == bytes.length) {
+              log.info("get data: "+new String(contents));
+              get = true;
+              for (int i = 0; i < contents.length; i++)
+                if (contents[i] != bytes[i]) get = false;
+            }
+          }
+          req = new ShellGetFileReq(shell, DIRNAME);
+          rsp = request(req);
+          log.info("get dir rsp: "+rsp);
+          if (rsp != null && rsp instanceof ShellGetFileRsp) {
+            String contents = new String(((ShellGetFileRsp)rsp).getContents());
+            String[] lines = contents.split("\\r?\\n");
+            for (String s: lines) {
+              log.info("DIR: "+s);
+              if (s.startsWith(FILENAME+"\t")) dir = true;
+            }
+          }
+          req = new ShellPutFileReq(shell, DIRNAME+File.separator+FILENAME, null);
+          rsp = request(req);
+          log.info("del rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
+            File f = new File(DIRNAME+File.separator+FILENAME);
+            if (!f.exists()) del = true;
+          }
+          log.info("exec="+exec+", put="+put+", get="+get+", del="+del+", dir="+dir);
+          done = true;
+        }
+      });
+    }
+  }
 
+}
