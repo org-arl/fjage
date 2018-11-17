@@ -8,6 +8,7 @@ for full license details.
 
 ******************************************************************************/
 
+package org.arl.fjage.test
 
 import org.arl.fjage.*
 import org.arl.fjage.connectors.Connector
@@ -22,11 +23,10 @@ class fjagejsTest {
   @Test
   void fjageJSTest() {
     def testStatus = false
-    def testPending = true
     def platform = new RealTimePlatform()
     def container = new MasterContainer(platform, 5081)
     WebServer.getInstance(8080).add("/", "/org/arl/fjage/web")
-    WebServer.getInstance(8080).add("/test", new File('src/jsTest/groovy'))
+    WebServer.getInstance(8080).add("/test", new File('src/test/groovy/org/arl/fjage/test'))
     Connector conn = new WebSocketConnector(8080, "/shell/ws")
     container.addConnector(new WebSocketConnector(8080, "/ws", true))
     platform.start()
@@ -37,15 +37,20 @@ class fjagejsTest {
           @Override
           void onReceive(Message msg) {
             println("Received: " + msg.performative + ',' + msg.recipient + ',' + msg.sender)
-            testPending = false
             testStatus = msg.performative != Performative.FAILURE
           }
         })
       }
     })
-    while (testPending) platform.delay(1000)
+    // Run Jasmine based test in puppeteer.
+    def proc = "node src/test/groovy/org/arl/fjage/test/server.js".execute();
+    def sout = new StringBuilder(), serr = new StringBuilder()
+    proc.consumeProcessOutput(sout, serr)
+    proc.waitFor();
+    def ret = proc.exitValue();
+    println "NPM : out> $sout err> $serr \n ret = $ret \n testStatus = $testStatus"
     platform.shutdown()
-    assertTrue(testStatus)
+    assertTrue(ret == 0 && testStatus)
   }
 }
 

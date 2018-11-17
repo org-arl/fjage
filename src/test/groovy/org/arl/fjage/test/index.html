@@ -24,6 +24,7 @@
       msg.performative = status ? Performative.AGREE : Performative.FAILURE;
       gw.send(msg);
     }
+    sendTestStatus(true);
   </script>
 
   <!-- include spec files here... -->
