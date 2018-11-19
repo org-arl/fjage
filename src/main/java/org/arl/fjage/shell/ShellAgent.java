@@ -392,7 +392,6 @@ public class ShellAgent extends Agent {
   private void handleGetFileReq(final GetFileReq req) {
     String filename = req.getFilename();
     if (filename == null) send(new Message(req, Performative.REFUSE));
-    log.info("get "+filename);
     File f = new File(filename);
     GetFileRsp rsp = null;
     InputStream is = null;
