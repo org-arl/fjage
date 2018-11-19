@@ -285,6 +285,7 @@ public class BasicTests {
     assertTrue(agent.get);
     assertTrue(agent.get2);
     assertTrue(agent.get3);
+    assertTrue(agent.get4);
     assertTrue(agent.dir);
     assertTrue(agent.del);
   }
@@ -381,7 +382,7 @@ public class BasicTests {
   private class ShellTestAgent extends Agent {
     private final String DIRNAME = "/tmp";
     private final String FILENAME = "fjage-test.txt";
-    public boolean exec = false, put = false, get = false, get2 = false, get3 = false, del = false, dir = false, done = false;
+    public boolean exec = false, put = false, get = false, get2 = false, get3 = false, get4 = false, del = false, dir = false, done = false;
     @Override
     public void init() {
       add(new OneShotBehavior() {
@@ -438,6 +439,10 @@ public class BasicTests {
                 if (contents[i] != bytes[9+i]) get3 = false;
             }
           }
+          req = new ShellGetFileReq(shell, DIRNAME+File.separator+FILENAME, 27, 1);
+          rsp = request(req);
+          log.info("get4 rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.REFUSE) get4 = true;
           req = new ShellGetFileReq(shell, DIRNAME);
           rsp = request(req);
           log.info("get dir rsp: "+rsp);
@@ -456,7 +461,6 @@ public class BasicTests {
             File f = new File(DIRNAME+File.separator+FILENAME);
             if (!f.exists()) del = true;
           }
-          log.info("exec="+exec+", put="+put+", get="+get+", get2="+get2+", get3="+get3+", del="+del+", dir="+dir);
           done = true;
         }
       });

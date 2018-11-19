@@ -415,6 +415,11 @@ public class ShellAgent extends Agent {
         long ofs = req.getOffset();
         long len = req.getLength();
         long length = f.length();
+        if (ofs > length) {
+          log.info("File too short for requested offset!");
+          send(new Message(req, Performative.REFUSE));
+          return;
+        }
         if (len <= 0) len = length-ofs;
         else if (ofs+len > length) len = length-ofs;
         if (len > Integer.MAX_VALUE) throw new IOException("File is too large!");
