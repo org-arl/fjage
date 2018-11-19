@@ -425,17 +425,17 @@ public class BasicTests {
                 if (contents[i] != bytes[5+i]) get2 = false;
             }
           }
-          req = new ShellGetFileReq(shell, DIRNAME+File.separator+FILENAME, 5, 0);
+          req = new ShellGetFileReq(shell, DIRNAME+File.separator+FILENAME, 9, 0);
           rsp = request(req);
           log.info("get3 rsp: "+rsp);
           if (rsp != null && rsp instanceof ShellGetFileRsp) {
             byte[] contents = ((ShellGetFileRsp)rsp).getContents();
             log.info("get data len: "+contents.length);
-            if (contents.length == bytes.length-5 && ((ShellGetFileRsp)rsp).getOffset() == 5) {
+            if (contents.length == bytes.length-9 && ((ShellGetFileRsp)rsp).getOffset() == 9) {
               log.info("get data: "+new String(contents));
               get3 = true;
               for (int i = 0; i < contents.length; i++)
-                if (contents[i] != bytes[5+i]) get3 = false;
+                if (contents[i] != bytes[9+i]) get3 = false;
             }
           }
           req = new ShellGetFileReq(shell, DIRNAME);

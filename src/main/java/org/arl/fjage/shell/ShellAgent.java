@@ -47,6 +47,17 @@ public class ShellAgent extends Agent {
     }
   }
 
+  protected class InputStreamCacheEntry {
+    InputStream is;
+    long lastUsed;
+    long pos;
+    InputStreamCacheEntry(InputStream is, long pos) {
+      this.is = is;
+      this.pos = pos;
+      this.lastUsed = currentTimeMillis();
+    }
+  }
+
   ////// private attributes
 
   protected Shell shell = null;
@@ -56,6 +67,7 @@ public class ShellAgent extends Agent {
   protected CyclicBehavior executor = null;
   protected List<MessageListener> listeners = new ArrayList<MessageListener>();
   protected List<InitScript> initScripts = new ArrayList<InitScript>();
+  protected Map<String,InputStreamCacheEntry> isCache = new HashMap<String,InputStreamCacheEntry>();
   protected boolean quit = false;
 
   ////// interface methods
@@ -190,6 +202,26 @@ public class ShellAgent extends Agent {
           log.warning("Init script failure: "+ex.toString());
         }
         if (consoleThread != null) consoleThread.start();
+      }
+    });
+
+    // behavior to manage cached input streams (idle timeout after 60 seconds)
+    add(new TickerBehavior(60000) {
+      @Override
+      public void onTick() {
+        long t = currentTimeMillis() - 60000;
+        Iterator<Map.Entry<String,InputStreamCacheEntry>> it = isCache.entrySet().iterator();
+        while (it.hasNext()) {
+          Map.Entry<String,InputStreamCacheEntry> pair = it.next();
+          if (pair.getValue().lastUsed < t) {
+            try {
+              pair.getValue().is.close();
+            } catch (IOException ex) {
+              // do nothing
+            }
+            it.remove();
+          }
+        }
       }
     });
 
@@ -380,7 +412,6 @@ public class ShellAgent extends Agent {
         rsp.setDirectory(true);
         rsp.setContents(sb.toString().getBytes());
       } else if (f.canRead()) {
-        // TODO optimization to cache open file for repeated read requests during log tailing
         long ofs = req.getOffset();
         long len = req.getLength();
         long length = f.length();
@@ -388,17 +419,35 @@ public class ShellAgent extends Agent {
         else if (ofs+len > length) len = length-ofs;
         if (len > Integer.MAX_VALUE) throw new IOException("File is too large!");
         byte[] bytes = new byte[(int)len];
+        InputStreamCacheEntry isce = isCache.get(filename);
+        if (isce != null) {
+          if (isce.pos == ofs) {
+            isce.lastUsed = currentTimeMillis();
+            isce.pos += len;
+            is = isce.is;
+          } else {
+            isce.is.close();
+            isCache.remove(filename);
+          }
+        }
         int offset = 0;
         int numRead = 0;
-        is = new FileInputStream(f);
-        if (ofs > 0) is.skip(ofs);
-        else if (ofs < 0) is.skip(length-ofs);
+        if (is == null) {
+          is = new FileInputStream(f);
+          if (ofs > 0) is.skip(ofs);
+          else if (ofs < 0) is.skip(length-ofs);
+        }
         while (offset < bytes.length && (numRead = is.read(bytes, offset, bytes.length-offset)) >= 0)
           offset += numRead;
         if (offset < bytes.length) throw new IOException("File read incomplete!");
         rsp = new ShellGetFileRsp(req);
         rsp.setOffset(ofs);
         rsp.setContents(bytes);
+        if (ofs != 0) {
+          if (!isCache.containsKey(filename))
+            isCache.put(filename, new InputStreamCacheEntry(is, ofs+bytes.length));
+          is = null;
+        }
       }
     } catch (IOException ex) {
       log.warning(ex.toString());
@@ -409,6 +458,7 @@ public class ShellAgent extends Agent {
         } catch (IOException ex) {
           // do nothing
         }
+        isCache.remove(filename);
       }
     }
     if (rsp != null) send(rsp);
