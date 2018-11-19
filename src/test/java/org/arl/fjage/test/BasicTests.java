@@ -393,68 +393,68 @@ public class BasicTests {
           Message rsp = request(req);
           if (rsp != null && rsp.getPerformative() == Performative.AGREE) exec = true;
           byte[] bytes = "this is a test".getBytes();
-          req = new ShellPutFileReq(shell, DIRNAME+File.separator+FILENAME, bytes);
+          req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, bytes);
           rsp = request(req);
           log.info("put rsp: "+rsp);
           if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
             File f = new File(DIRNAME+File.separator+FILENAME);
             if (f.exists()) put = true;
           }
-          req = new ShellGetFileReq(shell, DIRNAME+File.separator+FILENAME);
+          req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME);
           rsp = request(req);
           log.info("get rsp: "+rsp);
-          if (rsp != null && rsp instanceof ShellGetFileRsp) {
-            byte[] contents = ((ShellGetFileRsp)rsp).getContents();
+          if (rsp != null && rsp instanceof GetFileRsp) {
+            byte[] contents = ((GetFileRsp)rsp).getContents();
             log.info("get data len: "+contents.length);
-            if (contents.length == bytes.length && ((ShellGetFileRsp)rsp).getOffset() == 0) {
+            if (contents.length == bytes.length && ((GetFileRsp)rsp).getOffset() == 0) {
               log.info("get data: "+new String(contents));
               get = true;
               for (int i = 0; i < contents.length; i++)
                 if (contents[i] != bytes[i]) get = false;
             }
           }
-          req = new ShellGetFileReq(shell, DIRNAME+File.separator+FILENAME, 5, 4);
+          req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 5, 4);
           rsp = request(req);
           log.info("get2 rsp: "+rsp);
-          if (rsp != null && rsp instanceof ShellGetFileRsp) {
-            byte[] contents = ((ShellGetFileRsp)rsp).getContents();
+          if (rsp != null && rsp instanceof GetFileRsp) {
+            byte[] contents = ((GetFileRsp)rsp).getContents();
             log.info("get data len: "+contents.length);
-            if (contents.length == 4 && ((ShellGetFileRsp)rsp).getOffset() == 5) {
+            if (contents.length == 4 && ((GetFileRsp)rsp).getOffset() == 5) {
               log.info("get data: "+new String(contents));
               get2 = true;
               for (int i = 0; i < contents.length; i++)
                 if (contents[i] != bytes[5+i]) get2 = false;
             }
           }
-          req = new ShellGetFileReq(shell, DIRNAME+File.separator+FILENAME, 9, 0);
+          req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 9, 0);
           rsp = request(req);
           log.info("get3 rsp: "+rsp);
-          if (rsp != null && rsp instanceof ShellGetFileRsp) {
-            byte[] contents = ((ShellGetFileRsp)rsp).getContents();
+          if (rsp != null && rsp instanceof GetFileRsp) {
+            byte[] contents = ((GetFileRsp)rsp).getContents();
             log.info("get data len: "+contents.length);
-            if (contents.length == bytes.length-9 && ((ShellGetFileRsp)rsp).getOffset() == 9) {
+            if (contents.length == bytes.length-9 && ((GetFileRsp)rsp).getOffset() == 9) {
               log.info("get data: "+new String(contents));
               get3 = true;
               for (int i = 0; i < contents.length; i++)
                 if (contents[i] != bytes[9+i]) get3 = false;
             }
           }
-          req = new ShellGetFileReq(shell, DIRNAME+File.separator+FILENAME, 27, 1);
+          req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 27, 1);
           rsp = request(req);
           log.info("get4 rsp: "+rsp);
           if (rsp != null && rsp.getPerformative() == Performative.REFUSE) get4 = true;
-          req = new ShellGetFileReq(shell, DIRNAME);
+          req = new GetFileReq(shell, DIRNAME);
           rsp = request(req);
           log.info("get dir rsp: "+rsp);
-          if (rsp != null && rsp instanceof ShellGetFileRsp) {
-            String contents = new String(((ShellGetFileRsp)rsp).getContents());
+          if (rsp != null && rsp instanceof GetFileRsp) {
+            String contents = new String(((GetFileRsp)rsp).getContents());
             String[] lines = contents.split("\\r?\\n");
             for (String s: lines) {
               log.info("DIR: "+s);
               if (s.startsWith(FILENAME+"\t")) dir = true;
             }
           }
-          req = new ShellPutFileReq(shell, DIRNAME+File.separator+FILENAME, null);
+          req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, null);
           rsp = request(req);
           log.info("del rsp: "+rsp);
           if (rsp != null && rsp.getPerformative() == Performative.AGREE) {

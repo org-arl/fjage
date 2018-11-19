@@ -15,9 +15,9 @@ import org.arl.fjage.Message;
 import org.arl.fjage.Performative;
 
 /**
- * Response to a ShellGetFileReq, with the contents of the file or the directory.
+ * Response to a GetFileReq, with the contents of the file or the directory.
  */
-public class ShellGetFileRsp extends Message {
+public class GetFileRsp extends Message {
 
   private static final long serialVersionUID = 1L;
 
@@ -31,7 +31,7 @@ public class ShellGetFileRsp extends Message {
    *
    * @param inReplyTo message to which this is a response.
    */
-  public ShellGetFileRsp(ShellGetFileReq inReplyTo) {
+  public GetFileRsp(GetFileReq inReplyTo) {
     super(inReplyTo, Performative.INFORM);
     this.filename = inReplyTo.getFilename();
   }

@@ -17,7 +17,7 @@ import org.arl.fjage.Performative;
 /**
  * Request to write contents to a file, or delete a file.
  */
-public class ShellPutFileReq extends Message {
+public class PutFileReq extends Message {
 
   private static final long serialVersionUID = 1L;
 
@@ -27,7 +27,7 @@ public class ShellPutFileReq extends Message {
   /**
    * Create an empty request for file write.
    */
-  public ShellPutFileReq() {
+  public PutFileReq() {
     super(Performative.REQUEST);
   }
 
@@ -36,8 +36,20 @@ public class ShellPutFileReq extends Message {
    *
    * @param to shell agent id.
    */
-  public ShellPutFileReq(AgentID to) {
+  public PutFileReq(AgentID to) {
     super(to, Performative.REQUEST);
+  }
+
+  /**
+   * Create request for file write.
+   *
+   * @param filename name of the file to write.
+   * @param contents contents to write to the file (null to delete file).
+   */
+  public PutFileReq(String filename, byte[] contents) {
+    super(Performative.REQUEST);
+    this.filename = filename;
+    this.contents = contents;
   }
 
   /**
@@ -47,7 +59,7 @@ public class ShellPutFileReq extends Message {
    * @param filename name of the file to write.
    * @param contents contents to write to the file (null to delete file).
    */
-  public ShellPutFileReq(AgentID to, String filename, byte[] contents) {
+  public PutFileReq(AgentID to, String filename, byte[] contents) {
     super(to, Performative.REQUEST);
     this.filename = filename;
     this.contents = contents;

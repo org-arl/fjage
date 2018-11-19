@@ -23,7 +23,7 @@ import org.arl.fjage.Performative;
  *
  * The time is represented as epoch time (milliseconds since 1 Jan 1970).
  */
-public class ShellGetFileReq extends Message {
+public class GetFileReq extends Message {
 
   private static final long serialVersionUID = 1L;
 
@@ -34,7 +34,7 @@ public class ShellGetFileReq extends Message {
   /**
    * Create an empty request for file/directory.
    */
-  public ShellGetFileReq() {
+  public GetFileReq() {
     super(Performative.REQUEST);
   }
 
@@ -43,8 +43,18 @@ public class ShellGetFileReq extends Message {
    *
    * @param to shell agent id.
    */
-  public ShellGetFileReq(AgentID to) {
+  public GetFileReq(AgentID to) {
     super(to, Performative.REQUEST);
+  }
+
+  /**
+   * Create request for file/directory.
+   *
+   * @param filename name of the file/directory to read.
+   */
+  public GetFileReq(String filename) {
+    super(Performative.REQUEST);
+    this.filename = filename;
   }
 
   /**
@@ -53,9 +63,23 @@ public class ShellGetFileReq extends Message {
    * @param to shell agent id.
    * @param filename name of the file/directory to read.
    */
-  public ShellGetFileReq(AgentID to, String filename) {
+  public GetFileReq(AgentID to, String filename) {
     super(to, Performative.REQUEST);
     this.filename = filename;
+  }
+
+  /**
+   * Create request for partial file.
+   *
+   * @param filename name of the file/directory to read.
+   * @param ofs start location in file (negative for offset relative to end of file).
+   * @param len maximum number of bytes to read (0 for unlimited).
+   */
+  public GetFileReq(String filename, long ofs, long len) {
+    super(Performative.REQUEST);
+    this.filename = filename;
+    this.ofs = ofs;
+    this.len = len;
   }
 
   /**
@@ -66,7 +90,7 @@ public class ShellGetFileReq extends Message {
    * @param ofs start location in file (negative for offset relative to end of file).
    * @param len maximum number of bytes to read (0 for unlimited).
    */
-  public ShellGetFileReq(AgentID to, String filename, long ofs, long len) {
+  public GetFileReq(AgentID to, String filename, long ofs, long len) {
     super(to, Performative.REQUEST);
     this.filename = filename;
     this.ofs = ofs;

@@ -177,8 +177,8 @@ public class ShellAgent extends Agent {
       @Override
       public void onReceive(Message msg) {
         if (msg instanceof ShellExecReq) handleExecReq((ShellExecReq)msg);
-        else if (msg instanceof ShellGetFileReq) handleGetFileReq((ShellGetFileReq)msg);
-        else if (msg instanceof ShellPutFileReq) handlePutFileReq((ShellPutFileReq)msg);
+        else if (msg instanceof GetFileReq) handleGetFileReq((GetFileReq)msg);
+        else if (msg instanceof PutFileReq) handlePutFileReq((PutFileReq)msg);
         else {
           log.info(msg.getSender()+" > "+msg.toString());
           if (engine != null) engine.deliver(msg);
@@ -389,12 +389,12 @@ public class ShellAgent extends Agent {
     if (rsp != null) send(rsp);
   }
 
-  private void handleGetFileReq(final ShellGetFileReq req) {
+  private void handleGetFileReq(final GetFileReq req) {
     String filename = req.getFilename();
     if (filename == null) send(new Message(req, Performative.REFUSE));
     log.info("get "+filename);
     File f = new File(filename);
-    ShellGetFileRsp rsp = null;
+    GetFileRsp rsp = null;
     InputStream is = null;
     try {
       if (f.isDirectory()) {
@@ -408,7 +408,7 @@ public class ShellAgent extends Agent {
           sb.append(files[i].lastModified());
           sb.append('\n');
         }
-        rsp = new ShellGetFileRsp(req);
+        rsp = new GetFileRsp(req);
         rsp.setDirectory(true);
         rsp.setContents(sb.toString().getBytes());
       } else if (f.canRead()) {
@@ -445,7 +445,7 @@ public class ShellAgent extends Agent {
         while (offset < bytes.length && (numRead = is.read(bytes, offset, bytes.length-offset)) >= 0)
           offset += numRead;
         if (offset < bytes.length) throw new IOException("File read incomplete!");
-        rsp = new ShellGetFileRsp(req);
+        rsp = new GetFileRsp(req);
         rsp.setOffset(ofs);
         rsp.setContents(bytes);
         if (ofs != 0) {
@@ -470,7 +470,7 @@ public class ShellAgent extends Agent {
     else send(new Message(req, Performative.FAILURE));
   }
 
-  private void handlePutFileReq(final ShellPutFileReq req) {
+  private void handlePutFileReq(final PutFileReq req) {
     String filename = req.getFilename();
     if (filename == null) send(new Message(req, Performative.REFUSE));
     byte[] contents = req.getContents();
