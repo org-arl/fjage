@@ -28,6 +28,8 @@ public class ShellGetFileReq extends Message {
   private static final long serialVersionUID = 1L;
 
   private String filename = null;
+  private long ofs = 0;
+  private long len = 0;
 
   /**
    * Create an empty request for file/directory.
@@ -57,6 +59,21 @@ public class ShellGetFileReq extends Message {
   }
 
   /**
+   * Create request for partial file.
+   *
+   * @param to shell agent id.
+   * @param filename name of the file/directory to read.
+   * @param ofs start location in file (negative for offset relative to end of file).
+   * @param len maximum number of bytes to read (0 for unlimited).
+   */
+  public ShellGetFileReq(AgentID to, String filename, long ofs, long len) {
+    super(to, Performative.REQUEST);
+    this.filename = filename;
+    this.ofs = ofs;
+    this.len = len;
+  }
+
+  /**
    * Get the name of the file/directory.
    *
    * @return name of the file/directory.
@@ -72,6 +89,42 @@ public class ShellGetFileReq extends Message {
    */
   public void setFilename(String filename) {
     this.filename = filename;
+  }
+
+  /**
+   * Get the start location in file to read from.
+   *
+   * @return start locaion in file (negative for offset relative to end of file).
+   */
+  public long getOffset() {
+    return ofs;
+  }
+
+  /**
+   * Set the start location in file to read from.
+   *
+   * @param ofs start location in file (negative for offset relative to end of file).
+   */
+  public void setOffset(long ofs) {
+    this.ofs = ofs;
+  }
+
+  /**
+   * Get number of bytes to read from file.
+   *
+   * @return number of bytes to read, 0 for no limit.
+   */
+  public long getLength() {
+    return len;
+  }
+
+  /**
+   * Set number of bytes to read from file.
+   *
+   * @param len number of bytes to read, 0 for no limit.
+   */
+  public void setLength(long len) {
+    this.len = len;
   }
 
 }

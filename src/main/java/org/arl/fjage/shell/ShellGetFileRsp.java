@@ -22,7 +22,8 @@ public class ShellGetFileRsp extends Message {
   private static final long serialVersionUID = 1L;
 
   private String filename;
-  private byte[] contents = null;
+  private long ofs = 0;
+  private byte[] contents;
   private boolean dir = false;
 
   /**
@@ -65,7 +66,7 @@ public class ShellGetFileRsp extends Message {
   /**
    * Set the contents of the file.
    *
-   * @param contents the contents of the file (null to delete file).
+   * @param contents the contents of the file.
    */
   public void setContents(byte[] contents) {
     this.contents = contents;
@@ -87,6 +88,24 @@ public class ShellGetFileRsp extends Message {
    */
   public void setDirectory(boolean dir) {
     this.dir = dir;
+  }
+
+  /**
+   * Get the start location in file.
+   *
+   * @return start locaion in file.
+   */
+  public long getOffset() {
+    return ofs;
+  }
+
+  /**
+   * Set the start location in file.
+   *
+   * @param ofs start location in file.
+   */
+  public void setOffset(long ofs) {
+    this.ofs = ofs;
   }
 
 }

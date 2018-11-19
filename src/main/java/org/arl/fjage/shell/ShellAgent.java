@@ -380,16 +380,24 @@ public class ShellAgent extends Agent {
         rsp.setDirectory(true);
         rsp.setContents(sb.toString().getBytes());
       } else if (f.canRead()) {
+        // TODO optimization to cache open file for repeated read requests during log tailing
+        long ofs = req.getOffset();
+        long len = req.getLength();
         long length = f.length();
-        if (length > Integer.MAX_VALUE) throw new IOException("File is too large!");
-        byte[] bytes = new byte[(int)length];
+        if (len <= 0) len = length-ofs;
+        else if (ofs+len > length) len = length-ofs;
+        if (len > Integer.MAX_VALUE) throw new IOException("File is too large!");
+        byte[] bytes = new byte[(int)len];
         int offset = 0;
         int numRead = 0;
         is = new FileInputStream(f);
+        if (ofs > 0) is.skip(ofs);
+        else if (ofs < 0) is.skip(length-ofs);
         while (offset < bytes.length && (numRead = is.read(bytes, offset, bytes.length-offset)) >= 0)
           offset += numRead;
         if (offset < bytes.length) throw new IOException("File read incomplete!");
         rsp = new ShellGetFileRsp(req);
+        rsp.setOffset(ofs);
         rsp.setContents(bytes);
       }
     } catch (IOException ex) {

@@ -283,6 +283,8 @@ public class BasicTests {
     assertTrue(agent.exec);
     assertTrue(agent.put);
     assertTrue(agent.get);
+    assertTrue(agent.get2);
+    assertTrue(agent.get3);
     assertTrue(agent.dir);
     assertTrue(agent.del);
   }
@@ -379,7 +381,7 @@ public class BasicTests {
   private class ShellTestAgent extends Agent {
     private final String DIRNAME = "/tmp";
     private final String FILENAME = "fjage-test.txt";
-    public boolean exec = false, put = false, get = false, del = false, dir = false, done = false;
+    public boolean exec = false, put = false, get = false, get2 = false, get3 = false, del = false, dir = false, done = false;
     @Override
     public void init() {
       add(new OneShotBehavior() {
@@ -403,11 +405,37 @@ public class BasicTests {
           if (rsp != null && rsp instanceof ShellGetFileRsp) {
             byte[] contents = ((ShellGetFileRsp)rsp).getContents();
             log.info("get data len: "+contents.length);
-            if (contents.length == bytes.length) {
+            if (contents.length == bytes.length && ((ShellGetFileRsp)rsp).getOffset() == 0) {
               log.info("get data: "+new String(contents));
               get = true;
               for (int i = 0; i < contents.length; i++)
                 if (contents[i] != bytes[i]) get = false;
+            }
+          }
+          req = new ShellGetFileReq(shell, DIRNAME+File.separator+FILENAME, 5, 4);
+          rsp = request(req);
+          log.info("get2 rsp: "+rsp);
+          if (rsp != null && rsp instanceof ShellGetFileRsp) {
+            byte[] contents = ((ShellGetFileRsp)rsp).getContents();
+            log.info("get data len: "+contents.length);
+            if (contents.length == 4 && ((ShellGetFileRsp)rsp).getOffset() == 5) {
+              log.info("get data: "+new String(contents));
+              get2 = true;
+              for (int i = 0; i < contents.length; i++)
+                if (contents[i] != bytes[5+i]) get2 = false;
+            }
+          }
+          req = new ShellGetFileReq(shell, DIRNAME+File.separator+FILENAME, 5, 0);
+          rsp = request(req);
+          log.info("get3 rsp: "+rsp);
+          if (rsp != null && rsp instanceof ShellGetFileRsp) {
+            byte[] contents = ((ShellGetFileRsp)rsp).getContents();
+            log.info("get data len: "+contents.length);
+            if (contents.length == bytes.length-5 && ((ShellGetFileRsp)rsp).getOffset() == 5) {
+              log.info("get data: "+new String(contents));
+              get3 = true;
+              for (int i = 0; i < contents.length; i++)
+                if (contents[i] != bytes[5+i]) get3 = false;
             }
           }
           req = new ShellGetFileReq(shell, DIRNAME);
@@ -428,7 +456,7 @@ public class BasicTests {
             File f = new File(DIRNAME+File.separator+FILENAME);
             if (!f.exists()) del = true;
           }
-          log.info("exec="+exec+", put="+put+", get="+get+", del="+del+", dir="+dir);
+          log.info("exec="+exec+", put="+put+", get="+get+", get2="+get2+", get3="+get3+", del="+del+", dir="+dir);
           done = true;
         }
       });
