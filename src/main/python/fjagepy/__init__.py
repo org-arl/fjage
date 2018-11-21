@@ -338,8 +338,11 @@ class Gateway:
 
     # creates a unqualified message class based on a fully qualified name
     def importmsg(self, name):
+        def setclazz(self):
+            super(class_, self).__init__()
+            self.__clazz__ = name
         sname = name.split('.')[-1]
-        class_ = type(sname, (Message,), {"__clazz__": name})
+        class_ = type(sname, (Message,), {"__init__": setclazz})
         globals()[sname] = class_
 
     def request(self, msg, timeout=10000):
