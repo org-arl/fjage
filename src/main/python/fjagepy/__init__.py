@@ -196,9 +196,9 @@ class Message(object):
         for key, value in data.items():
             self.__dict__[key] = data[key]
 
-    def _deserialize(self, obj):
+    def _deserialize(obj):
         if (type(obj) == str or isinstance(obj, str)):
-            obj = json.loads(obj)
+            obj = _json.loads(obj)
         qclazz = obj['clazz']
         clazz = qclazz.split('.')[-1]
         try:
