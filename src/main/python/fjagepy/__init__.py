@@ -344,6 +344,8 @@ class Gateway:
         sname = name.split('.')[-1]
         class_ = type(sname, (Message,), {"__init__": setclazz})
         globals()[sname] = class_
+        mod = __import__('fjagepy')
+        return getattr(mod, str(class_.__name__))
 
     def request(self, msg, timeout=10000):
         """Sends a request and waits for a response. This method blocks until timeout if no response is received.
