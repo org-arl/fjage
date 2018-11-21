@@ -8,9 +8,9 @@ if (typeof window.fjage === 'undefined') {
   window.fjage = {};
   window.fjage.gateways = [];
   window.fjage.getGateway = function (url){
-    var f = window.fjage.gateways.filter(g => g.sock.url == url)
+    var f = window.fjage.gateways.filter(g => g.sock.url == url);
     if (f.length ) return f[0];
-  }
+  };
 }
 
 ////// private utilities
@@ -36,32 +36,32 @@ function _b64toArray(base64, dtype, littleEndian=true) {
   let rv = [];
   let view = new DataView(bytes.buffer);
   switch (dtype) {
-    case '[B': // byte array
-      for (i = 0; i < len; i++)
-        rv.push(view.getUint8(i));
-      break;
-    case '[S': // short array
-      for (i = 0; i < len; i+=2)
-        rv.push(view.getInt16(i, littleEndian));
-      break;
-    case '[I': // integer array
-      for (i = 0; i < len; i+=4)
-        rv.push(view.getInt32(i, littleEndian));
-      break;
-    case '[J': // long array
-      for (i = 0; i < len; i+=8)
-        rv.push(view.getInt64(i, littleEndian));
-      break;
-    case '[F': // float array
-      for (i = 0; i < len; i+=4)
-        rv.push(view.getFloat32(i, littleEndian));
-      break;
-    case '[D': // double array
-      for (i = 0; i < len; i+=8)
-        rv.push(view.getFloat64(i, littleEndian));
-      break;
-    default:
-      return;
+  case '[B': // byte array
+    for (i = 0; i < len; i++)
+      rv.push(view.getUint8(i));
+    break;
+  case '[S': // short array
+    for (i = 0; i < len; i+=2)
+      rv.push(view.getInt16(i, littleEndian));
+    break;
+  case '[I': // integer array
+    for (i = 0; i < len; i+=4)
+      rv.push(view.getInt32(i, littleEndian));
+    break;
+  case '[J': // long array
+    for (i = 0; i < len; i+=8)
+      rv.push(view.getInt64(i, littleEndian));
+    break;
+  case '[F': // float array
+    for (i = 0; i < len; i+=4)
+      rv.push(view.getFloat32(i, littleEndian));
+    break;
+  case '[D': // double array
+    for (i = 0; i < len; i+=8)
+      rv.push(view.getFloat64(i, littleEndian));
+    break;
+  default:
+    return;
   }
   return rv;
 }
@@ -208,9 +208,9 @@ export class Gateway {
 
   // connect back to the master container over a websocket to the server
   constructor(url) {
-    url = url || 'ws://'+window.location.hostname+':'+window.location.port+'/ws/'
-    let existing = window.fjage.getGateway(url)
-    if (existing) return existing
+    url = url || 'ws://'+window.location.hostname+':'+window.location.port+'/ws/';
+    let existing = window.fjage.getGateway(url);
+    if (existing) return existing;
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.aid = 'WebGW-'+_guid(4);         // gateway agent name
@@ -228,7 +228,7 @@ export class Gateway {
   }
 
   _onWebsockOpen() {
-    this.sock.send("{'alive': true}\n");
+    this.sock.send('{\'alive\': true}\n');
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
   }
@@ -254,23 +254,23 @@ export class Gateway {
       // respond to standard requests that every container must
       let rsp = { id: obj.id, inResponseTo: obj.action };
       switch (obj.action) {
-        case 'agents':
-          rsp.agentIDs = [this.aid];
-          break;
-        case 'containsAgent':
-          rsp.answer = (obj.agentID == this.aid);
-          break;
-        case 'services':
-          rsp.services = [];
-          break;
-        case 'agentForService':
-          rsp.agentID = '';
-          break;
-        case 'agentsForService':
-          rsp.agentIDs = [];
-          break;
-        default:
-          rsp = undefined;
+      case 'agents':
+        rsp.agentIDs = [this.aid];
+        break;
+      case 'containsAgent':
+        rsp.answer = (obj.agentID == this.aid);
+        break;
+      case 'services':
+        rsp.services = [];
+        break;
+      case 'agentForService':
+        rsp.agentID = '';
+        break;
+      case 'agentsForService':
+        rsp.agentIDs = [];
+        break;
+      default:
+        rsp = undefined;
       }
       if (rsp) this._websockTx(rsp);
     }
@@ -443,12 +443,12 @@ export class Gateway {
   close() {
     if (this.sock.readyState == this.sock.CONNECTING) {
       this.pendingOnOpen.push(() => {
-        this.sock.send("{'alive': false}\n");
+        this.sock.send('{\'alive\': false}\n');
         this.sock.close();
       });
       return true;
     } else if (this.sock.readyState == this.sock.OPEN) {
-      this.sock.send("{'alive': false}\n");
+      this.sock.send('{\'alive\': false}\n');
       this.sock.close();
       return true;
     }
