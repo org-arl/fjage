@@ -331,17 +331,6 @@ export class Gateway {
     }
   }
 
-  // creates a unqualified message class based on a fully qualified name
-  import(name) {
-    let sname = name.replace(/^.*\./, '');
-    window[sname] = class extends Message {
-      constructor() {
-        super();
-        this.__clazz__ = name;
-      }
-    };
-  }
-
   addMessageListener(listener) {
     this.observers.push(listener);
   }
@@ -458,4 +447,16 @@ export class Gateway {
   shutdown() {
     this.close();
   }
+}
+
+// creates a unqualified message class based on a fully qualified name
+export function importmsg(name) {
+  let sname = name.replace(/^.*\./, '');
+  window[sname] = class extends Message {
+    constructor() {
+      super();
+      this.__clazz__ = name;
+    }
+  };
+  return window[sname];
 }
