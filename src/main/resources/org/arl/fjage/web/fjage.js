@@ -450,7 +450,7 @@ export class Gateway {
 }
 
 // creates a unqualified message class based on a fully qualified name
-export function importmsg(name) {
+export function MessageClass(name) {
   let sname = name.replace(/^.*\./, '');
   window[sname] = class extends Message {
     constructor() {
