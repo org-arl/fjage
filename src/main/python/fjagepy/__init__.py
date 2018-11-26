@@ -1,38 +1,24 @@
-# global
-import os as _os
-import sys as _sys
-import time as _time
+import numpy
 import json as _json
 import uuid as _uuid
-import base64 as _base64
-import struct as _struct
+import time as _time
 import socket as _socket
 import threading as _td
 import logging as _log
-from warnings import warn as _warn
+import base64 as _base64
+import struct as _struct
 
 
-def _current_time_millis(): return int(round(_time.time() * 1000))
-
-
-# settings
-TIMEOUT = 5000   # ms, timeout to get response from to master container
-
-# private utilities
-
-# generate random ID with length 4*len characters
-
-
-def _guid():
-    s = str(_uuid.uuid4())
-    return s
-
-# convert from base 64 to array
+def _current_time_millis():
+    """Returns current time in milliseconds.
+    """
+    return int(round(_time.time() * 1000))
 
 
 def _b64toArray(base64, dtype, littleEndian=True):
+    """Convert from base64 to array.
+    """
     s = _base64.b64decode(base64)
-
     rv = []
     if dtype == '[B':  # byte array
         count = len(s) // _struct.calcsize('c')
@@ -56,35 +42,58 @@ def _b64toArray(base64, dtype, littleEndian=True):
         return
     return rv
 
-# base 64 JSON decoder
-
 
 def _decodeBase64(m):
+    """base64 JSON decoder.
+    """
     for d in m.values():
         if type(d) == dict and 'clazz' in d.keys():
             clazz = d['clazz']
             if clazz.startswith('[') and len(clazz) == 2 and 'data' in d.keys():
                 x = _b64toArray(d['data'], d['clazz'])
                 if x:
-                    d = x
+                    for i in d.keys():
+                        if i == 'signal':
+                            m[i] = x
+                        # d = x
+
     return m
 
 
-def _filtMsgsBin(filter, msg):
-    if type(filter) == str or isinstance(filter, str):
-        return 'inReplyTo' in msg.keys() and msg['inReplyTo'] == filter
-    else:
-        return isinstance(msg, filter)
+def MessageClass(name):
+    """Creates a unqualified message class based on a fully qualified name.
+    """
 
-# interface classes
+    def setclazz(self, **kwargs):
+        super(class_, self).__init__()
+        self.__clazz__ = name
+        for k, v in kwargs.items():
+            if not k.startswith('_') and k.endswith('_'):
+                k = k[:-1]
+            self.__dict__[k] = v
+    sname = name.split('.')[-1]
+    class_ = type(sname, (Message,), {"__init__": setclazz})
+    globals()[sname] = class_
+    mod = __import__('fjagepy')
+    return getattr(mod, str(class_.__name__))
+
+
+class Action:
+    """JSON message actions.
+    """
+    AGENTS = "agents"
+    CONTAINS_AGENT = "containsAgent"
+    SERVICES = "services"
+    AGENT_FOR_SERVICE = "agentForService"
+    AGENTS_FOR_SERVICE = "agentsForService"
+    SEND = "send"
+    SHUTDOWN = "shutdown"
 
 
 class Performative:
-    """
-    An action represented by a message. The performative actions are a subset of the
+    """An action represented by a message. The performative actions are a subset of the
     FIPA ACL recommendations for interagent communication.
     """
-
     REQUEST = "REQUEST"               #: Request an action to be performed.
     AGREE = "AGREE"                   #: Agree to performing the requested action.
     REFUSE = "REFUSE"                 #: Refuse to perform the requested action.
@@ -100,95 +109,53 @@ class Performative:
 
 
 class AgentID:
-    """An identifier for an agent or a topic."""
+    """An identifier for an agent or a topic.
+    """
 
-    def __init__(self, gw, name, topic=False):
+    def __init__(self, name, is_topic=False):
         self.name = name
-        if topic:
-            self.topic = True
+        if is_topic:
+            self.is_topic = True
         else:
-            self.topic = False
-        self.gw = gw
-
-    def getName(self):
-        return self.name
-
-    def isTopic(self):
-        return self.topic
-
-    def send(self, msg):
-        msg.recipient = self.name
-        return self.gw.send(msg)
-
-    def request(self, msg, timeout=1000):
-        msg.recipient = self.name
-        return self.gw.request(msg, timeout)
-
-    def __lshift__(self, msg):
-        return self.request(msg)
-
-    def __getattr__(self, param):
-        rsp = self.request(ParameterReq(index=self.index).get(param))
-        if rsp is None:
-            return None
-        return rsp.get(param)
-
-    def __setattr__(self, param, value):
-        if param in ['name', 'gw', 'is_topic', 'index']:
-            self.__dict__[param] = value
-            return value
-        rsp = self.request(ParameterReq(index=self.index).set(param, value))
-        if rsp is None:
-            _warn('Could not set parameter ' + param)
-            return None
-        v = rsp.get(param)
-        if v != value:
-            _warn('Parameter ' + param + ' set to ' + str(v))
-        return v
-
-    def __getitem__(self, index):
-        c = AgentID(self.gw, self.name)
-        c.index = index
-        return c
-
-    def __str__(self):
-        peer = self.gw.socket.getpeername()
-        return self.name + ' on ' + peer[0] + ':' + str(peer[1])
-
-    def toString(self):
-        if(self.topic):
-            return '#' + self.name
-        return self.name
-
-    def toJSON(self):
-        return self.toString()
+            self.is_topic = False
 
 
 class Message(object):
-    """
-    Base class for messages transmitted by one agent to another. This class provides
+    """Base class for messages transmitted by one agent to another. This class provides
     the basic attributes of messages and is typically extended by application-specific
     message classes. To ensure that messages can be sent between agents running
     on remote containers, all attributes of a message must be serializable.
     """
 
     def __init__(self, **kwargs):
-        self.__clazz__ = 'org.arl.fjage.Message'
         self.msgID = str(_uuid.uuid4())
-        self.sender = None
-        self.recipient = None
         self.perf = None
-        self.__dict__.update(kwargs)
+        self.recipient = None
+        self.sender = None
+        self.inReplyTo = None
+        for k, v in kwargs.items():
+            if not k.startswith('_') and k.endswith('_'):
+                k = k[:-1]
+            self.__dict__[k] = v
 
-    # convert a message into a JSON string
-    # NOTE: we don't do any base64 encoding for TX as
-    #       we don't know what data type is intended
+    def __getattribute__(self, name):
+        if not name.startswith('_') and name.endswith('_'):
+            return object.__getattribute__(self, name[:-1])
+        return object.__getattribute__(self, name)
+
     def _serialize(self):
+        """Convert a message into a JSON string.
+        NOTE: we don't do any base64 encoding for TX as
+        we don't know what data type is intended.
+        """
         clazz = self.__clazz__
         m = self.__dict__
         t = [key for key, value in self.__dict__.items() if key.startswith('__')]
         for i in t:
             m.pop(i)
+        for key, value in m.items():
+            if type(value) == numpy.ndarray:
+                m[key] = value.tolist()
         data = _json.dumps(m, separators=(',', ':'))
         return '{ "clazz": "' + clazz + '", "data": ' + data + ' }'
 
@@ -196,7 +163,7 @@ class Message(object):
         for key, value in data.items():
             self.__dict__[key] = data[key]
 
-    def _deserialize(obj):
+    def _deserialize(self, obj):
         if (type(obj) == str or isinstance(obj, str)):
             obj = _json.loads(obj)
         qclazz = obj['clazz']
@@ -209,106 +176,163 @@ class Message(object):
         rv._inflate(obj['data'])
         return rv
 
+    def __str__(self):
+        p = self.perf if self.perf else "MESSAGE"
+        if self.__class__ == Message:
+            return p
+        return p + ": " + str(self.__class__.__name__);
+
+    def toString(self):
+        s = ''
+        suffix = ''
+        clazz = self.__clazz__
+        clazz = clazz.split(".")[-1]
+        perf = self.perf
+        for k, v in self.__dict__.items():
+            if k.startswith('__'):
+                continue
+            if k == 'sender':
+                continue
+            if k == 'recipient':
+                continue
+            if k == 'msgID':
+                continue
+            if k == 'perf':
+                continue
+            if k == 'inReplyTo':
+                continue
+            if type(self.__dict__[k]) not in (int, float, bool, str):
+                suffix = ' ...'
+                continue
+            s += ' ' + k + ':' + str(self.__dict__[k])
+        s += suffix
+        return clazz + ':' + perf + '[' + s.replace(' ', '') + ']'
+
 
 class GenericMessage(Message):
+    """A message class that can convey generic messages represented by key-value pairs.
+    """
+
     def __init__(self, **kwargs):
-        super()
-        self.__clazz__ = 'org.arl.fjage.GenericMessage'
+        super(GenericMessage, self).__init__()
+        self.map = dict()
         self.__dict__.update(kwargs)
 
 
 class Gateway:
-    """ Gateway to communicate with agents from Python. Creates a gateway connecting to a specified master container.
+    """Gateway to communicate with agents from Python. 
+    Creates a gateway connecting to a specified master container.
 
-        :param hostname: hostname to connect to.
-        :param port: TCP port to connect to.
+    :param hostname: hostname to connect to.
+    :param port: TCP port to connect to.
     """
-
     DEFAULT_TIMEOUT = 1000
     NON_BLOCKING = 0
     BLOCKING = -1
 
-    def __init__(self, hostname, port):
+    def __init__(self, hostname, port, name=None):
         self.logger = _log.getLogger('org.arl.fjage')
         try:
+            if name == None:
+                self.name = "PythonGW-" + str(_uuid.uuid4())
+            else:
+                try:
+                    self.name = name
+                except Exception as e:
+                    self.self.logger.critical("Exception: Cannot assign name to gateway: " + str(e))
+                    raise
+            self.q = list()
+            self.subscribers = list()
             self.pending = dict()
-            self.pendingOnOpen = list()
-            self.aid = "PythonGW-" + _guid()
-            self.subscriptions = dict()
             self.cv = _td.Condition()
-            self.listener = dict()
-            self.observers = list()
-            self.queue = list()
-            self.debug = False
-            self.sock = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
-            self.recv_thread = _td.Thread(target=self.__recv_proc)
+            self.socket = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
+            self.recv_thread = _td.Thread(target=self.__recv_proc, args=(self.q, self.subscribers, ))
             self.recv_thread.daemon = True
             self.logger.info("Connecting to " + str(hostname) + ":" + str(port))
-            self.sock.connect((hostname, port))
-            self.socket_file = self.sock.makefile('r', 65536)
+            self.socket.connect((hostname, port))
+            self.socket_file = self.socket.makefile('r', 65536)
             self.recv_thread.start()
+            if self._is_duplicate():
+                self.logger.critical("Duplicate Gateway found. Shutting down.")
+                self.socket.close()
+                raise Exception('DuplicateGatewayException')
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
             raise
 
-    def _OnSockRx(self, data):
-        """Parse incoming messages and respond to them or dispatch them."""
-        obj = _json.loads(data, object_hook=_decodeBase64)
-        if self.debug:
-            self.logger.debug('< ' + data)
-        if 'id' in obj.keys() and obj['id'] in self.pending.keys():
-            # response to a pending request to master
-            self.pending[obj['id']](obj)
-            del self.pending[obj['id']]
-        elif obj['action'] == 'send':
-            # incoming message from master
-            msg = Message()
-            msg = msg._deserialize(obj['message'])
-            if msg.recipient == self.aid or self.subscriptions[msg.recipient]:
-                for i in range(len(self.observers)):
-                    if self.observers[i](msg):
-                        return
-                self.queue.append(msg)
-                self.cv.acquire()
-                self.cv.notify()
-                self.cv.release()
-                for key in self.listener.keys():  # iterate over internal callbacks, until one consumes the message
-                    if self.listener[key]():  # callback returns true if it has consumed the message
-                        break
-        else:
-            # respond to standard requests that every container must
-            rsp = {'id': obj['id'], 'inResponseTo': obj['action']};
-            if obj['action'] == 'agents':
-                rsp['agentIDs'] = [self.aid]
-            elif obj['action'] == 'containsAgent':
-                rsp['answer'] = (obj['agentID'] == self.aid)
-            elif obj['action'] == 'services':
-                rsp['services'] = []
-            elif obj['action'] == 'agentForService':
-                rsp['agentID'] = ''
-            elif obj['action'] == 'agentsForService':
-                rsp['agentIDs'] = []
-            else:
-                rsp = None
-            if rsp:
-                self._sockTx(rsp)
+    def _parse_dispatch(self, rmsg, q):
+        """Parse incoming messages and respond to them or dispatch them.
+        """
+        req = _json.loads(rmsg, object_hook=_decodeBase64)
+        rsp = dict()
+        if "id" in req:
+            req['id'] = _uuid.UUID(req['id'])
+        if "action" in req:
+            if req["action"] == Action.AGENTS:
+                rsp["inResponseTo"] = req["action"]
+                rsp["id"] = str(req["id"])
+                rsp["agentIDs"] = [self.name]
+                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+            elif req["action"] == Action.CONTAINS_AGENT:
+                rsp["inResponseTo"] = req["action"]
+                rsp["id"] = str(req["id"])
+                answer = False
+                if req["agentID"]:
+                    if req["agentID"] == self.name:
+                        answer = True
+                rsp["answer"] = answer
+                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+            elif req["action"] == Action.SERVICES:
+                rsp["inResponseTo"] = req["action"]
+                rsp["id"] = str(req["id"])
+                rsp["services"] = []
+                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+            elif req["action"] == Action.AGENT_FOR_SERVICE:
+                rsp["inResponseTo"] = req["action"]
+                rsp["id"] = str(req["id"])
+                rsp["agentID"] = ""
+                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+            elif req["action"] == Action.AGENTS_FOR_SERVICE:
+                rsp["inResponseTo"] = req["action"]
+                rsp["id"] = str(req["id"])
+                rsp["agentIDs"] = []
+                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+            elif req["action"] == Action.SEND:
+                try:
+                    msg = req["message"]
+                    if msg["data"]["recipient"] == self.name:
+                        q.append(msg)
+                        self.cv.acquire()
+                        self.cv.notify()
+                        self.cv.release()
 
-    def _sockTx(self, s):
-        if type(s) != str and not isinstance(s, str):
-            s = _json.dumps(s)
-        if self.debug:
-            self.logger.debug('> ' + s)
-        self.sock.sendall((s + '\n').encode())
+                    if self._is_topic(msg["data"]["recipient"]):
+                        if self.subscribers.count(msg["data"]["recipient"].replace("#", "")):
+                            q.append(msg)
+                            self.cv.acquire()
+                            self.cv.notify()
+                            self.cv.release()
+                except Exception as e:
+                    self.logger.critical("Exception: Error adding to queue - " + str(e))
+            elif req["action"] == Action.SHUTDOWN:
+                self.logger.debug("ACTION: " + Action.SHUTDOWN)
+                return None
+            else:
+                self.logger.warning("Invalid message, discarding")
+        else:
+            if "id" in req:
+                if req['id'] in self.pending:
+                    tup = self.pending[req["id"]]
+                    self.pending[req["id"]] = (tup[0], req)
+                    tup[0].set()
         return True
 
-    def _sockTxRx(self, rq):
-        self._sockTx(rq)
-
-    def __recv_proc(self):
-        """Receive process."""
+    def __recv_proc(self, q, subscribers):
+        """Receive process.
+        """
         parenthesis_count = 0
         rmsg = ""
-        name = self.sock.getpeername()
+        name = self.socket.getpeername()
         while True:
             try:
                 rmsg = self.socket_file.readline()
@@ -317,56 +341,97 @@ class Gateway:
                     break
                 self.logger.debug(str(name[0]) + ":" + str(name[1]) + " <<< " + rmsg)
                 # Parse and dispatch incoming messages
-                self._OnSockRx(rmsg)
-            except:
+                self._parse_dispatch(rmsg, q)
+            except Exception as e:
                 self.logger.critical("Exception: " + str(e))
                 pass
-            self.close()
+        self.close()
 
-    def _getMessageFromQueue(self, filter):
-        if not len(self.queue):
-            return
-        if not filter:
-            return self.queue.pop(0)
-        filtMsgs = []
-        for msg in self.queue:
-            if _filtMsgsBin(filter, msg):
-                filtMsgs.append(msg)
-        if filtMsgs:
-            self.queue.pop(self.queue.index(filtMsgs[0]))
-            return filtMsgs[0]
+    def __del__(self):
+        try:
+            self.socket.close()
+        except Exception as e:
+            self.logger.critical("Exception: " + str(e))
 
-    # creates a unqualified message class based on a fully qualified name
-    def importmsg(self, name):
-        def setclazz(self):
-            super(class_, self).__init__()
-            self.__clazz__ = name
-        sname = name.split('.')[-1]
-        class_ = type(sname, (Message,), {"__init__": setclazz})
-        globals()[sname] = class_
-        mod = __import__('fjagepy')
-        return getattr(mod, str(class_.__name__))
-
-    def request(self, msg, timeout=10000):
-        """Sends a request and waits for a response. This method blocks until timeout if no response is received.
-
-        :param msg: message to send.
-        :param timeout: timeout in milliseconds.
-        :returns: received response message, null on timeout.
+    def shutdown(self):
+        """Shutdown the platform.
         """
-        self.send(msg)
-        rsp = self.receive(msg, timeout)
-        return rsp
+        j_dict = dict()
+        j_dict["action"] = Action.SHUTDOWN
+        self.socket.sendall((_json.dumps(j_dict) + '\n').encode())
+
+    def close(self):
+        """Closes the gateway. The gateway functionality may not longer be accessed after this method is called.
+        """
+        try:
+            self.socket.shutdown(_socket.SHUT_RDWR)
+            # self.socket.close()
+        except Exception as e:
+            self.logger.critical("Exception: " + str(e))
+        print('The gateway connection is closed!')
+
+    def send(self, msg, relay=True):
+        """Sends a message to the recipient indicated in the message. The recipient may be an agent or a topic.
+        """
+        if not msg.recipient:
+            return False
+        msg.sender = self.name
+        if msg.perf == None:
+            if msg.__clazz__.endswith('Req'):
+                msg.perf = Performative.REQUEST
+            else:
+                msg.perf = Performative.INFORM
+        rq = _json.dumps({'action': 'send', 'relay': relay, 'message': '###MSG###'})
+        rq = rq.replace('"###MSG###"', msg._serialize())
+        name = self.socket.getpeername()
+        self.logger.debug(str(name[0]) + ":" + str(name[1]) + " >>> " + rq)
+        self.socket.sendall((rq + '\n').encode())
+        return True
+
+    def _retrieveFromQueue(self, filter):
+        rmsg = None
+        try:
+            if filter == None and len(self.q):
+                rmsg = self.q.pop()
+            # If filter is a Message, look for a Message in the
+            # receive Queue which was inReplyto that message.
+            elif isinstance(filter, Message):
+                if filter.msgID:
+                    for i in self.q:
+                        if "inReplyTo" in i["data"] and filter.msgID == i["data"]["inReplyTo"]:
+                            try:
+                                rmsg = self.q.pop(self.q.index(i))
+                            except Exception as e:
+                                self.logger.critical("Error: Getting item from list - " + str(e))
+            # If filter is a class, look for a Message of that class.
+            elif type(filter) == type(Message):
+                for i in self.q:
+                    if i["clazz"].split(".")[-1] == filter.__name__:
+                        try:
+                            rmsg = self.q.pop(self.q.index(i))
+                        except Exception as e:
+                            self.logger.critical("Error: Getting item from list - " + str(e))
+            # If filter is a lambda, look for a Message that on which the
+            # lambda returns True.
+            elif isinstance(filter, type(lambda: 0)):
+                for i in self.q:
+                    if filter(i):
+                        try:
+                            rmsg = self.q.pop(self.q.index(i))
+                        except Exception as e:
+                            self.logger.critical("Error: Getting item from list - " + str(e))
+        except Exception as e:
+            self.logger.critical("Error: Queue empty/timeout - " + str(e))
+        return rmsg
 
     def receive(self, filter=None, timeout=0):
-        """
-        Returns a message received by the gateway and matching the given filter. This method blocks until timeout if no message available.
+        """Returns a message received by the gateway and matching the given filter. This method blocks until timeout if no message available.
 
         :param filter: message filter.
         :param timeout: timeout in milliseconds.
         :returns: received message matching the filter, null on timeout.
         """
-        rmsg = self._getMessageFromQueue(filter)
+        rmsg = self._retrieveFromQueue(filter)
         if (rmsg == None and timeout != self.NON_BLOCKING):
             deadline = _current_time_millis() + timeout
             while (rmsg == None and (timeout == self.BLOCKING or _current_time_millis() < deadline)):
@@ -379,76 +444,161 @@ class Gateway:
                     t = deadline - _current_time_millis()
                     self.cv.wait(t / 1000)
                     self.cv.release()
-                rmsg = self._getMessageFromQueue(filter)
+                rmsg = self._retrieveFromQueue(filter)
         if not rmsg:
             return None
-        return rmsg
+        try:
+            m = Message()
+            rsp = m._deserialize(rmsg)
+            found_map = False
+            # add map if it is a Generic message
+            if rsp.__class__.__name__ == GenericMessage().__class__.__name__:
+                if "map" in rmsg["data"]:
+                    map = _json.loads(str(rmsg["data"]["map"]))
+                    rsp.__dict__.update(map)
+                    found_map = True
+                if not found_map:
+                    self.logger.warning("No map field found in Generic Message")
+        except Exception as e:
+            self.logger.critical("Exception: Class loading failed - " + str(e))
+            return None
+        return rsp
 
-    def addMessageListener(self, listener):
-        self.observers.append(listener)
+    def request(self, msg, timeout=1000):
+        """Sends a request and waits for a response. This method blocks until timeout if no response is received.
 
-    def removeMessageListener(self, listener):
-        ndx = self.observers.index(listener)
-        if ndx >= 0:
-            self.observers.pop(ndx)
+        :param msg: message to send.
+        :param timeout: timeout in milliseconds.
+        :returns: received response message, null on timeout.
+        """
+        self.send(msg)
+        return self.receive(msg, timeout)
 
-    def getAgentID(self):
-        return self.aid
+    def topic(self, topic, topic2=None):
+        """Returns an object representing the named topic.
 
-    def agent(self, name):
-        return AgentId(self, name, False)
-
-    def topic(self, topic, topic2):
-        if type(topic) == str or isinstance(topic, str):
-            return AgentID(self, topic, True)
-        if isinstance(topic, AgentID):
-            if topic.isTopic():
-                return topic
-            return AgentID(self, topic.getName() + (topic2 + '__' if topic2 else '') + '__ntf', True)
+        :param topic: name of the agent/topic.
+        :param topic2: named topic for a given agent.
+        :returns: object representing the topic.
+        """
+        if topic2 is None:
+            if isinstance(topic, str):
+                return AgentID(topic, True)
+            elif isinstance(topic, AgentID):
+                if topic.is_topic:
+                    return topic
+                return AgentID(topic.name + "__ntf", True)
+            else:
+                return AgentID(topic.__class__.__name__ + "." + str(topic), True)
+        else:
+            if not isinstance(topic2, str):
+                topic2 = topic2.__class__.__name__ + "." + str(topic2)
+            return AgentID(topic.name + "__" + topic2 + "__ntf", True)
 
     def subscribe(self, topic):
-        if not topic.isTopic():
-            topic = AgentID(self, topic, True)
-        self.subscriptions[topic.toString()] = True
+        """Subscribes the gateway to receive all messages sent to the given topic.
+
+        :param topic: the topic to subscribe to.
+        """
+        if isinstance(topic, AgentID):
+            if topic.is_topic == False:
+                new_topic = AgentID(topic.name + "__ntf", True)
+            else:
+                new_topic = topic
+
+            if len(self.subscribers) == 0:
+                self.subscribers.append(new_topic.name)
+            else:
+                if new_topic.name in self.subscribers:
+                    self.logger.critical("Error: Already subscribed to topic")
+                    return
+                self.subscribers.append(new_topic.name)
+        else:
+            self.logger.critical("Invalid AgentID")
 
     def unsubscribe(self, topic):
-        if not topic.isTopic():
-            topic = AgentID(self, topic, True)
-        del self.subscriptions[topic.toString()]
+        """Unsubscribes the gateway from a given topic.
 
-    def agentForService(self, service):
-        rq = {'action': 'agentForService', 'service': 'service'}
-        rsp = self._sockTxRx(rq)
-        return AgentID(self, rsp.agentID, False)
+        :param topic: the topic to unsubscribe.
+        """
+        if isinstance(topic, AgentID):
+            if topic.is_topic == False:
+                new_topic = AgentID(topic.name + "__ntf", True)
+            if len(self.subscribers) == 0:
+                return False
+            try:
+                self.subscribers.remove(topic.name)
+            except:
+                self.logger.critical("Exception: No such topic subscribed: " + new_topic.name)
+            return True
+        else:
+            self.logger.critical("Invalid AgentID")
 
-    def agentsForService(self, service):
-        rq = {'action': 'agentForService', 'service': 'service'}
-        rsp = self._sockTxRx(rq)
-        aids = []
-        for i in range(len(rsp.agentIds)):
-            aids.append(AgentID(self, rsp.agentIDs[i], False))
-        return aids
+    def agentForService(self, service, timeout=1000):
+        """Finds an agent that provides a named service. If multiple agents are registered
+        to provide a given service, any of the agents' id may be returned.
 
-    def send(self, msg, relay=True):
-        msg.sender = self.aid
-        if msg.perf == None:
-            if msg.__clazz__.endswith('Req'):
-                msg.perf = Performative.REQUEST
-            else:
-                msg.perf = Performative.INFORM
-        rq = _json.dumps({'action': 'send', 'relay': relay, 'message': '###MSG###'})
-        rq = rq.replace('"###MSG###"', msg._serialize())
-        self._sockTx(rq)
+        :param service: the named service of interest.
+        :returns: an agent id for an agent that provides the service.
+        """
+        req_id = _uuid.uuid4()
+        rq = {'action': 'agentForService', 'service': service, 'id': str(req_id)}
+        self.socket.sendall((_json.dumps(rq) + '\n').encode())
+        res_event = _td.Event()
+        self.pending[req_id] = (res_event, None)
+        ret = res_event.wait(timeout)
+        if not ret:
+            return None
+        else:
+            tup = self.pending.pop(req_id)
+            return tup[1]["agentID"] if "agentID" in tup[1] else None
 
-    def flush(self):
-        self.queue.clear()
+    def agentsForService(self, service, timeout=1000):
+        """Finds all agents that provides a named service.
 
-    def close(self):
-        """ Closes the gateway. The gateway functionality may not longer be accessed after this method is called."""
+        :param service: the named service of interest.
+        :returns: a list of agent ids representing all agent that provide the service.
+        """
+        req_id = _uuid.uuid4()
+        j_dict = dict()
+        j_dict["action"] = Action.AGENTS_FOR_SERVICE
+        j_dict["id"] = str(req_id)
+        if isinstance(service, str):
+            j_dict["service"] = service
+        else:
+            j_dict["service"] = service.__class__.__name__ + "." + str(service)
+        self.socket.sendall((_json.dumps(j_dict) + '\n').encode())
+        res_event = _td.Event()
+        self.pending[req_id] = (res_event, None)
+        ret = res_event.wait(timeout)
+        if not ret:
+            return None
+        else:
+            tup = self.pending.pop(req_id)
+            return tup[1]["agentIDs"] if "agentIDs" in tup[1] else None
 
-        try:
-            self.sock.shutdown(_socket.SHUT_RDWR)
-            # self.socket.close()
-        except Exception as e:
-            self.logger.critical("Exception: " + str(e))
-        print('The gateway connection is closed!')
+    def getAgentID(self):
+        """Returns the gateway Agent ID.
+        """
+        return self.name
+
+    def _is_duplicate(self):
+        req_id = _uuid.uuid4()
+        req = dict()
+        req["action"] = Action.CONTAINS_AGENT
+        req["id"] = str(req_id)
+        req["agentID"] = self.name
+        self.socket.sendall((_json.dumps(req) + '\n').encode())
+        res_event = _td.Event()
+        self.pending[req_id] = (res_event, None)
+        ret = res_event.wait(self.DEFAULT_TIMEOUT)
+        if not ret:
+            return True
+        else:
+            tup = self.pending.pop(req_id)
+            return tup[1]["answer"] if "answer" in tup[1] else True
+
+    def _is_topic(self, recipient):
+        if recipient[0] == "#":
+            return True
+        return False
