@@ -80,6 +80,10 @@ function _decodeBase64(k, d) {
 
 ////// interface classes
 
+/**
+ * An action represented by a message. The performative actions are a subset of the
+ * FIPA ACL recommendations for interagent communication.
+ */
 export const Performative = {
   REQUEST: 'REQUEST',               // Request an action to be performed
   AGREE: 'AGREE',                   // Agree to performing the requested action
@@ -95,46 +99,97 @@ export const Performative = {
   CANCEL: 'CANCEL'                  // Cancel pending request
 };
 
+/**
+ * An identifier for an agent or a topic.
+ */
 export class AgentID {
 
+  /**
+    * Create an AgentID
+    * @param {string} name - name of the agent.
+    * @param {string} topic - name of topic.
+    * @param {Gateway} gw - Gateway owner for this AgentID.
+    */
   constructor(name, topic, gw) {
     this.name = name;
     this.topic = topic;
     this.gw = gw;
   }
 
+  /**
+   * Gets the name of the agent or topic.
+   *
+   * @return {string} name of agent or topic.
+   */
   getName() {
     return this.name;
   }
 
+  /**
+   * Returns true if the agent id represents a topic.
+   *
+   * @return {boolean} true if the agent id represents a topic,
+   *         false if it represents an agent.
+   */
   isTopic() {
     return this.topic;
   }
 
+  /**
+   * Sends a message to the agent represented by this id.
+   *
+   * @param {string} msg - message to send.
+   * @returns {void}
+   */
   send(msg) {
     msg.recipient = this;
     this.gw.send(msg);
   }
 
-  // returns a Promise
+  /**
+   * Sends a request to the agent represented by this id and waits for
+   * a return message for 1 second.
+   *
+   * @param {Message} msg - request to send.
+   * @param {number} [timeout=1000] - timeout in milliseconds.
+   * @return {Message} response.
+   */
   request(msg, timeout=1000) {
     msg.recipient = this;
     return this.gw.request(msg, timeout);
   }
 
+  /**
+   * Gets a string representation of the agent id.
+   *
+   * @return {string} string representation of the agent id.
+   */
   toString() {
     if (this.topic) return '#'+this.name;
     return this.name;
   }
 
+  /**
+   * Gets a JSON string representation of the agent id.
+   *
+   * @return {string} JSON string representation of the agent id.
+   */
   toJSON() {
     return this.toString();
   }
-
 }
 
+/**
+ * Base class for messages transmitted by one agent to another. This class provides
+ * the basic attributes of messages and is typically extended by application-specific
+ * message classes. To ensure that messages can be sent between agents running
+ * on remote containers, all attributes of a message must be serializable.
+ */
 export class Message {
 
+  /**
+   * Creates an empty message.
+   */
   constructor() {
     this.__clazz__ = 'org.arl.fjage.Message';
     this.msgID = _guid(8);
@@ -143,6 +198,11 @@ export class Message {
     this.perf = '';
   }
 
+  /**
+   * Gets a string representation of the message.
+   *
+   * @return {string} string representation.
+   */
   toString() {
     let s = '';
     let suffix = '';
@@ -194,19 +254,34 @@ export class Message {
     rv._inflate(obj.data);
     return rv;
   }
-
 }
 
+/**
+ * A message class that can convey generic messages represented by key-value pairs.
+ * @extends Message
+ */
 export class GenericMessage extends Message {
+  /**
+   * Creates an empty generic message.
+   */
   constructor() {
     super();
     this.__clazz__ = 'org.arl.fjage.GenericMessage';
   }
 }
 
+/**
+ * Gateway to communicate with agents from Java classes. Only agents in a master
+ * or slave container can be accessed using this gateway.
+ *
+ */
 export class Gateway {
 
-  // connect back to the master container over a websocket to the server
+  /**
+   * Creates a gateway connecting to a specified master container over Websockets.
+   *
+   * @param {string} url - of the platform to connect to
+   */
   constructor(url) {
     url = url || 'ws://'+window.location.hostname+':'+window.location.port+'/ws/';
     let existing = window.fjage.getGateway(url);
@@ -331,23 +406,54 @@ export class Gateway {
     }
   }
 
+
+  /**
+   * Add a new listener to listen to all {Message}s sent to this Gateway
+   *
+   * @param {function} listener - new callback/function to be called when a {Message} is received.
+   * @returns {void}
+   */
   addMessageListener(listener) {
     this.observers.push(listener);
   }
 
+  /**
+   * Remove a message listener.
+   *
+   * @param {function} listener - removes a previously registered listener/callback.
+   * @returns {void}
+   */
   removeMessageListener(listener) {
     let ndx = this.observers.indexOf(listener);
     if (ndx >= 0) this.observers.splice(ndx, 1);
   }
 
+  /**
+   * Gets the agent ID associated with the gateway.
+   *
+   * @return {string} agent ID
+   */
   getAgentID() {
     return this.aid;
   }
 
+  /**
+   * Get an AgentID for a given agent name.
+   *
+   * @param {string} name - name of agent
+   * @return {AgentID} AgentID for the given name.
+   */
   agent(name) {
     return new AgentID(name, false, this);
   }
 
+  /**
+   * Returns an object representing the named topic.
+   *
+   * @param {string|AgentID} topic - name of the topic or AgentID.
+   * @param {string|AgentID} topic2 - name of the topic.
+   * @returns {AgentID} object representing the topic.
+   */
   topic(topic, topic2) {
     if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic, true, this);
     if (topic instanceof AgentID) {
@@ -356,24 +462,47 @@ export class Gateway {
     }
   }
 
+  /**
+   * Subscribes the gateway to receive all messages sent to the given topic.
+   *
+   * @param {string} topic - the topic to subscribe to.
+   * @return {boolean} true if the subscription is successful, false otherwise.
+   */
   subscribe(topic) {
     if (!topic.isTopic()) topic = new AgentID(topic, true, this);
     this.subscriptions[topic.toString()] = true;
   }
 
+  /**
+   * Unsubscribes the gateway from a given topic.
+   *
+   * @param {string} topic - the topic to unsubscribe.
+   * @returns {void}
+   */
   unsubscribe(topic) {
     if (!topic.isTopic()) topic = new AgentID(topic, true, this);
     delete this.subscriptions[topic.toString()];
   }
 
-  // returns a Promise
+  /**
+   * Finds an agent that provides a named service. If multiple agents are registered
+   * to provide a given service, any of the agents' id may be returned.
+   *
+   * @param {string} service - service the named service of interest.
+   * @return {Promise} - A promise which returns an agent id for an agent that provides the service when resolved.
+   */
   async agentForService(service) {
     let rq = { action: 'agentForService', service: service };
     let rsp = await this._websockTxRx(rq);
     return new AgentID(rsp.agentID, false, this);
   }
 
-  // returns a Promise
+  /**
+   * Finds all agents that provides a named service.
+   *
+   * @param {string} service - service the named service of interest.
+   * @return {Promise} - A promise which returns an array of all agent ids that provides the service when resolved.
+   */
   async agentsForService(service) {
     let rq = { action: 'agentsForService', service: service };
     let rsp = await this._websockTxRx(rq);
@@ -383,6 +512,14 @@ export class Gateway {
     return aids;
   }
 
+  /**
+   * Sends a message to the recipient indicated in the message. The recipient
+   * may be an agent or a topic.
+   *
+   * @param {Message} msg - message to be sent.
+   * @param {boolean} [relay=true] - enable relaying to associated remote containers.
+   * @returns {void}
+   */
   send(msg, relay=true) {
     msg.sender = this.aid;
     if (msg.perf == '') {
@@ -394,18 +531,35 @@ export class Gateway {
     this._websockTx(rq);
   }
 
+  /**
+   * Flush the Gateway queue for all pending messages. This drops all the pending messages.
+   * @returns {void}
+   *
+   */
   flush() {
     this.queue.length = 0;
   }
 
-  // returns a Promise
+  /**
+   * Sends a request and waits for a response. This method returns a {Promise} which resolves when a response is received or if no response is received after the timeout.
+   *
+   * @param {string} msg - message to send.
+   * @param {number} [timeout=10000] - timeout in milliseconds.
+   * @return {Promise} a promise which resolves with the received response message, null on timeout.
+   */
   async request(msg, timeout=10000) {
     this.send(msg);
     let rsp = await this.receive(msg.msgID, timeout);
     return rsp;
   }
 
-  // returns a Promise
+  /**
+   * Returns a response message received by the gateway. This method returns a {Promise} which resolves when a response is received or if no response is received after the timeout.
+   *
+   * @param {function} [filter=undefined] - original message to which a response is expected.
+   * @param {number} [timeout=1000] - timeout in milliseconds.
+   * @return {Message} received response message, null on timeout.
+   */
   receive(filter=undefined, timeout=1000) {
     return new Promise((resolve, reject) => {
       let msg = this._getMessageFromQueue.call(this,filter);
@@ -429,6 +583,11 @@ export class Gateway {
     });
   }
 
+  /**
+   * Closes the gateway. The gateway functionality may not longer be accessed after
+   * this method is called.
+   * @returns {void}
+   */
   close() {
     if (this.sock.readyState == this.sock.CONNECTING) {
       this.pendingOnOpen.push(() => {
@@ -444,12 +603,20 @@ export class Gateway {
     return false;
   }
 
+  /**
+   * Shuts down the gateway.
+   * @returns {void}
+   */
   shutdown() {
     this.close();
   }
 }
 
-// creates a unqualified message class based on a fully qualified name
+/**
+ * Creates a unqualified message class based on a fully qualified name.
+ * @param {string} name - fully qualified name of the message class to be created.
+ * @returns {function} constructor for the unqualified message class.
+ */
 export function MessageClass(name) {
   let sname = name.replace(/^.*\./, '');
   window[sname] = class extends Message {
