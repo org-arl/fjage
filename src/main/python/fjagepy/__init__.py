@@ -151,6 +151,8 @@ class Message(object):
             m.pop(i)
         for key, value in m.items():
             if type(value) == numpy.ndarray:
+                if value.dtype == 'complex':
+                    value = numpy.vstack((value.real, value.imag)).reshape((-1,), order='F')
                 m[key] = value.tolist()
         data = _json.dumps(m, separators=(',', ':'))
         return '{ "clazz": "' + clazz + '", "data": ' + data + ' }'
