@@ -124,6 +124,7 @@ class Message(object):
     """
 
     def __init__(self, **kwargs):
+        self.__clazz__ = 'org.arl.fjage.Message'
         self.msgID = str(_uuid.uuid4())
         self.perf = None
         self.recipient = None
