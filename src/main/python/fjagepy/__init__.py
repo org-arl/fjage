@@ -52,11 +52,7 @@ def _decodeBase64(m):
             if clazz.startswith('[') and len(clazz) == 2 and 'data' in d.keys():
                 x = _b64toArray(d['data'], d['clazz'])
                 if x:
-                    for i in d.keys():
-                        if i == 'signal':
-                            m[i] = x
-                        # d = x
-
+                    m['signal'] = x
     return m
 
 
@@ -177,12 +173,6 @@ class Message(object):
         return rv
 
     def __str__(self):
-        p = self.perf if self.perf else "MESSAGE"
-        if self.__class__ == Message:
-            return p
-        return p + ": " + str(self.__class__.__name__);
-
-    def toString(self):
         s = ''
         suffix = ''
         clazz = self.__clazz__
@@ -206,7 +196,7 @@ class Message(object):
                 continue
             s += ' ' + k + ':' + str(self.__dict__[k])
         s += suffix
-        return clazz + ':' + perf + '[' + s.replace(' ', '') + ']'
+        return clazz + ':' + perf + '[' + s.replace(',', ' ') + ']'
 
 
 class GenericMessage(Message):
@@ -345,7 +335,6 @@ class Gateway:
             except Exception as e:
                 self.logger.critical("Exception: " + str(e))
                 pass
-        self.close()
 
     def __del__(self):
         try:
@@ -365,7 +354,6 @@ class Gateway:
         """
         try:
             self.socket.shutdown(_socket.SHUT_RDWR)
-            # self.socket.close()
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
         print('The gateway connection is closed!')
@@ -602,3 +590,6 @@ class Gateway:
         if recipient[0] == "#":
             return True
         return False
+
+    def flush(self):
+        self.q.clear()
