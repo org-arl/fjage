@@ -7,6 +7,7 @@ const TIMEOUT = 5000;              // ms, timeout to get response from to master
 if (typeof window.fjage === 'undefined') {
   window.fjage = {};
   window.fjage.gateways = [];
+  window.fjage.MessageClass = MessageClass;
   window.fjage.getGateway = function (url){
     var f = window.fjage.gateways.filter(g => g.sock.url == url);
     if (f.length ) return f[0];
