@@ -45,6 +45,10 @@ compileGroovy {
   options.compilerArgs << "-Xlint:-options"
 }
 
+test {
+  systemProperties project.properties.subMap(["manualJSTest"])
+}
+
 tasks.withType(Javadoc) {
   options.addStringOption('Xdoclint:none', '-quiet')
 }

@@ -42,13 +42,22 @@ class fjagejsTest {
         })
       }
     })
-    // Run Jasmine based test in puppeteer.
-    def proc = "node src/test/groovy/org/arl/fjage/test/server.js".execute();
-    def sout = new StringBuilder(), serr = new StringBuilder()
-    proc.consumeProcessOutput(sout, serr)
-    proc.waitFor();
-    def ret = proc.exitValue();
-    println "NPM : out> $sout err> $serr \n ret = $ret \n testStatus = $testStatus"
+    def ret = 0;
+    if (System.getProperty('manualJSTest') == null){
+      // Run Jasmine based test in puppeteer.
+      println "Running automated tests using puppeteer";
+      def proc = "node src/test/groovy/org/arl/fjage/test/server.js".execute();
+      def sout = new StringBuilder(), serr = new StringBuilder()
+      proc.consumeProcessOutput(sout, serr)
+      proc.waitFor();
+      ret = proc.exitValue();
+      println "NPM : out> $sout err> $serr \n ret = $ret \n testStatus = $testStatus"
+    }else{
+      println "waiting for user to run manual tests"
+      while (!testStatus){
+        platform.delay(1000);
+      }
+    }
     platform.shutdown()
     assertTrue(ret == 0 && testStatus)
   }

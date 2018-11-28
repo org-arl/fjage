@@ -14,22 +14,8 @@
   <!-- include source files here... -->
   <script type="module" src="../fjage.js"></script>
 
-  <script type="module">
-    import { Gateway, Message, Performative } from '../fjage.js';
-    var gw = new Gateway();
-
-    function sendTestStatus(status){
-      let msg = new Message();
-      msg.recipient = gw.agent('test');
-      msg.performative = status ? Performative.AGREE : Performative.FAILURE;
-      gw.send(msg);
-    }
-    sendTestStatus(true);
-  </script>
-
   <!-- include spec files here... -->
-  <!-- <script src="spec/SpecHelper.js"></script> -->
-  <!-- <script src="spec/PlayerSpec.js"></script> -->
+  <script type="module"  src="spec/fjageSpec.js"></script>
 
 </head>
 
