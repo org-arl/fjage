@@ -62,6 +62,11 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
       @Override
       public void configure(WebSocketServletFactory factory) {
         factory.setCreator(WebSocketConnector.this);
+        factory.getPolicy().setMaxBinaryMessageSize(50000000);
+        factory.getPolicy().setMaxBinaryMessageBufferSize(50000000);
+        factory.getPolicy().setMaxTextMessageSize​(50000000);
+        factory.getPolicy().setMaxTextMessageBufferSize​(50000000);
+        factory.getPolicy().setInputBufferSize(50000000);
       }
     });
     server.add(handler);
