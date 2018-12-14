@@ -1,8 +1,8 @@
+[![Build Status](https://travis-ci.org/org-arl/fjage.svg?branch=1.5)](https://travis-ci.org/org-arl/fjage)
+
 fjåge
 =====
 **Framework for Java and Groovy Agents**
-
-developed by [Mandar Chitre](http://www.chitre.net), [Acoustic Research Laboratory](http://www.arl.nus.edu.sg)
 
 Introduction
 ------------
