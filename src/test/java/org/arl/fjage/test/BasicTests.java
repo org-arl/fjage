@@ -23,7 +23,7 @@ import org.junit.*;
 public class BasicTests {
 
   private static final int TICKS = 100;
-  private static final int DELAY = 100;
+  private static final int DELAY = 1000;
 
   private Random rnd = new Random();
   private Logger log = Logger.getLogger(getClass().getName());
@@ -92,6 +92,7 @@ public class BasicTests {
     assertTrue(slave.canLocateAgent(s));
     while (!client.done)
       platform.delay(DELAY);
+    platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -112,6 +113,7 @@ public class BasicTests {
     platform.start();
     while (!client.done)
       platform.delay(DELAY);
+    platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -132,6 +134,7 @@ public class BasicTests {
     platform.start();
     while (!client.done)
       platform.delay(DELAY);
+    platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
