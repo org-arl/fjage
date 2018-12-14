@@ -3,7 +3,6 @@
 tmp
 logs
 build
-htdocs
 *.o
 *.a
 test_fjage
