@@ -55,6 +55,13 @@ jar {
   }
 }
 
+test {
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat "full"
+  }
+}
+
 task jars(dependsOn: jar, type: Copy) {
   into "$buildDir/libs"
   from configurations.runtime
