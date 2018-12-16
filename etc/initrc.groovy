@@ -26,10 +26,10 @@ if (devname != null)  container.addConnector(new SerialPortConnector(devname, ba
 if (web) {
   WebServer.getInstance(8080).add("/", "/org/arl/fjage/web")
   Connector conn = new WebSocketConnector(8080, "/shell/ws")
-  shell = new ShellAgent(new ConsoleShell(conn), new GroovyScriptEngine())
+  shell = new ShellAgent(new ConsoleShell(conn), new JythonScriptEngine())
   container.addConnector(new WebSocketConnector(8080, "/ws", true))
 } else {
-  shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
+  shell = new ShellAgent(new ConsoleShell(), new JythonScriptEngine())
 }
 shell.addInitrc("cls://org.arl.fjage.shell.fshrc");
 container.add 'shell', shell
