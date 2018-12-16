@@ -108,7 +108,7 @@ class AgentID:
     """An identifier for an agent or a topic.
     """
 
-    def __init__(self, name, is_topic=False):
+    def __init__(self, name, is_topic):
         self.name = name
         if is_topic:
             self.is_topic = True
@@ -213,7 +213,7 @@ class GenericMessage(Message):
 
 
 class Gateway:
-    """Gateway to communicate with agents from Python. 
+    """Gateway to communicate with agents from Python.
     Creates a gateway connecting to a specified master container.
 
     :param hostname: hostname to connect to.
@@ -501,7 +501,7 @@ class Gateway:
                 self.subscribers.append(new_topic.name)
             else:
                 if new_topic.name in self.subscribers:
-                    self.logger.critical("Error: Already subscribed to topic")
+                    self.logger.critical("Warning: Already subscribed to topic")
                     return
                 self.subscribers.append(new_topic.name)
         else:
