@@ -8,22 +8,22 @@
 #
 #################################################################################
 
-from java.util.logging import Level, Logger
-from org.arl.fjage import AgentID
+from java.util.logging import Level as _Level, Logger as _Logger
+from org.arl.fjage import AgentID as _AgentID
 
 # Log levels
-ALL = Level.ALL
-FINEST = Level.FINEST
-FINER = Level.FINER
-FINE = Level.FINE
-INFO = Level.INFO
-WARNING = Level.WARNING
-SEVERE = Level.SEVERE
-OFF = Level.OFF
+ALL = _Level.ALL
+FINEST = _Level.FINEST
+FINER = _Level.FINER
+FINE = _Level.FINE
+INFO = _Level.INFO
+WARNING = _Level.WARNING
+SEVERE = _Level.SEVERE
+OFF = _Level.OFF
 
-log = Logger.getLogger('org.arl.fjage.shell.JythonScriptEngine')
+log = _Logger.getLogger('org.arl.fjage.shell.JythonScriptEngine')
 
-class __AgentID__(AgentID):
+class __AgentID__(_AgentID):
   def __lshift__(self, msg):
     return self.request(msg)
 
@@ -73,7 +73,7 @@ def logLevel(name, level=None):
   if level is None:
     level = name
     name = ''
-  Logger.getLogger(name).setLevel(level)
+  _Logger.getLogger(name).setLevel(level)
 
 def delay(millis):
   if '__agent__' in globals():
@@ -96,14 +96,23 @@ def agentsForService(service):
     return __agent__.agentsForService(service)
   return None
 
-def help(topic=None):
-  if topic is None:
-    return 'No help available yet!'  # TODO
-  else:
-    try:
-      return topic.__doc__
-    except:
-      return None
+def services():
+  s = ''
+  if '__agent__' in globals():
+    c = __agent__.getContainer()
+    svc = c.getServices()
+    first = True
+    for s1 in svc:
+      if not first:
+        s += '\n'
+      s += str(s1)
+      aids = agentsForService(s1)
+      if aids:
+        s += ':'
+        for a1 in aids:
+          s += ' '+str(a1)
+      first = False
+  return s
 
 def send(msg):
   if '__agent__' in globals():
@@ -131,29 +140,3 @@ def defined(varname):
   return varname in globals()
 
 __masked__ = globals().keys()
-
-# String services() {
-#   Binding binding = getBinding();
-#   if (binding.hasVariable('__agent__')) {
-#     Agent a = binding.getVariable('__agent__');
-#     Container c = a.getContainer();
-#     String[] svc = c.getServices();
-#     StringBuffer s = new StringBuffer();
-#     boolean first = true;
-#     for (String s1: svc) {
-#       if (!first) s.append('\n');
-#       s.append(s1);
-#       AgentID[] aids = agentsForService(s1)
-#       if (aids) {
-#         s.append(':')
-#         aids.each {
-#           s.append(' ')
-#           s.append(it)
-#         }
-#       }
-#       first = false;
-#     }
-#     return s.toString();
-#   }
-#   return null;
-# }
