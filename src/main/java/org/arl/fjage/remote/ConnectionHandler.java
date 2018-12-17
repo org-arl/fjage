@@ -23,8 +23,8 @@ import org.arl.fjage.connectors.Connector;
  */
 class ConnectionHandler extends Thread {
 
-  private final String ALIVE = "{'alive': true}";
-  private final String SIGN_OFF = "{'alive': false}";
+  private final String ALIVE = "{\"alive\": true}";
+  private final String SIGN_OFF = "{\"alive\": false}";
 
   private Connector conn;
   private DataOutputStream out;
