@@ -1,5 +1,19 @@
 language: java
+jdk:
+  - oraclejdk8
+  - openjdk8
 install: true
+cache:
+  directories:
+    - $HOME/.npm
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+env:
+  - NODE_VERSION=10 CC=clang CXX=clang++
+before_install:
+  - nvm install $NODE_VERSION
+before_script:
+  - npm ci
 notifications:
   slack:
     secure: QAm3ehwD1y1CQatjEB1aQ/oGJhLGMnsmlqehbT7V+KVq15hBeDZMKZocsmPMs+CwfXwSbYOeGSOtMigKTDVJXy+YmHaU4btO6JJxZwKB+HQBofgG2KO9/Ak/WPhBhqA9eJJzowjzHv/dVYvtWRRPriD9yJ8vv+2ZDC56cY06OZdWJxau3hTX0XAAJNPOXeVHXWmfORwIOQR5r5nGlYNhwbbuuPDlKLbvIaZ+5X3XHyNNgi+S+4nB8utrgEYumq8stgXDeZL8lS8rGeqCLt4RNrOBTw3UUIlPCZMnyq75BDtBRPs9bWTIFv3XqTWqBmvWY/OVQKRe6tc66dleRRc0+6xd5w5yNV44t8zsUbgpFs02+4mHbEGrrlXpJ0j0OZzBa5xWX5THhSgvdhw/rl/YAP57sLC6amsccLKoO/sBaEu73pXxafJ0C1un8gNAgVfIISsyplikSBzS9lVrUZLNnrAuESpC/kwPH4SGj0m3MxitVDtGgmM4+MINA0XAT8IJqiMnEagshbwKHBqWzQAJbMjlgI8rxlMZr1BXCfxf9mffxPpgsLKlM9jbG/JVmeQg8xcxedfkxsDm0FZ4egMiaHKv8kbdgldx8jruuIDcjWn7115hXpE2q1U4dcUnzTVGX1rG3gcTOqBVv+80+mGG8tmzX54iOwkB2XszUWIWMbg=
