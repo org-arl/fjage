@@ -51,8 +51,10 @@ def _decodeBase64(m):
             clazz = d['clazz']
             if clazz.startswith('[') and len(clazz) == 2 and 'data' in d.keys():
                 x = _b64toArray(d['data'], d['clazz'])
-                if x:
+                if x and 'signal' in m.keys():
                     m['signal'] = x
+                elif x:
+                    m['data'] = x
     return m
 
 
