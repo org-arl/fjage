@@ -8,7 +8,7 @@ defaultTasks 'jars'
 archivesBaseName = 'fjage'
 group = 'com.github.org-arl'
 version = new File('VERSION').text.trim()
-docsDirName = '../htdocs'
+docsDirName = '../docs'
 
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
@@ -55,20 +55,19 @@ jar {
   }
 }
 
+test {
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat "full"
+  }
+}
+
 task jars(dependsOn: jar, type: Copy) {
   into "$buildDir/libs"
   from configurations.runtime
 }
 
 jars.outputs.upToDateWhen { false }
-
-task doc {
-  doLast {
-    ant.exec(executable: 'make', dir: '.', failonerror: true) {
-      arg(line: 'html')
-    }
-  }
-}
 
 ////// tasks for MavenCentral deployment
 

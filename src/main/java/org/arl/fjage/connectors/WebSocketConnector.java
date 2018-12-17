@@ -14,7 +14,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.logging.Logger;
-import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.*;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.websocket.servlet.*;
@@ -41,7 +41,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
    * web server.
    */
   public WebSocketConnector(int port, String context) {
-    init(port, context);
+    init(port, context, -1);
   }
 
   /**
@@ -50,11 +50,30 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
    * web server.
    */
   public WebSocketConnector(int port, String context, boolean linemode) {
-    init(port, context);
+    init(port, context, -1);
     this.linemode = linemode;
   }
 
-  protected void init(int port, String context) {
+  /**
+   * Create a web socket connector and add it to a web server running on a
+   * given port. If a web server isn't already created, this will start the
+   * web server.
+   */
+  public WebSocketConnector(int port, String context, int maxMsgSize) {
+    init(port, context, maxMsgSize);
+  }
+
+  /**
+   * Create a web socket connector and add it to a web server running on a
+   * given port. If a web server isn't already created, this will start the
+   * web server.
+   */
+  public WebSocketConnector(int port, String context, boolean linemode, int maxMsgSize) {
+    init(port, context, maxMsgSize);
+    this.linemode = linemode;
+  }
+
+  protected void init(int port, String context, int maxMsgSize) {
     name = "ws:["+port+":"+context+"]";
     server = WebServer.getInstance(port);
     handler = new ContextHandler(context);
@@ -62,6 +81,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
       @Override
       public void configure(WebSocketServletFactory factory) {
         factory.setCreator(WebSocketConnector.this);
+        if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize​(maxMsgSize);
       }
     });
     server.add(handler);

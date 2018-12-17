@@ -47,6 +47,17 @@ public class ShellAgent extends Agent {
     }
   }
 
+  protected class InputStreamCacheEntry {
+    InputStream is;
+    long lastUsed;
+    long pos;
+    InputStreamCacheEntry(InputStream is, long pos) {
+      this.is = is;
+      this.pos = pos;
+      this.lastUsed = currentTimeMillis();
+    }
+  }
+
   ////// private attributes
 
   protected Shell shell = null;
@@ -56,6 +67,7 @@ public class ShellAgent extends Agent {
   protected CyclicBehavior executor = null;
   protected List<MessageListener> listeners = new ArrayList<MessageListener>();
   protected List<InitScript> initScripts = new ArrayList<InitScript>();
+  protected Map<String,InputStreamCacheEntry> isCache = new HashMap<String,InputStreamCacheEntry>();
   protected boolean quit = false;
 
   ////// interface methods
@@ -164,7 +176,9 @@ public class ShellAgent extends Agent {
     add(new MessageBehavior() {
       @Override
       public void onReceive(Message msg) {
-        if (msg instanceof ShellExecReq) handleReq((ShellExecReq)msg);
+        if (msg instanceof ShellExecReq) handleExecReq((ShellExecReq)msg);
+        else if (msg instanceof GetFileReq) handleGetFileReq((GetFileReq)msg);
+        else if (msg instanceof PutFileReq) handlePutFileReq((PutFileReq)msg);
         else {
           log.info(msg.getSender()+" > "+msg.toString());
           if (engine != null) engine.deliver(msg);
@@ -188,6 +202,26 @@ public class ShellAgent extends Agent {
           log.warning("Init script failure: "+ex.toString());
         }
         if (consoleThread != null) consoleThread.start();
+      }
+    });
+
+    // behavior to manage cached input streams (idle timeout after 60 seconds)
+    add(new TickerBehavior(60000) {
+      @Override
+      public void onTick() {
+        long t = currentTimeMillis() - 60000;
+        Iterator<Map.Entry<String,InputStreamCacheEntry>> it = isCache.entrySet().iterator();
+        while (it.hasNext()) {
+          Map.Entry<String,InputStreamCacheEntry> pair = it.next();
+          if (pair.getValue().lastUsed < t) {
+            try {
+              pair.getValue().is.close();
+            } catch (IOException ex) {
+              // do nothing
+            }
+            it.remove();
+          }
+        }
       }
     });
 
@@ -316,7 +350,7 @@ public class ShellAgent extends Agent {
     stop();
   }
 
-  private void handleReq(final ShellExecReq req) {
+  private void handleExecReq(final ShellExecReq req) {
     Message rsp = null;
     if (engine == null || engine.isBusy()) rsp = new Message(req, Performative.REFUSE);
     else {
@@ -353,6 +387,118 @@ public class ShellAgent extends Agent {
       }
     }
     if (rsp != null) send(rsp);
+  }
+
+  private void handleGetFileReq(final GetFileReq req) {
+    String filename = req.getFilename();
+    if (filename == null) send(new Message(req, Performative.REFUSE));
+    File f = new File(filename);
+    GetFileRsp rsp = null;
+    InputStream is = null;
+    try {
+      if (f.isDirectory()) {
+        File[] files = f.listFiles();
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < files.length; i++) {
+          sb.append(files[i].getName());
+          sb.append('\t');
+          sb.append(files[i].length());
+          sb.append('\t');
+          sb.append(files[i].lastModified());
+          sb.append('\n');
+        }
+        rsp = new GetFileRsp(req);
+        rsp.setDirectory(true);
+        rsp.setContents(sb.toString().getBytes());
+      } else if (f.canRead()) {
+        long ofs = req.getOffset();
+        long len = req.getLength();
+        long length = f.length();
+        if (ofs > length) {
+          log.info("File too short for requested offset!");
+          send(new Message(req, Performative.REFUSE));
+          return;
+        }
+        if (len <= 0) len = length-ofs;
+        else if (ofs+len > length) len = length-ofs;
+        if (len > Integer.MAX_VALUE) throw new IOException("File is too large!");
+        byte[] bytes = new byte[(int)len];
+        InputStreamCacheEntry isce = isCache.get(filename);
+        if (isce != null) {
+          if (isce.pos == ofs) {
+            isce.lastUsed = currentTimeMillis();
+            isce.pos += len;
+            is = isce.is;
+          } else {
+            isce.is.close();
+            isCache.remove(filename);
+          }
+        }
+        int offset = 0;
+        int numRead = 0;
+        if (is == null) {
+          is = new FileInputStream(f);
+          if (ofs > 0) is.skip(ofs);
+          else if (ofs < 0) is.skip(length-ofs);
+        }
+        while (offset < bytes.length && (numRead = is.read(bytes, offset, bytes.length-offset)) >= 0)
+          offset += numRead;
+        if (offset < bytes.length) throw new IOException("File read incomplete!");
+        rsp = new GetFileRsp(req);
+        rsp.setOffset(ofs);
+        rsp.setContents(bytes);
+        if (ofs != 0) {
+          if (!isCache.containsKey(filename))
+            isCache.put(filename, new InputStreamCacheEntry(is, ofs+bytes.length));
+          is = null;
+        }
+      }
+    } catch (IOException ex) {
+      log.warning(ex.toString());
+    } finally {
+      if (is != null) {
+        try {
+          is.close();
+        } catch (IOException ex) {
+          // do nothing
+        }
+        isCache.remove(filename);
+      }
+    }
+    if (rsp != null) send(rsp);
+    else send(new Message(req, Performative.FAILURE));
+  }
+
+  private void handlePutFileReq(final PutFileReq req) {
+    String filename = req.getFilename();
+    if (filename == null) send(new Message(req, Performative.REFUSE));
+    byte[] contents = req.getContents();
+    File f = new File(filename);
+    Message rsp = null;
+    OutputStream os = null;
+    try {
+      if (contents == null) {
+        log.info("delete "+filename);
+        if (f.delete()) rsp = new Message(req, Performative.AGREE);
+      } else {
+        log.info("put "+filename);
+        os = new FileOutputStream(f);
+        os.write(contents);
+        rsp = new Message(req, Performative.AGREE);
+      }
+    } catch (IOException ex) {
+      log.warning(ex.toString());
+    } finally {
+      if (os != null) {
+        try {
+          os.close();
+        } catch (IOException ex) {
+          // do nothing
+        }
+      }
+    }
+    if (rsp == null) rsp = new Message(req, Performative.FAILURE);
+    send(rsp);
   }
 
 }

@@ -11,17 +11,19 @@ for full license details.
 package org.arl.fjage.test;
 
 import static org.junit.Assert.assertTrue;
+import java.io.File;
 import java.io.IOException;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.*;
 import org.arl.fjage.*;
 import org.arl.fjage.remote.*;
+import org.arl.fjage.shell.*;
 import org.junit.*;
 
 public class BasicTests {
 
   private static final int TICKS = 100;
-  private static final int DELAY = 1100;
+  private static final int DELAY = 1000;
 
   private Random rnd = new Random();
   private Logger log = Logger.getLogger(getClass().getName());
@@ -41,7 +43,8 @@ public class BasicTests {
     container.add("C", client);
     container.add("S", server);
     platform.start();
-    platform.delay(DELAY);
+    while (!client.done)
+      platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -59,7 +62,8 @@ public class BasicTests {
     container.add("C", client);
     container.add("S", server);
     platform.start();
-    platform.delay(DELAY);
+    while (!client.done)
+      platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
     assertTrue(client.good == client.requests);
@@ -86,6 +90,8 @@ public class BasicTests {
     assertTrue(slave.containsAgent(c));
     assertTrue(!slave.containsAgent(s));
     assertTrue(slave.canLocateAgent(s));
+    while (!client.done)
+      platform.delay(DELAY);
     platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
@@ -105,6 +111,8 @@ public class BasicTests {
     master.add("C", client);
     slave.add("S", server);
     platform.start();
+    while (!client.done)
+      platform.delay(DELAY);
     platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
@@ -124,6 +132,8 @@ public class BasicTests {
     slave.add("C", client);
     slave.add("S", server);
     platform.start();
+    while (!client.done)
+      platform.delay(DELAY);
     platform.delay(DELAY);
     platform.shutdown();
     assertTrue(client.bad == 0);
@@ -169,6 +179,7 @@ public class BasicTests {
     Agent agent = new Agent();
     container.add(agent);
     FSMBehavior fsm = new FSMBehavior();
+    final List<Integer> list = new ArrayList<Integer>();
     fsm.add(new FSMBehavior.State("tick") {
       @Override
       public void onEnter() {
@@ -183,6 +194,7 @@ public class BasicTests {
       int n = 0;
       @Override
       public void onEnter() {
+        list.add(n);
         block(50);
       }
       @Override
@@ -194,9 +206,10 @@ public class BasicTests {
     });
     agent.add(fsm);
     platform.start();
-    platform.delay(DELAY);
-    assertTrue(fsm.done());
+    while (!fsm.done())
+      platform.delay(DELAY);
     platform.shutdown();
+    assertTrue(list.size() == 6);
   }
 
   @Test
@@ -258,6 +271,28 @@ public class BasicTests {
     assertTrue(s1.x == s2.x);
   }
 
+  @Test
+  public void testShell() {
+    log.info("testShell");
+    Platform platform = new RealTimePlatform();
+    Container container = new Container(platform);
+    container.add("shell", new ShellAgent(new EchoScriptEngine()));
+    ShellTestAgent agent = new ShellTestAgent();
+    container.add("test", agent);
+    platform.start();
+    while (!agent.done)
+      platform.delay(1000);
+    platform.shutdown();
+    assertTrue(agent.exec);
+    assertTrue(agent.put);
+    assertTrue(agent.get);
+    assertTrue(agent.get2);
+    assertTrue(agent.get3);
+    assertTrue(agent.get4);
+    assertTrue(agent.dir);
+    assertTrue(agent.del);
+  }
+
   private static class RequestMessage extends Message {
     private static final long serialVersionUID = 1L;
     public int x;
@@ -308,6 +343,7 @@ public class BasicTests {
   }
 
   private class ClientAgent extends Agent {
+    public boolean done = false;
     public int requests = 0, nuisance = 0, good = 0, bad = 0;
     @Override
     public void init() {
@@ -316,6 +352,7 @@ public class BasicTests {
         public void onTick() {
           if (getTickCount() > TICKS) {
             stop();
+            done = true;
             return;
           }
           if (rnd.nextBoolean()) {
@@ -345,5 +382,92 @@ public class BasicTests {
     }
   }
 
-}
+  private class ShellTestAgent extends Agent {
+    private final String DIRNAME = "/tmp";
+    private final String FILENAME = "fjage-test.txt";
+    public boolean exec = false, put = false, get = false, get2 = false, get3 = false, get4 = false, del = false, dir = false, done = false;
+    @Override
+    public void init() {
+      add(new OneShotBehavior() {
+        @Override
+        public void action() {
+          AgentID shell = new AgentID("shell");
+          Message req = new ShellExecReq(shell, "boo");
+          Message rsp = request(req);
+          if (rsp != null && rsp.getPerformative() == Performative.AGREE) exec = true;
+          byte[] bytes = "this is a test".getBytes();
+          req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, bytes);
+          rsp = request(req);
+          log.info("put rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
+            File f = new File(DIRNAME+File.separator+FILENAME);
+            if (f.exists()) put = true;
+          }
+          req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME);
+          rsp = request(req);
+          log.info("get rsp: "+rsp);
+          if (rsp != null && rsp instanceof GetFileRsp) {
+            byte[] contents = ((GetFileRsp)rsp).getContents();
+            log.info("get data len: "+contents.length);
+            if (contents.length == bytes.length && ((GetFileRsp)rsp).getOffset() == 0) {
+              log.info("get data: "+new String(contents));
+              get = true;
+              for (int i = 0; i < contents.length; i++)
+                if (contents[i] != bytes[i]) get = false;
+            }
+          }
+          req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 5, 4);
+          rsp = request(req);
+          log.info("get2 rsp: "+rsp);
+          if (rsp != null && rsp instanceof GetFileRsp) {
+            byte[] contents = ((GetFileRsp)rsp).getContents();
+            log.info("get data len: "+contents.length);
+            if (contents.length == 4 && ((GetFileRsp)rsp).getOffset() == 5) {
+              log.info("get data: "+new String(contents));
+              get2 = true;
+              for (int i = 0; i < contents.length; i++)
+                if (contents[i] != bytes[5+i]) get2 = false;
+            }
+          }
+          req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 9, 0);
+          rsp = request(req);
+          log.info("get3 rsp: "+rsp);
+          if (rsp != null && rsp instanceof GetFileRsp) {
+            byte[] contents = ((GetFileRsp)rsp).getContents();
+            log.info("get data len: "+contents.length);
+            if (contents.length == bytes.length-9 && ((GetFileRsp)rsp).getOffset() == 9) {
+              log.info("get data: "+new String(contents));
+              get3 = true;
+              for (int i = 0; i < contents.length; i++)
+                if (contents[i] != bytes[9+i]) get3 = false;
+            }
+          }
+          req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 27, 1);
+          rsp = request(req);
+          log.info("get4 rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.REFUSE) get4 = true;
+          req = new GetFileReq(shell, DIRNAME);
+          rsp = request(req);
+          log.info("get dir rsp: "+rsp);
+          if (rsp != null && rsp instanceof GetFileRsp) {
+            String contents = new String(((GetFileRsp)rsp).getContents());
+            String[] lines = contents.split("\\r?\\n");
+            for (String s: lines) {
+              log.info("DIR: "+s);
+              if (s.startsWith(FILENAME+"\t")) dir = true;
+            }
+          }
+          req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, null);
+          rsp = request(req);
+          log.info("del rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
+            File f = new File(DIRNAME+File.separator+FILENAME);
+            if (!f.exists()) del = true;
+          }
+          done = true;
+        }
+      });
+    }
+  }
 
+}

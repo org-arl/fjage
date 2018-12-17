@@ -18,6 +18,7 @@ import org.eclipse.jetty.util.log.*;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 
 /**
  * Web server instance manager.
@@ -89,9 +90,13 @@ public class WebServer {
     server.setStopAtShutdown(true);
     if (port > 0) servers.put(port, this);
     contexts = new ContextHandlerCollection();
-    HandlerCollection handlers = new HandlerCollection();
-    handlers.setHandlers(new Handler[] { contexts, new DefaultHandler() });
-    server.setHandler(handlers);
+    HandlerCollection handlerCollection = new HandlerCollection();
+    GzipHandler gzipHandler = new GzipHandler();
+    gzipHandler.setIncludedMimeTypes("text/html", "text/plain", "text/xml", "text/css", "application/javascript", "text/javascript");
+
+    handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });
+    gzipHandler.setHandler(handlerCollection);
+    server.setHandler(gzipHandler);
     started = false;
   }
 
@@ -136,7 +141,7 @@ public class WebServer {
 
 
   /**
-   * Adds a context handler to the server. Context handlers should be added before the web
+   * Adds a context handler to the server. Context handlerCollection should be added before the web
    * server is started.
    *
    * @param handler context handler.
@@ -179,6 +184,8 @@ public class WebServer {
     ResourceHandler resHandler = new ResourceHandler();
     resHandler.setResourceBase(staticWebResDir);
     resHandler.setWelcomeFiles(new String[]{ "index.html" });
+    resHandler.setDirectoriesListed(false);
+    resHandler.setCacheControl("public, max-age=31536000");
     handler.setHandler(resHandler);
     staticContexts.put(context, handler);
     add(handler);
@@ -195,6 +202,8 @@ public class WebServer {
     ResourceHandler resHandler = new ResourceHandler();
     resHandler.setResourceBase(dir.getAbsolutePath());
     resHandler.setWelcomeFiles(new String[]{ "index.html" });
+    resHandler.setDirectoriesListed(false);
+    resHandler.setCacheControl("public, max-age=31536000");
     handler.setHandler(resHandler);
     staticContexts.put(context, handler);
     add(handler);
