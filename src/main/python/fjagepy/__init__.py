@@ -21,8 +21,8 @@ def _b64toArray(base64, dtype, littleEndian=True):
     s = _base64.b64decode(base64)
     rv = []
     if dtype == '[B':  # byte array
-        count = len(s) // _struct.calcsize('c')
-        rv = list(_struct.unpack('<' + '{0}c'.format(count) if littleEndian else '>' + '{0}c'.format(count), s))
+        count = len(s) // _struct.calcsize('b')
+        rv = list(_struct.unpack('<' + '{0}b'.format(count) if littleEndian else '>' + '{0}c'.format(count), s))
     elif dtype == '[S':  # short array
         count = len(s) // _struct.calcsize('h')
         rv = list(_struct.unpack('<' + '{0}h'.format(count) if littleEndian else '>' + '{0}h'.format(count), s))
