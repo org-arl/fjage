@@ -12,14 +12,13 @@ package org.arl.fjage.shell;
 
 import java.util.logging.*;
 import org.arl.fjage.*;
-import org.codehaus.groovy.control.customizers.ImportCustomizer;
 
 /**
  * Methods and attributes available to Groovy scripts.
  *
  * @author Mandar Chitre
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings('rawtypes')
 abstract class BaseGroovyScript extends Script {
 
   // Log levels
@@ -52,22 +51,9 @@ abstract class BaseGroovyScript extends Script {
    */
   def export(String name) {
     Binding binding = getBinding();
-    if (binding.hasVariable('imports')) {
-      ImportCustomizer imports = binding.getVariable('imports');
-      name = name.trim();
-      if (name.startsWith("static ")) {
-        name = name.substring(7);
-        if (name.endsWith('.*')) imports.addStaticStars(name[0..-3]);
-        else {
-          int n = name.lastIndexOf('.');
-          if (n < 0) throw new FjageError('Bad static import');
-          imports.addStaticImport(name.substring(0, n), name.substring(n+1));
-        }
-      } else {
-        if (name.endsWith('.*')) imports.addStarImport(name[0..-3]);
-        else imports.addImport(name);
-      }
-      return null;
+    if (binding.hasVariable('__script_engine__')) {
+      GroovyScriptEngine engine = binding.getVariable('__script_engine__');
+      engine.importClasses(name.trim());
     }
   }
 
@@ -92,8 +78,8 @@ abstract class BaseGroovyScript extends Script {
    */
   void subscribe(topic) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       a.subscribe(topic);
     }
   }
@@ -105,8 +91,8 @@ abstract class BaseGroovyScript extends Script {
    */
   void unsubscribe(topic) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       a.unsubscribe(topic);
     }
   }
@@ -116,8 +102,8 @@ abstract class BaseGroovyScript extends Script {
    */
   void shutdown() {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       Platform p = a.getPlatform();
       p.shutdown();
     }
@@ -135,8 +121,8 @@ abstract class BaseGroovyScript extends Script {
    */
   String ps() {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       Container c = a.getContainer();
       AgentID[] agentIDs = c.getAgents();
       StringBuffer s = new StringBuffer();
@@ -159,6 +145,20 @@ abstract class BaseGroovyScript extends Script {
   }
 
   /**
+   * Gets the shell agent running the script.
+   *
+   * @return shell agent instance.
+   */
+  Agent agent() {
+    if (binding.hasVariable('__agent__')) return binding.getVariable('__agent__');
+    return null;
+  }
+
+  Agent getAgent() {
+    return agent();
+  }
+
+  /**
    * Represents an agent identifier for a named agent.
    *
    * @param name name of the agent.
@@ -166,8 +166,8 @@ abstract class BaseGroovyScript extends Script {
    */
   AgentID agent(String name) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       return a.agent(name);
     }
     return new AgentID(name);
@@ -178,8 +178,8 @@ abstract class BaseGroovyScript extends Script {
    */
   Container container() {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       return a.getContainer();
     }
     return null;
@@ -196,8 +196,8 @@ abstract class BaseGroovyScript extends Script {
    */
   String services() {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       Container c = a.getContainer();
       String[] svc = c.getServices();
       StringBuffer s = new StringBuffer();
@@ -232,8 +232,8 @@ abstract class BaseGroovyScript extends Script {
    */
   AgentID agentForService(def service) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       return a.agentForService(service);
     }
     return null;
@@ -247,8 +247,8 @@ abstract class BaseGroovyScript extends Script {
    */
   AgentID[] agentsForService(def service) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       return a.agentsForService(service);
     }
     return null;
@@ -262,8 +262,8 @@ abstract class BaseGroovyScript extends Script {
   */
   AgentID topic(s) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       return a.topic(s);
     }
     return null;
@@ -278,8 +278,8 @@ abstract class BaseGroovyScript extends Script {
   */
   AgentID topic(aid, s) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       return a.topic(aid, s);
     }
     return null;
@@ -313,8 +313,8 @@ abstract class BaseGroovyScript extends Script {
    */
   void delay(long millis) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       Platform p = a.getPlatform();
       p.delay(millis);
     }
@@ -330,8 +330,10 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding();
     StringBuffer s = new StringBuffer();
     binding.getVariables().each {
-      if (s.length() > 0) s << ', ';
-      s << it.key;
+      if (!it.key.startsWith('_')) {
+        if (s.length() > 0) s << ', ';
+        s << it.key;
+      }
     }
     return s.toString();
   }
@@ -356,7 +358,7 @@ abstract class BaseGroovyScript extends Script {
   }
 
   @Override
-  @SuppressWarnings("overrides")
+  @SuppressWarnings('overrides')
   void printf(String format, Object[] value) {
     println(String.format(format, value));
   }
@@ -372,16 +374,16 @@ abstract class BaseGroovyScript extends Script {
     def oldScript = binding.getVariable('script');
     def oldArgs = binding.getVariable('args');
     try {
-      if (binding.hasVariable('groovy')) {
-        GroovyShell groovy = binding.getVariable('groovy');
+      if (binding.hasVariable('__groovy__')) {
+        GroovyShell groovy = binding.getVariable('__groovy__');
         groovy.getClassLoader().clearCache();
-        if (!name.endsWith('.groovy') && !name.startsWith("cls://")) name += '.groovy';
+        if (!name.endsWith('.groovy') && !name.startsWith('cls://')) name += '.groovy';
         if (name.startsWith('res:/')) {
           InputStream inp = groovy.class.getResourceAsStream(name.substring(5));
-          if (inp == null) throw new FileNotFoundException(name+" not found");
+          if (inp == null) throw new FileNotFoundException(name+' not found');
           binding.setVariable('script', name);
           groovy.run(new InputStreamReader(inp), name, args);
-        } else if (name.startsWith("cls://")) {
+        } else if (name.startsWith('cls://')) {
           Class<Script> cls = (Class<Script>)Class.forName(name.substring(6));
           Script script = cls.newInstance();
           binding.setVariable('script', cls.getName());
@@ -414,14 +416,14 @@ abstract class BaseGroovyScript extends Script {
    * @param args arguments to pass to the script.
    */
   @Override
-  @SuppressWarnings("overrides")
+  @SuppressWarnings('overrides')
   void run(File file, String... args) {
     Binding binding = getBinding();
     def oldScript = binding.getVariable('script');
     def oldArgs = binding.getVariable('args');
     try {
-      if (binding.hasVariable('groovy')) {
-        GroovyShell groovy = binding.getVariable('groovy');
+      if (binding.hasVariable('__groovy__')) {
+        GroovyShell groovy = binding.getVariable('__groovy__');
         groovy.getClassLoader().clearCache();
         List<?> arglist = new ArrayList<?>();
         if (args != null && args.length > 0)
@@ -445,8 +447,8 @@ abstract class BaseGroovyScript extends Script {
    */
   void run(Reader reader, String name, String... args) {
     Binding binding = getBinding();
-    if (binding.hasVariable('groovy')) {
-      GroovyShell groovy = binding.getVariable('groovy');
+    if (binding.hasVariable('__groovy__')) {
+      GroovyShell groovy = binding.getVariable('__groovy__');
       groovy.getClassLoader().clearCache();
       groovy.run(reader, name, args);
     }
@@ -523,8 +525,8 @@ abstract class BaseGroovyScript extends Script {
    */
   boolean send(Message msg) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      Agent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__');
       return a.send(msg);
     }
     return false;
@@ -539,8 +541,8 @@ abstract class BaseGroovyScript extends Script {
     */
    Message request(Message msg, long timeout = 1000) {
      Binding binding = getBinding();
-     if (binding.hasVariable('agent')) {
-       ShellAgent a = binding.getVariable('agent');
+     if (binding.hasVariable('__agent__')) {
+       ShellAgent a = binding.getVariable('__agent__');
        return a.request(msg, timeout);
      }
      return null;
@@ -555,8 +557,8 @@ abstract class BaseGroovyScript extends Script {
    */
   Message receive(Class cls, long timeout = 1000) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      ShellAgent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      ShellAgent a = binding.getVariable('__agent__');
       return a.receive(cls, timeout);
     }
     return null;
@@ -570,8 +572,8 @@ abstract class BaseGroovyScript extends Script {
    */
   Message receive(long timeout = 1000) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      ShellAgent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      ShellAgent a = binding.getVariable('__agent__');
       return a.receive(timeout);
     }
     return null;
@@ -586,8 +588,8 @@ abstract class BaseGroovyScript extends Script {
    */
   Message receive(Closure filter, long timeout = 1000) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      ShellAgent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      ShellAgent a = binding.getVariable('__agent__');
       MessageFilter f = new MessageFilter() {
         boolean matches(Message m) {
           return filter(m);
@@ -607,8 +609,8 @@ abstract class BaseGroovyScript extends Script {
    */
   Message receive(Message msg, long timeout = 1000) {
     Binding binding = getBinding();
-    if (binding.hasVariable('agent')) {
-      ShellAgent a = binding.getVariable('agent');
+    if (binding.hasVariable('__agent__')) {
+      ShellAgent a = binding.getVariable('__agent__');
       MessageFilter f = new MessageFilter() {
         private String mid = msg.getMessageID();
         boolean matches(Message m) {
@@ -636,9 +638,12 @@ abstract class BaseGroovyScript extends Script {
   /**
    * Try executing a named script if a command/property does not exist.
    */
-  void propertyMissing(String name) {
+  def propertyMissing(String name) {
     try {
+      def a = agent(name)
+      if (container().canLocateAgent(a)) return a
       run(name)
+      return null
     } catch (FileNotFoundException ex) {
       throw new MissingPropertyException(name, getClass())
     }
@@ -649,7 +654,7 @@ abstract class BaseGroovyScript extends Script {
    */
   void methodMissing(String name, args) {
     try {
-      run(name, args)
+      run(name, args as String[])
     } catch (FileNotFoundException ex) {
       throw new MissingMethodException(name, getClass(), args)
     }

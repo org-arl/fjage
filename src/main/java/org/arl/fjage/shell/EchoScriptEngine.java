@@ -118,6 +118,11 @@ public class EchoScriptEngine implements ScriptEngine {
   }
 
   @Override
+  public void importClasses(String clazz) {
+    // do nothing
+  }
+
+  @Override
   public void shutdown() {
     // do nothing
   }

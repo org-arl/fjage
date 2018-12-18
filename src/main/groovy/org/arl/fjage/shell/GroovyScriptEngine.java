@@ -30,6 +30,7 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   private GroovyShell groovy;
   private Binding binding;
+  private ImportCustomizer imports;
   private Shell out = null;
   private Thread busy = null;
   private Logger log = Logger.getLogger(getClass().getName());
@@ -49,15 +50,15 @@ public class GroovyScriptEngine implements ScriptEngine {
   private void init() {
     CompilerConfiguration compiler = new CompilerConfiguration();
     compiler.setScriptBaseClass(BaseGroovyScript.class.getName());
-    ImportCustomizer imports = new ImportCustomizer();
-    binding.setVariable("imports", imports);
+    imports = new ImportCustomizer();
+    binding.setVariable("__script_engine__", this);
     binding.setVariable("rsp", null);
     binding.setVariable("ntf", null);
     compiler.addCompilationCustomizers(imports);
     compiler.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
     GroovyClassLoader gcl = new GroovyClassLoader(getClass().getClassLoader());
     groovy = new GroovyShell(gcl, binding, compiler);
-    binding.setVariable("groovy", groovy);
+    binding.setVariable("__groovy__", groovy);
     groovy.evaluate("_init_()");
   }
 
@@ -181,11 +182,11 @@ public class GroovyScriptEngine implements ScriptEngine {
   public boolean exec(final Class<?> script, final List<String> args) {
     if (isBusy()) return false;
     synchronized(this) {
-      if (ShellCommands.class.isAssignableFrom(script)) {
-        log.info("LOAD: "+script.getName());
-        exec("export 'static "+script.getName()+".*'");
-        return true;
-      }
+      //if (ShellCommands.class.isAssignableFrom(script)) {
+      //  log.info("LOAD: "+script.getName());
+      //  exec("export 'static "+script.getName()+".*'");
+      //  return true;
+      //}
       try {
         busy = Thread.currentThread();
         log.info("RUN: "+script.getName());
@@ -196,6 +197,7 @@ public class GroovyScriptEngine implements ScriptEngine {
           Script gs = (Script)script.newInstance();
           gs.setBinding(binding);
           gs.run();
+          exec("export 'static "+script.getName()+".*'");
         } catch (Throwable ex) {
           error(ex);
         } finally {
@@ -268,6 +270,22 @@ public class GroovyScriptEngine implements ScriptEngine {
   @Override
   public Object getVariable(String name) {
     return binding.getVariable(name);
+  }
+
+  @Override
+  public void importClasses(String clazz) {
+    if (clazz.startsWith("static ")) {
+      clazz = clazz.substring(7).trim();
+      if (clazz.endsWith(".*")) imports.addStaticStars(clazz.substring(0,clazz.length()-2));
+      else {
+        int n = clazz.lastIndexOf('.');
+        if (n < 0) return;
+        imports.addStaticImport(clazz.substring(0, n), clazz.substring(n+1));
+      }
+    } else {
+      if (clazz.endsWith(".*")) imports.addStarImports(clazz.substring(0,clazz.length()-2));
+      else imports.addImports(clazz);
+    }
   }
 
   @Override

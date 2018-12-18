@@ -139,6 +139,13 @@ public interface ScriptEngine {
   public Object getVariable(String name);
 
   /**
+   * Make classes accessible from script without qualified names.
+   *
+   * @param clazz qualified class name (with wildcards).
+   */
+  public void importClasses(String clazz);
+
+  /**
    * Terminate the scripting engine.
    */
   public void shutdown();
