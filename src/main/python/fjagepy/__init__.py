@@ -22,7 +22,7 @@ def _b64toArray(base64, dtype, littleEndian=True):
     rv = []
     if dtype == '[B':  # byte array
         count = len(s) // _struct.calcsize('b')
-        rv = list(_struct.unpack('<' + '{0}b'.format(count) if littleEndian else '>' + '{0}c'.format(count), s))
+        rv = list(_struct.unpack('<' + '{0}b'.format(count) if littleEndian else '>' + '{0}b'.format(count), s))
     elif dtype == '[S':  # short array
         count = len(s) // _struct.calcsize('h')
         rv = list(_struct.unpack('<' + '{0}h'.format(count) if littleEndian else '>' + '{0}h'.format(count), s))
@@ -110,12 +110,30 @@ class AgentID:
     """An identifier for an agent or a topic.
     """
 
-    def __init__(self, name, is_topic):
+    def __init__(self, gw, name, is_topic=False):
+        self.is_topic = is_topic
         self.name = name
-        if is_topic:
-            self.is_topic = True
-        else:
-            self.is_topic = False
+        self.index = -1
+        self.gw = gw
+
+    def send(self, msg):
+        """Sends a message to the agent represented by this id.
+
+        :param msg: message to send.
+        """
+        msg.recipient = self.name
+        self.gw.send(msg)
+
+    def request(self, msg, timeout=1000):
+        """Sends a request to the agent represented by this id and waits for
+        a return message for 1 second.
+
+        :param msg: request to send.
+        :param timeout: timeout in milliseconds.
+        :returns: response.
+        """
+        msg.recipient = self.name
+        return self.gw.request(msg, timeout)
 
 
 class Message(object):
@@ -300,7 +318,6 @@ class Gateway:
                         self.cv.acquire()
                         self.cv.notify()
                         self.cv.release()
-
                     if self._is_topic(msg["data"]["recipient"]):
                         if self.subscribers.count(msg["data"]["recipient"].replace("#", "")):
                             q.append(msg)
@@ -476,17 +493,17 @@ class Gateway:
         """
         if topic2 is None:
             if isinstance(topic, str):
-                return AgentID(topic, True)
+                return AgentID(self, topic, True)
             elif isinstance(topic, AgentID):
                 if topic.is_topic:
                     return topic
-                return AgentID(topic.name + "__ntf", True)
+                return AgentID(self, topic.name + "__ntf", True)
             else:
-                return AgentID(topic.__class__.__name__ + "." + str(topic), True)
+                return AgentID(self, topic.__class__.__name__ + "." + str(topic), True)
         else:
             if not isinstance(topic2, str):
                 topic2 = topic2.__class__.__name__ + "." + str(topic2)
-            return AgentID(topic.name + "__" + topic2 + "__ntf", True)
+            return AgentID(self, topic.name + "__" + topic2 + "__ntf", True)
 
     def subscribe(self, topic):
         """Subscribes the gateway to receive all messages sent to the given topic.
@@ -495,7 +512,7 @@ class Gateway:
         """
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
-                new_topic = AgentID(topic.name + "__ntf", True)
+                new_topic = AgentID(self, topic.name + "__ntf", True)
             else:
                 new_topic = topic
 
@@ -516,7 +533,8 @@ class Gateway:
         """
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
-                new_topic = AgentID(topic.name + "__ntf", True)
+                new_topic = AgentID(self, topic.name + "__ntf", True)
+                topic.name = new_topic.name
             if len(self.subscribers) == 0:
                 return False
             try:
@@ -544,7 +562,16 @@ class Gateway:
             return None
         else:
             tup = self.pending.pop(req_id)
-            return tup[1]["agentID"] if "agentID" in tup[1] else None
+            if "agentID" in tup[1]:
+                a = tup[1]["agentID"]
+            else:
+                a = None
+            if a is not None:
+                if isinstance(a, str):
+                    a = AgentID(self, a)
+                else:
+                    a = AgentID(self, a.name, a.is_topic)
+            return a
 
     def agentsForService(self, service, timeout=1000):
         """Finds all agents that provides a named service.
@@ -568,7 +595,17 @@ class Gateway:
             return None
         else:
             tup = self.pending.pop(req_id)
-            return tup[1]["agentIDs"] if "agentIDs" in tup[1] else None
+            if "agentIDs" in tup[1]:
+                a = tup[1]["agentIDs"]
+            else:
+                a = None
+            if a is not None:
+                for j in range(len(a)):
+                    if isinstance(a[j], str):
+                        a[j] = AgentID(self, a[j])
+                    else:
+                        a[j] = AgentID(self, a[j].name)
+            return a
 
     def getAgentID(self):
         """Returns the gateway Agent ID.
