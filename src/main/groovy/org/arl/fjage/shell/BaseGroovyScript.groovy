@@ -176,13 +176,17 @@ abstract class BaseGroovyScript extends Script {
   /**
    * Gets the container in which the shell is running.
    */
-  Container getContainer() {
+  Container container() {
     Binding binding = getBinding();
     if (binding.hasVariable('agent')) {
       Agent a = binding.getVariable('agent');
       return a.getContainer();
     }
     return null;
+  }
+
+  Container getContainer() {
+    return container();
   }
 
   /**
@@ -363,7 +367,7 @@ abstract class BaseGroovyScript extends Script {
    * @param name filename of the script to run.
    * @param args arguments to pass to the script.
    */
-  void run(String name, Object... args) {
+  void run(String name, String... args) {
     Binding binding = getBinding();
     def oldScript = binding.getVariable('script');
     def oldArgs = binding.getVariable('args');
@@ -376,19 +380,19 @@ abstract class BaseGroovyScript extends Script {
           InputStream inp = groovy.class.getResourceAsStream(name.substring(5));
           if (inp == null) throw new FileNotFoundException(name+" not found");
           binding.setVariable('script', name);
-          groovy.run(new InputStreamReader(inp), name, args as String[]);
+          groovy.run(new InputStreamReader(inp), name, args);
         } else if (name.startsWith("cls://")) {
           Class<Script> cls = (Class<Script>)Class.forName(name.substring(6));
           Script script = cls.newInstance();
           binding.setVariable('script', cls.getName());
-          binding.setVariable('args', args as String[]);
+          binding.setVariable('args', args);
           script.setBinding(binding);
           script.run();
         } else {
           List<?> arglist = new ArrayList<?>();
           if (args != null && args.length > 0)
             for (a in args)
-              arglist.add(a.toString());
+              arglist.add(a);
           String folder = null;
           if (!name.startsWith(File.pathSeparator) && binding.hasVariable('scripts'))
             folder = binding.getVariable('scripts');
@@ -439,12 +443,12 @@ abstract class BaseGroovyScript extends Script {
    * @param name name of the script to run.
    * @param args arguments to pass to the script.
    */
-  void run(Reader reader, String name, Object... args) {
+  void run(Reader reader, String name, String... args) {
     Binding binding = getBinding();
     if (binding.hasVariable('groovy')) {
       GroovyShell groovy = binding.getVariable('groovy');
       groovy.getClassLoader().clearCache();
-      groovy.run(reader, name, args as String[]);
+      groovy.run(reader, name, args);
     }
   }
 
