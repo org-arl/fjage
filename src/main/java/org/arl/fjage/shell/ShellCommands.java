@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2013, Mandar Chitre
+Copyright (c) 2018, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -11,13 +11,10 @@ for full license details.
 package org.arl.fjage.shell;
 
 /**
- * Represents the type of output string to display.
+ * This interface tags a class as providing shell commands to be loaded by a
+ * script engine. Shell commands are exposed as static methods (or attributes)
+ * of a class.
  */
-enum OutputType {
-  INPUT,
-  OUTPUT,
-  NOTIFY,
-  ERROR,
-  RECEIVED,
-  SENT
+public interface ShellCommands {
+  // tag interface only
 }

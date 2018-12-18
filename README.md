@@ -1,8 +1,8 @@
+[![Build Status](https://travis-ci.org/org-arl/fjage.svg?branch=1.5)](https://travis-ci.org/org-arl/fjage)
+
 fjåge
 =====
 **Framework for Java and Groovy Agents**
-
-developed by [Mandar Chitre](http://www.chitre.net), [Acoustic Research Laboratory](http://www.arl.nus.edu.sg)
 
 Introduction
 ------------
@@ -17,41 +17,38 @@ Key Features
 * Agent development in Java or Groovy
 * Interactive Groovy shell and scripting
 * Easy switching between realtime operation and discrete event simulation
+* APIs for access from Javascript, Python, C
 
 Documentation
 -------------
 
-* [Getting Started](http://org-arl.github.io/fjage/doc/html/quickstart.html)
-* [Developer's Guide](http://org-arl.github.com/fjage/doc/html/)
-* [API documentation](http://org-arl.github.com/fjage/javadoc/)
+* [Getting Started](https://fjage.readthedocs.io/en/latest/quickstart.html)
+* [Developer's Guide](https://fjage.readthedocs.io/en/latest/)
+* [API documentation](http://org-arl.github.io/fjage/javadoc/)
 
 Support
 -------
 
 * [Project Home](http://github.com/org-arl/fjage)
-* [Discussion Forum](http://groups.google.com/forum/#!forum/fjage-users)
 * [Issue Tracking](http://github.com/org-arl/fjage/issues)
 
-Binary Releases
----------------
-
-* [fjage-1.4.2.jar](http://repo1.maven.org/maven2/com/github/org-arl/fjage/1.4.2/fjage-1.4.2.jar), released Apr 19, 2018 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/t1-rN2i7lyU))
-* [fjage-1.4.1.jar](http://repo1.maven.org/maven2/com/github/org-arl/fjage/1.4.1/fjage-1.4.1.jar), released Dec 5, 2017 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/frim1f-5ZK8))
-* [fjage-1.4.jar](http://repo1.maven.org/maven2/com/github/org-arl/fjage/1.4/fjage-1.4.jar), released Mar 4, 2016 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/9yZuVZWQSfY))
-* [fjage-1.3.4.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3.4/fjage-1.3.4.jar), released Jul 23, 2015 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/7d5CZB82QCc))
-* [fjage-1.3.3.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3.3/fjage-1.3.3.jar), released Jul 21, 2014 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/_9p7w8eES9Q))
-* [fjage-1.3.2.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3.2/fjage-1.3.2.jar), released Oct 21, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/RdAidaBDlNQ))
-* [fjage-1.3.1.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3.1/fjage-1.3.1.jar), released Sep 1, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/2M_FtV2zzRY))
-* [fjage-1.3.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.3/fjage-1.3.jar), released Aug 26, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/dibfe8w2Ijk))
-* [fjage-1.2.1.jar](https://repo1.maven.org/maven2/com/github/org-arl/fjage/1.2.1/fjage-1.2.1.jar), released May 29, 2013 ([release notes](https://groups.google.com/forum/#!topic/fjage-users/tw5Zf-7hil4))
-
-**Maven Central dependency:**
+Maven Central dependency
+------------------------
 
     <dependency>
       <groupId>com.github.org-arl</groupId>
       <artifactId>fjage</artifactId>
-      <version>1.4.2</version>
+      <version>1.5</version>
     </dependency>
+
+Contributing
+------------
+
+Contributions are always welcome! Clone, develop and do a pull request!
+
+Try to stick to the coding style already in use in the repository. Additionally, some guidelines:
+
+* [Commit message style](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#commits)
 
 License
 -------

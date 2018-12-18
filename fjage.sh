@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Usage:
-#   ./fjage.sh [-gui] [-port port] [-baud baud] [-rs232 devname]
+#   ./fjage.sh [-web] [-port port] [-baud baud] [-rs232 devname]
 
 CLASSPATH=.`find build/libs -name *.jar -exec /bin/echo -n :'{}' \;`
 export CLASSPATH=$CLASSPATH:samples
@@ -9,17 +9,16 @@ export CLASSPATH=$CLASSPATH:samples
 # Cygwin/Windows uses a ";" classpath separator
 if [ $(expr "$(uname -s)" : 'CYGWIN.*') -gt 0 ];then
   CLASSPATH=`echo "$CLASSPATH" | sed 's/:/;/g'`
-  TERMOPT="-Djline.terminal=jline.UnixTerminal"
 fi
 
 # process command line options
-GUI=false
+WEB=false
 OPT1=
 while [[ $1 == -* ]]
 do
   OPT=$1
-  if [ $OPT = "-gui" ]; then
-    GUI=true
+  if [ $OPT = "-web" ]; then
+    WEB=true
   elif [ $OPT = "-port" ]; then
     shift
     OPT1="$OPT1 -Dfjage.port=$1"
@@ -37,4 +36,4 @@ do
 done
 
 mkdir -p logs
-java -cp "$CLASSPATH" -Dfjage.gui=$GUI $TERMOPT $OPT1 org.arl.fjage.shell.GroovyBoot $@ etc/initrc.groovy
+java -cp "$CLASSPATH" -Dfjage.web=$WEB $OPT1 org.arl.fjage.shell.GroovyBoot $@ etc/initrc.groovy

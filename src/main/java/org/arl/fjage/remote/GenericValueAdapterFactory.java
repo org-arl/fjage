@@ -12,17 +12,14 @@ package org.arl.fjage.remote;
 
 import java.io.IOException;
 import java.nio.*;
-import java.util.Base64;
+import java.util.*;
 import com.google.gson.*;
 import com.google.gson.stream.*;
 import com.google.gson.reflect.TypeToken;
 import org.arl.fjage.GenericValue;
 
 /**
- * Array adapter factory for custom JSON representation.
- *
- * Numeric arrays are compressed into a base 64 notation for quick transmission
- * over a network.
+ * Handles conversion of various data types to JSON.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 class GenericValueAdapterFactory implements TypeAdapterFactory {
@@ -47,6 +44,11 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
         if (Number.class.isAssignableFrom(type)) out.value((Number)((GenericValue)value).getValue());
         else if (type.equals(String.class)) out.value((String)((GenericValue)value).getValue());
         else if (type.equals(Boolean.class)) out.value((Boolean)((GenericValue)value).getValue());
+        else if (List.class.isAssignableFrom(type)) {
+          TypeAdapter delegate = gson.getAdapter(TypeToken.get(type));
+          Object v = ((GenericValue)value).getValue();
+          delegate.write(out, v);
+        }
         else {
           out.beginObject();
           out.name("clazz").value(type.getName());
@@ -76,27 +78,48 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
         }
         if (tok == JsonToken.STRING) return (T) new GenericValue(in.nextString());
         if (tok == JsonToken.BOOLEAN) return (T) new GenericValue(in.nextBoolean());
-        if (tok != JsonToken.BEGIN_OBJECT) return null;
-        TypeToken tt = null;
-        GenericValue rv = null;
-        in.beginObject();
-        while (in.hasNext()) {
-          String name = in.nextName();
-          if (name.equals("clazz")) {
-            try {
-              Class<?> cls = Class.forName(in.nextString());
-              tt = TypeToken.get(cls);
-            } catch (Exception ex) {
-              // do nothing
+        if (tok == JsonToken.BEGIN_OBJECT) {
+          TypeToken tt = null;
+          GenericValue rv = null;
+          in.beginObject();
+          while (in.hasNext()) {
+            String name = in.nextName();
+            if (name.equals("clazz")) {
+              try {
+                Class<?> cls = Class.forName(in.nextString());
+                tt = TypeToken.get(cls);
+              } catch (Exception ex) {
+                // do nothing
+              }
+            } else if (name.equals("data") && tt != null) {
+              TypeAdapter delegate = gson.getAdapter(tt);
+              rv = new GenericValue(delegate.read(in));
             }
-          } else if (name.equals("data") && tt != null) {
-            TypeAdapter delegate = gson.getAdapter(tt);
-            rv = new GenericValue(delegate.read(in));
+            else in.skipValue();
           }
-          else in.skipValue();
+          in.endObject();
+          return (T)rv;
         }
-        in.endObject();
-        return (T)rv;
+        if (tok == JsonToken.BEGIN_ARRAY) {
+          List<Object> list = new ArrayList<Object>();
+          in.beginArray();
+          while (in.hasNext()) {
+            JsonToken tok2 = in.peek();
+            String s = in.nextString();
+            if (tok2 != JsonToken.NUMBER) list.add(s);
+            else {
+              try {
+                if (s.contains(".")) list.add(Double.parseDouble(s));
+                else list.add(Long.parseLong(s));
+              } catch (NumberFormatException ex) {
+                list.add(s);
+              }
+            }
+          }
+          in.endArray();
+          return (T) new GenericValue(list);
+        }
+        return null;
       }
 
     };

@@ -16,97 +16,81 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 import org.arl.fjage.*;
-import com.fazecast.jSerialComm.SerialPort;
+import org.arl.fjage.connectors.Connector;
 
 /**
  * Handles a JSON/TCP connection with remote container.
  */
 class ConnectionHandler extends Thread {
 
-  private final String ALIVE = "{}";
-  private final String SIGN_OFF = "//";
+  private final String ALIVE = "{'alive': true}";
+  private final String SIGN_OFF = "{'alive': false}";
 
-  private Socket sock;
-  private SerialPort com;
+  private Connector conn;
   private DataOutputStream out;
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
   private Logger log = Logger.getLogger(getClass().getName());
   private RemoteContainer container;
-  private String name;
-  private boolean alive;
+  private boolean alive, keepAlive;
 
-  public ConnectionHandler(Socket sock, RemoteContainer container) {
-    this.sock = sock;
-    this.com = null;
+  public ConnectionHandler(Connector conn, RemoteContainer container) {
+    this.conn = conn;
     this.container = container;
-    name = sock.getRemoteSocketAddress().toString();
-    setName(name);
-  }
-
-  public ConnectionHandler(SerialPort com, RemoteContainer container) {
-    this.sock = null;
-    this.com = com;
-    this.container = container;
-    name = com.getDescriptivePortName();
-    setName(name);
-    com.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+    setName(conn.toString());
     alive = false;
+    keepAlive = true;
   }
 
   @Override
   public void run() {
     ExecutorService pool = Executors.newSingleThreadExecutor();
-    try {
-      BufferedReader in = new BufferedReader(new InputStreamReader(sock != null ? sock.getInputStream() : com.getInputStream()));
-      out = new DataOutputStream(sock != null ? sock.getOutputStream() : com.getOutputStream());
-      if (com != null) println(ALIVE);
-      while (sock != null || com != null) {
-        String s = null;
-        try {
-          s = in.readLine();
-        } catch(IOException ex) {
-          // do nothing
+    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+    out = new DataOutputStream(conn.getOutputStream());
+    if (keepAlive) println(ALIVE);
+    while (conn != null) {
+      String s = null;
+      try {
+        s = in.readLine();
+      } catch(IOException ex) {
+        // do nothing
+      }
+      if (s == null) break;
+      if (keepAlive) {
+        // additional alive/sign-off logic needed on serial ports to avoid waiting for slaves when none present
+        if (!alive) {
+          alive = true;
+          log.fine("Connection alive");
+        } else if (s.equals(SIGN_OFF)) {
+          alive = false;
+          log.fine("Peer signed off");
+          continue;
         }
-        if (s == null) break;
-        log.fine(name+" <<< "+s);
-        if (com != null) {
-          // additional alive/sign-off logic on RS232 ports to avoid waiting for RS232 slaves when none present
-          if (!alive) {
-            alive = true;
-            log.fine("RS232 connection alive");
-          } else if (s.equals(SIGN_OFF)) {
-            alive = false;
-            log.fine("RS232 peer signed off");
-            continue;
-          }
-          if (s.equals(ALIVE)) {
-            if (container instanceof SlaveContainer) println(ALIVE);
-            continue;
-          }
-        }
-        try {
-          JsonMessage rq = JsonMessage.fromJson(s);
-          if (rq.action == null) {
-            if (rq.id != null) {
-              // response to some request
-              Object obj = pending.get(rq.id);
-              if (obj != null) {
-                pending.put(rq.id, rq);
-                synchronized(obj) {
-                  obj.notify();
-                }
-              }
-            }
-          } else {
-            // new request
-            pool.execute(new RemoteTask(rq));
-          }
-        } catch(Exception ex) {
-          log.warning("Bad JSON request: "+ex.toString());
+        if (s.equals(ALIVE)) {
+          if (container instanceof SlaveContainer) println(ALIVE);
+          continue;
         }
       }
-    } catch(IOException ex) {
-      log.warning(ex.toString());
+      // handle JSON messages
+      try {
+        JsonMessage rq = JsonMessage.fromJson(s);
+        if (rq.action == null) {
+          if (rq.id != null) {
+            // response to some request
+            Object obj = pending.get(rq.id);
+            if (obj != null) {
+              pending.put(rq.id, rq);
+              synchronized(obj) {
+                obj.notify();
+              }
+            }
+          }
+        } else {
+          // new request
+          pool.execute(new RemoteTask(rq));
+        }
+      } catch(Exception ex) {
+        log.warning("Bad JSON request: "+ex.toString() + " in " + s);
+      }
     }
     close();
     pool.shutdown();
@@ -148,23 +132,18 @@ class ConnectionHandler extends Thread {
     if (out == null) return;
     try {
       out.writeBytes(s+"\n");
-      log.fine(name+" >>> "+s);
-      while (com != null && com.bytesAwaitingWrite​() > 0) {
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException ex) {
-          // do nothing
-        }
-      }
+      conn.waitOutputCompletion(1000);
     } catch(IOException ex) {
-      log.warning("Write failed: "+ex.toString());
-      if (sock != null) close();
+      if (!s.equals(SIGN_OFF)) {
+        log.warning("Write failed: "+ex.toString());
+        close();
+      }
     }
   }
 
   JsonMessage printlnAndGetResponse(String s, String id, long timeout) {
-    if (sock == null && com == null) return null;
-    if (com != null && !alive && container instanceof MasterContainer) return null;
+    if (conn == null) return null;
+    if (keepAlive && !alive && container instanceof MasterContainer) return null;
     pending.put(id, id);
     try {
       synchronized(id) {
@@ -177,34 +156,24 @@ class ConnectionHandler extends Thread {
     Object rv = pending.get(id);
     pending.remove(id);
     if (rv instanceof JsonMessage) return (JsonMessage)rv;
-    if (com != null && alive) {
+    if (keepAlive && alive) {
       alive = false;
-      log.fine("RS232 connection dead");
+      log.fine("Connection dead");
     }
     return null;
   }
 
-  void close() {
-    if (sock == null && com == null) return;
-    try {
-      if (sock != null) {
-        sock.close();
-        sock = null;
-      }
-      if (com != null) {
-        if (container instanceof SlaveContainer) println(SIGN_OFF);
-        com.closePort();
-        com = null;
-      }
-      out = null;
-      container.connectionClosed(this);
-    } catch (IOException ex) {
-      // do nothing
-    }
+  synchronized void close() {
+    if (conn == null) return;
+    if (keepAlive && container instanceof SlaveContainer) println(SIGN_OFF);
+    conn.close();
+    conn = null;
+    out = null;
+    container.connectionClosed(this);
   }
 
   boolean isClosed() {
-    return sock == null && com == null;
+    return conn == null;
   }
 
   //////// Private inner class representing task to run

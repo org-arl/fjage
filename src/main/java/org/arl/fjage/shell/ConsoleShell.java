@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2013, Mandar Chitre
+Copyright (c) 2018, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -11,203 +11,187 @@ for full license details.
 package org.arl.fjage.shell;
 
 import java.io.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.util.logging.Logger;
-import jline.console.ConsoleReader;
+import java.util.logging.*;
+import org.jline.reader.*;
+import org.jline.terminal.*;
+import org.jline.utils.*;
+import org.arl.fjage.connectors.Connector;
 
 /**
- * Console shell with line editing. Use three ESC to abort running processes
- * rather than ^C supported on the TcpShell.
+ * Shell input/output driver for console devices.
  */
-public class ConsoleShell extends Thread implements Shell {
-  
-  ////////// Private attributes
+public class ConsoleShell implements Shell {
 
-  private ScriptEngine engine = null;
-  private Term term = new Term();
-  private ConsoleReader console = null;
+  private Terminal term = null;
+  private LineReader console = null;
+  private Connector connector = null;
+  private ScriptEngine scriptEngine = null;
+  private AttributedStyle outputStyle = null;
+  private AttributedStyle notifyStyle = null;
+  private AttributedStyle errorStyle = null;
   private Logger log = Logger.getLogger(getClass().getName());
-  private boolean quit = false;
-  private boolean shutdownOnExit = true;
-
-  ////////// Methods
 
   /**
-   * Binds the console command shell to the script engine and activates it.
-   *
-   * @param engine script engine to use.
+   * Create a console shell attached to the system terminal.
    */
+  public ConsoleShell() {
+    try {
+      term = TerminalBuilder.terminal();
+      setupStyles();
+    } catch (IOException ex) {
+      log.warning("Unable to open terminal: "+ex.toString());
+    }
+  }
+
+  /**
+   * Create a console shell attached to a specified input and output stream.
+   *
+   * @param in input stream.
+   * @param out output stream.
+   */
+  public ConsoleShell(InputStream in, OutputStream out) {
+    try {
+      term = TerminalBuilder.builder().streams(in, out).build();
+      setupStyles();
+    } catch (IOException ex) {
+      log.warning("Unable to open terminal: "+ex.toString());
+    }
+  }
+
+  /**
+   * Create a console shell attached to a specified input and output stream.
+   *
+   * @param in input stream.
+   * @param out output stream.
+   * @param dumb true to force a dumb terminal, false otherwise.
+   */
+  public ConsoleShell(InputStream in, OutputStream out, boolean dumb) {
+    try {
+      if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
+      else {
+        term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
+        setupStyles();
+      }
+    } catch (IOException ex) {
+      log.warning("Unable to open terminal: "+ex.toString());
+    }
+  }
+
+  /**
+   * Create a console shell attached to a specified connector.
+   *
+   * @param connector input/output streams.
+   */
+  public ConsoleShell(Connector connector) {
+    try {
+      InputStream in = connector.getInputStream();
+      OutputStream out = connector.getOutputStream();
+      this.connector = connector;
+      term = TerminalBuilder.builder().streams(in, out).build();
+      setupStyles();
+    } catch (IOException ex) {
+      log.warning("Unable to open terminal: "+ex.toString());
+    }
+  }
+
+  /**
+   * Create a console shell attached to a specified connector.
+   *
+   * @param connector input/output streams.
+   * @param dumb true to force a dumb terminal, false otherwise.
+   */
+  public ConsoleShell(Connector connector, boolean dumb) {
+    try {
+      InputStream in = connector.getInputStream();
+      OutputStream out = connector.getOutputStream();
+      this.connector = connector;
+      if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
+      else {
+        term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
+        setupStyles();
+      }
+    } catch (IOException ex) {
+      log.warning("Unable to open terminal: "+ex.toString());
+    }
+  }
+
+  private void setupStyles() {
+    AttributedStyle style = new AttributedStyle();
+    outputStyle = style.foreground(AttributedStyle.GREEN);
+    notifyStyle = style.foreground(AttributedStyle.BLUE);
+    errorStyle = style.foreground(AttributedStyle.RED);
+  }
+
   @Override
-  public void bind(ScriptEngine engine) {
-    this.engine = engine;
-    setName(getClass().getSimpleName());
-    setDaemon(true);
+  public void init(ScriptEngine engine) {
+    if (term == null) return;
+    scriptEngine = engine;
+    if (scriptEngine == null) console = LineReaderBuilder.builder().terminal(term).build();
+    else {
+      Parser parser = new Parser() {
+        @Override
+        public CompletingParsedLine parse(String s, int cursor) {
+          if (!scriptEngine.isComplete(s)) throw new EOFError(0, cursor, "Incomplete sentence");
+          if (s.contains("\n") && cursor < s.length()) throw new EOFError(0, cursor, "Editing");
+          return null;
+        }
+        @Override
+        public CompletingParsedLine parse(String s, int cursor, Parser.ParseContext context) {
+          return parse(s, cursor);
+        }
+      };
+      console = LineReaderBuilder.builder().parser(parser).terminal(term).build();
+      console.setVariable(LineReader.DISABLE_COMPLETION, true);
+    }
+  }
+
+  @Override
+  public void println(Object obj) {
+    if (obj == null || console == null) return;
+    console.printAbove(new AttributedString(obj.toString(), outputStyle));
+  }
+
+  @Override
+  public void notify(Object obj) {
+    if (obj == null || console == null) return;
+    console.printAbove(new AttributedString(obj.toString(), notifyStyle));
+  }
+
+  @Override
+  public void error(Object obj) {
+    if (obj == null || console == null) return;
+    console.printAbove(new AttributedString(obj.toString(), errorStyle));
+  }
+
+  @Override
+  public String readLine(String prompt1, String prompt2, String line) {
+    if (console == null) return null;
+    try {
+      console.setVariable(LineReader.SECONDARY_PROMPT_PATTERN, prompt2);
+      return console.readLine(prompt1, null, (Character)null, line);
+    } catch (UserInterruptException ex) {
+      return ABORT;
+    } catch (Throwable ex) {
+      log.warning(ex.toString());
+      return null;
+    }
   }
 
   @Override
   public void shutdown() {
-    quit = true;
-  }
-
-  /**
-   * Set whether to shutdown platform when console shell is terminated.
-   *
-   * @param value true to initiate shutdown, false otherwise.
-   */
-  public void setShutdownOnExit(boolean value) {
-    shutdownOnExit = value;
-  }
-
-  /**
-   * Thread implementation.
-   *
-   * @see java.lang.Runnable#run()
-   */
-  @Override
-  public void run() {
-    if (engine == null) return;
-    try {
-      OutputStream out = System.out;
-      InputStream in = System.in;
-      console = new ConsoleReader(in, out);
+    if (term != null) {
       try {
-        console.getTerminal().init();
-      } catch (Exception ex) {
+        term.close();
+      } catch (IOException ex) {
         // do nothing
       }
-      if (!console.getTerminal().isAnsiSupported()) term.disable();
-      console.setExpandEvents(false);
-      console.addTriggeredAction((char)27, new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent arg0) {
-          try {
-            console.redrawLine();
-          } catch (IOException ex) {
-            // do nothing
-          }
-        }
-      });
-      StringBuffer sb = new StringBuffer();
-      boolean nest = false;
-      try {
-        // wait a short while to let fshrc execution progress
-        Thread.sleep(500);
-      } catch (InterruptedException ex) {
-        // do nothing
-      }
-      while (!quit) {
-        int esc = 0;
-        while (engine.isBusy()) {
-          if (in.available() > 0) {
-            int c = in.read();
-            if (c == 27) esc += 10;
-            if (esc > 20) {
-              log.info("ABORT");
-              engine.abort();
-            }
-          } else if (esc > 0) esc--;
-          try {
-            sleep(100);
-          } catch (InterruptedException ex) {
-            interrupt();
-          }
-        }
-        if (sb.length() > 0) console.setPrompt(term.prompt("- "));
-        else console.setPrompt(term.prompt("> "));
-        String s1 = console.readLine();
-        if (s1 == null) {
-          if (shutdownOnExit) engine.exec("shutdown", null);
-          break;
-        }
-        sb.append(s1);
-        String s = sb.toString();
-        nest = nested(s);
-        if (nest) sb.append('\n');
-        else if (s.length() > 0) {
-          sb = new StringBuffer();
-          log.info("> "+s);
-          if (s.trim().equals("exit")) {
-            if (shutdownOnExit) engine.exec("shutdown", null);
-            break;
-          }
-          boolean ok = engine.exec(s, this);
-          if (!ok) {
-            console.println(term.error("BUSY"));
-            log.info("BUSY");
-          }
-        }
-      }
-    } catch (IOException ex) {
-      log.warning(ex.toString());
+      term = null;
     }
-  }
-  
-  @Override
-  public void println(Object obj, OutputType type) {
-    if (obj == null) return;
-    String s = obj.toString();
-    try {
-      if (console != null) {
-        switch(type) {
-          case INPUT:
-            console.println(s);
-            break;
-          case OUTPUT:
-            console.println(term.response(s));
-            break;
-          case ERROR:
-            console.println(term.error(s));
-            break;
-          case NOTIFY:
-            console.println(term.notification(s));
-            break;
-          default:
-            return;
-        }
-        if (term.isEnabled()) console.redrawLine();
-        console.flush();
-      }
-    } catch (Exception ex) {
-      log.warning("println: "+ex.toString());
+    if (connector != null) {
+      connector.close();
+      connector = null;
     }
-  }
-
-  private boolean nested(String s) {
-    int nest1 = 0;
-    int nest2 = 0;
-    int nest3 = 0;
-    int quote1 = 0;
-    int quote2 = 0;
-    for (int i = 0; i < s.length(); i++) {
-      switch (s.charAt(i)) {
-        case '{':
-          nest1++;
-          break;
-        case '}':
-          if (nest1 > 0) nest1--;
-          break;
-        case '(':
-          nest2++;
-          break;
-        case ')':
-          if (nest2 > 0) nest2--;
-          break;
-        case '[':
-          nest3++;
-          break;
-        case ']':
-          if (nest3 > 0) nest3--;
-          break;
-        case '\'':
-          quote1 = 1-quote1;
-          break;
-        case '"':
-          quote2 = 1-quote2;
-          break;
-      }
-    }
-    return nest1+nest2+nest3+quote1+quote2 > 0;
+    console = null;
   }
 
 }

@@ -1,0 +1,59 @@
+<html>
+<head>
+  <title>fjåge shell</title>
+  <meta charset='utf-8'/>
+  <script src='hterm_all.js'></script>
+  <style>
+    html {
+      height: 100%;
+    }
+    body {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      margin: 0px;
+      padding: 0px;
+    }
+    #terminal {
+      display: block;
+      position: relative;
+      height: 100%;
+      width: 100%;
+      margin: 0px;
+      padding: 0px;
+    }
+  </style>
+</head>
+<body>
+<div id='terminal'></div>
+<script>
+  function setupHterm() {
+    const term = new hterm.Terminal();
+    term.onTerminalReady = function() {
+      const path = window.location.pathname.replace(/\/[^\/]*$/, '/ws/')
+      const ws = new WebSocket("ws://"+window.location.hostname+":"+window.location.port+path);
+      ws.onerror = (e) => {console.log('WebSocket error : ' + e.toString());};
+      ws.onopen = () => {
+        const io = this.io.push();
+        ws.onmessage = (evt) => {
+          io.print(evt.data);
+        };
+        io.onVTKeystroke = (string) => {
+          ws.send(string);
+        };
+        io.sendString = io.onVTKeystroke;
+        this.setCursorVisible(true);
+        this.keyboard.characterEncoding = 'raw';
+      };
+    };
+    term.decorate(document.querySelector('#terminal'));
+    term.installKeyboard();
+  }
+  window.onload = function() {
+    hterm.defaultStorage = new lib.Storage.Memory();
+    lib.init(setupHterm);
+  };
+</script>
+</body>
+</html>

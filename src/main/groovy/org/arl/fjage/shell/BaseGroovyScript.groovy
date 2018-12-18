@@ -12,7 +12,7 @@ package org.arl.fjage.shell;
 
 import java.util.logging.*;
 import org.arl.fjage.*;
-import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 
 /**
  * Methods and attributes available to Groovy scripts.
@@ -50,20 +50,39 @@ abstract class BaseGroovyScript extends Script {
    *
    * @param name name of class or package to import.
    */
-  def shellImport(String name) {
+  def export(String name) {
     Binding binding = getBinding();
     if (binding.hasVariable('imports')) {
       ImportCustomizer imports = binding.getVariable('imports');
-      if (name.endsWith('.*')) imports.addStarImport(name[0..-3]);
-      else imports.addImport(name);
+      name = name.trim();
+      if (name.startsWith("static ")) {
+        name = name.substring(7);
+        if (name.endsWith('.*')) imports.addStaticStars(name[0..-3]);
+        else {
+          int n = name.lastIndexOf('.');
+          if (n < 0) throw new FjageError('Bad static import');
+          imports.addStaticImport(name.substring(0, n), name.substring(n+1));
+        }
+      } else {
+        if (name.endsWith('.*')) imports.addStarImport(name[0..-3]);
+        else imports.addImport(name);
+      }
+      return null;
     }
   }
 
   /**
-   * Do not use include(), use shellImport() instead.
+   * Do not use shellImport(), use export() instead.
+   */
+  def shellImport(String name) {
+    throw new FjageError('shellImport() has been superceded by export()');
+  }
+
+  /**
+   * Do not use include(), use export() instead.
    */
   def include(String name) {
-    throw new FjageError('include() has been superceded by shellImport()');
+    throw new FjageError('include() has been superceded by export()');
   }
 
   /**
@@ -152,6 +171,18 @@ abstract class BaseGroovyScript extends Script {
       return a.agent(name);
     }
     return new AgentID(name);
+  }
+
+  /**
+   * Gets the container in which the shell is running.
+   */
+  Container getContainer() {
+    Binding binding = getBinding();
+    if (binding.hasVariable('agent')) {
+      Agent a = binding.getVariable('agent');
+      return a.getContainer();
+    }
+    return null;
   }
 
   /**
@@ -305,40 +336,25 @@ abstract class BaseGroovyScript extends Script {
     return who();
   }
 
-  /**
-   * Display on console. This method clears the current line
-   * and displays output on it, followed by a newline.
-   *
-   * @param s object to display.
-   */
-  void println(def x) {
-    Binding binding = getBinding();
-    if (binding.hasVariable('out')) {
-      def out = binding.getVariable('out');
-      if (out != null) out.println(x.toString(), OutputType.OUTPUT);
-    }
+  @Override
+  void println() {
+    println('');
   }
 
-  /**
-   * Display on console. This method clears the current line
-   * and displays output on it, followed by a newline.
-   *
-   * @param s object to display.
-   * @param type type of output to display.
-   */
-  void println(def x, OutputType type) {
-    Binding binding = getBinding();
-    if (binding.hasVariable('out')) {
-      def out = binding.getVariable('out');
-      if (out != null) out.println(x.toString(), type);
-    }
-  }
-
-  /**
-   * Do not use print(), use println() only.
-   */
+  @Override
   void print(def x) {
-    throw new FjageError("print() not supported, use println() instead");
+    println(x);
+  }
+
+  @Override
+  void printf(String format, Object value) {
+    println(String.format(format, value));
+  }
+
+  @Override
+  @SuppressWarnings("overrides")
+  void printf(String format, Object[] value) {
+    println(String.format(format, value));
   }
 
   /**
@@ -380,6 +396,35 @@ abstract class BaseGroovyScript extends Script {
           binding.setVariable('script', f.getAbsoluteFile());
           groovy.run(f, arglist);
         }
+      }
+    } finally {
+      binding.setVariable('script', oldScript);
+      binding.setVariable('args', oldArgs);
+    }
+  }
+
+  /**
+   * Run a nested Groovy script.
+   *
+   * @param file script to run.
+   * @param args arguments to pass to the script.
+   */
+  @Override
+  @SuppressWarnings("overrides")
+  void run(File file, String... args) {
+    Binding binding = getBinding();
+    def oldScript = binding.getVariable('script');
+    def oldArgs = binding.getVariable('args');
+    try {
+      if (binding.hasVariable('groovy')) {
+        GroovyShell groovy = binding.getVariable('groovy');
+        groovy.getClassLoader().clearCache();
+        List<?> arglist = new ArrayList<?>();
+        if (args != null && args.length > 0)
+          for (a in args)
+            arglist.add(a.toString());
+        binding.setVariable('script', file.getAbsoluteFile());
+        groovy.run(file, arglist);
       }
     } finally {
       binding.setVariable('script', oldScript);

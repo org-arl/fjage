@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2013, Mandar Chitre
+Copyright (c) 2018, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -14,14 +14,14 @@ import java.io.*;
 import java.util.*;
 import java.util.logging.*;
 import groovy.lang.ExpandoMetaClass;
-import org.arl.fjage.*  ;
+import org.arl.fjage.*;
 
 /**
  * fjage bootloader.
  * <p>
  * Usage:
  * <code>
- * java [-Djava.util.logging.config.file=logging.properties] org.arl.fjage.shell.GroovyBoot [-nocolor] [-debug:package-name] [[-arg:arg]... script-file]...
+ * java [-Djava.util.logging.config.file=logging.properties] org.arl.fjage.shell.GroovyBoot [-debug:package-name] [[-arg:arg]... script-file]...
  * </code>
  *
  * @author Mandar Chitre
@@ -55,13 +55,9 @@ public class GroovyBoot {
 
       // parse command line and execute scripts
       GroovyScriptEngine engine = new GroovyScriptEngine();
-      OutputShell out = new OutputShell(System.out);
       List<String> arglist = new ArrayList<String>();
       for (String a: args) {
-        if (a.equals("-nocolor")) {
-          Term.setDefaultState(false);
-          out.disableTerm();
-        } else if (a.equals("-debug")) {
+        if (a.equals("-debug")) {
           log.info("Setting root logger level to ALL");
           Logger logger = Logger.getLogger("");
           logger.setLevel(Level.ALL);
@@ -81,18 +77,17 @@ public class GroovyBoot {
             // execute script from resource file
             InputStream inp = GroovyBoot.class.getResourceAsStream(a.substring(5));
             if (inp == null) throw new FileNotFoundException(a+" not found");
-            engine.exec(new InputStreamReader(inp), a, arglist, out);
+            engine.exec(new InputStreamReader(inp), a, arglist);
             if (arglist.size() > 0) arglist = new ArrayList<String>();
           } else if (a.startsWith("cls://")) {
             // execute pre-compiled script from class file
             Class<?> cls = Class.forName(a.substring(6));
-            engine.exec(cls, arglist, out);
+            engine.exec(cls, arglist);
           } else {
             // execute script from file
-            engine.exec(new File(a), arglist, out);
+            engine.exec(new File(a), arglist);
             if (arglist.size() > 0) arglist = new ArrayList<String>();
           }
-          engine.waitUntilCompletion();
         }
       }
       engine.shutdown();

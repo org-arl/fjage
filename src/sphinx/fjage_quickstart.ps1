@@ -20,10 +20,10 @@ Write-Host "  2. groovy-all-2.4.4.jar"
 $webclient.DownloadFile("https://repo1.maven.org/maven2/org/codehaus/groovy/groovy-all/2.4.4/groovy-all-2.4.4.jar", "$pwd\build\libs\groovy-all-2.4.4.jar")
 Write-Host "  3. commons-lang3-3.1.jar"
 $webclient.DownloadFile("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.1/commons-lang3-3.1.jar", "$pwd\build\libs\commons-lang3-3.1.jar")
-Write-Host "  4. jline-2.12.jar"
-$webclient.DownloadFile("https://repo1.maven.org/maven2/jline/jline/2.12/jline-2.12.jar", "$pwd\build\libs\jline-2.12.jar")
-Write-Host "  5. gson-2.3.1.jar"
-$webclient.DownloadFile("https://repo1.maven.org/maven2/com/google/code/gson/gson/2.3.1/gson-2.3.1.jar", "$pwd\build\libs\gson-2.3.1.jar")
+Write-Host "  4. jline-3.9.0.jar"
+$webclient.DownloadFile("https://repo1.maven.org/maven2/jline/jline/3.9.0/jline-3.9.0.jar", "$pwd\build\libs\jline-3.9.0.jar")
+Write-Host "  5. gson-2.8.2.jar"
+$webclient.DownloadFile("https://repo1.maven.org/maven2/com/google/code/gson/gson/2.8.2/gson-2.8.2.jar", "$pwd\build\libs\gson-2.8.2.jar")
 
 Write-Host "  6. initrc.groovy"
 $webclient.DownloadFile("https://raw.githubusercontent.com/org-arl/fjage/master/etc/initrc.groovy", "$pwd\etc\initrc.groovy")
@@ -45,7 +45,7 @@ $webclient.DownloadFile("https://raw.githubusercontent.com/org-arl/fjage/master/
 
 Write-Host "Creating fjage.bat"
 $op = New-Item $pwd\fjage.bat -type file -force -value "@echo off
-set CLASSPATH=build\libs\commons-lang3-3.1.jar;build\libs\fjage-$ver.jar;build\libs\groovy-all-2.4.4.jar;build\libs\jline-2.12.jar;build\libs\gson-2.3.1.jar;samples
+set CLASSPATH=build\libs\commons-lang3-3.1.jar;build\libs\fjage-$ver.jar;build\libs\groovy-all-2.4.4.jar;build\libs\jline-3.9.0.jar;build\libs\gson-2.8.2.jar;samples
 set GUI=false
 java -Dfjage.gui= org.arl.fjage.shell.GroovyBoot etc/initrc.groovy" 2>$null
 

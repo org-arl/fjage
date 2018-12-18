@@ -8,10 +8,12 @@ for full license details.
 
 ******************************************************************************/
 
-package org.arl.fjage.shell;
+package org.arl.fjage.connectors;
+
 /**
- * Services supported by fjage shell agents.
+ * Interface to be implemented by clients wishing to listen to incoming
+ * TCP connections.
  */
-public enum Services {
-  SHELL
+public interface ConnectionListener {
+  public void connected(TcpConnector connector);
 }

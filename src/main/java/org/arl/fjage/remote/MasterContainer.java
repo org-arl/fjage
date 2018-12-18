@@ -14,7 +14,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import org.arl.fjage.*;
-import com.fazecast.jSerialComm.SerialPort;
+import org.arl.fjage.connectors.*;
 
 /**
  * Master container supporting multiple remote slave containers. Agents in linked
@@ -24,13 +24,13 @@ import com.fazecast.jSerialComm.SerialPort;
  *
  * @author Mandar Chitre
  */
-public class MasterContainer extends RemoteContainer {
+public class MasterContainer extends RemoteContainer implements ConnectionListener {
 
   ////////////// Private attributes
 
   private static final long TIMEOUT = 1000;
 
-  private ServerSocket listener;
+  private TcpServer listener = null;
   private List<ConnectionHandler> slaves = new ArrayList<ConnectionHandler>();
   private boolean needsCleanup = false;
 
@@ -43,7 +43,7 @@ public class MasterContainer extends RemoteContainer {
    */
   public MasterContainer(Platform platform) throws IOException {
     super(platform);
-    openSocket(0);
+    openTcpServer(0);
   }
 
   /**
@@ -54,7 +54,7 @@ public class MasterContainer extends RemoteContainer {
    */
   public MasterContainer(Platform platform, int port) throws IOException {
     super(platform);
-    openSocket(port);
+    openTcpServer(port);
   }
 
   /**
@@ -65,7 +65,7 @@ public class MasterContainer extends RemoteContainer {
    */
   public MasterContainer(Platform platform, String name) throws IOException {
     super(platform, name);
-    openSocket(0);
+    openTcpServer(0);
   }
 
   /**
@@ -77,7 +77,7 @@ public class MasterContainer extends RemoteContainer {
    */
   public MasterContainer(Platform platform, String name, int port) throws IOException {
     super(platform, name);
-    openSocket(port);
+    openTcpServer(port);
   }
 
   /**
@@ -88,10 +88,10 @@ public class MasterContainer extends RemoteContainer {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public MasterContainer(Platform platform, String devname, int baud, String settings) {
+  @Deprecated
+  public MasterContainer(Platform platform, String devname, int baud, String settings) throws IOException {
     super(platform);
-    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
-    openRS232(devname, baud);
+    addConnector(new SerialPortConnector(devname, baud, settings));
   }
 
   /**
@@ -103,10 +103,10 @@ public class MasterContainer extends RemoteContainer {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public MasterContainer(Platform platform, String name, String devname, int baud, String settings) {
+  @Deprecated
+  public MasterContainer(Platform platform, String name, String devname, int baud, String settings) throws IOException {
     super(platform);
-    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
-    openRS232(devname, baud);
+    addConnector(new SerialPortConnector(devname, baud, settings));
   }
 
   /**
@@ -118,11 +118,11 @@ public class MasterContainer extends RemoteContainer {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
+  @Deprecated
   public MasterContainer(Platform platform, int port, String devname, int baud, String settings) throws IOException {
     super(platform);
-    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
-    openSocket(port);
-    openRS232(devname, baud);
+    openTcpServer(port);
+    addConnector(new SerialPortConnector(devname, baud, settings));
   }
 
   /**
@@ -135,20 +135,35 @@ public class MasterContainer extends RemoteContainer {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
+  @Deprecated
   public MasterContainer(Platform platform, String name, int port, String devname, int baud, String settings) throws IOException {
     super(platform);
-    if (settings != null && settings != "N81") throw new FjageError("Bad RS232 settings");
-    openSocket(port);
-    openRS232(devname, baud);
+    openTcpServer(port);
+    addConnector(new SerialPortConnector(devname, baud, settings));
   }
 
   /**
    * Gets the TCP port on which the master container listens for connections.
    *
-   * @return port on which the container's TCP server runs.
+   * @return port on which the container's TCP server runs, -1 if none.
    */
   public int getPort() {
-    return listener.getLocalPort();
+    if (listener == null) return -1;
+    return listener.getPort();
+  }
+
+  /**
+   * Adds a connector over which the master container listens.
+   *
+   * @param conn connector.
+   */
+  public void addConnector(Connector conn) {
+    log.info("Listening on "+conn.getName());
+    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this);
+    synchronized(slaves) {
+      slaves.add(t);
+    }
+    t.start();
   }
 
   /////////////// Container interface methods to override
@@ -320,11 +335,9 @@ public class MasterContainer extends RemoteContainer {
       slaves.clear();
       needsCleanup = false;
     }
-    try {
-      if (listener != null) listener.close();
+    if (listener != null) {
+      listener.close();
       listener = null;
-    } catch (IOException ex) {
-      log.warning(ex.toString());
     }
     super.shutdown();
   }
@@ -338,45 +351,27 @@ public class MasterContainer extends RemoteContainer {
 
   @Override
   public void connectionClosed(ConnectionHandler handler) {
-    log.info("Connection to "+handler.getName()+" closed");
+    log.info("Connection "+handler.getName()+" closed");
     needsCleanup = true;
   }
 
-  /////////////// Private stuff
+  /////////////// ConnectionListener interface method
 
-  private void openSocket(int port) throws IOException {
-    listener = new ServerSocket(port);
-    log.info("Listening on "+listener.getLocalSocketAddress());
-    new Thread("fjage-master") {
-      @Override
-      public void run() {
-        try {
-          while (true) {
-            Socket conn = listener.accept();
-            log.info("Incoming connection from "+conn.getRemoteSocketAddress());
-            ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this);
-            synchronized(slaves) {
-              slaves.add(t);
-            }
-            t.start();
-          }
-        } catch (IOException ex) {
-          log.info("Stopped listening");
-        }
-      }
-    }.start();
-  }
-
-  private void openRS232(String devname, int baud) {
-    log.info("Listening on "+devname+"@"+baud);
-    SerialPort com = SerialPort.getCommPort(devname);
-    com.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
-    com.openPort();
-    ConnectionHandler t = new ConnectionHandler(com, MasterContainer.this);
+  @Override
+  public void connected(TcpConnector conn) {
+    log.info("Incoming connection "+conn.toString());
+    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this);
     synchronized(slaves) {
       slaves.add(t);
     }
     t.start();
+  }
+
+  /////////////// Private stuff
+
+  private void openTcpServer(int port) throws IOException {
+    listener = new TcpServer(port, this);
+    log.info("Listening on port "+listener.getPort());
   }
 
   private void cleanupSlaves() {
