@@ -69,6 +69,8 @@ def MessageClass(name):
             if not k.startswith('_') and k.endswith('_'):
                 k = k[:-1]
             self.__dict__[k] = v
+            if isinstance(v, AgentID):
+                self.__dict__[k] = v.name
     sname = name.split('.')[-1]
     class_ = type(sname, (Message,), {"__init__": setclazz})
     globals()[sname] = class_
@@ -154,6 +156,8 @@ class Message(object):
             if not k.startswith('_') and k.endswith('_'):
                 k = k[:-1]
             self.__dict__[k] = v
+            if isinstance(v, AgentID):
+                self.__dict__[k] = v.name
 
     def __getattribute__(self, name):
         if not name.startswith('_') and name.endswith('_'):
