@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.logging.*;
 import java.util.concurrent.*;
 import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import groovy.lang.*;
 import groovy.transform.ThreadInterrupt;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -34,17 +35,13 @@ public class GroovyScriptEngine implements ScriptEngine {
   private ImportCustomizer imports;
   private Shell out = null;
   private Thread busy = null;
+  private Documentation doc = new Documentation();
   private Logger log = Logger.getLogger(getClass().getName());
 
   ////// constructor
 
   public GroovyScriptEngine() {
     binding = new ConcurrentBinding();
-    init();
-  }
-
-  public GroovyScriptEngine(boolean protect) {
-    binding = protect ? new ProtectedBinding() : new Binding();
     init();
   }
 
@@ -60,6 +57,7 @@ public class GroovyScriptEngine implements ScriptEngine {
     GroovyClassLoader gcl = new GroovyClassLoader(getClass().getClassLoader());
     groovy = new GroovyShell(gcl, binding, compiler);
     binding.setVariable("__groovy__", groovy);
+    binding.setVariable("__doc__", doc);
     groovy.evaluate("__init__()");
   }
 
@@ -178,8 +176,16 @@ public class GroovyScriptEngine implements ScriptEngine {
           m.invoke(null, this);
         } catch (NoSuchMethodException ex) {
           // do nothing - it's OK to have no __init__() method
-        } catch (Exception ex) {
-          log.warning("Could not initialize "+script.getName()+": "+ex.toString());
+        } catch (Throwable ex) {
+          error(ex);
+        }
+        try {
+          Field m = script.getField("__doc__");
+          doc.add((String)m.get(null));
+        } catch (NoSuchFieldException ex) {
+          // do nothing - it's OK to have no __doc__ field
+        } catch (Throwable ex) {
+          error(ex);
         }
         return true;
       }
@@ -193,7 +199,6 @@ public class GroovyScriptEngine implements ScriptEngine {
           Script gs = (Script)script.newInstance();
           gs.setBinding(binding);
           gs.run();
-          exec("export 'static "+script.getName()+".*'");
         } catch (Throwable ex) {
           error(ex);
         } finally {

@@ -40,8 +40,6 @@ abstract class BaseGroovyScript extends Script {
     log.setLevel(Level.ALL);
     Binding binding = getBinding();
     binding.setVariable('log', log);
-    def doc = [:];
-    binding.setVariable('doc', doc);
   }
 
   /**
@@ -449,11 +447,9 @@ abstract class BaseGroovyScript extends Script {
    */
   String help(Object obj) {
     Binding binding = getBinding();
-    if (binding.hasVariable('doc')) {
-      def doc = binding.getVariable('doc');
-      String s = doc[obj];
-      if (s != null && s.startsWith('@')) s = s.substring(1);
-      return s;
+    if (binding.hasVariable('__doc__')) {
+      def doc = binding.getVariable('__doc__');
+      return doc.get(obj as String);
     }
     return null;
   }
@@ -465,41 +461,9 @@ abstract class BaseGroovyScript extends Script {
    */
   String getHelp() {
     Binding binding = getBinding();
-    if (binding.hasVariable('doc')) {
-      def doc = binding.getVariable('doc');
-      StringBuffer s = new StringBuffer();
-      doc.each {
-        if (!it.value.startsWith('@')) {
-          if (it.value.endsWith('\n')) s << it.value.find(/^[^\n]*\n/);
-          else s << "${it.value}\n";
-        }
-      }
-      return s.toString();
-    }
-    return null;
-  }
-
-  /**
-   * Show brief help on Groovy objects with given prefix available in the
-   * documentation database.
-   *
-   * @param prefix prefix to look for.
-   * @return help text, or null if none available.
-   */
-  String getHelp(String prefix) {
-    Binding binding = getBinding();
-    if (binding.hasVariable('doc')) {
-      def doc = binding.getVariable('doc');
-      StringBuffer s = new StringBuffer();
-      doc.each {
-        if (it.key.startsWith(prefix)) {
-          String s1 = it.value;
-          if (s1.startsWith('@')) s1 = '  '+s1.substring(1);
-          if (s1.endsWith('\n')) s << s1.find(/^[^\n]*\n/);
-          else s << "${s1}\n";
-        }
-      }
-      return s.toString();
+    if (binding.hasVariable('__doc__')) {
+      def doc = binding.getVariable('__doc__');
+      return doc.get();
     }
     return null;
   }
