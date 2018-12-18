@@ -50,7 +50,7 @@ class AlohaTest {
     println "Offered Load: ${100*NODES*FRAMELEN/EXPDELAY}%"
     println "Success: ${s1}/${n1} = ${n1?100*s1/n1:0}%, ${s2}/${n2} = ${n2?100*s2/n2:0}%"
     println "Throughput: ${100*T1}%, ${100*T2}%"
-    assert T1 > 0.16 && T1 < 0.20 && T2 > 0.16 && T2 < 0.20
+    assert T1 > 0.16 && T1 < 0.21 && T2 > 0.16 && T2 < 0.21
   }
 
   private static class Node extends Agent {
