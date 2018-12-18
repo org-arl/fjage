@@ -92,7 +92,7 @@ public class GroovyScriptEngine implements ScriptEngine {
         busy = Thread.currentThread();
         String cmd = cmd1.trim();
         if (cmd.startsWith("help ")) cmd = "help '"+cmd.substring(5)+"'";
-        else if (cmd.startsWith("import ")) cmd = "shellImport '"+cmd.substring(7)+"'";
+        else if (cmd.startsWith("import ")) cmd = "export '"+cmd.substring(7)+"'";
         else if (cmd.startsWith("<")) {
           if (cmd.contains(" ")) cmd = "run('"+cmd.substring(1).replaceFirst(" ","',")+");";
           else cmd = "run('"+cmd.substring(1)+"');";
@@ -181,6 +181,11 @@ public class GroovyScriptEngine implements ScriptEngine {
   public boolean exec(final Class<?> script, final List<String> args) {
     if (isBusy()) return false;
     synchronized(this) {
+      if (ShellCommands.class.isAssignableFrom(script)) {
+        log.info("LOAD: "+script.getName());
+        exec("export 'static "+script.getName()+".*'");
+        return true;
+      }
       try {
         busy = Thread.currentThread();
         log.info("RUN: "+script.getName());

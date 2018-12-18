@@ -1,7 +1,7 @@
 package org.arl.fjage.shell
 @groovy.transform.BaseScript org.arl.fjage.shell.BaseGroovyScript fjageGroovyScript
 
-shellImport 'org.arl.fjage.*'
+export 'org.arl.fjage.*'
 
 doc['help'] = 'help [topic] - provide help on a specified topic'
 doc['ps'] = 'ps - list all the agents'
@@ -65,14 +65,14 @@ Examples:
   unsubscribe topic(\'MyTopic\')   // unsubscribe notifications from MyTopic
   unsubscribe agent(\'abc\')       // unsubscribe notifications from agent abc
 '''
-doc['shellImport'] = '''\
-shellImport - add specified package/classes to list of imports
+doc['export'] = '''\
+export - add specified package/classes to list of default imports
 
 Examples:
-  shellImport \'org.arl.fjage.*\'    // import package org.arl.fjage
-  shellImport \'mypackage.MyClass\'  // import class mypackage.MyClass
+  export \'org.arl.fjage.*\'    // import package org.arl.fjage
+  export \'mypackage.MyClass\'  // import class mypackage.MyClass
 
-At the shell prompt (but not in a script), shellImport can be abbreviated
+At the shell prompt (but not in a script), export can be abbreviated
 to import. For example:
   import org.arl.fjage.*             // import package org.arl.fjage
 '''

@@ -12,9 +12,9 @@ Groovy syntax
 
 :A: Variables declared with types or using `def` are available during execution of the command, but not exported to the variable binding of the shell. To declare a new variable in the binding, it should be declared without a type definition (e.g. `x = ...`).
 
-:Q: What is the difference between `import` and `shellImport`?
+:Q: What is the difference between `import` and `export`?
 
-:A: In a Groovy script, `import` is used in the same sense as Java or Groovy, to import a package or class.  The imports are only active during the execution of the script.  `shellImport` is used to add an import to the shell, so that import is in force in the shell even after the script has terminated.  At the shell prompt, `import` and `shellImport` can be used interchangeably (with a slightly different syntax -- see `help shellImport` for more information).
+:A: In a Groovy script, `import` is used in the same sense as Java or Groovy, to import a package or class.  The imports are only active during the execution of the script.  `export` is used to add an import to the shell, so that import is in force in the shell even after the script has terminated.  At the shell prompt, `import` and `export` can be used interchangeably (with a slightly different syntax -- see `help export` for more information).
 
 Logging
 -------

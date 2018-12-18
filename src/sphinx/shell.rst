@@ -12,7 +12,7 @@ The default shell provided by fjåge is a Groovy shell, and can execute any vali
 
 .. code-block:: console
 
-    bash$ ./fjage.sh 
+    bash$ ./fjage.sh
     > help
     help [topic] - provide help on a specified topic
     ps - list all the agents
@@ -25,14 +25,14 @@ The default shell provided by fjåge is a Groovy shell, and can execute any vali
     logLevel - set loglevel (optionally for a named logger)
     subscribe - subscribe to notifications from a named topic
     unsubscribe - unsubscribe from notifications for a named topic
-    shellImport - add specified package/classes to list of imports
+    export - add specified package/classes to list of imports
     agent - return an agent id for the named agent
     agentForService - find an agent id providing the specified service
     agentsForService - get a list of all agent ids providing the specified service
     send - send the given message
     request - send the given request and wait for a response
     receive - wait for a message
-    > 
+    >
 
 Further help on an individual topic can be obtained by typing `help` followed by the topic name. You are encouraged to explore the help.
 

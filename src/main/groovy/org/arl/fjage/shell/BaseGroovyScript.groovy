@@ -50,20 +50,39 @@ abstract class BaseGroovyScript extends Script {
    *
    * @param name name of class or package to import.
    */
-  def shellImport(String name) {
+  def export(String name) {
     Binding binding = getBinding();
     if (binding.hasVariable('imports')) {
       ImportCustomizer imports = binding.getVariable('imports');
-      if (name.endsWith('.*')) imports.addStarImport(name[0..-3]);
-      else imports.addImport(name);
+      name = name.trim();
+      if (name.startsWith("static ")) {
+        name = name.substring(7);
+        if (name.endsWith('.*')) imports.addStaticStars(name[0..-3]);
+        else {
+          int n = name.lastIndexOf('.');
+          if (n < 0) throw new FjageError('Bad static import');
+          imports.addStaticImport(name.substring(0, n), name.substring(n+1));
+        }
+      } else {
+        if (name.endsWith('.*')) imports.addStarImport(name[0..-3]);
+        else imports.addImport(name);
+      }
+      return null;
     }
   }
 
   /**
-   * Do not use include(), use shellImport() instead.
+   * Do not use shellImport(), use export() instead.
+   */
+  def shellImport(String name) {
+    throw new FjageError('shellImport() has been superceded by export()');
+  }
+
+  /**
+   * Do not use include(), use export() instead.
    */
   def include(String name) {
-    throw new FjageError('include() has been superceded by shellImport()');
+    throw new FjageError('include() has been superceded by export()');
   }
 
   /**
