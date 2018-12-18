@@ -149,11 +149,19 @@ public class JythonScriptEngine implements ScriptEngine {
 
   @Override
   public boolean exec(Class<?> script) {
+    if (ShellCommands.class.isAssignableFrom(script)) {
+      exec("from "+script.getName()+" import *");
+      return true;
+    }
     return false;
   }
 
   @Override
   public boolean exec(Class<?> script, List<String> args) {
+    if (ShellCommands.class.isAssignableFrom(script)) {
+      exec("from "+script.getName()+" import *");
+      return true;
+    }
     return false;
   }
 
