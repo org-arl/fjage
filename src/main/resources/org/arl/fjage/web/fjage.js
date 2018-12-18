@@ -108,7 +108,7 @@ export class AgentID {
   /**
     * Create an AgentID
     * @param {string} name - name of the agent.
-    * @param {string} topic - name of topic.
+    * @param {boolean} topic - name of topic.
     * @param {Gateway} gw - Gateway owner for this AgentID.
     */
   constructor(name, topic, gw) {
@@ -594,11 +594,15 @@ export class Gateway {
       this.pendingOnOpen.push(() => {
         this.sock.send('{\'alive\': false}\n');
         this.sock.close();
+        var index = window.fjage.gateways.indexOf(this);
+        window.fjage.gateways.splice(index,1);
       });
       return true;
     } else if (this.sock.readyState == this.sock.OPEN) {
       this.sock.send('{\'alive\': false}\n');
       this.sock.close();
+      var index = window.fjage.gateways.indexOf(this);
+      window.fjage.gateways.splice(index,1);
       return true;
     }
     return false;

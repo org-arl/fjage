@@ -1,0 +1,26 @@
+{
+  "name": "fjage",
+  "version": "1.5.0",
+  "description": "Framework for Java and Groovy Agents",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "dependencies": {
+    "puppeteer": "^1.11.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/org-arl/fjage.git"
+  },
+  "author": "[Mandar Chitre] (http://www.chitre.net)",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/org-arl/fjage/issues"
+  },
+  "homepage": "https://github.com/org-arl/fjage#readme"
+}
