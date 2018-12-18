@@ -35,7 +35,7 @@ abstract class BaseGroovyScript extends Script {
    * Initializes the script.  Creates a 'log' variable to allow logging from the
    * script. Also creates a 'doc' hash map in suppport of 'help' commands.
    */
-  void _init_() {
+  void __init__() {
     Logger log = Logger.getLogger(getClass().getName());
     log.setLevel(Level.ALL);
     Binding binding = getBinding();
@@ -55,20 +55,6 @@ abstract class BaseGroovyScript extends Script {
       GroovyScriptEngine engine = binding.getVariable('__script_engine__');
       engine.importClasses(name.trim());
     }
-  }
-
-  /**
-   * Do not use shellImport(), use export() instead.
-   */
-  def shellImport(String name) {
-    throw new FjageError('shellImport() has been superceded by export()');
-  }
-
-  /**
-   * Do not use include(), use export() instead.
-   */
-  def include(String name) {
-    throw new FjageError('include() has been superceded by export()');
   }
 
   /**
@@ -322,7 +308,8 @@ abstract class BaseGroovyScript extends Script {
   }
 
   /**
-   * Lists variables in current binding.
+   * Lists variables in current binding. Variables with "__" are considered
+   * reserved and are not shown.
    *
    * @return string representation of all variables.
    */
@@ -330,7 +317,7 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding();
     StringBuffer s = new StringBuffer();
     binding.getVariables().each {
-      if (!it.key.startsWith('_')) {
+      if (!it.key.contains('__')) {
         if (s.length() > 0) s << ', ';
         s << it.key;
       }
@@ -639,12 +626,15 @@ abstract class BaseGroovyScript extends Script {
    * Try executing a named script if a command/property does not exist.
    */
   def propertyMissing(String name) {
+    def a = agent(name)
+    if (container().canLocateAgent(a)) return a
     try {
-      def a = agent(name)
-      if (container().canLocateAgent(a)) return a
-      run(name)
-      return null
-    } catch (FileNotFoundException ex) {
+      if (binding.hasVariable('__groovy__')) {
+        GroovyShell groovy = binding.getVariable('__groovy__');
+        return groovy.evaluate(name+'()')
+      }
+      throw new MissingPropertyException(name, getClass())
+    } catch (MissingMethodException ex) {
       throw new MissingPropertyException(name, getClass())
     }
   }

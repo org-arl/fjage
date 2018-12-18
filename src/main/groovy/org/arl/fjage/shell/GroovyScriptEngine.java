@@ -14,6 +14,7 @@ import java.io.*;
 import java.util.*;
 import java.util.logging.*;
 import java.util.concurrent.*;
+import java.lang.reflect.Method;
 import groovy.lang.*;
 import groovy.transform.ThreadInterrupt;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -59,7 +60,7 @@ public class GroovyScriptEngine implements ScriptEngine {
     GroovyClassLoader gcl = new GroovyClassLoader(getClass().getClassLoader());
     groovy = new GroovyShell(gcl, binding, compiler);
     binding.setVariable("__groovy__", groovy);
-    groovy.evaluate("_init_()");
+    groovy.evaluate("__init__()");
   }
 
   ////// script engine methods
@@ -94,19 +95,6 @@ public class GroovyScriptEngine implements ScriptEngine {
         String cmd = cmd1.trim();
         if (cmd.startsWith("help ")) cmd = "help '"+cmd.substring(5)+"'";
         else if (cmd.startsWith("import ")) cmd = "export '"+cmd.substring(7)+"'";
-        else if (cmd.startsWith("<")) {
-          if (cmd.contains(" ")) cmd = "run('"+cmd.substring(1).replaceFirst(" ","',")+");";
-          else cmd = "run('"+cmd.substring(1)+"');";
-        } else {
-          String sname = cmd;
-          int ndx = sname.indexOf(' ');
-          if (ndx > 0) sname = sname.substring(0,ndx);
-          String folder = binding.hasVariable("scripts") ? (String)binding.getVariable("scripts") : null;
-          File f = new File(folder, sname+".groovy");
-          if (f.exists() && f.isFile())
-            if (ndx > 0) cmd = "run('"+sname+"',"+cmd.substring(ndx+1)+");";
-            else cmd = "run('"+cmd+"');";
-        }
         log.info("EVAL: "+cmd);
         Object rv = null;
         try {
@@ -182,11 +170,19 @@ public class GroovyScriptEngine implements ScriptEngine {
   public boolean exec(final Class<?> script, final List<String> args) {
     if (isBusy()) return false;
     synchronized(this) {
-      //if (ShellCommands.class.isAssignableFrom(script)) {
-      //  log.info("LOAD: "+script.getName());
-      //  exec("export 'static "+script.getName()+".*'");
-      //  return true;
-      //}
+      if (ShellExtension.class.isAssignableFrom(script)) {
+        log.info("LOAD: "+script.getName());
+        importClasses("static "+script.getName()+".*");
+        try {
+          Method m = script.getMethod("__init__", ScriptEngine.class);
+          m.invoke(null, this);
+        } catch (NoSuchMethodException ex) {
+          // do nothing - it's OK to have no __init__() method
+        } catch (Exception ex) {
+          log.warning("Could not initialize "+script.getName()+": "+ex.toString());
+        }
+        return true;
+      }
       try {
         busy = Thread.currentThread();
         log.info("RUN: "+script.getName());

@@ -15,6 +15,6 @@ package org.arl.fjage.shell;
  * script engine. Shell commands are exposed as static methods (or attributes)
  * of a class.
  */
-public interface ShellCommands {
+public interface ShellExtension {
   // tag interface only
 }
