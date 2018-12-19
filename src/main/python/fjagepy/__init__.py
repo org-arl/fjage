@@ -7,6 +7,7 @@ import threading as _td
 import logging as _log
 import base64 as _base64
 import struct as _struct
+import copy as _copy
 
 
 def _current_time_millis():
@@ -387,16 +388,17 @@ class Gateway:
     def send(self, msg, relay=True):
         """Sends a message to the recipient indicated in the message. The recipient may be an agent or a topic.
         """
-        if not msg.recipient:
+        tmsg = _copy.deepcopy(msg)
+        if not tmsg.recipient:
             return False
-        msg.sender = self.name
-        if msg.perf == None:
-            if msg.__clazz__.endswith('Req'):
-                msg.perf = Performative.REQUEST
+        tmsg.sender = self.name
+        if tmsg.perf == None:
+            if tmsg.__clazz__.endswith('Req'):
+                tmsg.perf = Performative.REQUEST
             else:
-                msg.perf = Performative.INFORM
+                tmsg.perf = Performative.INFORM
         rq = _json.dumps({'action': 'send', 'relay': relay, 'message': '###MSG###'})
-        rq = rq.replace('"###MSG###"', msg._serialize())
+        rq = rq.replace('"###MSG###"', tmsg._serialize())
         name = self.socket.getpeername()
         self.logger.debug(str(name[0]) + ":" + str(name[1]) + " >>> " + rq)
         self.socket.sendall((rq + '\n').encode())
