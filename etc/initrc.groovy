@@ -31,6 +31,5 @@ if (web) {
 } else {
   shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
 }
-shell.addInitrc("cls://org.arl.fjage.shell.ShellDoc");
 container.add 'shell', shell
 platform.start()

@@ -11,10 +11,14 @@ for full license details.
 package org.arl.fjage.shell;
 
 import java.util.*;
+import java.util.regex.*;
 
 public class Documentation {
 
   protected List<String> doc = new ArrayList<String>();
+  protected Map<String,Integer> ndx = new HashMap<String,Integer>();
+  protected Pattern heading = Pattern.compile("^#+ +([^ ]+) +\\-.*$");
+  protected Pattern section = Pattern.compile("^#+ .*$");
 
   /**
    * Add markdown documentation.
@@ -23,8 +27,11 @@ public class Documentation {
    */
   public void add(String s) {
     String lines[] = s.split("\\r?\\n");
-    for (String line: lines)
+    for (String line: lines) {
+      Matcher m = heading.matcher(line);
+      if (m.matches()) ndx.put(m.group(1), doc.size());
       doc.add(line);
+    }
   }
 
   /**
@@ -32,9 +39,10 @@ public class Documentation {
    */
   public String get() {
     StringBuffer sb = new StringBuffer();
-    for (String s: doc) {
+    for (Integer v: ndx.values()) {
+      String s = doc.get(v);
       if (s.startsWith("# ")) {
-        sb.append(s);
+        sb.append(s.substring(2));
         sb.append('\n');
       }
     }
@@ -47,15 +55,44 @@ public class Documentation {
    * @param keyword keyword.
    */
   public String get(String keyword) {
-    // TODO fix this
+    Integer pos = ndx.get(keyword);
+    if (pos == null) return null;
+    String s = doc.get(pos);
+    int level = s.indexOf(' ');
+    if (level <= 0) return null;
+    String prefix = s.substring(0,level+1);
     StringBuffer sb = new StringBuffer();
-    for (String s: doc) {
-      if (s.contains(keyword)) {
+    sb.append(s.replaceAll("^#+ +", ""));
+    sb.append('\n');
+    int skip = 0;
+    for (int i = pos+1; i < doc.size(); i++) {
+      s = doc.get(i);
+      if (s.startsWith(prefix)) break;
+      Matcher m = section.matcher(s);
+      if (m.matches()) {
+        m = heading.matcher(s);
+        level = s.indexOf(' ');
+        boolean nl = false;
+        if (skip == 0 || level <= skip) {
+          if (skip > 0) nl = true;
+          skip = 0;
+          s = s.replaceAll("^#+ +", "");
+        }
+        if (m.matches()) {
+          skip = level;
+          sb.append("- ");
+          sb.append(s);
+          sb.append('\n');
+        } else if (nl) {
+          sb.append('\n');
+        }
+      }
+      if (skip == 0) {
         sb.append(s);
         sb.append('\n');
       }
     }
-    return sb.toString();
+    return sb.toString().replaceAll("\\n+$", "\n");
   }
 
 }

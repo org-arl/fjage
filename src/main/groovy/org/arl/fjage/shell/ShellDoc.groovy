@@ -13,13 +13,23 @@ package org.arl.fjage.shell
 /**
  * Basic help for shell commands.
  */
+@groovy.transform.CompileStatic
 class ShellDoc implements ShellExtension {
 
 static final public String __doc__ = '''\
 
 # shell - basic shell commands
 
-## help [topic] - provide help on a specified topic
+## help - provide help on a specified topic
+
+Usage:
+  help [topic]
+
+Examples:
+  help                            // get help index
+  help shell                      // get help on 'shell'
+  help('shell')                   // alternative syntax
+
 ## ps - list all the agents
 ## services - list all services provided by agents
 ## who - display list of variables in workspace

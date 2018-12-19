@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.util.logging.*;
 import org.arl.fjage.*;
 
@@ -369,12 +371,17 @@ abstract class BaseGroovyScript extends Script {
           binding.setVariable('script', name);
           groovy.run(new InputStreamReader(inp), name, args);
         } else if (name.startsWith('cls://')) {
-          Class<Script> cls = (Class<Script>)Class.forName(name.substring(6));
-          Script script = cls.newInstance();
-          binding.setVariable('script', cls.getName());
-          binding.setVariable('args', args);
-          script.setBinding(binding);
-          script.run();
+          Class<?> cls = (Class<?>)Class.forName(name.substring(6));
+          if (ShellExtension.class.isAssignableFrom(cls) && binding.hasVariable('__script_engine__')) {
+            GroovyScriptEngine engine = binding.getVariable('__script_engine__');
+            engine.exec(cls);
+          } else {
+            Script script = (Class<Script>)cls.newInstance();
+            binding.setVariable('script', cls.getName());
+            binding.setVariable('args', args);
+            script.setBinding(binding);
+            script.run();
+          }
         } else {
           List<?> arglist = new ArrayList<?>();
           if (args != null && args.length > 0)
@@ -590,8 +597,9 @@ abstract class BaseGroovyScript extends Script {
    * Try executing a named script if a command/property does not exist.
    */
   def propertyMissing(String name) {
+    Binding binding = getBinding();
     def a = agent(name)
-    if (container().canLocateAgent(a)) return a
+    if (getContainer()?.canLocateAgent(a)) return a
     try {
       if (binding.hasVariable('__groovy__')) {
         GroovyShell groovy = binding.getVariable('__groovy__');

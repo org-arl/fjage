@@ -86,6 +86,7 @@ public class ShellAgent extends Agent {
       engine.bind(shell);
       engine.setVariable("__agent__", this);
     }
+    addInitrc("cls://org.arl.fjage.shell.ShellDoc");
   }
 
   @Override
@@ -179,6 +180,7 @@ public class ShellAgent extends Agent {
         if (msg instanceof ShellExecReq) handleExecReq((ShellExecReq)msg);
         else if (msg instanceof GetFileReq) handleGetFileReq((GetFileReq)msg);
         else if (msg instanceof PutFileReq) handlePutFileReq((PutFileReq)msg);
+        else if (msg.getPerformative() == Performative.REQUEST) send(new Message(msg, Performative.NOT_UNDERSTOOD));
         else {
           log.info(msg.getSender()+" > "+msg.toString());
           if (engine != null) engine.deliver(msg);

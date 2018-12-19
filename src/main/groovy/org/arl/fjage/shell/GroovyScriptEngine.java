@@ -166,30 +166,30 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   @Override
   public boolean exec(final Class<?> script, final List<String> args) {
-    if (isBusy()) return false;
-    synchronized(this) {
-      if (ShellExtension.class.isAssignableFrom(script)) {
-        log.info("LOAD: "+script.getName());
-        importClasses("static "+script.getName()+".*");
-        try {
-          Method m = script.getMethod("__init__", ScriptEngine.class);
-          m.invoke(null, this);
-        } catch (NoSuchMethodException ex) {
-          // do nothing - it's OK to have no __init__() method
-        } catch (Throwable ex) {
-          error(ex);
-        }
-        try {
-          Field m = script.getField("__doc__");
-          doc.add((String)m.get(null));
-        } catch (NoSuchFieldException ex) {
-          // do nothing - it's OK to have no __doc__ field
-        } catch (Throwable ex) {
-          error(ex);
-        }
-        return true;
+    if (ShellExtension.class.isAssignableFrom(script)) {
+      log.info("LOAD: "+script.getName());
+      importClasses("static "+script.getName()+".*");
+      try {
+        Method m = script.getMethod("__init__", ScriptEngine.class);
+        m.invoke(null, this);
+      } catch (NoSuchMethodException ex) {
+        // do nothing - it's OK to have no __init__() method
+      } catch (Throwable ex) {
+        error(ex);
       }
       try {
+        Field m = script.getField("__doc__");
+        doc.add((String)m.get(null));
+      } catch (NoSuchFieldException ex) {
+        // do nothing - it's OK to have no __doc__ field
+      } catch (Throwable ex) {
+        error(ex);
+      }
+      return true;
+    }
+    synchronized(this) {
+      try {
+        if (isBusy()) return false;
         busy = Thread.currentThread();
         log.info("RUN: "+script.getName());
         try {

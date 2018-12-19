@@ -26,6 +26,5 @@ if (devname != null) {
   container = new SlaveContainer(platform, hostname, port)
 }
 shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
-shell.addInitrc("cls://org.arl.fjage.shell.fshrc");
 container.add 'rshell', shell
 platform.start()
