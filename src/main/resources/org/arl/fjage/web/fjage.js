@@ -401,7 +401,7 @@ export class Gateway {
       }
     });
 
-    if (filtMsgs){
+    if (filtMsgs.length){
       this.queue.splice(this.queue.indexOf(filtMsgs[0]), 1);
       return filtMsgs[0];
     }
