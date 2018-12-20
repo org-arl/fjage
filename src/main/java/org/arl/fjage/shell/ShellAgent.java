@@ -397,6 +397,7 @@ public class ShellAgent extends Agent {
     InputStream is = null;
     try {
       if (f.isDirectory()) {
+        log.info("list dir "+filename);
         File[] files = f.listFiles();
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < files.length; i++) {
@@ -411,6 +412,7 @@ public class ShellAgent extends Agent {
         rsp.setDirectory(true);
         rsp.setContents(sb.toString().getBytes());
       } else if (f.canRead()) {
+        log.info("get file "+filename);
         long ofs = req.getOffset();
         long len = req.getLength();
         long length = f.length();

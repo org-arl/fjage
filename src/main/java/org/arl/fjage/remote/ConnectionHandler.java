@@ -55,6 +55,7 @@ class ConnectionHandler extends Thread {
         // do nothing
       }
       if (s == null) break;
+      log.fine(this.getName() +" <<< "+s);
       if (keepAlive) {
         // additional alive/sign-off logic needed on serial ports to avoid waiting for slaves when none present
         if (!alive) {
@@ -132,6 +133,7 @@ class ConnectionHandler extends Thread {
     if (out == null) return;
     try {
       out.writeBytes(s+"\n");
+      log.fine(this.getName() +" >>> "+s);
       conn.waitOutputCompletion(1000);
     } catch(IOException ex) {
       if (!s.equals(SIGN_OFF)) {
