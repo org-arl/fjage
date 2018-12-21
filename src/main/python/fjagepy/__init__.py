@@ -8,6 +8,7 @@ import logging as _log
 import base64 as _base64
 import struct as _struct
 import copy as _copy
+import time as _time
 
 
 def _current_time_millis():
@@ -258,6 +259,9 @@ class Gateway:
     BLOCKING = -1
 
     def __init__(self, hostname, port, name=None):
+        self.hostname = hostname
+        self.port = port
+        self.keepalive = True
         self.logger = _log.getLogger('org.arl.fjage')
         try:
             if name == None:
@@ -272,12 +276,10 @@ class Gateway:
             self.subscribers = list()
             self.pending = dict()
             self.cv = _td.Condition()
-            self.socket = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
             self.recv_thread = _td.Thread(target=self.__recv_proc, args=(self.q, self.subscribers, ))
             self.recv_thread.daemon = True
             self.logger.info("Connecting to " + str(hostname) + ":" + str(port))
-            self.socket.connect((hostname, port))
-            self.socket_file = self.socket.makefile('r', 65536)
+            self._socket_connect(hostname, port)
             self.recv_thread.start()
             if self._is_duplicate():
                 self.logger.critical("Duplicate Gateway found. Shutting down.")
@@ -286,6 +288,11 @@ class Gateway:
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
             raise
+
+    def _socket_connect(self, hostname, port):
+        self.socket = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
+        self.socket.connect((hostname, port))
+        self.socket_file = self.socket.makefile('r', 65536)
 
     def _parse_dispatch(self, rmsg, q):
         """Parse incoming messages and respond to them or dispatch them.
@@ -353,6 +360,19 @@ class Gateway:
                     tup[0].set()
         return True
 
+    def _socket_reconnect(self, keepalive):
+        if keepalive:
+            print('The master container is closed, trying to reconnect..\n')
+            while True:
+                try:
+                    self._socket_connect(self.hostname, self.port)
+                    print('Reconnected..')
+                    break
+                except Exception as e:
+                    _time.sleep(5)
+        else:
+            print('The remote connection is closed..\n')
+
     def __recv_proc(self, q, subscribers):
         """Receive process.
         """
@@ -363,8 +383,11 @@ class Gateway:
             try:
                 rmsg = self.socket_file.readline()
                 if not rmsg:
-                    print('The remote connection is closed!\n')
-                    break
+                    self._socket_reconnect(self.keepalive)
+                    if self.keepalive:
+                        continue
+                    else:
+                        break
                 self.logger.debug(str(name[0]) + ":" + str(name[1]) + " <<< " + rmsg)
                 # Parse and dispatch incoming messages
                 self._parse_dispatch(rmsg, q)
@@ -389,10 +412,10 @@ class Gateway:
         """Closes the gateway. The gateway functionality may not longer be accessed after this method is called.
         """
         try:
+            self.keepalive = False
             self.socket.shutdown(_socket.SHUT_RDWR)
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
-        print('The gateway connection is closed!\n')
 
     def send(self, msg, relay=True):
         """Sends a message to the recipient indicated in the message. The recipient may be an agent or a topic.
