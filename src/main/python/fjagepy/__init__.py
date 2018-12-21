@@ -232,9 +232,11 @@ class GenericMessage(Message):
     """
 
     def __init__(self, **kwargs):
-        super(GenericMessage, self).__init__()
         self.__clazz__ = 'org.arl.fjage.GenericMessage'
-        self.map = dict()
+        self.msgID = str(_uuid.uuid4())
+        self.perf = None
+        self.recipient = None
+        self.sender = None
         self.__dict__.update(kwargs)
         for k, v in kwargs.items():
             if not k.startswith('_') and k.endswith('_'):
@@ -473,15 +475,6 @@ class Gateway:
         try:
             m = Message()
             rsp = m._deserialize(rmsg)
-            found_map = False
-            # add map if it is a Generic message
-            if rsp.__class__.__name__ == GenericMessage().__class__.__name__:
-                if "map" in rmsg["data"]:
-                    map = _json.loads(str(rmsg["data"]["map"]))
-                    rsp.__dict__.update(map)
-                    found_map = True
-                if not found_map:
-                    self.logger.warning("No map field found in Generic Message")
         except Exception as e:
             self.logger.critical("Exception: Class loading failed - " + str(e))
             return None
