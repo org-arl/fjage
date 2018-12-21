@@ -233,8 +233,15 @@ class GenericMessage(Message):
 
     def __init__(self, **kwargs):
         super(GenericMessage, self).__init__()
+        self.__clazz__ = 'org.arl.fjage.GenericMessage'
         self.map = dict()
         self.__dict__.update(kwargs)
+        for k, v in kwargs.items():
+            if not k.startswith('_') and k.endswith('_'):
+                k = k[:-1]
+            self.__dict__[k] = v
+            if isinstance(v, AgentID):
+                self.__dict__[k] = v.name
 
 
 class Gateway:
@@ -354,7 +361,7 @@ class Gateway:
             try:
                 rmsg = self.socket_file.readline()
                 if not rmsg:
-                    print('The remote connection is closed!')
+                    print('The remote connection is closed!\n')
                     break
                 self.logger.debug(str(name[0]) + ":" + str(name[1]) + " <<< " + rmsg)
                 # Parse and dispatch incoming messages
@@ -383,7 +390,7 @@ class Gateway:
             self.socket.shutdown(_socket.SHUT_RDWR)
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
-        print('The gateway connection is closed!')
+        print('The gateway connection is closed!\n')
 
     def send(self, msg, relay=True):
         """Sends a message to the recipient indicated in the message. The recipient may be an agent or a topic.
