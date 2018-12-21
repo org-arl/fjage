@@ -618,6 +618,7 @@ export class Gateway {
     if (this.sock.readyState == this.sock.CONNECTING) {
       this.pendingOnOpen.push(() => {
         this.sock.send('{\'alive\': false}\n');
+        this.sock.onclose = null;
         this.sock.close();
         var index = window.fjage.gateways.indexOf(this);
         window.fjage.gateways.splice(index,1);
@@ -625,6 +626,7 @@ export class Gateway {
       return true;
     } else if (this.sock.readyState == this.sock.OPEN) {
       this.sock.send('{\'alive\': false}\n');
+      this.sock.onclose = null;
       this.sock.close();
       var index = window.fjage.gateways.indexOf(this);
       window.fjage.gateways.splice(index,1);
