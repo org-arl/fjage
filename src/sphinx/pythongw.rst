@@ -85,8 +85,6 @@ As the use case of `GenericMessage` is already explained before, we will illustr
 
 The shell agent running on the server side will receive this generic message sent through gateway::
 
-.. code-block:: groovy
-
     rgmsg = receive(GenericMessage, 1000)
     println rgmsg.text
     println rgmsg.data
