@@ -1,6 +1,7 @@
 ////// settings
 
 const TIMEOUT = 5000;              // ms, timeout to get response from to master container
+const RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
 
 ////// global
 
@@ -294,16 +295,18 @@ export class Gateway {
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
     this.observers = [];                  // external observers wanting to listen incoming messages
     this.queue = [];                      // incoming message queue
+    this.keepAlive = true;                // reconnect if websocket connection gets closed/errored
     this.debug = false;                   // debug info to be logged to console?
-    this.sock = new WebSocket(url);
-    this.sock.onopen = this._onWebsockOpen.bind(this);
-    this.sock.onmessage = event => {
-      this._onWebsockRx.call(this,event.data);
-    };
+    this._websockSetup(url);
     window.fjage.gateways.push(this);
   }
 
   _onWebsockOpen() {
+    if(this.debug) console.log('Connected to ', this.sock.url);
+    this.sock.onclose = this._websockReconnect.bind(this);
+    this.sock.onmessage = event => {
+      this._onWebsockRx.call(this,event.data);
+    };
     this.sock.send('{\'alive\': true}\n');
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
@@ -350,6 +353,28 @@ export class Gateway {
       }
       if (rsp) this._websockTx(rsp);
     }
+  }
+
+  _websockSetup(url){
+    try {
+      this.sock = new WebSocket(url);
+      this.sock.onerror = this._websockReconnect.bind(this);
+      this.sock.onopen = this._onWebsockOpen.bind(this);
+    } catch (error) {
+      if(this.debug) console.log('Connection failed to ', this.sock.url);
+      return;
+    }
+  }
+
+  _websockReconnect(){
+    if (!this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
+    if(this.debug) console.log('Reconnecting to ', this.sock.url);
+    setTimeout(() => {
+      this.pending = {};
+      this.pendingOnOpen = [];
+      this.flush();
+      this._websockSetup(this.sock.url);
+    }, RECONNECT_TIME);
   }
 
   _websockTx(s) {
