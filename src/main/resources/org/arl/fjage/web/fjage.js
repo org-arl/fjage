@@ -307,7 +307,7 @@ export class Gateway {
     this.sock.onmessage = event => {
       this._onWebsockRx.call(this,event.data);
     };
-    this.sock.send('{\'alive\': true}\n');
+    this.sock.send('{"alive": true}\n');
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
   }
@@ -617,7 +617,7 @@ export class Gateway {
   close() {
     if (this.sock.readyState == this.sock.CONNECTING) {
       this.pendingOnOpen.push(() => {
-        this.sock.send('{\'alive\': false}\n');
+        this.sock.send('{"alive": false}\n');
         this.sock.onclose = null;
         this.sock.close();
         var index = window.fjage.gateways.indexOf(this);
@@ -625,7 +625,7 @@ export class Gateway {
       });
       return true;
     } else if (this.sock.readyState == this.sock.OPEN) {
-      this.sock.send('{\'alive\': false}\n');
+      this.sock.send('{"alive": false}\n');
       this.sock.onclose = null;
       this.sock.close();
       var index = window.fjage.gateways.indexOf(this);
