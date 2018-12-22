@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.test
 
 import org.arl.fjage.*
+import org.arl.fjage.shell.*;
 import org.arl.fjage.connectors.Connector
 import org.arl.fjage.connectors.WebServer
 import org.arl.fjage.connectors.WebSocketConnector
@@ -25,6 +26,7 @@ class fjagejsTest {
     def testStatus = false
     def platform = new RealTimePlatform()
     def container = new MasterContainer(platform, 5081)
+    container.add("shell", new ShellAgent(new EchoScriptEngine()));
     WebServer.getInstance(8080).add("/", "/org/arl/fjage/web")
     WebServer.getInstance(8080).add("/test", new File('src/test/groovy/org/arl/fjage/test'))
     Connector conn = new WebSocketConnector(8080, "/shell/ws")
@@ -62,4 +64,6 @@ class fjagejsTest {
     assertTrue(ret == 0 && testStatus)
   }
 }
+
+
 
