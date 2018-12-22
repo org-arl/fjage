@@ -1,6 +1,6 @@
 import { Performative, AgentID, Message, GenericMessage, Gateway, MessageClass } from '../../fjage.js';
 
-const DIRNAME = ".";
+const DIRNAME = "/tmp";
 const FILENAME = "fjage-test.txt";
 const TEST_STRING = "this is a test";
 GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq');
