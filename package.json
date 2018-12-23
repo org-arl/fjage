@@ -9,9 +9,12 @@
   "dependencies": {
     "puppeteer": "^1.11.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "documentation": "^9.1.1"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Use 'gradle test' instead\" && exit 1",
+    "docs": "documentation build src/main/resources/org/arl/fjage/web/fjage.js -f html -o docs/jsdoc"
   },
   "repository": {
     "type": "git",
