@@ -6,11 +6,7 @@ Getting Started
 Quick start
 -----------
 
-We assume that you have Java Development Kit (JDK) 1.6 or higher installed. If you don't have one, you'll need to `install <http://www.oracle.com/technetwork/java/javase/downloads/index.html>`_ one. We also assume that you have network connectivity.
-
-For a UNIX based platform
--------------------------
-(Linux, Mac OS X or `Cygwin <http://www.cygwin.com/>`_ on Windows)
+We also assume a UNIX style platform (Linux, Mac OS X or `Cygwin <http://www.cygwin.com/>`_ on Windows) with Java Development Kit (JDK) 1.8 or higher installed. If you don't have one, you'll need to `install <http://www.oracle.com/technetwork/java/javase/downloads/index.html>`_ one. We also assume that you have network connectivity to download the relevant files automatically.
 
 Create a new folder for your first fjåge project. Lets call it `MyFjageProject`. Open a terminal window in this folder and download the `fjage_quickstart.sh <https://raw.githubusercontent.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.sh>`_ script in that folder::
 
@@ -29,14 +25,17 @@ Your directory structure should now look something like this:
 .. parsed-literal::
 
     fjage.sh
+    rconsole.sh
     logs/
     build/libs/
       fjage-|version|.jar
       groovy-all-2.4.4.jar
       commons-lang3-3.1.jar
-      jline-2.12.jar
+      jline-3.90.jar
+      gson-2.8.2.jar
     etc/
       initrc.groovy
+      initrc-rconsole.groovy
     samples/
       01_hello.groovy
       02_ticker.groovy
@@ -46,43 +45,7 @@ Your directory structure should now look something like this:
       04_weatherStation.groovy
       WeatherForecastReqMsg.groovy
 
-For a Windows machine
----------------------
-
-Create a new folder for your first fjåge project. Lets call it `MyFjageProject`. Download the PowerShell script `fjage_quickstart.ps1 <https://raw.githubusercontent.com/org-arl/fjage/master/src/sphinx/fjage_quickstart.ps1>`_ to this folder. Now, open a command prompt at this folder and just run the script::
-
-    powershell fjage_quickstart.ps1
-
-The script downloads all necessary libraries (jar files) and create some template startup scripts to get you going. You may now delete off the `fjage_quickstart.ps1` file, if you like.
-
-Your directory structure should now look something like this:
-
-.. parsed-literal::
-
-    fjage.bat
-    logs/
-    build/libs/
-      fjage-|version|.jar
-      groovy-all-2.4.4.jar
-      commons-lang3-3.1.jar
-      jline-2.12.jar
-    etc/
-      initrc.groovy
-    samples/
-      01_hello.groovy
-      02_ticker.groovy
-      03_weatherRequest.groovy
-      03_weatherStation.groovy
-      04_weatherRequest.groovy
-      04_weatherStation.groovy
-      WeatherForecastReqMsg.groovy
-
-.. note:: You may get an error message if the execution of scripts on your machine is not enabled. To resolve this, open a new command prompt with administrator privilage (On the start menu, point to the cmd.exe, right click and select the 'Run as administrator' option) and type in the following command:
-
-    `Set-ExecutionPolicy RemoteSigned`
-
-
-.. note:: The `build/libs` folder contains all the necessary libraries. The `etc` folder contains startup files. The `samples` folder contains the example programs used in this documentation. `initrc.groovy` in the initialization script where you create your agents and configure them. `fjage.sh` or `fjage.bat` is your startup script that simply sets up the classpath and boots up fjåge with the `initrc.groovy` script. The organization of the directory structure and names of the files are all customizable by editing `fjage.sh` and `initrc.groovy`.
+.. note:: The `build/libs` folder contains all the necessary libraries. The `etc` folder contains startup files. The `samples` folder contains the example programs used in this documentation. `initrc.groovy` in the initialization script where you create your agents and configure them. `fjage.sh` is your startup script that simply sets up the classpath and boots up fjåge with the `initrc.groovy` script. The organization of the directory structure and names of the files are all customizable by editing `fjage.sh` and `initrc.groovy`.
 
 To check that your fjåge installation is correctly working, type `./fjage.sh` (or fjage.bat in command prompt). That should simply give you an interactive fjåge Groovy shell with a `>` prompt. Type `ps` to see a list of running agents. There should be only one `shell` agent created by the default `initrc.groovy` script. Type `shutdown` or press control-D to terminate fjåge.
 
@@ -122,7 +85,7 @@ To run the agent, start fjåge and run the script by typing `run 'hello'` or sim
 
 .. code-block:: console
 
-    bash$ ./fjage.sh 
+    bash$ ./fjage.sh
     > <hello
     > ps
     hello
@@ -131,7 +94,7 @@ To run the agent, start fjåge and run the script by typing `run 'hello'` or sim
 
     bash$ cat logs/log-0.txt | grep HelloWorldAgent@
     1377443280802|INFO|HelloWorldAgent@18:println|Hello world!!!
-    bash$ 
+    bash$
 
 .. tip:: The code for the HelloWorldAgent is located in the samples directory. You can simply run it by typing:
 

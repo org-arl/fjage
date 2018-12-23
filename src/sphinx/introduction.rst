@@ -3,18 +3,19 @@
 Introduction
 ============
 
-Fjåge provides a **lightweight** and **easy-to-learn** platform for `agent-oriented software development <http://en.wikipedia.org/wiki/Agent-oriented_programming>`_ in Java and `Groovy <http://groovy.codehaus.org/>`_.
+fjåge provides a **lightweight** and **easy-to-learn** platform for `agent-oriented software development <http://en.wikipedia.org/wiki/Agent-oriented_programming>`_ in Java and `Groovy <http://groovy.codehaus.org/>`_.
 
 Why fjåge?
 ----------
 
 Several frameworks exist for agent-oriented software development. For Java programmers, `JADE <http://jade.tilab.com/>`_ provides a `FIPA <http://www.fipa.org/>`_-compliant framework for multi-agent systems. The `API <http://org-arl.github.com/fjage/javadoc/>`_ for fjåge is largely based on the API available in JADE, and so any developer familiar with JADE should have very little difficulty learning to develop using fjåge. However, there are some significant differences between the philosophy between the two projects. The key advantages of fjåge are:
 
-* Fjåge is designed to be very **lightweight and fast**, and is suitable for Java-capable embedded systems.
+* fjåge is designed to be very **lightweight and fast**, and is suitable for Java-capable embedded systems.
 * The API for fjåge is kept very simple with a view to making it **easy to learn**, and having very little scaffolding code. This enables a **quick agent development cycle**.
-* Fjåge can be run in realtime mode, or in a **discrete event simulation mode**. This makes it ideally suited for development of simulators, and allows rapid testing of production code in simulated environments.
-* Fjåge has excellent **Groovy support** that makes agent development easy to learn and enjoyable, and the resulting code very readable.
-* Fjåge provides an **interactive shell and scripting support**, making development, debugging and remote management easy.
+* fjåge can be run in realtime mode, or in a **discrete event simulation mode**. This makes it ideally suited for development of simulators, and allows rapid testing of production code in simulated environments.
+* fjåge has excellent **Groovy support** that makes agent development easy to learn and enjoyable, and the resulting code very readable.
+* fjåge provides an **interactive shell and scripting support**, making development, debugging and remote management easy.
+* fjåge has APIs for access from Java, Groovy, Python, C and Javascript applications, and a well-defined JSON protocol that can be used to develop connectors from any other language.
 
 On the flip side, although fjåge follows many of the ideas from FIPA, it is not fully FIPA-compliant and cannot directly interact with other FIPA-compliant multiagent systems.
 
@@ -22,8 +23,6 @@ Java and Groovy support
 -----------------------
 
 Although most of the functionality of the framework can be used in pure-Java projects, the adoption of Groovy in the project simplifies development immensely. In this guide, most of the code examples are in Groovy. Writing equivalent Java code is mostly trivial, though there are cases where the mapping may not be obvious. In such cases, we provide Java examples alongside the Groovy ones.
-
-.. Developers wishing to develop Java agents are advised to read the chapter ":ref:`java`".
 
 Key concepts
 ------------
@@ -49,12 +48,12 @@ That's pretty much it for the concepts that you need to understand to get starte
 License
 -------
 
-Fjåge is released under the open source `simplified (3-clause) BSD license <http://github.com/org-arl/fjage/blob/master/LICENSE.txt>`_.
+fjåge is released under the open source `simplified (3-clause) BSD license <http://github.com/org-arl/fjage/blob/master/LICENSE.txt>`_.
 
 Availability
 ------------
 
-Fjåge is available as a binary release via Maven central:
+fjåge is available as a binary release via Maven central:
 
 .. parsed-literal::
 
