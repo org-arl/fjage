@@ -22,7 +22,7 @@ before_install:
   - export PATH=$HOME/mc/bin:$PATH
   - nvm install $NODE_VERSION
   - conda update --yes conda
-  - conda create -n testenv --yes numpy nose python=$TRAVIS_PYTHON_VERSION
+  - if [ ! -e "$HOME/mc/envs/testenv" ]; then conda create -n testenv --yes numpy nose python=$TRAVIS_PYTHON_VERSION; fi
   - source activate testenv
 before_script:
   - npm ci

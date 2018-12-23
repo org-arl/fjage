@@ -16,7 +16,7 @@ Import all the necessary symbols from `fjagepy` package::
 
     from fjagepy import Gateway, AgentID, Message, MessageClass, GenericMessage, Performative
 
-or just:
+or just::
 
     from fjagepy import *
 
