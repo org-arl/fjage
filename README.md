@@ -17,7 +17,8 @@ Key Features
 * Agent development in Java or Groovy
 * Interactive Groovy shell and scripting
 * Easy switching between realtime operation and discrete event simulation
-* APIs for access from Javascript, Python, C
+* APIs for access from Java, Groovy, Python, C, and Javascript
+* JSON-based protocol to interface with external applications
 
 Documentation
 -------------
@@ -49,6 +50,15 @@ Contributions are always welcome! Clone, develop and do a pull request!
 Try to stick to the coding style already in use in the repository. Additionally, some guidelines:
 
 * [Commit message style](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#commits)
+
+Building:
+
+* `gradle` to build the jars
+* `gradle check` to run all regression tests (automated through Travis CI)
+* `gradle upload` to upload jars to Maven staging (requires credentials)
+* `make html` to build developer's documentation (automated through ReadTheDocs)
+* `gradle javadoc` to build the Java API documentation
+* `npm run docs` to build the Javascript API documentation
 
 License
 -------

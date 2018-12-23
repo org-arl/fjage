@@ -67,12 +67,68 @@ We could then access the shell using `telnet`:
     shell
     >
 
+GUI shell using Java Swing
+--------------------------
+
+The `SwingShell` GUI has been deprecated and no longer available in fjåge 1.5 and above. Use the web-based shell instead.
+
 Web-based shell
 ---------------
 
-TODO
+A web-based shell is available for users to access using a browser. An `initrc.groovy` enabling the web shell on port 8080 would look like this::
+
+    import org.arl.fjage.*
+    import org.arl.fjage.shell.*
+    import org.arl.fjage.connectors.*
+
+    platform = new RealTimePlatform()
+    container = new Container(platform)
+    WebServer.getInstance(8080).add("/", "/org/arl/fjage/web")
+    Connector conn = new WebSocketConnector(8080, "/shell/ws")
+    shell = new ShellAgent(new ConsoleShell(conn), new GroovyScriptEngine())
+    container.add 'shell', shell
+    // add other agents to the container here
+    platform.start()
+
+The shell can be accessed by accessing http://localhost:8080 once fjåge is running.
+
+.. tip:: The web-based shell uses the Jetty web server. For this to work, the Jetty classes need to be in the classpath. This is automatically done for you if you use the Maven repository to download fjåge and its dependencies. If you used the quickstart script to start using fjåge, you may have to manually download the Jetty web server jars into the `build/lib` folder.
 
 Shell extensions
 ----------------
 
-TODO
+Shell extensions are classes that extend the `org.arl.fjage.shell.ShellExtension` interface, and can be executed in a shell using the agent's `addInitrc()` method or using `run()`. This interface is simply a tag, and does not contain any methods. All public static methods and attributes (except those that contain "`__`" in the name) of the extension class are imported into the shell as comamnds and constants.
+
+If the extension has a `public static void __init__(ScriptEngine engine)` method, it is executed at startup. If the extension has a public static string attribute called `__doc__` , it is loaded into the documentation system. The documentation system interprets it's inputs as Markdown help snippets. A first level heading provides a top level description for the extension. Individual commands and attributes should be described in sections with second level headings.
+
+An simple Groovy extension example is shown below::
+
+    class DemoShellExt implements org.arl.fjage.shell.ShellExtension {
+
+    static final public String __doc__ = '''\
+    # demo - demo shell extension
+
+    This shell extension imports all classes from the package
+    "my.special.package" into the shell. In addition, it adds
+    a command "hello", which is described below:
+
+    ## hello - say hello to the world
+
+    Usage:
+      hello             // say hello
+      hello()           // say hello
+
+    Example:
+    > hello
+    Hello world!!!
+    '''
+
+        static void __init__(ScriptEngine engine) {
+            engine.importClasses('my.special.package.*')
+        }
+
+        static String hello() {
+            return 'Hello world!!!'
+        }
+
+    }
