@@ -20,7 +20,8 @@ before_script:
   # - chmod +x miniconda.sh
   # #for debugging
   - which python
-  - pip3 list
+  - pip list
+  - /opt/pyenv/shims/python --version
   # - ls -la /home/travis/
   # - export PATH=/home/travis/miniconda3/bin:$PATH
   # - conda install --yes numpy=1.8
