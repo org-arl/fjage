@@ -1,8 +1,21 @@
 language: java
+sudo: true
+matrix:
+  include:
+    - python: "3.6"
+      env: DEPS="numpy"
 jdk:
   - oraclejdk8
   - openjdk8
-install: true
+install: 
+  - conda update --yes conda 
+  - conda create -n testenv --yes $DEPS nose python=$TRAVIS_PYTHON_VERSION
+  - source activate testenv
+  # for debugging...
+  - echo $PATH
+  - which python
+  - conda info
+  - conda list
 cache:
   directories:
     - $HOME/.npm
@@ -11,18 +24,22 @@ cache:
 env:
   - NODE_VERSION=10 CC=clang CXX=clang++
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install python3
-  - sudo apt-get install python3-pip
-  # - sudo apt-get install python3-numpy
-  - python3.4 -m pip install numpy==1.8.2
+  - if [ ${TRAVIS_PYTHON_VERSION:0:1} == "2" ]; then wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; else wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b -p /home/travis/mc
+  - export PATH=/home/travis/mc/bin:$PATH
   - nvm install $NODE_VERSION
+  # - sudo apt-get update
+  # - sudo apt-get install python3
+  # - sudo apt-get install python3-pip
+  # # - sudo apt-get install python3-numpy
+  # - python3.4 -m pip install numpy==1.8.2
 before_script:
   # - wget http://repo.continuum.io/miniconda/Miniconda-3.8.3-Linux-x86_64.sh -O miniconda.sh
   # - chmod +x miniconda.sh
   # #for debugging
-  - which python3
-  - /usr/bin/env python3 --version
+  # - which python3
+  # - /usr/bin/env python3 --version
   # - pip list
   # - ls -la /home/travis/
   # - export PATH=/home/travis/miniconda3/bin:$PATH
