@@ -13,14 +13,15 @@ env:
 before_install:
   - sudo apt-get update
   - sudo apt-get install python3
+  - sudo apt-get install python3-numpy
   - nvm install $NODE_VERSION
 before_script:
-  - wget http://repo.continuum.io/miniconda/Miniconda-3.8.3-Linux-x86_64.sh -O miniconda.sh
-  - chmod +x miniconda.sh
-  #for debugging
-  - ls -la /home/travis/
-  - export PATH=/home/travis/miniconda3/bin:$PATH
-  - conda install --yes numpy=1.8
+  # - wget http://repo.continuum.io/miniconda/Miniconda-3.8.3-Linux-x86_64.sh -O miniconda.sh
+  # - chmod +x miniconda.sh
+  # #for debugging
+  # - ls -la /home/travis/
+  # - export PATH=/home/travis/miniconda3/bin:$PATH
+  # - conda install --yes numpy=1.8
   - npm ci
 after_failure:
   - export MY_LOG_DIR="$(pwd)/build/reports/tests/test/"
