@@ -30,7 +30,7 @@ class fjagepyTest {
 	    })
 	    def ret = 0;
 	    println "Running automated tests.";
-	    def proc = "python src/test/groovy/org/arl/fjage/test/BasicTests.py".execute();
+	    def proc = "python3 src/test/groovy/org/arl/fjage/test/BasicTests.py".execute();
 	    def sout = new StringBuilder(), serr = new StringBuilder()
 	    proc.consumeProcessOutput(sout, serr)
 	    proc.waitFor();
