@@ -11,6 +11,8 @@ cache:
 env:
   - NODE_VERSION=10 CC=clang CXX=clang++
 before_install:
+  - sudo apt-get update
+  - sudo apt-get install python3
   - nvm install $NODE_VERSION
 before_script:
   - npm ci
