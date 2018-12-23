@@ -1,4 +1,4 @@
-Fjåge Developer's Guide
+fjåge Developer's Guide
 =======================
 
 Table of Contents
@@ -16,12 +16,14 @@ Table of Contents
    shell
    simulation
    pythongw
+   cgw
+   jsgw
+   protocol
    faq
 
 Useful Links
 ------------
 
-* `Fjåge GitHub home <http://github.com/org-arl/fjage>`_
-* `Fjåge API documentation <http://org-arl.github.com/fjage/javadoc/>`_
-* `Fjåge discussion forum <http://groups.google.com/forum/#!forum/fjage-users>`_
-* `Fjåge issue tracking <http://github.com/org-arl/fjage/issues>`_
+* `fjåge GitHub home <http://github.com/org-arl/fjage>`_
+* `fjåge API documentation <http://org-arl.github.com/fjage/javadoc/>`_
+* `fjåge issue tracking <http://github.com/org-arl/fjage/issues>`_
