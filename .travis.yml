@@ -3,7 +3,7 @@ sudo: false
 matrix:
   include:
     - python: "3.6"
-      env: DEPS="numpy"
+      # env: DEPS="numpy"
 jdk:
   - oraclejdk8
   - openjdk8
