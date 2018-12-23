@@ -23,6 +23,7 @@ Key Features
 Documentation
 -------------
 
+* [Release Notes](ReleaseNotes.md)
 * [Getting Started](https://fjage.readthedocs.io/en/latest/quickstart.html)
 * [Developer's Guide](https://fjage.readthedocs.io/en/latest/)
 * [API documentation](http://org-arl.github.io/fjage/javadoc/)
