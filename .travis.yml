@@ -1,5 +1,5 @@
 language: java
-sudo: true
+sudo: false
 matrix:
   include:
     - python: "3.6"
@@ -7,15 +7,7 @@ matrix:
 jdk:
   - oraclejdk8
   - openjdk8
-install: 
-  - conda update --yes conda 
-  - conda create -n testenv --yes $DEPS nose python=$TRAVIS_PYTHON_VERSION
-  - source activate testenv
-  # for debugging...
-  - echo $PATH
-  - which python
-  - conda info
-  - conda list
+install: true
 cache:
   directories:
     - $HOME/.npm
@@ -29,6 +21,14 @@ before_install:
   - ./miniconda.sh -b -p /home/travis/mc
   - export PATH=/home/travis/mc/bin:$PATH
   - nvm install $NODE_VERSION
+  - conda update --yes conda 
+  - conda create -n testenv --yes numpy nose python=$TRAVIS_PYTHON_VERSION
+  - source activate testenv
+  # for debugging...
+  - echo $PATH
+  - which python
+  - conda info
+  - conda list
   # - sudo apt-get update
   # - sudo apt-get install python3
   # - sudo apt-get install python3-pip
