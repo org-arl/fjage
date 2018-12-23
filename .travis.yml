@@ -12,15 +12,16 @@ cache:
     - $HOME/.npm
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+    - $HOME/mc
 env:
   - NODE_VERSION=10 CC=clang CXX=clang++
 before_install:
   - if [ ${TRAVIS_PYTHON_VERSION:0:1} == "2" ]; then wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; else wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
   - chmod +x miniconda.sh
-  - ./miniconda.sh -b -p /home/travis/mc
-  - export PATH=/home/travis/mc/bin:$PATH
+  - ./miniconda.sh -b -u -p $HOME/mc
+  - export PATH=$HOME/mc/bin:$PATH
   - nvm install $NODE_VERSION
-  - conda update --yes conda 
+  - conda update --yes conda
   - conda create -n testenv --yes numpy nose python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
 before_script:
