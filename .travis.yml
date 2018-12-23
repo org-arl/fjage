@@ -20,6 +20,7 @@ after_failure:
   - export MY_LOG_DIR="$(pwd)/build/reports/tests/test/"
   - pwd && cd "${MY_LOG_DIR:-.}" && pwd && ls -al
   - sudo apt-get install -qq lynx && lynx --dump index.html > myIndex.log
+  - lynx --dump classes/org.arl.fjage.test.fjagepyTest.html > myfjagepyTest.log
   - for file in *.log; do echo "$file"; echo "====================="; cat "$file"; done || true
 notifications:
   slack:
