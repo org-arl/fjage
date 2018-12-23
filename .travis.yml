@@ -19,6 +19,8 @@ before_script:
   # - wget http://repo.continuum.io/miniconda/Miniconda-3.8.3-Linux-x86_64.sh -O miniconda.sh
   # - chmod +x miniconda.sh
   # #for debugging
+  - which python
+  - pip3 list
   # - ls -la /home/travis/
   # - export PATH=/home/travis/miniconda3/bin:$PATH
   # - conda install --yes numpy=1.8
