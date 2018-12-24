@@ -22,5 +22,8 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
+    install_requires=[
+        'numpy>=1.11'
+    ]
     packages=find_packages(exclude=('tests', 'docs')),
 )
