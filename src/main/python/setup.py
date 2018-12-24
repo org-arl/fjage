@@ -3,13 +3,13 @@ from setuptools import setup, find_packages
 with open('../../sphinx/pythongw.rst') as f:
     readme = f.read()
 
-with open('../../../VERSION') as f:
-    ver = f.read()
-    ver = ver.split('-')[0]
+# with open('../../../VERSION') as f:
+#     ver = f.read()
+#     ver = ver.split('-')[0]
 
 setup(
     name='fjagepy',
-    version=ver,
+    version=1.5.0,
     description='Python Gateway',
     long_description=readme,
     author='Prasad Anjangi, Mandar Chitre, Chinmay Pendharkar, Manu Ignatius',
