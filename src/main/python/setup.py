@@ -11,7 +11,7 @@ with open('README.rst') as f:
 
 # with open('../../../VERSION') as f:
 #     ver = f.read()
-#     ver = ver.split('-')[0] + 'b1'
+#     ver = ver.split('-')[0]
 
 setup(
     name='fjagepy',
@@ -28,6 +28,9 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
+    install_requires=[
+        'numpy>=1.11'
+    ]
     packages=find_packages(exclude=('tests', 'docs')),
     install_requires=[
         'numpy>=1.11'
