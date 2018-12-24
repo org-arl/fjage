@@ -1,6 +1,12 @@
 from setuptools import setup, find_packages
 
 with open('../../sphinx/pythongw.rst') as f:
+    with open('README.rst', 'w') as f1:
+        for line in f:
+            if ".. highlight" not in line:
+                f1.write(line)
+
+with open('README.rst') as f:
     readme = f.read()
 
 # with open('../../../VERSION') as f:
@@ -9,7 +15,7 @@ with open('../../sphinx/pythongw.rst') as f:
 
 setup(
     name='fjagepy',
-    version=1.5.0,
+    version='1.5.0',
     description='Python Gateway',
     long_description=readme,
     author='Prasad Anjangi, Mandar Chitre, Chinmay Pendharkar, Manu Ignatius',
@@ -25,5 +31,4 @@ setup(
     install_requires=[
         'numpy>=1.11'
     ]
-    packages=find_packages(exclude=('tests', 'docs')),
 )
