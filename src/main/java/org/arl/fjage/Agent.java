@@ -82,7 +82,7 @@ public class Agent implements Runnable, TimestampProvider {
   private boolean unblocked = false;
   private Platform platform = null;
   private Container container = null;
-  private MessageQueue queue = new MessageQueue();
+  private MessageQueue queue = new MessageQueue(256);
   protected long tid = -1;
 
   /////////////////////// Attributes available to agents
