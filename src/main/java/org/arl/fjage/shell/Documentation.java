@@ -60,18 +60,18 @@ public class Documentation {
     String s = doc.get(pos);
     int level = s.indexOf(' ');
     if (level <= 0) return null;
-    String prefix = s.substring(0,level+1);
+    int endlevel = level;
     StringBuffer sb = new StringBuffer();
     sb.append(s.replaceAll("^#+ +", ""));
     sb.append('\n');
     int skip = 0;
     for (int i = pos+1; i < doc.size(); i++) {
       s = doc.get(i);
-      if (s.startsWith(prefix)) break;
       Matcher m = section.matcher(s);
       if (m.matches()) {
         m = heading.matcher(s);
         level = s.indexOf(' ');
+        if (level <= endlevel) break;
         boolean nl = false;
         if (skip == 0 || level <= skip) {
           if (skip > 0) nl = true;
