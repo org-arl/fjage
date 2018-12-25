@@ -28,6 +28,11 @@ import org.arl.fjage.*;
  */
 public class GroovyScriptEngine implements ScriptEngine {
 
+  ////// private constants
+
+  private final int MAX_RESULT_LEN = 8192;
+  private final int RESULT_SNIPPET_LEN = 32;
+
   ////// private attributes
 
   private GroovyShell groovy;
@@ -305,6 +310,8 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   private void println(Object s) {
     String str = s.toString();
+    int n = str.length();
+    if (n > MAX_RESULT_LEN) str = str.substring(0,RESULT_SNIPPET_LEN) + " <<snip>> " + str.substring(n-RESULT_SNIPPET_LEN);
     log.info("RESULT: "+str);
     // Mostly log the String version, but for messages, log it so that GUI can display details
     // Be careful not to ever log AgentIDs otherwise the toString() extensions can get called too often by GUI!
