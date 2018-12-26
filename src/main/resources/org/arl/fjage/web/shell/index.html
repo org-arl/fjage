@@ -31,29 +31,65 @@
   function setupHterm() {
     const term = new hterm.Terminal();
     term.onTerminalReady = function() {
-      const path = window.location.pathname.replace(/\/[^\/]*$/, '/ws/')
-      const ws = new WebSocket("ws://"+window.location.hostname+":"+window.location.port+path);
-      ws.onerror = (e) => {console.log('WebSocket error : ' + e.toString());};
-      ws.onopen = () => {
-        const io = this.io.push();
-        ws.onmessage = (evt) => {
-          io.print(evt.data);
-        };
-        io.onVTKeystroke = (string) => {
-          ws.send(string);
-        };
-        io.sendString = io.onVTKeystroke;
-        this.setCursorVisible(true);
-        this.keyboard.characterEncoding = 'raw';
-      };
+      const io = this.io.push();
+      this.keyboard.characterEncoding = 'raw';
+      this.keyboard.bindings.addBinding('Meta-R', () => hterm.Keyboard.KeyActions.PASS)
+      this.keyboard.bindings.addBinding('Meta-Shift-R', () => hterm.Keyboard.KeyActions.PASS)
+      connectIO(io, term);
     };
     term.decorate(document.querySelector('#terminal'));
     term.installKeyboard();
+    term.setCursorBlink(true);
+  }
+  function connectIO(io, term){
+    const path = window.location.pathname.replace(/\/[^\/]*$/, '/ws/');
+    const ws = new WebSocket('ws://'+window.location.hostname+':'+window.location.port+path);
+    window.ws = ws;
+    ws.onerror = e => {
+      reconnectIO(io,term,ws);
+    };
+    ws.onclose = e => {
+      reconnectIO(io,term,ws);
+    };
+    ws.onopen = () => {
+      console.log('Connected to ', path);
+      ws.onmessage = (evt) => {
+        console.log("received", evt.data);
+        io.print(evt.data);
+      };
+      io.onVTKeystroke = (string) => {
+        if (ws.readyState != ws.CLOSING && ws.readyState != ws.CLOSED) {
+          console.log("sending ", JSON.stringify(string));
+          ws.send(string);
+        }
+      };
+      io.sendString = io.onVTKeystroke;
+      // sending ^C to get a prompt
+      ws.send('\u0003');
+      // enable cursor to indicate connection is back
+      term.setCursorVisible(true);
+    };
+  }
+  function reconnectIO(io, term, ws){
+    disconnectIO(io, term, ws);
+    setTimeout(() => {
+      connectIO(io, term);
+    },1000);
+  }
+  function disconnectIO(io, term, ws){
+    // enable cursor to indicate connection is back
+    term.setCursorVisible(false);
+    io.onVTKeystroke = () => {};
+    io.sendString = () => {};
+    ws.onmessage = null;
+    ws.onopen = null;
+    ws.onclose = null;
+    ws.onerror = null;
   }
   window.onload = function() {
     hterm.defaultStorage = new lib.Storage.Memory();
     lib.init(setupHterm);
   };
-</script>
+  </script>
 </body>
 </html>

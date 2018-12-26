@@ -126,7 +126,7 @@ public class ConsoleShell implements Shell {
   public void init(ScriptEngine engine) {
     if (term == null) return;
     scriptEngine = engine;
-    if (scriptEngine == null) console = LineReaderBuilder.builder().terminal(term).build();
+    if (scriptEngine == null) console = LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).build();
     else {
       Parser parser = new Parser() {
         @Override
