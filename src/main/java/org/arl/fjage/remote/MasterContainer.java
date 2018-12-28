@@ -358,7 +358,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   /////////////// ConnectionListener interface method
 
   @Override
-  public void connected(TcpConnector conn) {
+  public void connected(Connector conn) {
     log.info("Incoming connection "+conn.toString());
     ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this);
     synchronized(slaves) {

@@ -61,6 +61,11 @@ public class TcpConnector implements Connector {
   }
 
   @Override
+  public void setConnectionListener(ConnectionListener listener) {
+    if (sock != null) listener.connected(this);
+  }
+
+  @Override
   public void close() {
     if (sock == null) return;
     try {

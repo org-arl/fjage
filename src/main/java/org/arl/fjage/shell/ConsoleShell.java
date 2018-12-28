@@ -15,12 +15,12 @@ import java.util.logging.*;
 import org.jline.reader.*;
 import org.jline.terminal.*;
 import org.jline.utils.*;
-import org.arl.fjage.connectors.Connector;
+import org.arl.fjage.connectors.*;
 
 /**
  * Shell input/output driver for console devices.
  */
-public class ConsoleShell implements Shell {
+public class ConsoleShell implements Shell, ConnectionListener {
 
   private Terminal term = null;
   private LineReader console = null;
@@ -86,6 +86,7 @@ public class ConsoleShell implements Shell {
     try {
       InputStream in = connector.getInputStream();
       OutputStream out = connector.getOutputStream();
+      connector.setConnectionListener(this);
       this.connector = connector;
       term = TerminalBuilder.builder().streams(in, out).build();
       setupStyles();
@@ -104,6 +105,7 @@ public class ConsoleShell implements Shell {
     try {
       InputStream in = connector.getInputStream();
       OutputStream out = connector.getOutputStream();
+      connector.setConnectionListener(this);
       this.connector = connector;
       if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
       else {
@@ -113,6 +115,12 @@ public class ConsoleShell implements Shell {
     } catch (IOException ex) {
       log.warning("Unable to open terminal: "+ex.toString());
     }
+  }
+
+  @Override
+  public void connected(Connector connector) {
+    console.callWidget(LineReader.REDRAW_LINE);
+    console.callWidget(LineReader.REDISPLAY);
   }
 
   private void setupStyles() {

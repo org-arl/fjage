@@ -33,6 +33,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   protected OutputThread outThread = null;
   protected PseudoInputStream pin = new PseudoInputStream();
   protected PseudoOutputStream pout = new PseudoOutputStream();
+  protected ConnectionListener listener = null;
   protected Logger log = Logger.getLogger(getClass().getName());
 
   /**
@@ -92,7 +93,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
 
   @Override
   public Object createWebSocket​(ServletUpgradeRequest req, ServletUpgradeResponse resp) {
-    return new WSHandler();
+    return new WSHandler(this);
   }
 
   @Override
@@ -108,6 +109,11 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   @Override
   public OutputStream getOutputStream() {
     return pout;
+  }
+
+  @Override
+  public void setConnectionListener(ConnectionListener listener) {
+    this.listener = listener;
   }
 
   @Override
@@ -184,12 +190,18 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   public class WSHandler {
 
     Session session = null;
+    WebSocketConnector conn;
+
+    public WSHandler(WebSocketConnector conn) {
+      this.conn = conn;
+    }
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
       log.info("New connection from "+session.getRemoteAddress());
       this.session = session;
       wsHandlers.add(this);
+      if (listener != null) listener.connected(conn);
     }
 
     @OnWebSocketClose

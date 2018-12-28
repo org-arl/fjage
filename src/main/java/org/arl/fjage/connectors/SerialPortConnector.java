@@ -61,6 +61,11 @@ public class SerialPortConnector implements Connector {
   }
 
   @Override
+  public void setConnectionListener(ConnectionListener listener) {
+    listener.connected(this);
+  }
+
+  @Override
   public void close() {
     if (com == null) return;
     com.closePort();
