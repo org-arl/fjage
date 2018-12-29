@@ -3,10 +3,74 @@ import { Performative, AgentID, Message, Gateway, MessageClass } from '../../fja
 const DIRNAME = '/tmp';
 const FILENAME = 'fjage-test.txt';
 const TEST_STRING = 'this is a test';
-var GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq');
-var GetFileRsp = MessageClass('org.arl.fjage.shell.GetFileRsp');
-var ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
-var PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq');
+const GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq');
+const GetFileRsp = MessageClass('org.arl.fjage.shell.GetFileRsp');
+const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
+const PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq');
+
+const ValidFjageActions = ['agents', 'containsAgent', 'services', 'agentForService', 'agentsForService', 'send', 'shutdown'];
+const ValidFjagePerformatives = ['REQUEST', 'AGREE', 'REFUSE', 'FAILURE', 'INFORM', 'CONFIRM', 'DISCONFIRM', 'QUERY_IF', 'NOT_UNDERSTOOD', 'CFP', 'PROPOSE', 'CANCEL', ];
+
+function fjageMessageChecker() {
+  return {
+    asymmetricMatch: function(compareTo) {
+      var ret = true;
+      var msg;
+      try{
+        msg = JSON.parse(compareTo);
+      }catch(e){
+        return false;
+      }
+      // ret = ret && msg.id && msg.id.length == 32;
+      ret = ret && msg.action && ValidFjageActions.includes(msg.action);
+      ret = ret && msg.relay;
+
+      if (!msg.message) return ret;
+
+      ret = ret && (!msg.message.clazz || msg.message.clazz instanceof String);
+
+      if (!msg.message.data) return ret;
+
+      ret = ret && !!msg.message.data.msgID && msg.message.data.msgID.length == 32;
+      ret = ret && !!msg.message.data.sender;
+      ret = ret && !!msg.message.data.recipient;
+      ret = ret && msg.message.data.perf && ValidFjagePerformatives.includes(msg.message.data.perf);
+      return ret;
+    },
+    jasmineToString: function() {
+      return '<fjageMessageChecker>';
+    }
+  };
+}
+
+function ShellExecReqChecker() {
+  return {
+    asymmetricMatch: function(compareTo) {
+      var ret = true;
+      var msg;
+      try{
+        msg = JSON.parse(compareTo);
+      }catch(e){
+        return false;
+      }
+      // ret = ret && msg.id && msg.id.length == 32;
+      ret = ret && msg.action && ValidFjageActions.includes(msg.action);
+      ret = ret && msg.relay;
+
+      ret = ret && !!msg.message;
+      ret = ret && msg.message.clazz == 'org.arl.fjage.shell.ShellExecReq';
+      ret = ret && !!msg.message.data;
+      ret = ret && !!msg.message.data.msgID && msg.message.data.msgID.length == 32;
+      ret = ret && !!msg.message.data.sender;
+      ret = ret && !!msg.message.data.recipient;
+      ret = ret && msg.message.data.perf && ValidFjagePerformatives.includes(msg.message.data.perf);
+      return ret;
+    },
+    jasmineToString: function() {
+      return '<ShellExecReqChecker>';
+    }
+  };
+}
 
 describe('A Gateway', function () {
   it('should be able to be constructed', function (done) {
@@ -69,6 +133,54 @@ describe('A Gateway', function () {
         done();
       }, 100);
     }, 100);
+  });
+  it('should send a message over WebSocket', function(done){
+    const shell = new AgentID('shell');
+    const gw = new Gateway();
+    spyOn(gw.sock, 'send').and.callThrough();
+    setTimeout(() => {
+      gw.sock.send.calls.reset();
+      const req = new ShellExecReq();
+      req.recipient = shell;
+      req.cmd = 'boo';
+      gw.request(req);
+      setTimeout(() => {
+        expect(gw.sock.send).toHaveBeenCalled();
+        done();
+      },100);
+    },100);
+  });
+  it('should send a WebSocket message of valid fjage message structure', function(done){
+    const shell = new AgentID('shell');
+    const gw = new Gateway();
+    spyOn(gw.sock, 'send').and.callThrough();
+    setTimeout(() => {
+      gw.sock.send.calls.reset();
+      const req = new ShellExecReq();
+      req.recipient = shell;
+      req.cmd = 'boo';
+      gw.request(req);
+      setTimeout(() => {
+        expect(gw.sock.send).toHaveBeenCalledWith(fjageMessageChecker());
+        done();
+      },100);
+    },100);
+  });
+  it('should send correct ShellExecReq of valid fjage message structure', function(done){
+    const shell = new AgentID('shell');
+    const gw = new Gateway();
+    spyOn(gw.sock, 'send').and.callThrough();
+    setTimeout(() => {
+      gw.sock.send.calls.reset();
+      const req = new ShellExecReq();
+      req.recipient = shell;
+      req.cmd = 'boo';
+      gw.request(req);
+      setTimeout(() => {
+        expect(gw.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
+        done();
+      },100);
+    },100);
   });
 });
 
@@ -135,7 +247,6 @@ describe('Shell GetFile/PutFile', function () {
   var gw, shell;
   beforeAll(() => {
     gw = new Gateway();
-    // gw.debug = true;
     shell = new AgentID('shell');
   });
 
@@ -145,9 +256,8 @@ describe('Shell GetFile/PutFile', function () {
     pfr.filename = DIRNAME + '/' + FILENAME;
     const rsp = gw.request(pfr);
     expect(rsp).not.toBeNull();
-    rsp.then((msg) => {
+    rsp.then(() => {
       setTimeout(() => {
-
         gw.close();
         done();
       },100);
@@ -244,7 +354,7 @@ describe('Shell GetFile/PutFile', function () {
     });
   });
 
-  it('should refuse to return the contents of the file if offset is beyond filelength using GetFileReq', function (done) {
+  it('should refuse to return the contents of the file if offset is beyond file length using GetFileReq', function (done) {
     var gfr = new GetFileReq();
     gfr.recipient = shell;
     gfr.filename = DIRNAME + '/' + FILENAME;
