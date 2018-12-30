@@ -37,8 +37,8 @@ public class Gateway {
 
   //////////// Private attributes
 
-  private SlaveContainer container;
-  private Agent agent;
+  protected SlaveContainer container;
+  protected Agent agent;
 
   /////////// Interface methods
 
