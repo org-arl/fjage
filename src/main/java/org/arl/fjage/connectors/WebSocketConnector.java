@@ -173,7 +173,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
         try {
           Thread.sleep(10);
         } catch (InterruptedException ex) {
-          Thread.interrupted();
+          break;
         }
       }
     }

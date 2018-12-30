@@ -177,7 +177,7 @@ public class Agent implements Runnable, TimestampProvider {
       Thread.currentThread().interrupt();
     }
     if (state == AgentState.IDLE) {
-      log.info("Spurious wakeup detected, evasive action taken");
+      log.info("block() interrupted");
       if (oldState != AgentState.NONE) {
         state = oldState;
         if (container != null) container.reportBusy(aid);
@@ -430,6 +430,7 @@ public class Agent implements Runnable, TimestampProvider {
           long t = deadline - currentTimeMillis();
           block(t);
         }
+        if (Thread.interrupted()) return null;
         if (state == AgentState.FINISHING) return null;
         m = queue.get(filter);
       } while (m == null && (timeout == BLOCKING || currentTimeMillis() < deadline));
@@ -745,7 +746,10 @@ public class Agent implements Runnable, TimestampProvider {
     container.reportBusy(aid);
     try {
       init();
-      if (!container.isRunning()) block();
+      while (!container.isRunning()) {
+        block();
+        Thread.interrupted(); // interrupts used for disrupting timeouts only
+      }
       while (state != AgentState.FINISHING) {
         // restart necessary blocked behaviors
         if (restartBehaviors) {
@@ -786,6 +790,7 @@ public class Agent implements Runnable, TimestampProvider {
           continue;
         }
         block();
+        Thread.interrupted(); // interrupts used for disrupting timeouts only
       }
     } catch (Throwable ex) {
       log.log(Level.SEVERE, "Exception in agent: "+aid, ex);

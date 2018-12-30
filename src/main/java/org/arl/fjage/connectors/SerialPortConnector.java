@@ -85,7 +85,8 @@ public class SerialPortConnector implements Connector {
       try {
         Thread.sleep(100);
       } catch (InterruptedException ex) {
-        // do nothing
+        Thread.currentThread().interrupt();
+        return false;
       }
     }
     return true;

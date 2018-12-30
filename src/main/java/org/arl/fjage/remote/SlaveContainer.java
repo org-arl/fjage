@@ -274,7 +274,7 @@ public class SlaveContainer extends RemoteContainer {
             Thread.sleep(1000);
           }
         } catch (InterruptedException ex) {
-          log.severe("Connection manager interrupted!");
+          log.warning("Connection manager interrupted!");
         }
       }
     }.start();

@@ -121,7 +121,7 @@ public class Gateway {
             });
             sync.wait();
           } catch (InterruptedException ex) {
-            // ignore exception
+            Thread.currentThread().interrupt();
           }
           return rsp;
         }

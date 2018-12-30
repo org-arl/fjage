@@ -494,7 +494,10 @@ public class Container {
         try {
           Thread.sleep(100);
         } catch (InterruptedException ex) {
-          // do nothing
+          log.warning("Init interrupted!");
+          Thread.currentThread().interrupt();
+          initing = false;
+          return;
         }
         if (agentsToAdd.size() > 0) {
           synchronized (agents) {
@@ -550,7 +553,12 @@ public class Container {
             try {
               wait(100);   // wait for all agents to kill themselves
             } catch (InterruptedException ex) {
-              // do nothing, try again
+              log.warning("Shutdown interrupted!");
+              Thread.currentThread().interrupt();
+              agents.clear();
+              idle.clear();
+              running = false;
+              return;
             }
           }
         }
@@ -610,9 +618,9 @@ public class Container {
     s += "/"+platform;
     return s;
   }
-  
+
   //////////////// Package private methods
-  
+
   /**
    * Deep clones an object if autoclone is enabled.
    *

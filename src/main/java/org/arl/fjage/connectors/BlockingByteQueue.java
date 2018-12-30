@@ -110,7 +110,7 @@ public class BlockingByteQueue {
     try {
       if (bytes == 0) wait();
     } catch (InterruptedException ex) {
-      Thread.interrupted();
+      Thread.currentThread().interrupt();
     }
     if (bytes == 0) return -1;
     if (rpos >= rlen) {
@@ -155,7 +155,7 @@ public class BlockingByteQueue {
     try {
       if (bytes == 0) wait();
     } catch (InterruptedException ex) {
-      Thread.interrupted();
+      Thread.currentThread().interrupt();
     }
     if (bytes == 0) return null;
     byte[] buf = new byte[bytes];

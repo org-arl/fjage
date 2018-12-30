@@ -55,7 +55,8 @@ public class TcpHubConnector extends Thread implements Connector {
       try {
         wait(100);
       } catch (InterruptedException ex) {
-        // do nothing
+        Thread.currentThread().interrupt();
+        return -1;
       }
     }
     return port;
@@ -97,7 +98,8 @@ public class TcpHubConnector extends Thread implements Connector {
       try {
         sleep(10);
       } catch (InterruptedException ex) {
-        // do nothing
+        Thread.currentThread().interrupt();
+        return false;
       }
     }
     return true;
@@ -213,12 +215,12 @@ public class TcpHubConnector extends Thread implements Connector {
         try {
           sleep(100);
         } catch (InterruptedException ex) {
-          // do nothing
+          Thread.currentThread().interrupt();
         }
-        while (in.available() > 0)
+        while (!Thread.interrupted() && in.available() > 0)
           in.read();
         // process incoming data
-        while (true) {
+        while (!Thread.interrupted()) {
           int c = in.read();
           if (c < 0 || c == 4) break;
           if (c > 0) pin.write(c);

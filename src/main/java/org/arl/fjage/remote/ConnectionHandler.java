@@ -153,7 +153,7 @@ class ConnectionHandler extends Thread {
         id.wait(timeout);
       }
     } catch (InterruptedException ex) {
-      // do nothing
+      Thread.currentThread().interrupt();
     }
     Object rv = pending.get(id);
     pending.remove(id);
