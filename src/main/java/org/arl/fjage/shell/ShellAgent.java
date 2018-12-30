@@ -101,7 +101,7 @@ public class ShellAgent extends Agent {
         if (exec != null) {
           try {
             exec.call();
-          } catch (Exception ex) {
+          } catch (Throwable ex) {
             log.warning("Exec failure: "+ex.toString());
           }
           exec = null;
@@ -157,7 +157,11 @@ public class ShellAgent extends Agent {
                         @Override
                         public Void call() {
                           log.info("> "+cmd);
-                          engine.exec(cmd);
+                          try {
+                            engine.exec(cmd);
+                          } catch (Throwable ex) {
+                            log.warning("Exec failure: "+ex.toString());
+                          }
                           return null;
                         }
                       };
@@ -200,7 +204,7 @@ public class ShellAgent extends Agent {
             else if (script.reader != null) engine.exec(script.reader, script.name);
             else if (script.cls != null) engine.exec(script.cls);
           }
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
           log.warning("Init script failure: "+ex.toString());
         }
         if (consoleThread != null) consoleThread.start();
