@@ -37,8 +37,13 @@ public class Gateway {
 
   //////////// Private attributes
 
-  protected SlaveContainer container;
-  protected Agent agent;
+  protected Container container = null;
+  protected Agent agent = null;
+  protected boolean shutdownContainer = false;
+
+  protected Gateway() {
+    // empty constructor to allow extending gateway
+  }
 
   /////////// Interface methods
 
@@ -100,7 +105,16 @@ public class Gateway {
     platform.start();
   }
 
-  private void init() {
+  /**
+   * Creates a gateway based on an exsiting container.
+   */
+  public Gateway(Container container) {
+    this.container = container;
+    shutdownContainer = false;
+    init();
+  }
+
+  protected void init() {
     agent = new Agent() {
       private Message rsp;
       private Object sync = new Object();
@@ -122,6 +136,7 @@ public class Gateway {
             sync.wait();
           } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
+            thread.interrupt();
           }
           return rsp;
         }
@@ -144,7 +159,10 @@ public class Gateway {
    * this method is called.
    */
   public void shutdown() {
-    if (container != null) container.shutdown();
+    if (container != null) {
+      if (shutdownContainer) container.shutdown();
+      else container.kill(getAgentID());
+    }
     agent = null;
     container = null;
   }
@@ -156,6 +174,7 @@ public class Gateway {
    * @param m message to be sent.
    */
   public void send(final Message m) {
+    if (agent == null) return;
     agent.add(new OneShotBehavior() {
       @Override
       public void action() {
@@ -173,6 +192,7 @@ public class Gateway {
    * @return received message matching the filter, null on timeout.
    */
   public synchronized Message receive(final MessageFilter filter, final long timeout) {
+    if (agent == null) return null;
     return agent.receive(filter, timeout);
   }
 
@@ -273,6 +293,7 @@ public class Gateway {
    * @return object representing the topic.
    */
   public AgentID topic(String topic) {
+    if (agent == null) return null;
     return agent.topic(topic);
   }
 
@@ -283,6 +304,7 @@ public class Gateway {
    * @return object representing the topic.
    */
   public AgentID topic(Enum<?> topic) {
+    if (agent == null) return null;
     return agent.topic(topic);
   }
 
@@ -293,6 +315,7 @@ public class Gateway {
    * @return object representing the topic.
    */
   public AgentID topic(AgentID topic) {
+    if (agent == null) return null;
     return agent.topic(topic);
   }
 
@@ -304,6 +327,7 @@ public class Gateway {
    * @return object representing the topic.
    */
   public AgentID topic(AgentID aid, String topic) {
+    if (agent == null) return null;
     return agent.topic(aid, topic);
   }
 
@@ -315,6 +339,7 @@ public class Gateway {
    * @return object representing the topic.
    */
   public AgentID topic(AgentID aid, Enum<?> topic) {
+    if (agent == null) return null;
     return agent.topic(aid, topic);
   }
 
@@ -325,6 +350,7 @@ public class Gateway {
    * @return true if the subscription is successful, false otherwise.
    */
   public boolean subscribe(AgentID topic) {
+    if (agent == null) return false;
     return agent.subscribe(topic);
   }
 
@@ -335,6 +361,7 @@ public class Gateway {
    * @return true if the unsubscription is successful, false otherwise.
    */
   public boolean unsubscribe(AgentID topic) {
+    if (agent == null) return false;
     return agent.unsubscribe(topic);
   }
 
@@ -346,6 +373,7 @@ public class Gateway {
    * @return an agent id for an agent that provides the service.
    */
   public AgentID agentForService(String service) {
+    if (container == null) return null;
     return container.agentForService(service);
   }
 
@@ -357,6 +385,7 @@ public class Gateway {
    * @return an agent id for an agent that provides the service.
    */
   public AgentID agentForService(Enum<?> service) {
+    if (container == null) return null;
     return container.agentForService(service.getClass().getName()+"."+service.toString());
   }
 
@@ -367,6 +396,7 @@ public class Gateway {
    * @return an array of agent ids representing all agent that provide the service.
    */
   public AgentID[] agentsForService(String service) {
+    if (container == null) return null;
     return container.agentsForService(service);
   }
 
@@ -377,6 +407,7 @@ public class Gateway {
    * @return an array of agent ids representing all agent that provide the service.
    */
   public AgentID[] agentsForService(Enum<?> service) {
+    if (container == null) return null;
     return container.agentsForService(service.getClass().getName()+"."+service.toString());
   }
 

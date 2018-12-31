@@ -84,6 +84,7 @@ public class Agent implements Runnable, TimestampProvider {
   private Container container = null;
   private MessageQueue queue = new MessageQueue(256);
   protected long tid = -1;
+  protected Thread thread = null;
 
   /////////////////////// Attributes available to agents
 
@@ -741,7 +742,8 @@ public class Agent implements Runnable, TimestampProvider {
    */
   @Override
   public final void run() {
-    tid = Thread.currentThread().getId();
+    thread = Thread.currentThread();
+    tid = thread.getId();
     state = AgentState.RUNNING;
     container.reportBusy(aid);
     try {
