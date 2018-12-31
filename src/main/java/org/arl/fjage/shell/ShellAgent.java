@@ -352,7 +352,8 @@ public class ShellAgent extends Agent {
   ////// private methods
 
   private void shutdownPlatform() {
-    getPlatform().shutdown();
+    Platform platform = getPlatform();
+    if (platform != null) platform.shutdown();
     stop();
   }
 
