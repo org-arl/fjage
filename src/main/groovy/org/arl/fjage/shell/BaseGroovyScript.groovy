@@ -376,7 +376,7 @@ abstract class BaseGroovyScript extends Script {
             GroovyScriptEngine engine = binding.getVariable('__script_engine__');
             engine.exec(cls);
           } else {
-            Script script = (Class<Script>)cls.newInstance();
+            Script script = ((Class<Script>)cls).newInstance();
             binding.setVariable('script', cls.getName());
             binding.setVariable('args', args);
             script.setBinding(binding);
