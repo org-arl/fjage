@@ -29,6 +29,11 @@ public interface Shell {
   public void init(ScriptEngine engine);
 
   /**
+   * Display input line.
+   */
+  public void input(Object obj);
+
+  /**
    * Display script output.
    */
   public void println(Object obj);

@@ -146,27 +146,25 @@ public class ShellAgent extends Agent {
               s = null;
             } else {
               if (engine == null) s = null;
-              else {
+              else if (exec == null && !engine.isBusy()) {
                 final String cmd = s.trim();
                 s = null;
                 if (cmd.length() > 0) {
-                  if (exec != null || engine.isBusy()) shell.error("BUSY");
-                  else {
-                    synchronized(executor) {
-                      exec = new Callable<Void>() {
-                        @Override
-                        public Void call() {
-                          log.info("> "+cmd);
-                          try {
-                            engine.exec(cmd);
-                          } catch (Throwable ex) {
-                            log.warning("Exec failure: "+ex.toString());
-                          }
-                          return null;
+                  synchronized(executor) {
+                    exec = new Callable<Void>() {
+                      @Override
+                      public Void call() {
+                        log.info("> "+cmd);
+                        shell.input("> "+cmd.replaceAll("\n", "\n- "));
+                        try {
+                          engine.exec(cmd);
+                        } catch (Throwable ex) {
+                          log.warning("Exec failure: "+ex.toString());
                         }
-                      };
-                      executor.restart();
-                    }
+                        return null;
+                      }
+                    };
+                    executor.restart();
                   }
                 }
               }

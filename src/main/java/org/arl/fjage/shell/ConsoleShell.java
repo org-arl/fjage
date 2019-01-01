@@ -26,6 +26,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
   private LineReader console = null;
   private Connector connector = null;
   private ScriptEngine scriptEngine = null;
+  private AttributedStyle inputStyle = null;
   private AttributedStyle outputStyle = null;
   private AttributedStyle notifyStyle = null;
   private AttributedStyle errorStyle = null;
@@ -125,6 +126,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
 
   private void setupStyles() {
     AttributedStyle style = new AttributedStyle();
+    inputStyle = style.foreground(AttributedStyle.WHITE);
     outputStyle = style.foreground(AttributedStyle.GREEN);
     notifyStyle = style.foreground(AttributedStyle.BLUE);
     errorStyle = style.foreground(AttributedStyle.RED);
@@ -139,8 +141,8 @@ public class ConsoleShell implements Shell, ConnectionListener {
       Parser parser = new Parser() {
         @Override
         public CompletingParsedLine parse(String s, int cursor) {
-          if (!scriptEngine.isComplete(s)) throw new EOFError(0, cursor, "Incomplete sentence");
-          if (s.contains("\n") && cursor < s.length()) throw new EOFError(0, cursor, "Editing");
+          if (!scriptEngine.isComplete(s)) throw new EOFError(-1, -1, "");
+          if (s.contains("\n") && cursor < s.length()) throw new EOFError(-1, -1, "");
           return null;
         }
         @Override
@@ -150,7 +152,14 @@ public class ConsoleShell implements Shell, ConnectionListener {
       };
       console = LineReaderBuilder.builder().parser(parser).terminal(term).build();
       console.setVariable(LineReader.DISABLE_COMPLETION, true);
+      console.setOpt(LineReader.Option.ERASE_LINE_ON_FINISH);
     }
+  }
+
+  @Override
+  public void input(Object obj) {
+    if (obj == null || console == null) return;
+    console.printAbove(new AttributedString(obj.toString(), inputStyle));
   }
 
   @Override
