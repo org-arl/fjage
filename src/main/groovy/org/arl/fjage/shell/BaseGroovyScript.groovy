@@ -591,11 +591,12 @@ abstract class BaseGroovyScript extends Script {
    */
   String input(String prompt = null, boolean hide = false) {
     Binding binding = getBinding();
-    if (binding.hasVariable('__input__')) {
+    if (binding.hasVariable('__input__') && binding.hasVariable('out')) {
       def input = binding.getVariable('__input__');
-      if (prompt) println(prompt);
+      def out = binding.getVariable('out');
+      if (prompt) out.prompt(prompt);
       String s = input.get();
-      if (!hide && s) println(s);
+      if (!hide && s) out.input(s);
       return s;
     }
     return null;
@@ -609,7 +610,7 @@ abstract class BaseGroovyScript extends Script {
    */
   boolean defined(String varname) {
     Binding binding = getBinding();
-    return binding.hasVariable(varname)
+    return binding.hasVariable(varname);
   }
 
   /**
@@ -617,16 +618,16 @@ abstract class BaseGroovyScript extends Script {
    */
   def propertyMissing(String name) {
     Binding binding = getBinding();
-    def a = agent(name)
-    if (getContainer()?.canLocateAgent(a)) return a
+    def a = agent(name);
+    if (getContainer()?.canLocateAgent(a)) return a;
     try {
       if (binding.hasVariable('__groovy__')) {
         GroovyShell groovy = binding.getVariable('__groovy__');
-        return groovy.evaluate(name+'()')
+        return groovy.evaluate(name+'()');
       }
-      throw new MissingPropertyException(name, getClass())
+      throw new MissingPropertyException(name, getClass());
     } catch (MissingMethodException ex) {
-      throw new MissingPropertyException(name, getClass())
+      throw new MissingPropertyException(name, getClass());
     }
   }
 
@@ -635,9 +636,9 @@ abstract class BaseGroovyScript extends Script {
    */
   void methodMissing(String name, args) {
     try {
-      run(name, args as String[])
+      run(name, args as String[]);
     } catch (FileNotFoundException ex) {
-      throw new MissingMethodException(name, getClass(), args)
+      throw new MissingMethodException(name, getClass(), args);
     }
   }
 

@@ -26,6 +26,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
   private LineReader console = null;
   private Connector connector = null;
   private ScriptEngine scriptEngine = null;
+  private AttributedStyle promptStyle = null;
   private AttributedStyle inputStyle = null;
   private AttributedStyle outputStyle = null;
   private AttributedStyle notifyStyle = null;
@@ -126,9 +127,10 @@ public class ConsoleShell implements Shell, ConnectionListener {
 
   private void setupStyles() {
     AttributedStyle style = new AttributedStyle();
+    promptStyle = style.foreground(AttributedStyle.BRIGHT+AttributedStyle.YELLOW);
     inputStyle = style.foreground(AttributedStyle.WHITE);
     outputStyle = style.foreground(AttributedStyle.GREEN);
-    notifyStyle = style.foreground(AttributedStyle.BLUE);
+    notifyStyle = style.foreground(AttributedStyle.BRIGHT+AttributedStyle.BLUE);
     errorStyle = style.foreground(AttributedStyle.RED);
   }
 
@@ -154,6 +156,12 @@ public class ConsoleShell implements Shell, ConnectionListener {
       console.setVariable(LineReader.DISABLE_COMPLETION, true);
       console.setOpt(LineReader.Option.ERASE_LINE_ON_FINISH);
     }
+  }
+
+  @Override
+  public void prompt(Object obj) {
+    if (obj == null || console == null) return;
+    console.printAbove(new AttributedString(obj.toString(), promptStyle));
   }
 
   @Override
