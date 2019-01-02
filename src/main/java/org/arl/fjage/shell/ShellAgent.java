@@ -85,6 +85,8 @@ public class ShellAgent extends Agent {
     if (engine != null) {
       engine.bind(shell);
       engine.setVariable("__agent__", this);
+      engine.setVariable("__shell__", shell);
+      engine.setVariable("__script_engine__", engine);
     }
     addInitrc("cls://org.arl.fjage.shell.ShellDoc");
   }
@@ -187,9 +189,13 @@ public class ShellAgent extends Agent {
         else if (msg.getPerformative() == Performative.REQUEST) send(new Message(msg, Performative.NOT_UNDERSTOOD));
         else {
           log.info(msg.getSender()+" > "+msg.toString());
-          if (engine != null) engine.deliver(msg);
           for (MessageListener ml: listeners)
-            ml.onReceive(msg);
+            try {
+              if (ml.onReceive(msg)) return;
+            } catch (Throwable ex) {
+              log.warning("MessageListener: "+ex.toString());
+            }
+          if (engine != null) engine.deliver(msg);
         }
       }
     });
@@ -325,27 +331,27 @@ public class ShellAgent extends Agent {
   }
 
   /**
-   * Adds a message monitor for displayed messages.
+   * Adds a message listener for incoming notifications.
    *
    * @param ml message listener.
    */
-  public void addMessageMonitor(MessageListener ml) {
+  public void addMessageListener(MessageListener ml) {
     listeners.add(ml);
   }
 
   /**
-   * Removes a message monitor.
+   * Removes a message listener.
    *
    * @param ml message listener.
    */
-  public void removeMessageMonitor(MessageListener ml) {
+  public void removeMessageListener(MessageListener ml) {
     listeners.remove(ml);
   }
 
   /**
-   * Removes all message monitors.
+   * Removes all message listeners.
    */
-  public void clearMessageMonitors() {
+  public void clearMessageListeners() {
     listeners.clear();
   }
 

@@ -21,9 +21,13 @@ public interface MessageListener {
 
   /**
    * This method is called for each message to be conveyed to the listener.
+   * <p>
+   * If this method returns true, the message is assumed to be consumed
+   * and is not passed to further message listeners.
    *
    * @param msg received message.
+   * @return true if the message is consumed, false otherwise.
    */
-  public void onReceive(Message msg);
+  public boolean onReceive(Message msg);
 
 }

@@ -88,7 +88,6 @@ public class GroovyScriptEngine implements ScriptEngine {
     CompilerConfiguration compiler = new CompilerConfiguration();
     compiler.setScriptBaseClass(BaseGroovyScript.class.getName());
     imports = new ImportCustomizer();
-    binding.setVariable("__script_engine__", this);
     binding.setVariable("__input__", input);
     binding.setVariable("rsp", null);
     binding.setVariable("ntf", null);
