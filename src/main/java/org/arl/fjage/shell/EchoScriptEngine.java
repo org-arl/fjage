@@ -96,6 +96,11 @@ public class EchoScriptEngine implements ScriptEngine {
   }
 
   @Override
+  public boolean offer(String s) {
+    return false;
+  }
+
+  @Override
   public boolean isBusy() {
     return busy;
   }

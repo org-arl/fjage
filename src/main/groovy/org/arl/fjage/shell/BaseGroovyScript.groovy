@@ -583,10 +583,29 @@ abstract class BaseGroovyScript extends Script {
   }
 
   /**
+   * Gets user input.
+   *
+   * @param prompt prompt to display, or null.
+   * @param hide true to hide input after entering.
+   * @return string input from user.
+   */
+  String input(String prompt = null, boolean hide = false) {
+    Binding binding = getBinding();
+    if (binding.hasVariable('__input__')) {
+      def input = binding.getVariable('__input__');
+      if (prompt) println(prompt);
+      String s = input.get();
+      if (!hide && s) println(s);
+      return s;
+    }
+    return null;
+  }
+
+  /**
    * Checks is a named variable is defined in the shell.
    *
-   * @param varname name of the variable
-   * @return true if defined, false otherwise
+   * @param varname name of the variable.
+   * @return true if defined, false otherwise.
    */
   boolean defined(String varname) {
     Binding binding = getBinding();

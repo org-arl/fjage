@@ -33,6 +33,39 @@ public class GroovyScriptEngine implements ScriptEngine {
   private final int MAX_RESULT_LEN = 8192;
   private final int RESULT_SNIPPET_LEN = 32;
 
+  ////// inner classes
+
+  class BlockingInput {
+
+    private int waiting = 0;
+    private String input = null;
+
+    synchronized String get() throws InterruptedException {
+      try {
+        waiting++;
+        while (input == null)
+          wait();
+      } finally {
+        waiting--;
+      }
+      String s = input;
+      input = null;
+      return s;
+    }
+
+    synchronized boolean put(String s) {
+      if (waiting == 0) return false;
+      input = s;
+      notify();
+      return true;
+    }
+
+    synchronized boolean isWaiting() {
+      return waiting > 0;
+    }
+
+  }
+
   ////// private attributes
 
   private GroovyShell groovy;
@@ -41,6 +74,7 @@ public class GroovyScriptEngine implements ScriptEngine {
   private Shell out = null;
   private Thread busy = null;
   private Documentation doc = new Documentation();
+  private BlockingInput input = new BlockingInput();
   private Logger log = Logger.getLogger(getClass().getName());
 
   ////// constructor
@@ -55,6 +89,7 @@ public class GroovyScriptEngine implements ScriptEngine {
     compiler.setScriptBaseClass(BaseGroovyScript.class.getName());
     imports = new ImportCustomizer();
     binding.setVariable("__script_engine__", this);
+    binding.setVariable("__input__", input);
     binding.setVariable("rsp", null);
     binding.setVariable("ntf", null);
     compiler.addCompilationCustomizers(imports);
@@ -304,6 +339,11 @@ public class GroovyScriptEngine implements ScriptEngine {
     if (msg.getPerformative() == Performative.INFORM || msg.getInReplyTo() == null) binding.setVariable("ntf", msg);
     else binding.setVariable("rsp", msg);
     if (out != null) out.notify(msg.getSender().getName() + " >> " + msg.toString());
+  }
+
+  @Override
+  public boolean offer(String s) {
+    return input.put(s);
   }
 
   ////// private methods

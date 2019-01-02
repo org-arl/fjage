@@ -148,6 +148,8 @@ public class ShellAgent extends Agent {
               if (engine == null) s = null;
               else if (exec == null && !engine.isBusy()) {
                 final String cmd = s.trim();
+                final String p1 = prompt1;
+                final String p2 = "\n"+prompt2;
                 s = null;
                 if (cmd.length() > 0) {
                   synchronized(executor) {
@@ -155,7 +157,7 @@ public class ShellAgent extends Agent {
                       @Override
                       public Void call() {
                         log.info("> "+cmd);
-                        shell.input("> "+cmd.replaceAll("\n", "\n- "));
+                        shell.input(p1+cmd.replaceAll("\n", p2));
                         try {
                           engine.exec(cmd);
                         } catch (Throwable ex) {
@@ -167,7 +169,7 @@ public class ShellAgent extends Agent {
                     executor.restart();
                   }
                 }
-              }
+              } else if (engine.offer(s)) s = null;
             }
           }
         }

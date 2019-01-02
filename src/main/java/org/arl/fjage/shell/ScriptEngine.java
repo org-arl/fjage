@@ -113,6 +113,14 @@ public interface ScriptEngine {
   public void deliver(Message msg);
 
   /**
+   * Offers a string input to a running script. This is used to allow interactive scripts.
+   *
+   * @param s string input
+   * @return true if consumed, false otherwise
+   */
+  public boolean offer(String s);
+
+  /**
    * Check if script is currently being executed.
    */
   public boolean isBusy();

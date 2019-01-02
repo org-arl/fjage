@@ -137,6 +137,14 @@ Examples:
   msg = receive { it instanceof A } // get message that of class A
   msg = receive req                 // get message response to req
 
+## input - get user input
+
+Usage:
+  input [prompt], [hide]
+
+Examples:
+  name = input('What is your name?')  // prompt user and get input
+  secret = input('Secret?', true)     // hide input after entering
 '''
 
   static void __init__(ScriptEngine engine) {
