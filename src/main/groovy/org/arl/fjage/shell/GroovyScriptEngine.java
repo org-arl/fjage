@@ -105,6 +105,7 @@ public class GroovyScriptEngine implements ScriptEngine {
   @Override
   public void bind(Shell shell) {
     out = shell;
+    binding.setVariable("__out__", out);
   }
 
   @Override
@@ -309,7 +310,11 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   @Override
   public Object getVariable(String name) {
-    return binding.getVariable(name);
+    try {
+      return binding.getVariable(name);
+    } catch (Exception ex) {
+      return null;
+    }
   }
 
   @Override
@@ -344,6 +349,12 @@ public class GroovyScriptEngine implements ScriptEngine {
   public boolean offer(String s) {
     return input.put(s);
   }
+
+  @Override
+  public String input() throws InterruptedException {
+    return input.get();
+  }
+
 
   ////// private methods
 

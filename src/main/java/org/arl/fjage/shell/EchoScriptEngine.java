@@ -101,6 +101,11 @@ public class EchoScriptEngine implements ScriptEngine {
   }
 
   @Override
+  public String input() {
+    return null;
+  }
+
+  @Override
   public boolean isBusy() {
     return busy;
   }

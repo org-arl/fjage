@@ -121,6 +121,14 @@ public interface ScriptEngine {
   public boolean offer(String s);
 
   /**
+   * Gets an input offered by {@link offer()}. Blocks until an input is available or
+   * an interrupt. This is used to allow interactive scripts.
+   *
+   * @return input string, or null if input not supported
+   */
+  public String input() throws InterruptedException;
+
+  /**
    * Check if script is currently being executed.
    */
   public boolean isBusy();
