@@ -143,7 +143,7 @@ public class ShellAgent extends Agent {
                 }
               }
               if (aborted) {
-                log.info("ABORT");
+                log.fine("ABORT");
               }
               s = null;
             } else {
@@ -158,7 +158,7 @@ public class ShellAgent extends Agent {
                     exec = new Callable<Void>() {
                       @Override
                       public Void call() {
-                        log.info("> "+cmd);
+                        log.fine("> "+cmd);
                         shell.input(p1+cmd.replaceAll("\n", p2));
                         try {
                           engine.exec(cmd);
@@ -188,7 +188,7 @@ public class ShellAgent extends Agent {
         else if (msg instanceof PutFileReq) handlePutFileReq((PutFileReq)msg);
         else if (msg.getPerformative() == Performative.REQUEST) send(new Message(msg, Performative.NOT_UNDERSTOOD));
         else {
-          log.info(msg.getSender()+" > "+msg.toString());
+          log.fine(msg.getSender()+" > "+msg.toString());
           for (MessageListener ml: listeners)
             try {
               if (ml.onReceive(msg)) return;
@@ -376,7 +376,7 @@ public class ShellAgent extends Agent {
             exec = new Callable<Void>() {
               @Override
               public Void call() {
-                log.info("run "+file.getName());
+                log.fine("run "+file.getName());
                 engine.exec(file, req.getScriptArgs());
                 return null;
               }
@@ -410,7 +410,7 @@ public class ShellAgent extends Agent {
     InputStream is = null;
     try {
       if (f.isDirectory()) {
-        log.info("list dir "+filename);
+        log.fine("list dir "+filename);
         File[] files = f.listFiles();
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < files.length; i++) {
@@ -425,12 +425,11 @@ public class ShellAgent extends Agent {
         rsp.setDirectory(true);
         rsp.setContents(sb.toString().getBytes());
       } else if (f.canRead()) {
-        log.info("get file "+filename);
+        log.fine("get file "+filename);
         long ofs = req.getOffset();
         long len = req.getLength();
         long length = f.length();
         if (ofs > length) {
-          log.info("File too short for requested offset!");
           send(new Message(req, Performative.REFUSE));
           return;
         }
@@ -493,10 +492,10 @@ public class ShellAgent extends Agent {
     OutputStream os = null;
     try {
       if (contents == null) {
-        log.info("delete "+filename);
+        log.fine("delete "+filename);
         if (f.delete()) rsp = new Message(req, Performative.AGREE);
       } else {
-        log.info("put "+filename);
+        log.fine("put "+filename);
         os = new FileOutputStream(f);
         os.write(contents);
         rsp = new Message(req, Performative.AGREE);

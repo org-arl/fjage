@@ -133,7 +133,7 @@ public class GroovyScriptEngine implements ScriptEngine {
         String cmd = cmd1.trim();
         if (cmd.startsWith("help ")) cmd = "help '"+cmd.substring(5)+"'";
         else if (cmd.startsWith("import ")) cmd = "export '"+cmd.substring(7)+"'";
-        log.info("EVAL: "+cmd);
+        log.fine("EVAL: "+cmd);
         Object rv = null;
         try {
           if (binding.hasVariable(cmd)) {
@@ -180,7 +180,7 @@ public class GroovyScriptEngine implements ScriptEngine {
   public boolean exec(final File script, final List<String> args) {
     if (isBusy()) return false;
     try {
-      log.info("RUN: "+script.getAbsolutePath());
+      log.fine("RUN: "+script.getAbsolutePath());
       try {
         binding.setVariable("out", out);
         binding.setVariable("script", script.getAbsoluteFile());
@@ -207,7 +207,7 @@ public class GroovyScriptEngine implements ScriptEngine {
   @Override
   public boolean exec(final Class<?> script, final List<String> args) {
     if (ShellExtension.class.isAssignableFrom(script)) {
-      log.info("LOAD: "+script.getName());
+      log.fine("LOAD: "+script.getName());
       importClasses("static "+script.getName()+".*");
       try {
         Method m = script.getMethod("__init__", ScriptEngine.class);
@@ -231,7 +231,7 @@ public class GroovyScriptEngine implements ScriptEngine {
       try {
         if (isBusy()) return false;
         busy = Thread.currentThread();
-        log.info("RUN: "+script.getName());
+        log.fine("RUN: "+script.getName());
         try {
           binding.setVariable("out", out);
           binding.setVariable("script", script.getName());
@@ -266,7 +266,7 @@ public class GroovyScriptEngine implements ScriptEngine {
     synchronized(this) {
       try {
         busy = Thread.currentThread();
-        log.info("RUN: "+name);
+        log.fine("RUN: "+name);
         try {
           binding.setVariable("out", out);
           binding.setVariable("script", name);
@@ -362,7 +362,7 @@ public class GroovyScriptEngine implements ScriptEngine {
     String str = s.toString();
     int n = str.length();
     if (n > MAX_RESULT_LEN) str = str.substring(0,RESULT_SNIPPET_LEN) + " <<snip>> " + str.substring(n-RESULT_SNIPPET_LEN);
-    log.info("RESULT: "+str);
+    log.fine("RESULT: "+str);
     // Mostly log the String version, but for messages, log it so that GUI can display details
     // Be careful not to ever log AgentIDs otherwise the toString() extensions can get called too often by GUI!
     if (out != null) out.println((s instanceof Message)?s:str);
