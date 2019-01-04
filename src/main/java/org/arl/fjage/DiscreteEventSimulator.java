@@ -10,9 +10,11 @@ for full license details.
 
 package org.arl.fjage;
 
-import java.util.*;
+import java.util.Queue;
+import java.util.TimerTask;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.logging.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Discrete event simulation platform.  This platform is useful to run high-speed

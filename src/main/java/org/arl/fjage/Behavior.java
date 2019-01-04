@@ -12,7 +12,6 @@ package org.arl.fjage;
 
 import java.util.TimerTask;
 import java.util.logging.Logger;
-import java.lang.reflect.Method;
 
 /**
  * Base class for agent behaviors. Commonly used behaviors are provided by subclasses:

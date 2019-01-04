@@ -362,16 +362,16 @@ class Gateway:
 
     def _socket_reconnect(self, keepalive):
         if keepalive:
-            print('The master container is closed, trying to reconnect..\n')
+            self.logger.info('The master container is closed, trying to reconnect..\n')
             while True:
                 try:
                     self._socket_connect(self.hostname, self.port)
-                    print('Reconnected..')
+                    self.logger.info('Reconnected..')
                     break
                 except Exception as e:
                     _time.sleep(5)
         else:
-            print('The remote connection is closed..\n')
+            self.logger.info('The remote connection is closed..\n')
 
     def __recv_proc(self, q, subscribers):
         """Receive process.

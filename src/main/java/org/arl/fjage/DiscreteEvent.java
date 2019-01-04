@@ -69,9 +69,7 @@ class DiscreteEvent implements Comparable<DiscreteEvent> {
     if (created > e.created) return 1;
     if (tid < e.tid) return -1;
     if (tid > e.tid) return 1;
-    if (id < e.id) return -1;
-    if (id > e.id) return 1;
-    return 0;
+    return Long.compare(id, e.id);
   }
 
 }

@@ -11,8 +11,12 @@ for full license details.
 package org.arl.fjage;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.logging.*;
+import java.util.ArrayDeque;
+import java.util.Iterator;
+import java.util.Queue;
+import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Base class to be extended by all agents. An agent must be added to a container
@@ -478,12 +482,7 @@ public class Agent implements Runnable, TimestampProvider {
    * @return received message of the given class, null on timeout.
    */
   public Message receive(final Class<?> cls, long timeout) {
-    return receive(new MessageFilter() {
-      @Override
-      public boolean matches(Message m) {
-        return cls.isInstance(m);
-      }
-    }, timeout);
+    return receive(m -> cls.isInstance(m), timeout);
   }
 
   /**
@@ -528,8 +527,7 @@ public class Agent implements Runnable, TimestampProvider {
     if (Thread.currentThread().getId() != tid)
       throw new FjageError("request() should only be called from agent thread "+tid+", but called from "+Thread.currentThread().getId());
     if (!send(msg)) return null;
-    Message rsp = receive(msg, timeout);
-    return rsp;
+    return receive(msg, timeout);
   }
 
   /**

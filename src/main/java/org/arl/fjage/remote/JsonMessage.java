@@ -10,8 +10,11 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import org.arl.fjage.*;
-import com.google.gson.*;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.arl.fjage.AgentID;
+import org.arl.fjage.Message;
 
 /**
  * Class representing a JSON request/response message.

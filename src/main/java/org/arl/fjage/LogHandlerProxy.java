@@ -10,7 +10,9 @@ for full license details.
 
 package org.arl.fjage;
 
-import java.util.logging.*;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 /**
  * Proxy log handler to allow discrete time stamps in logs when the discrete

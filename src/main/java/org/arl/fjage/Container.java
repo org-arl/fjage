@@ -648,7 +648,7 @@ public class Container {
   /**
    * Called by agent to report when its idle.
    *
-   * @param agent agent that is idle.
+   * @param aid agent that is idle.
    */
   void reportIdle(AgentID aid) {
     synchronized (idle) {
@@ -660,7 +660,7 @@ public class Container {
   /**
    * Called by agent to report when its busy.
    *
-   * @param agent agent that is busy.
+   * @param aid agent that is busy.
    */
   void reportBusy(AgentID aid) {
     synchronized (idle) {

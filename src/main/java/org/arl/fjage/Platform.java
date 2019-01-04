@@ -11,8 +11,12 @@ for full license details.
 package org.arl.fjage;
 
 import java.net.*;
-import java.util.*;
-import java.util.jar.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.TimerTask;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 /**
  * Base class for platforms on which agent containers run. The platform provides
@@ -109,15 +113,12 @@ public abstract class Platform implements TimestampProvider {
    * Terminates all containers on the platform.
    */
   public void shutdown() {
-    Thread t = new Thread() {
-      @Override
-      public void run() {
-        for (Container c: containers) {
-          if (c != null) c.shutdown();
-        }
-        running = false;
+    Thread t = new Thread(() -> {
+      for (Container c: containers) {
+        if (c != null) c.shutdown();
       }
-    };
+      running = false;
+    });
     t.start();
   }
 
@@ -141,12 +142,12 @@ public abstract class Platform implements TimestampProvider {
   public String getHostname() {
     if (hostname != null) return hostname;
     try {
-      InetAddress addr = null;
+      InetAddress addr;
       if (nif == null) addr = InetAddress.getLocalHost();
       else {
         Enumeration<InetAddress> alist = nif.getInetAddresses();
         addr = alist.nextElement();
-        while (addr != null && addr instanceof Inet6Address)
+        while (addr instanceof Inet6Address)
           addr = alist.nextElement();
       }
       if (addr == null) return "localhost";

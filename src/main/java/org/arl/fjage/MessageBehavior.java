@@ -39,12 +39,7 @@ public class MessageBehavior extends Behavior {
    * @param cls message class of interest.
    */
   public MessageBehavior(final Class<?> cls) {
-    filter = new MessageFilter() {
-      @Override
-      public boolean matches(Message m) {
-        return cls.isInstance(m);
-      }
-    };
+    filter = m -> cls.isInstance(m);
   }
 
   /**

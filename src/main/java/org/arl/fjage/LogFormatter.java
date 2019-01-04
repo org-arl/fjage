@@ -10,8 +10,10 @@ for full license details.
 
 package org.arl.fjage;
 
-import java.io.*;
-import java.util.logging.*;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 /**
  * Utility class to format log entries. This formatter creates log entries

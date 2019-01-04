@@ -10,7 +10,10 @@ for full license details.
 
 package org.arl.fjage;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 import java.util.logging.Logger;
 
 /**

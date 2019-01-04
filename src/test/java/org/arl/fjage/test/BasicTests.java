@@ -10,15 +10,22 @@ for full license details.
 
 package org.arl.fjage.test;
 
-import static org.junit.Assert.assertTrue;
+import org.arl.fjage.*;
+import org.arl.fjage.remote.Gateway;
+import org.arl.fjage.remote.MasterContainer;
+import org.arl.fjage.remote.SlaveContainer;
+import org.arl.fjage.shell.*;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
-import java.util.logging.*;
-import org.arl.fjage.*;
-import org.arl.fjage.remote.*;
-import org.arl.fjage.shell.*;
-import org.junit.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 public class BasicTests {
 
@@ -46,10 +53,10 @@ public class BasicTests {
     while (!client.done)
       platform.delay(DELAY);
     platform.shutdown();
-    assertTrue(client.bad == 0);
-    assertTrue(client.good == client.requests);
-    assertTrue(client.requests == server.requests);
-    assertTrue(client.nuisance == server.nuisance);
+    assertEquals(0, client.bad);
+    assertEquals(client.good, client.requests);
+    assertEquals(client.requests, server.requests);
+    assertEquals(client.nuisance, server.nuisance);
   }
 
   @Test
@@ -65,10 +72,10 @@ public class BasicTests {
     while (!client.done)
       platform.delay(DELAY);
     platform.shutdown();
-    assertTrue(client.bad == 0);
-    assertTrue(client.good == client.requests);
-    assertTrue(client.requests == server.requests);
-    assertTrue(client.nuisance == server.nuisance);
+    assertEquals(0, client.bad);
+    assertEquals(client.good, client.requests);
+    assertEquals(client.requests, server.requests);
+    assertEquals(client.nuisance, server.nuisance);
   }
 
   @Test
@@ -94,10 +101,10 @@ public class BasicTests {
       platform.delay(DELAY);
     platform.delay(DELAY);
     platform.shutdown();
-    assertTrue(client.bad == 0);
-    assertTrue(client.good == client.requests);
-    assertTrue(client.requests == server.requests);
-    assertTrue(client.nuisance == server.nuisance);
+    assertEquals(0, client.bad);
+    assertEquals(client.good, client.requests);
+    assertEquals(client.requests, server.requests);
+    assertEquals(client.nuisance, server.nuisance);
   }
 
   @Test
@@ -115,10 +122,10 @@ public class BasicTests {
       platform.delay(DELAY);
     platform.delay(DELAY);
     platform.shutdown();
-    assertTrue(client.bad == 0);
-    assertTrue(client.good == client.requests);
-    assertTrue(client.requests == server.requests);
-    assertTrue(client.nuisance == server.nuisance);
+    assertEquals(0, client.bad);
+    assertEquals(client.good, client.requests);
+    assertEquals(client.requests, server.requests);
+    assertEquals(client.nuisance, server.nuisance);
   }
 
   @Test
@@ -136,10 +143,10 @@ public class BasicTests {
       platform.delay(DELAY);
     platform.delay(DELAY);
     platform.shutdown();
-    assertTrue(client.bad == 0);
-    assertTrue(client.good == client.requests);
-    assertTrue(client.requests == server.requests);
-    assertTrue(client.nuisance == server.nuisance);
+    assertEquals(0, client.bad);
+    assertEquals(client.good, client.requests);
+    assertEquals(client.requests, server.requests);
+    assertEquals(client.nuisance, server.nuisance);
   }
 
   @Test
@@ -152,21 +159,21 @@ public class BasicTests {
     platform.start();
     Gateway gw = new Gateway("localhost", master.getPort());
     Message rsp = gw.receive(100);
-    assertTrue(rsp == null);
+    assertNull(rsp);
     AgentID s = gw.agentForService("server");
-    assertTrue(server.getAgentID().equals(s));
+    assertEquals(server.getAgentID(), s);
     Message req = new RequestMessage(s);
     gw.send(req);
     rsp = gw.receive(100);
-    assertTrue(rsp != null);
-    assertTrue(rsp.getClass() == ResponseMessage.class);
+    assertNotNull(rsp);
+    assertSame(rsp.getClass(), ResponseMessage.class);
     req = new RequestMessage(server.getAgentID());
     rsp = gw.request(req, 100);
-    assertTrue(rsp != null);
-    assertTrue(rsp.getClass() == ResponseMessage.class);
+    assertNotNull(rsp);
+    assertSame(rsp.getClass(), ResponseMessage.class);
     req = new NuisanceMessage(server.getAgentID());
     rsp = gw.request(req, 100);
-    assertTrue(rsp == null);
+    assertNull(rsp);
     gw.shutdown();
     platform.shutdown();
   }
@@ -209,7 +216,7 @@ public class BasicTests {
     while (!fsm.done())
       platform.delay(DELAY);
     platform.shutdown();
-    assertTrue(list.size() == 6);
+    assertEquals(6, list.size());
   }
 
   @Test
@@ -242,7 +249,7 @@ public class BasicTests {
     platform.delay(tickDelay*ticks+1000);
     platform.shutdown();
     for (int i = 0; i < nAgents; i++)
-      assertTrue("ticks = "+tb[i].getTickCount()+", expected "+ticks, tb[i].getTickCount() == ticks);
+      assertEquals("ticks = " + tb[i].getTickCount() + ", expected " + ticks, tb[i].getTickCount(), ticks);
   }
 
   @Test
@@ -254,8 +261,8 @@ public class BasicTests {
     RequestMessage s1 = new RequestMessage(null);
     s1.x = 77;
     RequestMessage s2 = container.clone(s1);
-    assertTrue(s1 != s2);
-    assertTrue(s1.x == s2.x);
+    assertNotSame(s1, s2);
+    assertEquals(s1.x, s2.x);
   }
 
   @Test
@@ -267,8 +274,8 @@ public class BasicTests {
     RequestMessage s1 = new RequestMessage(null);
     s1.x = 77;
     RequestMessage s2 = container.clone(s1);
-    assertTrue(s1 != s2);
-    assertTrue(s1.x == s2.x);
+    assertNotSame(s1, s2);
+    assertEquals(s1.x, s2.x);
   }
 
   @Test
@@ -406,7 +413,7 @@ public class BasicTests {
           req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME);
           rsp = request(req);
           log.info("get rsp: "+rsp);
-          if (rsp != null && rsp instanceof GetFileRsp) {
+          if (rsp instanceof GetFileRsp) {
             byte[] contents = ((GetFileRsp)rsp).getContents();
             log.info("get data len: "+contents.length);
             if (contents.length == bytes.length && ((GetFileRsp)rsp).getOffset() == 0) {
@@ -419,7 +426,7 @@ public class BasicTests {
           req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 5, 4);
           rsp = request(req);
           log.info("get2 rsp: "+rsp);
-          if (rsp != null && rsp instanceof GetFileRsp) {
+          if (rsp instanceof GetFileRsp) {
             byte[] contents = ((GetFileRsp)rsp).getContents();
             log.info("get data len: "+contents.length);
             if (contents.length == 4 && ((GetFileRsp)rsp).getOffset() == 5) {
@@ -432,7 +439,7 @@ public class BasicTests {
           req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 9, 0);
           rsp = request(req);
           log.info("get3 rsp: "+rsp);
-          if (rsp != null && rsp instanceof GetFileRsp) {
+          if (rsp instanceof GetFileRsp) {
             byte[] contents = ((GetFileRsp)rsp).getContents();
             log.info("get data len: "+contents.length);
             if (contents.length == bytes.length-9 && ((GetFileRsp)rsp).getOffset() == 9) {
@@ -449,7 +456,7 @@ public class BasicTests {
           req = new GetFileReq(shell, DIRNAME);
           rsp = request(req);
           log.info("get dir rsp: "+rsp);
-          if (rsp != null && rsp instanceof GetFileRsp) {
+          if (rsp instanceof GetFileRsp) {
             String contents = new String(((GetFileRsp)rsp).getContents());
             String[] lines = contents.split("\\r?\\n");
             for (String s: lines) {

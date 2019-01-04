@@ -10,7 +10,8 @@ for full license details.
 
 package org.arl.fjage;
 
-import java.util.*;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * A platform that runs the agents in its containers in real-time.  The notion

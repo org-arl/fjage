@@ -10,7 +10,8 @@ for full license details.
 
 package org.arl.fjage;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 /**
  * Internal class representing a message queue.

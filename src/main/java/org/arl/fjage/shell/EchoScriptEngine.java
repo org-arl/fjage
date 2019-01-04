@@ -10,10 +10,11 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import org.arl.fjage.Message;
+
 import java.io.File;
 import java.io.Reader;
 import java.util.List;
-import org.arl.fjage.Message;
 
 
 /**

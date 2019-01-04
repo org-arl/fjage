@@ -10,11 +10,18 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import java.io.*;
-import java.util.*;
-import java.util.logging.*;
-import groovy.lang.ExpandoMetaClass;
-import org.arl.fjage.*;
+import org.arl.fjage.GroovyExtensions;
+import org.arl.fjage.Platform;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 /**
  * fjage bootloader.

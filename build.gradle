@@ -47,6 +47,7 @@ compileGroovy {
 
 test {
   systemProperties project.properties.subMap(["manualJSTest"])
+  systemProperties project.properties.subMap(["manualPyTest"])
 }
 
 tasks.withType(Javadoc) {

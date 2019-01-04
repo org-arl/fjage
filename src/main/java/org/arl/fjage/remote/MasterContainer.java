@@ -10,11 +10,16 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import java.io.*;
-import java.net.*;
+import org.arl.fjage.AgentID;
+import org.arl.fjage.Message;
+import org.arl.fjage.Platform;
+import org.arl.fjage.connectors.ConnectionListener;
+import org.arl.fjage.connectors.Connector;
+import org.arl.fjage.connectors.SerialPortConnector;
+import org.arl.fjage.connectors.TcpServer;
+
+import java.io.IOException;
 import java.util.*;
-import org.arl.fjage.*;
-import org.arl.fjage.connectors.*;
 
 /**
  * Master container supporting multiple remote slave containers. Agents in linked
@@ -41,7 +46,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    *
    * @param platform platform on which the container runs.
    */
-  public MasterContainer(Platform platform) throws IOException {
+  public MasterContainer(Platform platform) {
     super(platform);
     openTcpServer(0);
   }
@@ -52,7 +57,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    * @param platform platform on which the container runs.
    * @param port port on which the container's TCP server runs.
    */
-  public MasterContainer(Platform platform, int port) throws IOException {
+  public MasterContainer(Platform platform, int port) {
     super(platform);
     openTcpServer(port);
   }
@@ -63,7 +68,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    * @param platform platform on which the container runs.
    * @param name name of the container.
    */
-  public MasterContainer(Platform platform, String name) throws IOException {
+  public MasterContainer(Platform platform, String name) {
     super(platform, name);
     openTcpServer(0);
   }
@@ -75,7 +80,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    * @param name of the container.
    * @param port port on which the container's TCP server runs.
    */
-  public MasterContainer(Platform platform, String name, int port) throws IOException {
+  public MasterContainer(Platform platform, String name, int port) {
     super(platform, name);
     openTcpServer(port);
   }
@@ -213,10 +218,8 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   @Override
   public AgentID[] getAgents() {
-    List<AgentID> rv = new ArrayList<AgentID>();
     AgentID[] aids = super.getAgents();
-    for (int i = 0; i < aids.length; i++)
-      rv.add(aids[i]);
+    List<AgentID> rv = new ArrayList<AgentID>(Arrays.asList(aids));
     JsonMessage rq = new JsonMessage();
     rq.action = Action.AGENTS;
     rq.id = UUID.randomUUID().toString();
@@ -226,8 +229,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       for (ConnectionHandler slave: slaves) {
         JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
         if (rsp != null && rsp.agentIDs != null) {
-          for (int i = 0; i < rsp.agentIDs.length; i++)
-            rv.add(rsp.agentIDs[i]);
+          rv.addAll(Arrays.asList(rsp.agentIDs));
         }
       }
     }
@@ -236,10 +238,8 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   @Override
   public String[] getServices() {
-    Set<String> rv = new HashSet<String>();
     String[] svc = super.getServices();
-    for (int i = 0; i < svc.length; i++)
-      rv.add(svc[i]);
+    Set<String> rv = new HashSet<String>(Arrays.asList(svc));
     JsonMessage rq = new JsonMessage();
     rq.action = Action.SERVICES;
     rq.id = UUID.randomUUID().toString();
@@ -249,8 +249,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       for (ConnectionHandler slave: slaves) {
         JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
         if (rsp != null && rsp.services != null) {
-          for (int i = 0; i < rsp.services.length; i++)
-            rv.add(rsp.services[i]);
+          rv.addAll(Arrays.asList(rsp.services));
         }
       }
     }
@@ -281,8 +280,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     List<AgentID> rv = new ArrayList<AgentID>();
     AgentID[] aids = super.agentsForService(service);
     if (aids != null)
-      for (int i = 0; i < aids.length; i++)
-        rv.add(aids[i]);
+      rv.addAll(Arrays.asList(aids));
     JsonMessage rq = new JsonMessage();
     rq.action = Action.AGENTS_FOR_SERVICE;
     rq.service = service;
@@ -293,8 +291,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       for (ConnectionHandler slave: slaves) {
         JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
         if (rsp != null && rsp.agentIDs != null) {
-          for (int i = 0; i < rsp.agentIDs.length; i++)
-            rv.add(rsp.agentIDs[i]);
+          rv.addAll(Arrays.asList(rsp.agentIDs));
         }
       }
     }
@@ -369,18 +366,14 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   /////////////// Private stuff
 
-  private void openTcpServer(int port) throws IOException {
+  private void openTcpServer(int port) {
     listener = new TcpServer(port, this);
     log.info("Listening on port "+listener.getPort());
   }
 
   private void cleanupSlaves() {
     synchronized(slaves) {
-      Iterator<ConnectionHandler> it = slaves.iterator();
-      while (it.hasNext()) {
-        ConnectionHandler slave = it.next();
-        if (slave.isClosed()) it.remove();
-      }
+      slaves.removeIf(ConnectionHandler::isClosed);
     }
     needsCleanup = false;
   }
