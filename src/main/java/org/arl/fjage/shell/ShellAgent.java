@@ -69,15 +69,43 @@ public class ShellAgent extends Agent {
   protected List<InitScript> initScripts = new ArrayList<InitScript>();
   protected Map<String,InputStreamCacheEntry> isCache = new HashMap<String,InputStreamCacheEntry>();
   protected boolean quit = false;
+  protected boolean ephemeral = false;
 
   ////// interface methods
 
+  /**
+   * Create a shell agent without a user console. This is typically useful
+   * for provinding shell services to other agents.
+   *
+   * @param engine script engine to use
+   */
   public ShellAgent(ScriptEngine engine) {
     shell = null;
     this.engine = engine;
     if (engine != null) engine.setVariable("__agent__", this);
   }
 
+  /**
+   * Create a transient shell agent without a user console. This is typically
+   * used for initialization or short-lived scripts. This shell automatically
+   * terminates when all initrc scripts are executed.
+   *
+   * @param engine script engine to use
+   * @param ephemeral true for transient shell, false for long-lived shell
+   */
+  public ShellAgent(ScriptEngine engine, boolean ephemeral) {
+    shell = null;
+    this.ephemeral = ephemeral;
+    this.engine = engine;
+    if (engine != null) engine.setVariable("__agent__", this);
+  }
+
+  /**
+   * Create a shell for user interaction.
+   *
+   * @param shell user console
+   * @param engine script engine to use
+   */
   public ShellAgent(Shell shell, ScriptEngine engine) {
     this.shell = shell;
     this.engine = engine;
@@ -94,7 +122,7 @@ public class ShellAgent extends Agent {
   @Override
   public void init() {
     log.info("Agent "+getName()+" init");
-    register(Services.SHELL);
+    if (!ephemeral) register(Services.SHELL);
 
     // behavior to exec in agent's thread
     executor = new CyclicBehavior() {
@@ -180,7 +208,7 @@ public class ShellAgent extends Agent {
     }
 
     // behavior to manage incoming messages
-    add(new MessageBehavior() {
+    if (!ephemeral) add(new MessageBehavior() {
       @Override
       public void onReceive(Message msg) {
         if (msg instanceof ShellExecReq) handleExecReq((ShellExecReq)msg);
@@ -213,7 +241,8 @@ public class ShellAgent extends Agent {
         } catch (Throwable ex) {
           log.warning("Init script failure: "+ex.toString());
         }
-        if (consoleThread != null) consoleThread.start();
+        if (ephemeral) shutdown();
+        else if (consoleThread != null) consoleThread.start();
       }
     });
 
