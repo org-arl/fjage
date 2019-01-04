@@ -726,7 +726,7 @@ public class Agent implements Runnable, TimestampProvider {
    */
   final void deliver(Message m) {
     if (container == null) return;
-    log.finer("MSG "+m.getSender()+" > "+aid+"@"+tid+" : "+m.getClass().getSimpleName()+"/"+m.getMessageID());
+    log.finer("MSG "+m.getSender()+" > "+aid+"@"+tid+" : "+m.toString());
     queue.add(container.autoclone(m));
     synchronized (this) {
       restartBehaviors = true;

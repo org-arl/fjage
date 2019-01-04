@@ -121,8 +121,12 @@ public class ConsoleShell implements Shell, ConnectionListener {
 
   @Override
   public void connected(Connector connector) {
-    console.callWidget(LineReader.REDRAW_LINE);
-    console.callWidget(LineReader.REDISPLAY);
+    try {
+      console.callWidget(LineReader.REDRAW_LINE);
+      console.callWidget(LineReader.REDISPLAY);
+    } catch(IllegalStateException ex) {
+      // safely ignore exception
+    }
   }
 
   private void setupStyles() {
