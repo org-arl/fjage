@@ -10,11 +10,18 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import org.arl.fjage.*;
-import org.arl.fjage.connectors.*;
+import org.arl.fjage.AgentID;
+import org.arl.fjage.Message;
+import org.arl.fjage.Platform;
+import org.arl.fjage.connectors.Connector;
+import org.arl.fjage.connectors.SerialPortConnector;
+import org.arl.fjage.connectors.TcpConnector;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Slave container attached to a master container. Agents in linked
@@ -118,8 +125,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
-    if (rsp != null && rsp.answer) return true;
-    return false;
+    return rsp != null && rsp.answer;
   }
 
   @Override
@@ -253,31 +259,28 @@ public class SlaveContainer extends RemoteContainer {
   /////////////// Private stuff
 
   private void connectToMaster() {
-    new Thread() {
-      @Override
-      public void run() {
-        try {
-          while (!quit) {
-            try {
-              log.info("Connecting to "+hostname+":"+(port>=0?":"+port:"@"+baud));
-              Connector conn;
-              if (port >= 0) conn = new TcpConnector(hostname, port);
-              else conn = new SerialPortConnector(hostname, baud, settings);
-              master = new ConnectionHandler(conn, SlaveContainer.this);
-              master.start();
-              master.join();
-              log.info("Connection to "+hostname+(port>=0?":"+port:"@"+baud)+" lost");
-              master = null;
-            } catch (IOException ex) {
-              log.warning("Connection failed: "+ex.toString());
-            }
-            Thread.sleep(1000);
+    new Thread(() -> {
+      try {
+        while (!quit) {
+          try {
+            log.info("Connecting to "+hostname+":"+(port>=0?":"+port:"@"+baud));
+            Connector conn;
+            if (port >= 0) conn = new TcpConnector(hostname, port);
+            else conn = new SerialPortConnector(hostname, baud, settings);
+            master = new ConnectionHandler(conn, SlaveContainer.this);
+            master.start();
+            master.join();
+            log.info("Connection to "+hostname+(port>=0?":"+port:"@"+baud)+" lost");
+            master = null;
+          } catch (IOException ex) {
+            log.warning("Connection failed: "+ex.toString());
           }
-        } catch (InterruptedException ex) {
-          log.warning("Connection manager interrupted!");
+          Thread.sleep(1000);
         }
+      } catch (InterruptedException ex) {
+        log.warning("Connection manager interrupted!");
       }
-    }.start();
+    }).start();
   }
 
 }

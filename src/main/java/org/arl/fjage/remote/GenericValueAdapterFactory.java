@@ -10,13 +10,18 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import java.io.IOException;
-import java.nio.*;
-import java.util.*;
-import com.google.gson.*;
-import com.google.gson.stream.*;
+import com.google.gson.Gson;
+import com.google.gson.TypeAdapter;
+import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
 import org.arl.fjage.GenericValue;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Handles conversion of various data types to JSON.

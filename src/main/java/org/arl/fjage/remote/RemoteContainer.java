@@ -10,7 +10,9 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import org.arl.fjage.*;
+import org.arl.fjage.AgentID;
+import org.arl.fjage.Container;
+import org.arl.fjage.Platform;
 
 /**
  * Represents a remote container, either master or slave. This class adds interface

@@ -199,8 +199,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
     if (!(obj instanceof AgentID)) return false;
     AgentID a = (AgentID)obj;
     if (!name.equals(a.name)) return false;
-    if (isTopic != a.isTopic) return false;
-    return true;
+    return isTopic == a.isTopic;
   }
 
   /**

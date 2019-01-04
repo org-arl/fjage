@@ -10,11 +10,11 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import org.arl.fjage.*;
+
 import java.io.*;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.concurrent.Callable;
-import org.arl.fjage.*;
 
 /**
  * Shell agent runs in a container and allows execution of shell commands and scripts.
@@ -60,9 +60,9 @@ public class ShellAgent extends Agent {
 
   ////// private attributes
 
-  protected Shell shell = null;
+  protected Shell shell;
   protected Thread consoleThread = null;
-  protected ScriptEngine engine = null;
+  protected ScriptEngine engine;
   protected Callable<Void> exec = null;
   protected CyclicBehavior executor = null;
   protected List<MessageListener> listeners = new ArrayList<MessageListener>();
@@ -155,18 +155,15 @@ public class ShellAgent extends Agent {
                 s = null;
                 if (cmd.length() > 0) {
                   synchronized(executor) {
-                    exec = new Callable<Void>() {
-                      @Override
-                      public Void call() {
-                        log.fine("> "+cmd);
-                        shell.input(p1+cmd.replaceAll("\n", p2));
-                        try {
-                          engine.exec(cmd);
-                        } catch (Throwable ex) {
-                          log.warning("Exec failure: "+ex.toString());
-                        }
-                        return null;
+                    exec = () -> {
+                      log.fine("> "+cmd);
+                      shell.input(p1+cmd.replaceAll("\n", p2));
+                      try {
+                        engine.exec(cmd);
+                      } catch (Throwable ex) {
+                        log.warning("Exec failure: "+ex.toString());
                       }
+                      return null;
                     };
                     executor.restart();
                   }
@@ -364,7 +361,7 @@ public class ShellAgent extends Agent {
   }
 
   private void handleExecReq(final ShellExecReq req) {
-    Message rsp = null;
+    Message rsp;
     if (engine == null || engine.isBusy()) rsp = new Message(req, Performative.REFUSE);
     else {
       if (req.isScript()) {
@@ -399,12 +396,15 @@ public class ShellAgent extends Agent {
         }
       }
     }
-    if (rsp != null) send(rsp);
+    send(rsp);
   }
 
   private void handleGetFileReq(final GetFileReq req) {
     String filename = req.getFilename();
-    if (filename == null) send(new Message(req, Performative.REFUSE));
+    if (filename == null) {
+      send(new Message(req, Performative.REFUSE));
+      return;
+    }
     File f = new File(filename);
     GetFileRsp rsp = null;
     InputStream is = null;
@@ -412,14 +412,16 @@ public class ShellAgent extends Agent {
       if (f.isDirectory()) {
         log.fine("list dir "+filename);
         File[] files = f.listFiles();
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < files.length; i++) {
-          sb.append(files[i].getName());
-          sb.append('\t');
-          sb.append(files[i].length());
-          sb.append('\t');
-          sb.append(files[i].lastModified());
-          sb.append('\n');
+        StringBuilder sb = new StringBuilder();
+        if (files != null){
+          for (File file : files) {
+            sb.append(file.getName());
+            sb.append('\t');
+            sb.append(file.length());
+            sb.append('\t');
+            sb.append(file.lastModified());
+            sb.append('\n');
+          }
         }
         rsp = new GetFileRsp(req);
         rsp.setDirectory(true);
@@ -449,7 +451,7 @@ public class ShellAgent extends Agent {
           }
         }
         int offset = 0;
-        int numRead = 0;
+        int numRead;
         if (is == null) {
           is = new FileInputStream(f);
           if (ofs > 0) is.skip(ofs);
@@ -485,7 +487,10 @@ public class ShellAgent extends Agent {
 
   private void handlePutFileReq(final PutFileReq req) {
     String filename = req.getFilename();
-    if (filename == null) send(new Message(req, Performative.REFUSE));
+    if (filename == null) {
+      send(new Message(req, Performative.REFUSE));
+      return;
+    }
     byte[] contents = req.getContents();
     File f = new File(filename);
     Message rsp = null;

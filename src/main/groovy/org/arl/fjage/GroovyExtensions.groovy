@@ -24,7 +24,7 @@ class GroovyExtensions {
       def b = cls.getDeclaredConstructor().newInstance()
       b.action = c as Callback
       c.delegate = b
-      c.resolveStrategy = Closure.DELEGATE_FIRST
+      c.resolveStrategy = DELEGATE_FIRST
       return b
     }
 
@@ -36,7 +36,7 @@ class GroovyExtensions {
       def b = cls.getDeclaredConstructor(long).newInstance((long)param)
       b.action = c as Callback
       c.delegate = b
-      c.resolveStrategy = Closure.DELEGATE_FIRST
+      c.resolveStrategy = DELEGATE_FIRST
       return b
     }
 
@@ -49,7 +49,7 @@ class GroovyExtensions {
       def b = new MessageBehavior(msg)
       b.action = c as Callback
       c.delegate = b
-      c.resolveStrategy = Closure.DELEGATE_FIRST
+      c.resolveStrategy = DELEGATE_FIRST
       return b
     }
 
@@ -57,20 +57,20 @@ class GroovyExtensions {
       def b = new MessageBehavior(filter)
       b.action = c as Callback
       c.delegate = b
-      c.resolveStrategy = Closure.DELEGATE_FIRST
+      c.resolveStrategy = DELEGATE_FIRST
       return b
     }
 
     AgentID.metaClass.leftShift = { Message msg ->
-      request(msg);
+      request(msg)
     }
 
     Agent.metaClass.receive = { Closure filter, long timeout = 1000 ->
       MessageFilter f = new MessageFilter() {
         boolean matches(Message m) {
-          return filter(m);
+          return filter(m)
         }
-      };
+      }
       receive(f, timeout)
     }
 

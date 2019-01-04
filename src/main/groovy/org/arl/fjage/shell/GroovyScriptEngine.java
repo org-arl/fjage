@@ -10,18 +10,26 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import java.io.*;
-import java.util.*;
-import java.util.logging.*;
-import java.util.concurrent.*;
-import java.lang.reflect.Method;
-import java.lang.reflect.Field;
 import groovy.lang.*;
 import groovy.transform.ThreadInterrupt;
-import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.customizers.*;
+import org.arl.fjage.Message;
+import org.arl.fjage.Performative;
 import org.codehaus.groovy.GroovyBugError;
-import org.arl.fjage.*;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
+
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Groovy scripting engine.
@@ -384,7 +392,9 @@ public class GroovyScriptEngine implements ScriptEngine {
         String offendingGroovyScript = offendingClass.replace(".","/")+".groovy";
         try {
           InputStream in = groovy.getClassLoader().getResourceAsStream(offendingGroovyScript);
-          groovy.parse(new InputStreamReader(in), offendingGroovyScript);
+          if (in != null) {
+            groovy.parse(new InputStreamReader(in), offendingGroovyScript);
+          }
         } catch (Throwable ex1) {
           ex = ex1;
         }

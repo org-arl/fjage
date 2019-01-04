@@ -10,12 +10,18 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import java.io.*;
-import java.util.logging.*;
+import org.arl.fjage.connectors.ConnectionListener;
+import org.arl.fjage.connectors.Connector;
 import org.jline.reader.*;
-import org.jline.terminal.*;
-import org.jline.utils.*;
-import org.arl.fjage.connectors.*;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
+import org.jline.utils.AttributedString;
+import org.jline.utils.AttributedStyle;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.logging.Logger;
 
 /**
  * Shell input/output driver for console devices.
@@ -71,7 +77,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
     try {
       if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
       else {
-        term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
+        term = TerminalBuilder.builder().streams(in, out).dumb(false).build();
         setupStyles();
       }
     } catch (IOException ex) {
@@ -111,7 +117,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
       this.connector = connector;
       if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
       else {
-        term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
+        term = TerminalBuilder.builder().streams(in, out).dumb(false).build();
         setupStyles();
       }
     } catch (IOException ex) {

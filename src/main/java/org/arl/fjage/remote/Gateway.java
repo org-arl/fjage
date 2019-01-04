@@ -56,7 +56,7 @@ public class Gateway {
    * @param hostname hostname to connect to.
    * @param port TCP port to connect to.
    */
-  public Gateway(Platform platform, String hostname, int port) throws IOException {
+  public Gateway(Platform platform, String hostname, int port) {
     container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
     init();
     platform.start();
@@ -68,7 +68,7 @@ public class Gateway {
    * @param hostname hostname to connect to.
    * @param port TCP port to connect to.
    */
-  public Gateway(String hostname, int port) throws IOException {
+  public Gateway(String hostname, int port) {
     Platform platform = new RealTimePlatform();
     container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
     init();
@@ -235,12 +235,7 @@ public class Gateway {
    * @return received message of the given class, null on timeout.
    */
   public Message receive(final Class<?> cls, long timeout) {
-    return receive(new MessageFilter() {
-      @Override
-      public boolean matches(Message m) {
-        return cls.isInstance(m);
-      }
-    }, timeout);
+    return receive(m -> cls.isInstance(m), timeout);
   }
 
   /**

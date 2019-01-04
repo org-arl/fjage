@@ -22,5 +22,5 @@ enum Action {
   @SerializedName("agentForService")  AGENT_FOR_SERVICE,
   @SerializedName("agentsForService") AGENTS_FOR_SERVICE,
   @SerializedName("send")             SEND,
-  @SerializedName("shutdown")         SHUTDOWN;
+  @SerializedName("shutdown")         SHUTDOWN
 }
