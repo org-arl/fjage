@@ -24,7 +24,7 @@ class GroovyExtensions {
       def b = cls.getDeclaredConstructor().newInstance()
       b.action = c as Callback
       c.delegate = b
-      c.resolveStrategy = DELEGATE_FIRST
+      c.resolveStrategy = Closure.DELEGATE_FIRST
       return b
     }
 
@@ -36,7 +36,7 @@ class GroovyExtensions {
       def b = cls.getDeclaredConstructor(long).newInstance((long)param)
       b.action = c as Callback
       c.delegate = b
-      c.resolveStrategy = DELEGATE_FIRST
+      c.resolveStrategy = Closure.DELEGATE_FIRST
       return b
     }
 
@@ -49,7 +49,7 @@ class GroovyExtensions {
       def b = new MessageBehavior(msg)
       b.action = c as Callback
       c.delegate = b
-      c.resolveStrategy = DELEGATE_FIRST
+      c.resolveStrategy = Closure.DELEGATE_FIRST
       return b
     }
 
@@ -57,7 +57,7 @@ class GroovyExtensions {
       def b = new MessageBehavior(filter)
       b.action = c as Callback
       c.delegate = b
-      c.resolveStrategy = DELEGATE_FIRST
+      c.resolveStrategy = Closure.DELEGATE_FIRST
       return b
     }
 

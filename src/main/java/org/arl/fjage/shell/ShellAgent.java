@@ -439,7 +439,6 @@ public class ShellAgent extends Agent {
     InputStream is = null;
     try {
       if (f.isDirectory()) {
-        log.fine("list dir "+filename);
         File[] files = f.listFiles();
         StringBuilder sb = new StringBuilder();
         if (files != null){
@@ -456,7 +455,6 @@ public class ShellAgent extends Agent {
         rsp.setDirectory(true);
         rsp.setContents(sb.toString().getBytes());
       } else if (f.canRead()) {
-        log.fine("get file "+filename);
         long ofs = req.getOffset();
         long len = req.getLength();
         long length = f.length();
@@ -526,10 +524,8 @@ public class ShellAgent extends Agent {
     OutputStream os = null;
     try {
       if (contents == null) {
-        log.fine("delete "+filename);
         if (f.delete()) rsp = new Message(req, Performative.AGREE);
       } else {
-        log.fine("put "+filename);
         os = new FileOutputStream(f);
         os.write(contents);
         rsp = new Message(req, Performative.AGREE);

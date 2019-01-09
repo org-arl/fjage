@@ -179,7 +179,14 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     }
 
     void close() {
-      if (pout != null) pout.close();
+      try {
+        if (pout != null) {
+          pout.close();
+          join();
+        }
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
     }
 
   }
