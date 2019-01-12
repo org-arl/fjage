@@ -176,6 +176,22 @@ abstract class BaseGroovyScript extends Script {
   }
 
   /**
+   * Gets the platform on which the shell is running.
+   */
+  Platform platform() {
+    Binding binding = getBinding()
+    if (binding.hasVariable('__agent__')) {
+      Agent a = binding.getVariable('__agent__')
+      return a.getPlatform()
+    }
+    return null
+  }
+
+  Platform getPlatform() {
+    return platform()
+  }
+
+  /**
    * Lists all the services, along with a list of agents that provide them.
    *
    * @return a string representation of all services.
