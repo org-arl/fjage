@@ -521,13 +521,15 @@ public class ShellAgent extends Agent {
     byte[] contents = req.getContents();
     File f = new File(filename);
     Message rsp = null;
-    OutputStream os = null;
+    FileOutputStream os = null;
     try {
       if (contents == null) {
         if (f.delete()) rsp = new Message(req, Performative.AGREE);
       } else {
         os = new FileOutputStream(f);
         os.write(contents);
+        os.flush();
+        os.getFD().sync();
         rsp = new Message(req, Performative.AGREE);
       }
     } catch (IOException ex) {
