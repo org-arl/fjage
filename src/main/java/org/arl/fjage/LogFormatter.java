@@ -91,7 +91,7 @@ public class LogFormatter extends Formatter {
     for (Handler h1: h)
       h1.setFormatter(f);
   }
-  
+
   /**
    * Indent multiline logs. The first line in the string is not indented.
    *
@@ -99,7 +99,7 @@ public class LogFormatter extends Formatter {
    * @return indented message.
    */
   private static String indent(String s) {
-    if (s.indexOf('\n') < 0) return s;
+    if (s == null || s.indexOf('\n') < 0) return s;
     return s.replaceAll("\n", "\n\t");
   }
 
