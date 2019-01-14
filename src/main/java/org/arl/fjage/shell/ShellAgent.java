@@ -239,7 +239,7 @@ public class ShellAgent extends Agent {
         } catch (Throwable ex) {
           log.warning("Init script failure: "+ex.toString());
         }
-        if (ephemeral) shutdown();
+        if (ephemeral) stop();
         else if (consoleThread != null) consoleThread.start();
       }
     });
