@@ -70,6 +70,7 @@ public class ShellAgent extends Agent {
   protected Map<String,InputStreamCacheEntry> isCache = new HashMap<String,InputStreamCacheEntry>();
   protected boolean quit = false;
   protected boolean ephemeral = false;
+  protected boolean enabled = true;
 
   ////// interface methods
 
@@ -176,7 +177,7 @@ public class ShellAgent extends Agent {
               s = null;
             } else {
               if (engine == null) s = null;
-              else if (exec == null && !engine.isBusy()) {
+              else if (exec == null && !engine.isBusy() && enabled) {
                 final String cmd = s.trim();
                 final String p1 = prompt1;
                 final String p2 = "\n"+prompt2;
@@ -379,6 +380,24 @@ public class ShellAgent extends Agent {
    */
   public void clearMessageListeners() {
     listeners.clear();
+  }
+
+  /**
+   * Enable/disable user interaction in shell.
+   *
+   * @param b true to enable, false to disable.
+   */
+  public void enable(boolean b) {
+    enabled = b;
+  }
+
+  /**
+   * Checks if user interaction in shell is enabled.
+   *
+   * @return true if enabled, false if disabled.
+   */
+  public boolean isEnabled() {
+    return enabled;
   }
 
   ////// private methods
