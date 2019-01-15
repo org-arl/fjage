@@ -226,14 +226,16 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     @OnWebSocketMessage
     public void onMessage(String message) {
       byte[] buf = message.getBytes();
-      for (int i = 0; i < buf.length; i++) {
-        int c = buf[i];
-        if (c < 0) c += 256;
-        if (c == 4) continue;     // ignore ^D
-        try {
-          pin.write(c);
-        } catch (IOException ex) {
-          // do nothing
+      synchronized (pin) {
+        for (int i = 0; i < buf.length; i++) {
+          int c = buf[i];
+          if (c < 0) c += 256;
+          if (c == 4) continue;     // ignore ^D
+          try {
+            pin.write(c);
+          } catch (IOException ex) {
+            // do nothing
+          }
         }
       }
     }
