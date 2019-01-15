@@ -563,11 +563,13 @@ class Gateway:
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
                 new_topic = AgentID(self, topic.name + "__ntf", True)
-                topic.name = new_topic.name
+            else:
+                new_topic = topic
+
             if len(self.subscribers) == 0:
                 return False
             try:
-                self.subscribers.remove(topic.name)
+                self.subscribers.remove(new_topic.name)
             except:
                 self.logger.critical("Exception: No such topic subscribed: " + new_topic.name)
             return True
