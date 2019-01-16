@@ -33,6 +33,30 @@
     const term = new hterm.Terminal();
     term.onTerminalReady = function() {
       const io = this.io.push();
+      io.onTerminalResize = () => {
+        const width = document.body.clientWidth;
+        var size = 15;
+        if (width > 820){
+          size = 15;
+        } else if (width > 660){
+          size = 14;
+        } else if (width > 520){
+          size = 13;
+        } else if (width > 500){
+          size = 12;
+        } else if (width > 460){
+          size = 11;
+        } else if (width > 340){
+          size = 10;
+        } else if (width > 290){
+          size = 9;
+        } else if (width > 250){
+          size = 8;
+        } else{
+          size = 7;
+        }
+        term.prefs_.set('font-size', size);
+      };
       this.keyboard.characterEncoding = 'raw';
       ignoreKeys.forEach(keyname => {
         this.keyboard.bindings.addBinding(keyname, () => hterm.Keyboard.KeyActions.PASS);
@@ -42,6 +66,7 @@
     term.decorate(document.querySelector('#terminal'));
     term.installKeyboard();
     term.setCursorBlink(true);
+    window.term = term;
   }
   function connectIO(io, term){
     const path = window.location.pathname.replace(/\/[^/]*$/, '/ws/');
