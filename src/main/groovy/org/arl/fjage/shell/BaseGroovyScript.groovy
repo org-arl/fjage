@@ -367,6 +367,28 @@ abstract class BaseGroovyScript extends Script {
   }
 
   /**
+   * Converts a URL to a clickable link, if terminal supports it.
+   *
+   * @param url URL
+   * @return clickable link String that can be printed to terminal
+   */
+  String href(String url) {
+    return href(url, url)
+  }
+
+  /**
+   * Converts a URL to a clickable link, if terminal supports it.
+   *
+   * @param url URL
+   * @param text text to display instead of URL
+   * @return clickable link String that can be printed to terminal
+   */
+  String href(String url, String text) {
+    if (out == null || out.isDumb()) return text;
+    return "\033]8;;" + url + "\007" + text + "\033]8;;\007";
+  }
+
+  /**
    * Run a nested Groovy script.
    *
    * @param name filename of the script to run.

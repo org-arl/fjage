@@ -55,6 +55,16 @@ Examples:
   println 'hello there!'
   println 'that failed!', org.arl.fjage.shell.OutputType.ERROR
 
+## href - make a clickable URL (on terminals that support URLs)
+
+Usage:
+  href(url)
+  href(url, text)
+
+Examples:
+  println href('http://www.google.com')
+  println href('http://www.google.com', 'Search...')
+
 ## delay - delay execution by the specified number of milliseconds
 
 Example:

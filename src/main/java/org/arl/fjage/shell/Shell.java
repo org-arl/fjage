@@ -64,6 +64,13 @@ public interface Shell {
   public String readLine(String prompt1, String prompt2, String line);
 
   /**
+   * Check if terminal supports ANSI control sequences.
+   *
+   * @return true if it does not support control sequences, false if it supports.
+   */
+  public boolean isDumb();
+
+  /**
    * Shutdown the shell.
    */
   public void shutdown();

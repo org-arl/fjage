@@ -215,6 +215,11 @@ public class ConsoleShell implements Shell, ConnectionListener {
   }
 
   @Override
+  public boolean isDumb() {
+    return errorStyle == null;
+  }
+
+  @Override
   public void shutdown() {
     if (term != null) {
       try {
