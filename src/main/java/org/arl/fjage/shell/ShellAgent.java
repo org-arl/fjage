@@ -149,6 +149,14 @@ public class ShellAgent extends Agent {
         public void run() {
           String s = null;
           while (!quit) {
+            if (!enabled) {
+              try {
+                Thread.sleep(100);
+              } catch (InterruptedException ex) {
+                interrupt();
+              }
+              continue;
+            }
             String prompt1 = null;
             String prompt2 = null;
             if (engine != null) {

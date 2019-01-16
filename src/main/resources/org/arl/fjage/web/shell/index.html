@@ -89,6 +89,7 @@
       io.sendString = io.onVTKeystroke;
       // enable cursor to indicate connection is back
       term.setCursorVisible(true);
+      term.io.print('\x1b[1G\x1b[2K');
     };
   }
   function reconnectIO(io, term, ws){
@@ -100,6 +101,7 @@
   function disconnectIO(io, term, ws){
   // enable cursor to indicate connection is back
     term.setCursorVisible(false);
+    term.io.print('\x1b[1G\x1b[2K\x1b[31m\x1b[2m(connection lost)\x1b[0m');
     io.onVTKeystroke = () => {};
     io.sendString = () => {};
     ws.onmessage = null;

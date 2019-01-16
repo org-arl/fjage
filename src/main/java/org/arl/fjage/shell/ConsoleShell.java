@@ -128,8 +128,10 @@ public class ConsoleShell implements Shell, ConnectionListener {
   @Override
   public void connected(Connector connector) {
     try {
-      console.callWidget(LineReader.REDRAW_LINE);
-      console.callWidget(LineReader.REDISPLAY);
+      if (console != null) {
+        console.callWidget(LineReader.REDRAW_LINE);
+        console.callWidget(LineReader.REDISPLAY);
+      }
     } catch(IllegalStateException ex) {
       // safely ignore exception
     }
