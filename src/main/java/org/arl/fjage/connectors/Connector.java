@@ -48,6 +48,14 @@ public interface Connector {
   public boolean waitOutputCompletion(long timeout);
 
   /**
+   * Set a connection state listener.
+   *
+   * @param listener listener to call for connection/disconnection,
+   *                 or null to disable listener.
+   */
+  public void setConnectionListener(ConnectionListener listener);
+
+  /**
    * Close the connection.
    */
   public void close();

@@ -10,10 +10,11 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import org.arl.fjage.Message;
+
 import java.io.File;
 import java.io.Reader;
 import java.util.List;
-import org.arl.fjage.Message;
 
 
 /**
@@ -54,7 +55,7 @@ public class EchoScriptEngine implements ScriptEngine {
         wait(500);
       }
     } catch (InterruptedException ex) {
-      // do nothing
+      Thread.currentThread().interrupt();
     }
     busy = false;
     return true;
@@ -93,6 +94,16 @@ public class EchoScriptEngine implements ScriptEngine {
   @Override
   public void deliver(Message msg) {
     if (shell != null) shell.notify(msg.getSender().getName() + " >> " + msg.toString());
+  }
+
+  @Override
+  public boolean offer(String s) {
+    return false;
+  }
+
+  @Override
+  public String input() {
+    return null;
   }
 
   @Override

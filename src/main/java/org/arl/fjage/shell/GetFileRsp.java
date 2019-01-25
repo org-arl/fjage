@@ -10,7 +10,6 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import org.arl.fjage.AgentID;
 import org.arl.fjage.Message;
 import org.arl.fjage.Performative;
 

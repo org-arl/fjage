@@ -10,11 +10,11 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import org.arl.fjage.*;
+
 import java.io.*;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.concurrent.Callable;
-import org.arl.fjage.*;
 
 /**
  * Shell agent runs in a container and allows execution of shell commands and scripts.
@@ -60,24 +60,53 @@ public class ShellAgent extends Agent {
 
   ////// private attributes
 
-  protected Shell shell = null;
+  protected Shell shell;
   protected Thread consoleThread = null;
-  protected ScriptEngine engine = null;
+  protected ScriptEngine engine;
   protected Callable<Void> exec = null;
   protected CyclicBehavior executor = null;
   protected List<MessageListener> listeners = new ArrayList<MessageListener>();
   protected List<InitScript> initScripts = new ArrayList<InitScript>();
   protected Map<String,InputStreamCacheEntry> isCache = new HashMap<String,InputStreamCacheEntry>();
   protected boolean quit = false;
+  protected boolean ephemeral = false;
+  protected boolean enabled = true;
 
   ////// interface methods
 
+  /**
+   * Create a shell agent without a user console. This is typically useful
+   * for provinding shell services to other agents.
+   *
+   * @param engine script engine to use
+   */
   public ShellAgent(ScriptEngine engine) {
     shell = null;
     this.engine = engine;
     if (engine != null) engine.setVariable("__agent__", this);
   }
 
+  /**
+   * Create a transient shell agent without a user console. This is typically
+   * used for initialization or short-lived scripts. This shell automatically
+   * terminates when all initrc scripts are executed.
+   *
+   * @param engine script engine to use
+   * @param ephemeral true for transient shell, false for long-lived shell
+   */
+  public ShellAgent(ScriptEngine engine, boolean ephemeral) {
+    shell = null;
+    this.ephemeral = ephemeral;
+    this.engine = engine;
+    if (engine != null) engine.setVariable("__agent__", this);
+  }
+
+  /**
+   * Create a shell for user interaction.
+   *
+   * @param shell user console
+   * @param engine script engine to use
+   */
   public ShellAgent(Shell shell, ScriptEngine engine) {
     this.shell = shell;
     this.engine = engine;
@@ -85,6 +114,8 @@ public class ShellAgent extends Agent {
     if (engine != null) {
       engine.bind(shell);
       engine.setVariable("__agent__", this);
+      engine.setVariable("__shell__", shell);
+      engine.setVariable("__script_engine__", engine);
     }
     addInitrc("cls://org.arl.fjage.shell.ShellDoc");
   }
@@ -92,7 +123,7 @@ public class ShellAgent extends Agent {
   @Override
   public void init() {
     log.info("Agent "+getName()+" init");
-    register(Services.SHELL);
+    if (!ephemeral) register(Services.SHELL);
 
     // behavior to exec in agent's thread
     executor = new CyclicBehavior() {
@@ -101,7 +132,7 @@ public class ShellAgent extends Agent {
         if (exec != null) {
           try {
             exec.call();
-          } catch (Exception ex) {
+          } catch (Throwable ex) {
             log.warning("Exec failure: "+ex.toString());
           }
           exec = null;
@@ -118,6 +149,14 @@ public class ShellAgent extends Agent {
         public void run() {
           String s = null;
           while (!quit) {
+            if (!enabled) {
+              try {
+                Thread.sleep(100);
+              } catch (InterruptedException ex) {
+                interrupt();
+              }
+              continue;
+            }
             String prompt1 = null;
             String prompt2 = null;
             if (engine != null) {
@@ -141,31 +180,32 @@ public class ShellAgent extends Agent {
                 }
               }
               if (aborted) {
-                log.info("ABORT");
+                log.fine("ABORT");
               }
               s = null;
             } else {
               if (engine == null) s = null;
-              else {
+              else if (exec == null && !engine.isBusy() && enabled) {
                 final String cmd = s.trim();
+                final String p1 = prompt1;
+                final String p2 = "\n"+prompt2;
                 s = null;
                 if (cmd.length() > 0) {
-                  if (exec != null || engine.isBusy()) shell.error("BUSY");
-                  else {
-                    synchronized(executor) {
-                      exec = new Callable<Void>() {
-                        @Override
-                        public Void call() {
-                          log.info("> "+cmd);
-                          engine.exec(cmd);
-                          return null;
-                        }
-                      };
-                      executor.restart();
-                    }
+                  synchronized(executor) {
+                    exec = () -> {
+                      log.fine("> "+cmd);
+                      shell.input(p1+cmd.replaceAll("\n", p2));
+                      try {
+                        engine.exec(cmd);
+                      } catch (Throwable ex) {
+                        log.warning("Exec failure: "+ex.toString());
+                      }
+                      return null;
+                    };
+                    executor.restart();
                   }
                 }
-              }
+              } else if (engine.offer(s)) s = null;
             }
           }
         }
@@ -174,7 +214,7 @@ public class ShellAgent extends Agent {
     }
 
     // behavior to manage incoming messages
-    add(new MessageBehavior() {
+    if (!ephemeral) add(new MessageBehavior() {
       @Override
       public void onReceive(Message msg) {
         if (msg instanceof ShellExecReq) handleExecReq((ShellExecReq)msg);
@@ -182,10 +222,14 @@ public class ShellAgent extends Agent {
         else if (msg instanceof PutFileReq) handlePutFileReq((PutFileReq)msg);
         else if (msg.getPerformative() == Performative.REQUEST) send(new Message(msg, Performative.NOT_UNDERSTOOD));
         else {
-          log.info(msg.getSender()+" > "+msg.toString());
-          if (engine != null) engine.deliver(msg);
+          log.fine(msg.getSender()+" > "+msg.toString());
           for (MessageListener ml: listeners)
-            ml.onReceive(msg);
+            try {
+              if (ml.onReceive(msg)) return;
+            } catch (Throwable ex) {
+              log.warning("MessageListener: "+ex.toString());
+            }
+          if (engine != null) engine.deliver(msg);
         }
       }
     });
@@ -200,10 +244,11 @@ public class ShellAgent extends Agent {
             else if (script.reader != null) engine.exec(script.reader, script.name);
             else if (script.cls != null) engine.exec(script.cls);
           }
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
           log.warning("Init script failure: "+ex.toString());
         }
-        if (consoleThread != null) consoleThread.start();
+        if (ephemeral) stop();
+        else if (consoleThread != null) consoleThread.start();
       }
     });
 
@@ -321,39 +366,58 @@ public class ShellAgent extends Agent {
   }
 
   /**
-   * Adds a message monitor for displayed messages.
+   * Adds a message listener for incoming notifications.
    *
    * @param ml message listener.
    */
-  public void addMessageMonitor(MessageListener ml) {
+  public void addMessageListener(MessageListener ml) {
     listeners.add(ml);
   }
 
   /**
-   * Removes a message monitor.
+   * Removes a message listener.
    *
    * @param ml message listener.
    */
-  public void removeMessageMonitor(MessageListener ml) {
+  public void removeMessageListener(MessageListener ml) {
     listeners.remove(ml);
   }
 
   /**
-   * Removes all message monitors.
+   * Removes all message listeners.
    */
-  public void clearMessageMonitors() {
+  public void clearMessageListeners() {
     listeners.clear();
+  }
+
+  /**
+   * Enable/disable user interaction in shell.
+   *
+   * @param b true to enable, false to disable.
+   */
+  public void enable(boolean b) {
+    enabled = b;
+  }
+
+  /**
+   * Checks if user interaction in shell is enabled.
+   *
+   * @return true if enabled, false if disabled.
+   */
+  public boolean isEnabled() {
+    return enabled;
   }
 
   ////// private methods
 
   private void shutdownPlatform() {
-    getPlatform().shutdown();
+    Platform platform = getPlatform();
+    if (platform != null) platform.shutdown();
     stop();
   }
 
   private void handleExecReq(final ShellExecReq req) {
-    Message rsp = null;
+    Message rsp;
     if (engine == null || engine.isBusy()) rsp = new Message(req, Performative.REFUSE);
     else {
       if (req.isScript()) {
@@ -365,7 +429,7 @@ public class ShellAgent extends Agent {
             exec = new Callable<Void>() {
               @Override
               public Void call() {
-                log.info("run "+file.getName());
+                log.fine("run "+file.getName());
                 engine.exec(file, req.getScriptArgs());
                 return null;
               }
@@ -388,38 +452,40 @@ public class ShellAgent extends Agent {
         }
       }
     }
-    if (rsp != null) send(rsp);
+    send(rsp);
   }
 
   private void handleGetFileReq(final GetFileReq req) {
     String filename = req.getFilename();
-    if (filename == null) send(new Message(req, Performative.REFUSE));
+    if (filename == null) {
+      send(new Message(req, Performative.REFUSE));
+      return;
+    }
     File f = new File(filename);
     GetFileRsp rsp = null;
     InputStream is = null;
     try {
       if (f.isDirectory()) {
-        log.info("list dir "+filename);
         File[] files = f.listFiles();
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < files.length; i++) {
-          sb.append(files[i].getName());
-          sb.append('\t');
-          sb.append(files[i].length());
-          sb.append('\t');
-          sb.append(files[i].lastModified());
-          sb.append('\n');
+        StringBuilder sb = new StringBuilder();
+        if (files != null){
+          for (File file : files) {
+            sb.append(file.getName());
+            sb.append('\t');
+            sb.append(file.length());
+            sb.append('\t');
+            sb.append(file.lastModified());
+            sb.append('\n');
+          }
         }
         rsp = new GetFileRsp(req);
         rsp.setDirectory(true);
         rsp.setContents(sb.toString().getBytes());
       } else if (f.canRead()) {
-        log.info("get file "+filename);
         long ofs = req.getOffset();
         long len = req.getLength();
         long length = f.length();
         if (ofs > length) {
-          log.info("File too short for requested offset!");
           send(new Message(req, Performative.REFUSE));
           return;
         }
@@ -439,7 +505,7 @@ public class ShellAgent extends Agent {
           }
         }
         int offset = 0;
-        int numRead = 0;
+        int numRead;
         if (is == null) {
           is = new FileInputStream(f);
           if (ofs > 0) is.skip(ofs);
@@ -475,19 +541,22 @@ public class ShellAgent extends Agent {
 
   private void handlePutFileReq(final PutFileReq req) {
     String filename = req.getFilename();
-    if (filename == null) send(new Message(req, Performative.REFUSE));
+    if (filename == null) {
+      send(new Message(req, Performative.REFUSE));
+      return;
+    }
     byte[] contents = req.getContents();
     File f = new File(filename);
     Message rsp = null;
-    OutputStream os = null;
+    FileOutputStream os = null;
     try {
       if (contents == null) {
-        log.info("delete "+filename);
         if (f.delete()) rsp = new Message(req, Performative.AGREE);
       } else {
-        log.info("put "+filename);
         os = new FileOutputStream(f);
         os.write(contents);
+        os.flush();
+        os.getFD().sync();
         rsp = new Message(req, Performative.AGREE);
       }
     } catch (IOException ex) {

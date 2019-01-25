@@ -55,6 +55,16 @@ Examples:
   println 'hello there!'
   println 'that failed!', org.arl.fjage.shell.OutputType.ERROR
 
+## href - make a clickable URL (on terminals that support URLs)
+
+Usage:
+  href(url)
+  href(url, text)
+
+Examples:
+  println href('http://www.google.com')
+  println href('http://www.google.com', 'Search...')
+
 ## delay - delay execution by the specified number of milliseconds
 
 Example:
@@ -137,6 +147,14 @@ Examples:
   msg = receive { it instanceof A } // get message that of class A
   msg = receive req                 // get message response to req
 
+## input - get user input
+
+Usage:
+  input [prompt], [hide]
+
+Examples:
+  name = input('What is your name?')  // prompt user and get input
+  secret = input('Secret?', true)     // hide input after entering
 '''
 
   static void __init__(ScriptEngine engine) {

@@ -29,6 +29,16 @@ public interface Shell {
   public void init(ScriptEngine engine);
 
   /**
+   * Prompt user for input.
+   */
+  public void prompt(Object obj);
+
+  /**
+   * Display input line.
+   */
+  public void input(Object obj);
+
+  /**
    * Display script output.
    */
   public void println(Object obj);
@@ -52,6 +62,13 @@ public interface Shell {
    * @return input string, null on EOF, or ABORT on ^C.
    */
   public String readLine(String prompt1, String prompt2, String line);
+
+  /**
+   * Check if terminal supports ANSI control sequences.
+   *
+   * @return true if it does not support control sequences, false if it supports.
+   */
+  public boolean isDumb();
 
   /**
    * Shutdown the shell.

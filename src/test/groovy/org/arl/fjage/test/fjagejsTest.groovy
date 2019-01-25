@@ -11,12 +11,13 @@ for full license details.
 package org.arl.fjage.test
 
 import org.arl.fjage.*
-import org.arl.fjage.shell.*;
-import org.arl.fjage.connectors.Connector
 import org.arl.fjage.connectors.WebServer
 import org.arl.fjage.connectors.WebSocketConnector
 import org.arl.fjage.remote.MasterContainer
+import org.arl.fjage.shell.EchoScriptEngine
+import org.arl.fjage.shell.ShellAgent
 import org.junit.Test
+
 import static org.junit.Assert.assertTrue
 
 class fjagejsTest {
@@ -26,10 +27,9 @@ class fjagejsTest {
     def testStatus = false
     def platform = new RealTimePlatform()
     def container = new MasterContainer(platform, 5081)
-    container.add("shell", new ShellAgent(new EchoScriptEngine()));
+    container.add("shell", new ShellAgent(new EchoScriptEngine()))
     WebServer.getInstance(8080).add("/", "/org/arl/fjage/web")
     WebServer.getInstance(8080).add("/test", new File('src/test/groovy/org/arl/fjage/test'))
-    Connector conn = new WebSocketConnector(8080, "/shell/ws")
     container.addConnector(new WebSocketConnector(8080, "/ws", true))
     platform.start()
     container.add('test', new Agent(){
@@ -44,22 +44,23 @@ class fjagejsTest {
         })
       }
     })
-    def ret = 0;
+    def ret = 0
     if (System.getProperty('manualJSTest') == null){
       // Run Jasmine based test in puppeteer.
-      println "Running automated tests using puppeteer";
-      def proc = "node src/test/groovy/org/arl/fjage/test/server.js".execute();
+      println "Running automated tests using puppeteer"
+      def proc = "node src/test/groovy/org/arl/fjage/test/server.js".execute()
       def sout = new StringBuilder(), serr = new StringBuilder()
       proc.consumeProcessOutput(sout, serr)
-      proc.waitFor();
-      ret = proc.exitValue();
+      proc.waitFor()
+      ret = proc.exitValue()
       println "NPM : out> $sout err> $serr \n ret = $ret \n testStatus = $testStatus"
     }else{
       println "waiting for user to run manual tests"
       while (!testStatus){
-        platform.delay(1000);
+        platform.delay(1000)
       }
     }
+    container.shutdown()
     platform.shutdown()
     assertTrue(ret == 0 && testStatus)
   }

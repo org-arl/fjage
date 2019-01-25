@@ -29,7 +29,7 @@ public class SerialPortConnector implements Connector {
    */
   public SerialPortConnector(String devname, int baud, String settings) throws IOException {
     if (settings != null && settings != "N81") throw new IOException("Bad serial port settings");
-    SerialPort com = SerialPort.getCommPort(devname);
+    com = SerialPort.getCommPort(devname);
     com.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
     com.openPort();
     com.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
@@ -61,6 +61,11 @@ public class SerialPortConnector implements Connector {
   }
 
   @Override
+  public void setConnectionListener(ConnectionListener listener) {
+    listener.connected(this);
+  }
+
+  @Override
   public void close() {
     if (com == null) return;
     com.closePort();
@@ -80,7 +85,8 @@ public class SerialPortConnector implements Connector {
       try {
         Thread.sleep(100);
       } catch (InterruptedException ex) {
-        // do nothing
+        Thread.currentThread().interrupt();
+        return false;
       }
     }
     return true;

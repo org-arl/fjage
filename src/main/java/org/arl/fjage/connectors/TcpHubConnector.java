@@ -30,6 +30,7 @@ public class TcpHubConnector extends Thread implements Connector {
   protected Logger log = Logger.getLogger(getClass().getName());
   protected PseudoInputStream pin = new PseudoInputStream();
   protected PseudoOutputStream pout = new PseudoOutputStream();
+  protected ConnectionListener listener = null;
 
   /**
    * Creates a TCP server running on a specified port.
@@ -54,7 +55,8 @@ public class TcpHubConnector extends Thread implements Connector {
       try {
         wait(100);
       } catch (InterruptedException ex) {
-        // do nothing
+        Thread.currentThread().interrupt();
+        return -1;
       }
     }
     return port;
@@ -96,7 +98,8 @@ public class TcpHubConnector extends Thread implements Connector {
       try {
         sleep(10);
       } catch (InterruptedException ex) {
-        // do nothing
+        Thread.currentThread().interrupt();
+        return false;
       }
     }
     return true;
@@ -116,7 +119,7 @@ public class TcpHubConnector extends Thread implements Connector {
       log.info("Listening on port "+port);
       while (sock != null) {
         try {
-          new ClientThread(sock.accept()).start();
+          new ClientThread(this, sock.accept()).start();
         } catch (IOException ex) {
           // do nothing
         }
@@ -137,6 +140,11 @@ public class TcpHubConnector extends Thread implements Connector {
   @Override
   public OutputStream getOutputStream() {
     return pout;
+  }
+
+  @Override
+  public void setConnectionListener(ConnectionListener listener) {
+    this.listener = listener;
   }
 
   @Override
@@ -177,10 +185,12 @@ public class TcpHubConnector extends Thread implements Connector {
 
     Socket client;
     OutputStream out = null;
+    TcpHubConnector conn;
 
-    ClientThread(Socket client) {
+    ClientThread(TcpHubConnector conn, Socket client) {
       setName(getClass().getSimpleName());
       setDaemon(true);
+      this.conn = conn;
       this.client = client;
     }
 
@@ -192,6 +202,7 @@ public class TcpHubConnector extends Thread implements Connector {
       try {
         cname = client.getInetAddress().toString();
         log.info("New connection from "+cname);
+        if (listener != null) listener.connected(conn);
         in = client.getInputStream();
         out = client.getOutputStream();
         if (charmode) {
@@ -204,12 +215,12 @@ public class TcpHubConnector extends Thread implements Connector {
         try {
           sleep(100);
         } catch (InterruptedException ex) {
-          // do nothing
+          Thread.currentThread().interrupt();
         }
-        while (in.available() > 0)
+        while (!Thread.interrupted() && in.available() > 0)
           in.read();
         // process incoming data
-        while (true) {
+        while (!Thread.interrupted()) {
           int c = in.read();
           if (c < 0 || c == 4) break;
           if (c > 0) pin.write(c);

@@ -79,14 +79,14 @@ class AlohaTest {
           agent.attempts++
           agent.tx++
           if (agent.tx == 1) {
-            agent.add new WakerBehavior(AlohaTest.FRAMELEN) {
+            agent.add new WakerBehavior(FRAMELEN) {
               void onWake() {
                 if (agent.tx == 1) agent.success++
                 agent.tx--
               }
             }
           } else {
-            agent.add new WakerBehavior(AlohaTest.FRAMELEN) {
+            agent.add new WakerBehavior(FRAMELEN) {
               void onWake() {
                 agent.tx--
               }

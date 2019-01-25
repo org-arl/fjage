@@ -10,13 +10,17 @@ for full license details.
 
 package org.arl.fjage.remote;
 
+import com.google.gson.Gson;
+import com.google.gson.TypeAdapter;
+import com.google.gson.TypeAdapterFactory;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+import org.arl.fjage.*;
+
 import java.io.IOException;
 import java.util.logging.Logger;
-import java.util.*;
-import org.arl.fjage.*;
-import com.google.gson.*;
-import com.google.gson.stream.*;
-import com.google.gson.reflect.TypeToken;
 
 /**
  * Message adapter for custom JSON representation.
@@ -108,14 +112,26 @@ class MessageAdapterFactory implements TypeAdapterFactory {
               in.beginObject();
               while (in.hasNext()) {
                 String fname = in.nextName();
-                if (fname.equals("msgID")) msg.setMessageID(in.nextString());
-                else if (fname.equals("inReplyTo")) msg.setInReplyTo(in.nextString());
-                else if (fname.equals("perf")) msg.setPerformative(perfDelegate.read(in));
-                else if (fname.equals("recipient")) msg.setRecipient(aidDelegate.read(in));
-                else if (fname.equals("sender")) msg.setSender(aidDelegate.read(in));
-                else {
-                  GenericValue v = gvDelegate.read(in);
-                  msg.put(fname, v.getValue());
+                switch (fname) {
+                  case "msgID":
+                    msg.setMessageID(in.nextString());
+                    break;
+                  case "inReplyTo":
+                    msg.setInReplyTo(in.nextString());
+                    break;
+                  case "perf":
+                    msg.setPerformative(perfDelegate.read(in));
+                    break;
+                  case "recipient":
+                    msg.setRecipient(aidDelegate.read(in));
+                    break;
+                  case "sender":
+                    msg.setSender(aidDelegate.read(in));
+                    break;
+                  default:
+                    GenericValue v = gvDelegate.read(in);
+                    msg.put(fname, v.getValue());
+                    break;
                 }
               }
               in.endObject();

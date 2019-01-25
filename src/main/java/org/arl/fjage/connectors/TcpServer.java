@@ -46,7 +46,8 @@ public class TcpServer extends Thread {
       try {
         wait(100);
       } catch (InterruptedException ex) {
-        // do nothing
+        Thread.currentThread().interrupt();
+        return -1;
       }
     }
     return port;

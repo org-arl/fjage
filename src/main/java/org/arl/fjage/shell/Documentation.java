@@ -10,14 +10,18 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import java.util.*;
-import java.util.regex.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Documentation {
 
   protected List<String> doc = new ArrayList<String>();
   protected Map<String,Integer> ndx = new HashMap<String,Integer>();
-  protected Pattern heading = Pattern.compile("^#+ +([^ ]+) +\\-.*$");
+  protected Pattern heading = Pattern.compile("^#+ +([^ ]+) +-.*$");
   protected Pattern section = Pattern.compile("^#+ .*$");
 
   /**
@@ -26,7 +30,7 @@ public class Documentation {
    * @param s multiline string.
    */
   public void add(String s) {
-    String lines[] = s.split("\\r?\\n");
+    String[] lines = s.split("\\r?\\n");
     for (String line: lines) {
       Matcher m = heading.matcher(line);
       if (m.matches()) ndx.put(m.group(1), doc.size());
@@ -38,7 +42,7 @@ public class Documentation {
    * Get documentation index.
    */
   public String get() {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     for (Integer v: ndx.values()) {
       String s = doc.get(v);
       if (s.startsWith("# ")) {
@@ -60,18 +64,18 @@ public class Documentation {
     String s = doc.get(pos);
     int level = s.indexOf(' ');
     if (level <= 0) return null;
-    String prefix = s.substring(0,level+1);
-    StringBuffer sb = new StringBuffer();
+    int endlevel = level;
+    StringBuilder sb = new StringBuilder();
     sb.append(s.replaceAll("^#+ +", ""));
     sb.append('\n');
     int skip = 0;
     for (int i = pos+1; i < doc.size(); i++) {
       s = doc.get(i);
-      if (s.startsWith(prefix)) break;
       Matcher m = section.matcher(s);
       if (m.matches()) {
         m = heading.matcher(s);
         level = s.indexOf(' ');
+        if (level <= endlevel) break;
         boolean nl = false;
         if (skip == 0 || level <= skip) {
           if (skip > 0) nl = true;

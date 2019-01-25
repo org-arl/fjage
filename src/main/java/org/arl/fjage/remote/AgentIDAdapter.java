@@ -10,9 +10,10 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import java.lang.reflect.Type;
-import org.arl.fjage.AgentID;
 import com.google.gson.*;
+import org.arl.fjage.AgentID;
+
+import java.lang.reflect.Type;
 
 /**
  * AgentID adapter for custom JSON representation.

@@ -10,8 +10,10 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import org.arl.fjage.*;
+import java.util.Date;
 import com.google.gson.*;
+import org.arl.fjage.AgentID;
+import org.arl.fjage.Message;
 
 /**
  * Class representing a JSON request/response message.
@@ -30,13 +32,16 @@ public class JsonMessage {
   Boolean relay;
 
   private static GsonBuilder gsonBuilder = new GsonBuilder()
-                                               .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
-                                               .serializeSpecialFloatingPointValues()
-                                               .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
-                                               .registerTypeAdapterFactory(new MessageAdapterFactory())
-                                               .registerTypeAdapterFactory(new ArrayAdapterFactory())
-                                               .registerTypeAdapterFactory(new GenericValueAdapterFactory())
-                                               .enableComplexMapKeySerialization();
+    .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
+    .serializeSpecialFloatingPointValues()
+    .registerTypeAdapter(Date.class, (JsonDeserializer<Date>) (json, typeOfT, context) -> new Date(json.getAsJsonPrimitive().getAsLong()))
+    .registerTypeAdapter(Date.class, (JsonSerializer<Date>) (date, type, jsonSerializationContext) -> new JsonPrimitive(date.getTime()))
+    .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
+    .registerTypeAdapterFactory(new MessageAdapterFactory())
+    .registerTypeAdapterFactory(new ArrayAdapterFactory())
+    .registerTypeAdapterFactory(new GenericValueAdapterFactory())
+    .enableComplexMapKeySerialization();
+
   private static Gson gson = gsonBuilder.create();
 
   public static void addTypeHierarchyAdapter(Class<?> cls, Object adapter) {

@@ -11,8 +11,12 @@ for full license details.
 package org.arl.fjage;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.logging.*;
+import java.util.ArrayDeque;
+import java.util.Iterator;
+import java.util.Queue;
+import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Base class to be extended by all agents. An agent must be added to a container
@@ -82,8 +86,9 @@ public class Agent implements Runnable, TimestampProvider {
   private boolean unblocked = false;
   private Platform platform = null;
   private Container container = null;
-  private MessageQueue queue = new MessageQueue();
+  private MessageQueue queue = new MessageQueue(256);
   protected long tid = -1;
+  protected Thread thread = null;
 
   /////////////////////// Attributes available to agents
 
@@ -177,7 +182,7 @@ public class Agent implements Runnable, TimestampProvider {
       Thread.currentThread().interrupt();
     }
     if (state == AgentState.IDLE) {
-      log.info("Spurious wakeup detected, evasive action taken");
+      log.info("block() interrupted");
       if (oldState != AgentState.NONE) {
         state = oldState;
         if (container != null) container.reportBusy(aid);
@@ -430,6 +435,7 @@ public class Agent implements Runnable, TimestampProvider {
           long t = deadline - currentTimeMillis();
           block(t);
         }
+        if (Thread.interrupted()) return null;
         if (state == AgentState.FINISHING) return null;
         m = queue.get(filter);
       } while (m == null && (timeout == BLOCKING || currentTimeMillis() < deadline));
@@ -476,12 +482,7 @@ public class Agent implements Runnable, TimestampProvider {
    * @return received message of the given class, null on timeout.
    */
   public Message receive(final Class<?> cls, long timeout) {
-    return receive(new MessageFilter() {
-      @Override
-      public boolean matches(Message m) {
-        return cls.isInstance(m);
-      }
-    }, timeout);
+    return receive(m -> cls.isInstance(m), timeout);
   }
 
   /**
@@ -526,8 +527,7 @@ public class Agent implements Runnable, TimestampProvider {
     if (Thread.currentThread().getId() != tid)
       throw new FjageError("request() should only be called from agent thread "+tid+", but called from "+Thread.currentThread().getId());
     if (!send(msg)) return null;
-    Message rsp = receive(msg, timeout);
-    return rsp;
+    return receive(msg, timeout);
   }
 
   /**
@@ -724,7 +724,7 @@ public class Agent implements Runnable, TimestampProvider {
    */
   final void deliver(Message m) {
     if (container == null) return;
-    log.finer("MSG "+m.getSender()+" > "+aid+"@"+tid+" : "+m.getClass().getSimpleName()+"/"+m.getMessageID());
+    log.finer("MSG "+m.getSender()+" > "+aid+"@"+tid+" : "+m.toString());
     queue.add(container.autoclone(m));
     synchronized (this) {
       restartBehaviors = true;
@@ -740,12 +740,16 @@ public class Agent implements Runnable, TimestampProvider {
    */
   @Override
   public final void run() {
-    tid = Thread.currentThread().getId();
+    thread = Thread.currentThread();
+    tid = thread.getId();
     state = AgentState.RUNNING;
     container.reportBusy(aid);
     try {
       init();
-      if (!container.isRunning()) block();
+      while (!container.isRunning()) {
+        block();
+        Thread.interrupted(); // interrupts used for disrupting timeouts only
+      }
       while (state != AgentState.FINISHING) {
         // restart necessary blocked behaviors
         if (restartBehaviors) {
@@ -786,6 +790,7 @@ public class Agent implements Runnable, TimestampProvider {
           continue;
         }
         block();
+        Thread.interrupted(); // interrupts used for disrupting timeouts only
       }
     } catch (Throwable ex) {
       log.log(Level.SEVERE, "Exception in agent: "+aid, ex);

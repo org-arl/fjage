@@ -10,13 +10,19 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.logging.Logger;
-import org.arl.fjage.*;
+import org.arl.fjage.AgentID;
 import org.arl.fjage.connectors.Connector;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 /**
  * Handles a JSON/TCP connection with remote container.
@@ -153,7 +159,7 @@ class ConnectionHandler extends Thread {
         id.wait(timeout);
       }
     } catch (InterruptedException ex) {
-      // do nothing
+      Thread.currentThread().interrupt();
     }
     Object rv = pending.get(id);
     pending.remove(id);
@@ -195,7 +201,7 @@ class ConnectionHandler extends Thread {
           respond(rq, container.getLocalAgents());
           break;
         case CONTAINS_AGENT:
-          respond(rq, rq.agentID != null ? container.containsAgent(rq.agentID) : false);
+          respond(rq, rq.agentID != null && container.containsAgent(rq.agentID));
           break;
         case SERVICES:
           respond(rq, container.getLocalServices());

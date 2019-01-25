@@ -10,7 +10,8 @@ for full license details.
 
 package org.arl.fjage;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 /**
  * Internal class representing a message queue.
@@ -22,9 +23,17 @@ public class MessageQueue {
   /////////// Private attributes
 
   private LinkedList<Message> queue = new LinkedList<Message>();
-  private int maxQueueLen = 0;
+  private int maxQueueLen;
 
   /////////// Interface methods
+
+  public MessageQueue() {
+    maxQueueLen = 0;  // unlimited queue
+  }
+
+  public MessageQueue(int maxlen) {
+    maxQueueLen = maxlen;
+  }
 
   public synchronized void setSize(int size) {
     maxQueueLen = size;
@@ -34,6 +43,8 @@ public class MessageQueue {
 
   public synchronized void add(Message m) {
     queue.offer(m);
+    while (maxQueueLen > 0 && queue.size() >= maxQueueLen)
+      queue.remove();
   }
 
   public synchronized Message get() {

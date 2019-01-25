@@ -10,10 +10,11 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import org.arl.fjage.Message;
+
 import java.io.File;
 import java.io.Reader;
 import java.util.List;
-import org.arl.fjage.Message;
 
 /**
  * An interface representing a scripting engine.
@@ -111,6 +112,22 @@ public interface ScriptEngine {
    * @param msg message to deliver.
    */
   public void deliver(Message msg);
+
+  /**
+   * Offers a string input to a running script. This is used to allow interactive scripts.
+   *
+   * @param s string input
+   * @return true if consumed, false otherwise
+   */
+  public boolean offer(String s);
+
+  /**
+   * Gets an input offered by {@link #offer(String)}. Blocks until an input is available or
+   * an interrupt. This is used to allow interactive scripts.
+   *
+   * @return input string, or null if input not supported
+   */
+  public String input() throws InterruptedException;
 
   /**
    * Check if script is currently being executed.

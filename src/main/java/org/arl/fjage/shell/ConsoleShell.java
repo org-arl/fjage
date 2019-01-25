@@ -10,22 +10,30 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import java.io.*;
-import java.util.logging.*;
-import org.jline.reader.*;
-import org.jline.terminal.*;
-import org.jline.utils.*;
+import org.arl.fjage.connectors.ConnectionListener;
 import org.arl.fjage.connectors.Connector;
+import org.jline.reader.*;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
+import org.jline.utils.AttributedString;
+import org.jline.utils.AttributedStyle;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.logging.Logger;
 
 /**
  * Shell input/output driver for console devices.
  */
-public class ConsoleShell implements Shell {
+public class ConsoleShell implements Shell, ConnectionListener {
 
   private Terminal term = null;
   private LineReader console = null;
   private Connector connector = null;
   private ScriptEngine scriptEngine = null;
+  private AttributedStyle promptStyle = null;
+  private AttributedStyle inputStyle = null;
   private AttributedStyle outputStyle = null;
   private AttributedStyle notifyStyle = null;
   private AttributedStyle errorStyle = null;
@@ -69,7 +77,7 @@ public class ConsoleShell implements Shell {
     try {
       if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
       else {
-        term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
+        term = TerminalBuilder.builder().streams(in, out).dumb(false).build();
         setupStyles();
       }
     } catch (IOException ex) {
@@ -86,6 +94,7 @@ public class ConsoleShell implements Shell {
     try {
       InputStream in = connector.getInputStream();
       OutputStream out = connector.getOutputStream();
+      connector.setConnectionListener(this);
       this.connector = connector;
       term = TerminalBuilder.builder().streams(in, out).build();
       setupStyles();
@@ -104,10 +113,11 @@ public class ConsoleShell implements Shell {
     try {
       InputStream in = connector.getInputStream();
       OutputStream out = connector.getOutputStream();
+      connector.setConnectionListener(this);
       this.connector = connector;
       if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
       else {
-        term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
+        term = TerminalBuilder.builder().streams(in, out).dumb(false).build();
         setupStyles();
       }
     } catch (IOException ex) {
@@ -115,10 +125,24 @@ public class ConsoleShell implements Shell {
     }
   }
 
+  @Override
+  public void connected(Connector connector) {
+    try {
+      if (console != null) {
+        console.callWidget(LineReader.REDRAW_LINE);
+        console.callWidget(LineReader.REDISPLAY);
+      }
+    } catch(IllegalStateException ex) {
+      // safely ignore exception
+    }
+  }
+
   private void setupStyles() {
     AttributedStyle style = new AttributedStyle();
+    promptStyle = style.foreground(AttributedStyle.BRIGHT+AttributedStyle.YELLOW);
+    inputStyle = style.foreground(AttributedStyle.WHITE);
     outputStyle = style.foreground(AttributedStyle.GREEN);
-    notifyStyle = style.foreground(AttributedStyle.BLUE);
+    notifyStyle = style.foreground(AttributedStyle.BRIGHT+AttributedStyle.BLUE);
     errorStyle = style.foreground(AttributedStyle.RED);
   }
 
@@ -126,13 +150,13 @@ public class ConsoleShell implements Shell {
   public void init(ScriptEngine engine) {
     if (term == null) return;
     scriptEngine = engine;
-    if (scriptEngine == null) console = LineReaderBuilder.builder().terminal(term).build();
+    if (scriptEngine == null) console = LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).build();
     else {
       Parser parser = new Parser() {
         @Override
         public CompletingParsedLine parse(String s, int cursor) {
-          if (!scriptEngine.isComplete(s)) throw new EOFError(0, cursor, "Incomplete sentence");
-          if (s.contains("\n") && cursor < s.length()) throw new EOFError(0, cursor, "Editing");
+          if (!scriptEngine.isComplete(s)) throw new EOFError(-1, -1, "");
+          if (s.contains("\n") && cursor < s.length()) throw new EOFError(-1, -1, "");
           return null;
         }
         @Override
@@ -142,7 +166,20 @@ public class ConsoleShell implements Shell {
       };
       console = LineReaderBuilder.builder().parser(parser).terminal(term).build();
       console.setVariable(LineReader.DISABLE_COMPLETION, true);
+      console.setOpt(LineReader.Option.ERASE_LINE_ON_FINISH);
     }
+  }
+
+  @Override
+  public void prompt(Object obj) {
+    if (obj == null || console == null) return;
+    console.printAbove(new AttributedString(obj.toString(), promptStyle));
+  }
+
+  @Override
+  public void input(Object obj) {
+    if (obj == null || console == null) return;
+    console.printAbove(new AttributedString(obj.toString(), inputStyle));
   }
 
   @Override
@@ -175,6 +212,11 @@ public class ConsoleShell implements Shell {
       log.warning(ex.toString());
       return null;
     }
+  }
+
+  @Override
+  public boolean isDumb() {
+    return errorStyle == null;
   }
 
   @Override

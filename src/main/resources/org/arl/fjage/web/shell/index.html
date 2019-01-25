@@ -28,32 +28,91 @@
 <body>
 <div id='terminal'></div>
 <script>
+  const ignoreKeys = ['Meta-R', 'Meta-Shift-R'];
   function setupHterm() {
     const term = new hterm.Terminal();
     term.onTerminalReady = function() {
-      const path = window.location.pathname.replace(/\/[^\/]*$/, '/ws/')
-      const ws = new WebSocket("ws://"+window.location.hostname+":"+window.location.port+path);
-      ws.onerror = (e) => {console.log('WebSocket error : ' + e.toString());};
-      ws.onopen = () => {
-        const io = this.io.push();
-        ws.onmessage = (evt) => {
-          io.print(evt.data);
-        };
-        io.onVTKeystroke = (string) => {
-          ws.send(string);
-        };
-        io.sendString = io.onVTKeystroke;
-        this.setCursorVisible(true);
-        this.keyboard.characterEncoding = 'raw';
+      const io = this.io.push();
+      io.onTerminalResize = () => {
+        const width = document.body.clientWidth;
+        var size = 15;
+        if (width > 820){
+          size = 15;
+        } else if (width > 660){
+          size = 14;
+        } else if (width > 520){
+          size = 13;
+        } else if (width > 500){
+          size = 12;
+        } else if (width > 460){
+          size = 11;
+        } else if (width > 340){
+          size = 10;
+        } else if (width > 290){
+          size = 9;
+        } else if (width > 250){
+          size = 8;
+        } else{
+          size = 7;
+        }
+        term.prefs_.set('font-size', size);
       };
+      this.keyboard.characterEncoding = 'raw';
+      ignoreKeys.forEach(keyname => {
+        this.keyboard.bindings.addBinding(keyname, () => hterm.Keyboard.KeyActions.PASS);
+      });
+      connectIO(io, term);
     };
     term.decorate(document.querySelector('#terminal'));
     term.installKeyboard();
+    term.setCursorBlink(true);
+    window.term = term;
+  }
+  function connectIO(io, term){
+    const path = window.location.pathname.replace(/\/[^/]*$/, '/ws/');
+    const ws = new WebSocket('ws://'+window.location.hostname+':'+window.location.port+path);
+    window.ws = ws;
+    ws.onerror = () => {
+      reconnectIO(io,term,ws);
+    };
+    ws.onclose = () => {
+      reconnectIO(io,term,ws);
+    };
+    ws.onopen = () => {
+      console.log('Connected to ', path);
+      ws.onmessage = (evt) => {
+        io.print(evt.data);
+      };
+      io.onVTKeystroke = (string) => {
+        if (ws.readyState != ws.CLOSING && ws.readyState != ws.CLOSED) ws.send(string);
+      };
+      io.sendString = io.onVTKeystroke;
+      // enable cursor to indicate connection is back
+      term.setCursorVisible(true);
+      term.io.print('\x1b[1G\x1b[2K');
+    };
+  }
+  function reconnectIO(io, term, ws){
+    disconnectIO(io, term, ws);
+    setTimeout(() => {
+      connectIO(io, term);
+    },1000);
+  }
+  function disconnectIO(io, term, ws){
+  // enable cursor to indicate connection is back
+    term.setCursorVisible(false);
+    term.io.print('\x1b[1G\x1b[2K\x1b[31m\x1b[2m(connection lost)\x1b[0m');
+    io.onVTKeystroke = () => {};
+    io.sendString = () => {};
+    ws.onmessage = null;
+    ws.onopen = null;
+    ws.onclose = null;
+    ws.onerror = null;
   }
   window.onload = function() {
     hterm.defaultStorage = new lib.Storage.Memory();
     lib.init(setupHterm);
   };
-</script>
+  </script>
 </body>
 </html>

@@ -362,16 +362,16 @@ class Gateway:
 
     def _socket_reconnect(self, keepalive):
         if keepalive:
-            print('The master container is closed, trying to reconnect..\n')
+            self.logger.info('The master container is closed, trying to reconnect..\n')
             while True:
                 try:
                     self._socket_connect(self.hostname, self.port)
-                    print('Reconnected..')
+                    self.logger.info('Reconnected..')
                     break
                 except Exception as e:
                     _time.sleep(5)
         else:
-            print('The remote connection is closed..\n')
+            self.logger.info('The remote connection is closed..\n')
 
     def __recv_proc(self, q, subscribers):
         """Receive process.
@@ -563,11 +563,13 @@ class Gateway:
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
                 new_topic = AgentID(self, topic.name + "__ntf", True)
-                topic.name = new_topic.name
+            else:
+                new_topic = topic
+
             if len(self.subscribers) == 0:
                 return False
             try:
-                self.subscribers.remove(topic.name)
+                self.subscribers.remove(new_topic.name)
             except:
                 self.logger.critical("Exception: No such topic subscribed: " + new_topic.name)
             return True

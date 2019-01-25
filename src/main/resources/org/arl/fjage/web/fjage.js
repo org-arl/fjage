@@ -285,7 +285,7 @@ export class Gateway {
    * @param {string} url - of the platform to connect to
    */
   constructor(url) {
-    url = url || 'ws://'+window.location.hostname+':'+window.location.port+'/ws/';
+    url = url || 'ws://'+window.location.hostname+':'+(window.location.port||80)+'/ws/';
     let existing = window.fjage.getGateway(url);
     if (existing) return existing;
     this.pending = {};                    // msgid to callback mapping for pending requests to server

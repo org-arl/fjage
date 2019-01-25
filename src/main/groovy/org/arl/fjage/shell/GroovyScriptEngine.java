@@ -10,23 +10,69 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import java.io.*;
-import java.util.*;
-import java.util.logging.*;
-import java.util.concurrent.*;
-import java.lang.reflect.Method;
-import java.lang.reflect.Field;
 import groovy.lang.*;
 import groovy.transform.ThreadInterrupt;
-import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.customizers.*;
+import org.arl.fjage.Message;
+import org.arl.fjage.Performative;
 import org.codehaus.groovy.GroovyBugError;
-import org.arl.fjage.*;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
+
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Groovy scripting engine.
  */
 public class GroovyScriptEngine implements ScriptEngine {
+
+  ////// private constants
+
+  private final int MAX_RESULT_LEN = 8192;
+  private final int RESULT_SNIPPET_LEN = 32;
+
+  ////// inner classes
+
+  class BlockingInput {
+
+    private int waiting = 0;
+    private String input = null;
+
+    synchronized String get() throws InterruptedException {
+      try {
+        waiting++;
+        while (input == null)
+          wait();
+      } finally {
+        waiting--;
+      }
+      String s = input;
+      input = null;
+      return s;
+    }
+
+    synchronized boolean put(String s) {
+      if (waiting == 0) return false;
+      input = s;
+      notify();
+      return true;
+    }
+
+    synchronized boolean isWaiting() {
+      return waiting > 0;
+    }
+
+  }
 
   ////// private attributes
 
@@ -36,6 +82,7 @@ public class GroovyScriptEngine implements ScriptEngine {
   private Shell out = null;
   private Thread busy = null;
   private Documentation doc = new Documentation();
+  private BlockingInput input = new BlockingInput();
   private Logger log = Logger.getLogger(getClass().getName());
 
   ////// constructor
@@ -49,7 +96,7 @@ public class GroovyScriptEngine implements ScriptEngine {
     CompilerConfiguration compiler = new CompilerConfiguration();
     compiler.setScriptBaseClass(BaseGroovyScript.class.getName());
     imports = new ImportCustomizer();
-    binding.setVariable("__script_engine__", this);
+    binding.setVariable("__input__", input);
     binding.setVariable("rsp", null);
     binding.setVariable("ntf", null);
     compiler.addCompilationCustomizers(imports);
@@ -66,6 +113,7 @@ public class GroovyScriptEngine implements ScriptEngine {
   @Override
   public void bind(Shell shell) {
     out = shell;
+    binding.setVariable("__out__", out);
   }
 
   @Override
@@ -93,7 +141,7 @@ public class GroovyScriptEngine implements ScriptEngine {
         String cmd = cmd1.trim();
         if (cmd.startsWith("help ")) cmd = "help '"+cmd.substring(5)+"'";
         else if (cmd.startsWith("import ")) cmd = "export '"+cmd.substring(7)+"'";
-        log.info("EVAL: "+cmd);
+        log.fine("EVAL: "+cmd);
         Object rv = null;
         try {
           if (binding.hasVariable(cmd)) {
@@ -140,7 +188,7 @@ public class GroovyScriptEngine implements ScriptEngine {
   public boolean exec(final File script, final List<String> args) {
     if (isBusy()) return false;
     try {
-      log.info("RUN: "+script.getAbsolutePath());
+      log.fine("RUN: "+script.getAbsolutePath());
       try {
         binding.setVariable("out", out);
         binding.setVariable("script", script.getAbsoluteFile());
@@ -167,7 +215,7 @@ public class GroovyScriptEngine implements ScriptEngine {
   @Override
   public boolean exec(final Class<?> script, final List<String> args) {
     if (ShellExtension.class.isAssignableFrom(script)) {
-      log.info("LOAD: "+script.getName());
+      log.fine("LOAD: "+script.getName());
       importClasses("static "+script.getName()+".*");
       try {
         Method m = script.getMethod("__init__", ScriptEngine.class);
@@ -191,7 +239,7 @@ public class GroovyScriptEngine implements ScriptEngine {
       try {
         if (isBusy()) return false;
         busy = Thread.currentThread();
-        log.info("RUN: "+script.getName());
+        log.fine("RUN: "+script.getName());
         try {
           binding.setVariable("out", out);
           binding.setVariable("script", script.getName());
@@ -226,7 +274,7 @@ public class GroovyScriptEngine implements ScriptEngine {
     synchronized(this) {
       try {
         busy = Thread.currentThread();
-        log.info("RUN: "+name);
+        log.fine("RUN: "+name);
         try {
           binding.setVariable("out", out);
           binding.setVariable("script", name);
@@ -270,7 +318,11 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   @Override
   public Object getVariable(String name) {
-    return binding.getVariable(name);
+    try {
+      return binding.getVariable(name);
+    } catch (Exception ex) {
+      return null;
+    }
   }
 
   @Override
@@ -301,11 +353,24 @@ public class GroovyScriptEngine implements ScriptEngine {
     if (out != null) out.notify(msg.getSender().getName() + " >> " + msg.toString());
   }
 
+  @Override
+  public boolean offer(String s) {
+    return input.put(s);
+  }
+
+  @Override
+  public String input() throws InterruptedException {
+    return input.get();
+  }
+
+
   ////// private methods
 
   private void println(Object s) {
     String str = s.toString();
-    log.info("RESULT: "+str);
+    int n = str.length();
+    if (n > MAX_RESULT_LEN) str = str.substring(0,RESULT_SNIPPET_LEN) + " <<snip>> " + str.substring(n-RESULT_SNIPPET_LEN);
+    log.fine("RESULT: "+str);
     // Mostly log the String version, but for messages, log it so that GUI can display details
     // Be careful not to ever log AgentIDs otherwise the toString() extensions can get called too often by GUI!
     if (out != null) out.println((s instanceof Message)?s:str);
@@ -327,7 +392,9 @@ public class GroovyScriptEngine implements ScriptEngine {
         String offendingGroovyScript = offendingClass.replace(".","/")+".groovy";
         try {
           InputStream in = groovy.getClassLoader().getResourceAsStream(offendingGroovyScript);
-          groovy.parse(new InputStreamReader(in), offendingGroovyScript);
+          if (in != null) {
+            groovy.parse(new InputStreamReader(in), offendingGroovyScript);
+          }
         } catch (Throwable ex1) {
           ex = ex1;
         }

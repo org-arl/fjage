@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2013, Mandar Chitre
+Copyright (c) 2018, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -33,6 +33,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   protected OutputThread outThread = null;
   protected PseudoInputStream pin = new PseudoInputStream();
   protected PseudoOutputStream pout = new PseudoOutputStream();
+  protected ConnectionListener listener = null;
   protected Logger log = Logger.getLogger(getClass().getName());
 
   /**
@@ -92,7 +93,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
 
   @Override
   public Object createWebSocket​(ServletUpgradeRequest req, ServletUpgradeResponse resp) {
-    return new WSHandler();
+    return new WSHandler(this);
   }
 
   @Override
@@ -108,6 +109,11 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   @Override
   public OutputStream getOutputStream() {
     return pout;
+  }
+
+  @Override
+  public void setConnectionListener(ConnectionListener listener) {
+    this.listener = listener;
   }
 
   @Override
@@ -145,6 +151,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     OutputThread() {
       setName(getClass().getSimpleName()+":"+name);
       setDaemon(true);
+      setPriority(MIN_PRIORITY);
     }
 
     @Override
@@ -163,11 +170,23 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
           for (WSHandler t: wsHandlers)
             t.write(s);
         }
+        try {
+          Thread.sleep(10);
+        } catch (InterruptedException ex) {
+          break;
+        }
       }
     }
 
     void close() {
-      if (pout != null) pout.close();
+      try {
+        if (pout != null) {
+          pout.close();
+          join();
+        }
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
     }
 
   }
@@ -178,12 +197,18 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   public class WSHandler {
 
     Session session = null;
+    WebSocketConnector conn;
+
+    public WSHandler(WebSocketConnector conn) {
+      this.conn = conn;
+    }
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
       log.info("New connection from "+session.getRemoteAddress());
       this.session = session;
       wsHandlers.add(this);
+      if (listener != null) listener.connected(conn);
     }
 
     @OnWebSocketClose
@@ -201,14 +226,16 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     @OnWebSocketMessage
     public void onMessage(String message) {
       byte[] buf = message.getBytes();
-      for (int i = 0; i < buf.length; i++) {
-        int c = buf[i];
-        if (c < 0) c += 256;
-        if (c == 4) continue;     // ignore ^D
-        try {
-          pin.write(c);
-        } catch (IOException ex) {
-          // do nothing
+      synchronized (pin) {
+        for (int i = 0; i < buf.length; i++) {
+          int c = buf[i];
+          if (c < 0) c += 256;
+          if (c == 4) continue;     // ignore ^D
+          try {
+            pin.write(c);
+          } catch (IOException ex) {
+            // do nothing
+          }
         }
       }
     }
