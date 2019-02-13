@@ -48,12 +48,12 @@ def _b64toArray(base64, dtype, littleEndian=True):
 def _decodeBase64(m):
     """base64 JSON decoder.
     """
-    for d in m.values():
-        if type(d) == dict and 'clazz' in d.keys():
+    for d in list(m.values()):
+        if type(d) == dict and 'clazz' in list(d.keys()):
             clazz = d['clazz']
-            if clazz.startswith('[') and len(clazz) == 2 and 'data' in d.keys():
+            if clazz.startswith('[') and len(clazz) == 2 and 'data' in list(d.keys()):
                 x = _b64toArray(d['data'], d['clazz'])
-                if x and 'signal' in m.keys():
+                if x and 'signal' in list(m):
                     m['signal'] = x
                 elif x:
                     m['data'] = x
