@@ -194,6 +194,8 @@ class Message(object):
         qclazz = obj['clazz']
         clazz = qclazz.split('.')[-1]
         try:
+            mod = __import__('fjagepy')
+            clazz = getattr(mod, clazz)
             rv = clazz()
         except:
             rv = Message()
@@ -270,7 +272,7 @@ class Gateway:
                 try:
                     self.name = name
                 except Exception as e:
-                    self.self.logger.critical("Exception: Cannot assign name to gateway: " + str(e))
+                    self.logger.critical("Exception: Cannot assign name to gateway: " + str(e))
                     raise
             self.q = list()
             self.subscribers = list()
