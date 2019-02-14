@@ -263,6 +263,7 @@ class Gateway:
     def __init__(self, hostname, port, name=None):
         self.hostname = hostname
         self.port = port
+        self.connection = None
         self.keepalive = True
         self.logger = _log.getLogger('org.arl.fjage')
         try:
@@ -295,6 +296,13 @@ class Gateway:
         self.socket = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
         self.socket.connect((hostname, port))
         self.socket_file = self.socket.makefile('r', 65536)
+        self.connection = True
+
+    def isConnected(self):
+        if self.connection == False:
+            return False
+        else:
+            return True
 
     def _parse_dispatch(self, rmsg, q):
         """Parse incoming messages and respond to them or dispatch them.
@@ -385,10 +393,12 @@ class Gateway:
             try:
                 rmsg = self.socket_file.readline()
                 if not rmsg:
+                    self.connection = False
                     self._socket_reconnect(self.keepalive)
                     if self.keepalive:
                         continue
                     else:
+                        self.connection = True
                         break
                 self.logger.debug(str(name[0]) + ":" + str(name[1]) + " <<< " + rmsg)
                 # Parse and dispatch incoming messages
