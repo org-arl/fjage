@@ -245,7 +245,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
         if (session != null) {
           session.getRemote().sendString(s);
         }
-      } catch (IOException e) {
+      } catch (Exception e) {
         log.warning(e.getMessage());
       }
     }
