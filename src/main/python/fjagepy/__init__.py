@@ -183,7 +183,10 @@ class Message(object):
 
     def _inflate(self, data):
         for key, value in data.items():
-            self.__dict__[key] = data[key]
+            if key == 'signal' and 'fc' in list(data.keys()) and data['fc'] != 0:
+                self.__dict__[key] = numpy.asarray(data[key][0::2]) + 1j * numpy.asarray(data[key][1::2])
+            else:
+                self.__dict__[key] = data[key]
 
     def _deserialize(self, obj):
         if (type(obj) == str or isinstance(obj, str)):
