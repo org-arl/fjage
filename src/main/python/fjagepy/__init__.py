@@ -206,9 +206,11 @@ class Message(object):
     def __str__(self):
         s = ''
         suffix = ''
+        sigrepr = ''
         clazz = self.__clazz__
         clazz = clazz.split(".")[-1]
         perf = self.perf
+        flag = False
         for k, v in self.__dict__.items():
             if k.startswith('__'):
                 continue
@@ -222,11 +224,15 @@ class Message(object):
                 continue
             if k == 'inReplyTo':
                 continue
-            if type(self.__dict__[k]) not in (int, float, bool, str):
+            if type(self.__dict__[k]) not in (int, float, bool, str, list, numpy.ndarray):
                 suffix = ' ...'
                 continue
-            s += ' ' + k + ':' + str(self.__dict__[k])
-        s += suffix
+            if type(self.__dict__[k]) in (numpy.ndarray, list) and k == 'signal':
+                sigrepr = '(' + str(len(self.__dict__[k])) + ' samples' + ')' if self.__dict__['fc'] == 0 else '(' + str(len(self.__dict__[k])) + ' baseband samples' + ')'
+                continue
+            s += ' ' + k + ':' + str(self.__dict__[k]) if flag else '' + k + ':' + str(self.__dict__[k])
+            flag = True
+        s += suffix + ' ' + sigrepr
         return clazz + ':' + perf + '[' + s.replace(',', ' ') + ']'
 
 
