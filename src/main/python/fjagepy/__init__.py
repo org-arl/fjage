@@ -282,7 +282,12 @@ class Gateway:
             self.recv_thread = _td.Thread(target=self.__recv_proc, args=(self.q, self.subscribers, ))
             self.recv_thread.daemon = True
             self.logger.info("Connecting to " + str(hostname) + ":" + str(port))
-            self._socket_connect(hostname, port)
+            try:
+                self._socket_connect(hostname, port)
+            except Exception as e:
+                self.logger.critical("Exception: " + str(e))
+                self.keepalive = True
+                self._socket_reconnect(self.keepalive)
             self.recv_thread.start()
             if self._is_duplicate():
                 self.logger.critical("Duplicate Gateway found. Shutting down.")
@@ -388,7 +393,12 @@ class Gateway:
         """
         parenthesis_count = 0
         rmsg = ""
-        name = self.socket.getpeername()
+        try:
+            name = self.socket.getpeername()
+        except Exception as e:
+            self.logger.critical("Exception: " + str(e))
+            self.keepalive = True
+            self._socket_reconnect(self.keepalive)
         while True:
             try:
                 rmsg = self.socket_file.readline()
@@ -425,6 +435,7 @@ class Gateway:
         """
         try:
             self.keepalive = False
+            self.connection = False
             self.socket.shutdown(_socket.SHUT_RDWR)
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
@@ -443,7 +454,12 @@ class Gateway:
                 tmsg.perf = Performative.INFORM
         rq = _json.dumps({'action': 'send', 'relay': relay, 'message': '###MSG###'})
         rq = rq.replace('"###MSG###"', tmsg._serialize())
-        name = self.socket.getpeername()
+        try:
+            name = self.socket.getpeername()
+        except Exception as e:
+            self.logger.critical("Exception: " + str(e))
+            self.keepalive = True
+            self._socket_reconnect(self.keepalive)
         self.logger.debug(str(name[0]) + ":" + str(name[1]) + " >>> " + rq)
         self.socket.sendall((rq + '\n').encode())
         return True
