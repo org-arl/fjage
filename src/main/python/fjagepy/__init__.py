@@ -207,6 +207,7 @@ class Message(object):
         s = ''
         suffix = ''
         sigrepr = ''
+        datarepr = ''
         clazz = self.__clazz__
         clazz = clazz.split(".")[-1]
         perf = self.perf
@@ -230,9 +231,17 @@ class Message(object):
             if type(self.__dict__[k]) in (numpy.ndarray, list) and k == 'signal':
                 sigrepr = '(' + str(len(self.__dict__[k])) + ' samples' + ')' if self.__dict__['fc'] == 0 else '(' + str(len(self.__dict__[k])) + ' baseband samples' + ')'
                 continue
+            if type(self.__dict__[k]) in (numpy.ndarray, list) and k == 'data':
+                datarepr = '(' + str(len(self.__dict__[k])) + ' bytes' + ')'
+                continue
             s += ' ' + k + ':' + str(self.__dict__[k]) if flag else '' + k + ':' + str(self.__dict__[k])
             flag = True
-        s += suffix + ' ' + sigrepr
+        if suffix != '':
+            s += ' ' + suffix
+        if sigrepr != '':
+            s += ' ' + sigrepr
+        if datarepr != '':
+            s += ' ' + datarepr
         return clazz + ':' + perf + '[' + s.replace(',', ' ') + ']'
 
 
