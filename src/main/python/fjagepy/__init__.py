@@ -242,7 +242,7 @@ class Message(object):
             s += ' ' + sigrepr
         if datarepr != '':
             s += ' ' + datarepr
-        return clazz + ':' + perf + '[' + s.replace(',', ' ') + ']'
+        return clazz + ':' + perf + '[' + s + ']'
 
 
 class GenericMessage(Message):
