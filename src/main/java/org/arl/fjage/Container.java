@@ -60,7 +60,7 @@ public class Container {
    * @param platform platform on which the container runs.
    */
   public Container(Platform platform) {
-    name = Integer.toHexString(hashCode());
+    name = "@"+Integer.toHexString(hashCode());
     this.platform = platform;
     LogHandlerProxy.install(platform, log);
     try {

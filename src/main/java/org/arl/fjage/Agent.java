@@ -715,6 +715,11 @@ public class Agent implements Runnable, TimestampProvider {
     this.aid = aid;
     this.container = container;
     platform = (container == null) ? null : container.getPlatform();
+    if (container != null) {
+      String cname = container.getName();
+      if (cname != null && !cname.startsWith("@"))
+        log = Logger.getLogger(getClass().getName()+"/"+container.getName());
+    }
     LogHandlerProxy.install(platform, log);
   }
 
