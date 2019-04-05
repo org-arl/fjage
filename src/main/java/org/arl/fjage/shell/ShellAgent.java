@@ -447,7 +447,14 @@ public class ShellAgent extends Agent {
         } else {
           boolean ok = false;
           if (cmd != null) ok = engine.exec(cmd);
-          if (ok) rsp = new Message(req, Performative.AGREE);
+          if (ok) {
+            Object ans = req.getAns() ? engine.getVariable("ans") : null;
+            if (ans == null) rsp = new Message(req, Performative.AGREE);
+            else {
+              rsp = new GenericMessage(req, Performative.AGREE);
+              ((GenericMessage)rsp).put("ans", ans);
+            }
+          }
           else rsp = new Message(req, Performative.REFUSE);
         }
       }

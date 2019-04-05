@@ -27,6 +27,7 @@ public class ShellExecReq extends Message {
   private String cmd = null;
   private File script = null;
   private List<String> args = null;
+  private boolean ans = false;
 
   /**
    * Create an empty request for shell command.
@@ -177,6 +178,26 @@ public class ShellExecReq extends Message {
    */
   public boolean isScript() {
     return script != null;
+  }
+
+  /**
+   * Set a flag to indicate that the output from the command should be returned in the response,
+   * when possible.
+   *
+   * @param ans true to get output, false otherwise
+   */
+  public void setAns(boolean ans) {
+    this.ans = ans;
+  }
+
+  /**
+   * Get the flag that indicates whether the output from the command should be returned in the response,
+   * when possible.
+   *
+   * @return true to get output, false otherwise
+   */
+  public boolean getAns() {
+    return ans;
   }
 
 }
