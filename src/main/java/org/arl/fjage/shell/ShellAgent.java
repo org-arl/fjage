@@ -468,6 +468,8 @@ public class ShellAgent extends Agent {
       send(new Message(req, Performative.REFUSE));
       return;
     }
+    if (filename.endsWith("/") || filename.endsWith(File.separator))
+      filename = filename.substring(0, filename.length()-1);
     File f = new File(filename);
     GetFileRsp rsp = null;
     InputStream is = null;
@@ -478,6 +480,7 @@ public class ShellAgent extends Agent {
         if (files != null){
           for (File file : files) {
             sb.append(file.getName());
+            if (file.isDirectory()) sb.append('/');
             sb.append('\t');
             sb.append(file.length());
             sb.append('\t');

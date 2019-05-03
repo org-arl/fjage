@@ -54,7 +54,10 @@ public class GetFileRsp extends Message {
   }
 
   /**
-   * Get the contents of the file.
+   * Get the contents of the file. For directories, the content consists of a
+   * list of files (one file per line). Each line starts with the filename
+   * (with a trailing "/" if it is a directory), "\t", file size in bytes,
+   * "\t", and last modification date.
    *
    * @return the contents of the file.
    */
