@@ -1,4 +1,4 @@
-CFLAGS=-std=c99 -Wall -O2
+CFLAGS=-std=c99 -Wall -O2 -D_BSD_SOURCE
 
 all: libfjage.a
 
