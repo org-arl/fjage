@@ -565,7 +565,6 @@ public class ShellAgent extends Agent {
     try {
       if (contents == null) {
         if (filename.endsWith("/") || filename.endsWith(File.separator)){
-          log.info("Deleting directory");
           Path pathToBeDeleted = Paths.get(filename);
  
           Files.walk(pathToBeDeleted)
@@ -577,7 +576,6 @@ public class ShellAgent extends Agent {
         }
         else if (f.delete()) rsp = new Message(req, Performative.AGREE);
       } else if (filename.endsWith("/") || filename.endsWith(File.separator)){
-        log.info("Creating directory");
         if(!f.exists()){
           f.mkdir();
           rsp = new Message(req, Performative.AGREE);
