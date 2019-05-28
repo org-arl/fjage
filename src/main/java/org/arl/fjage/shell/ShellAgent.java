@@ -15,6 +15,9 @@ import org.arl.fjage.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
 
 /**
  * Shell agent runs in a container and allows execution of shell commands and scripts.
@@ -561,7 +564,22 @@ public class ShellAgent extends Agent {
     FileOutputStream os = null;
     try {
       if (contents == null) {
-        if (f.delete()) rsp = new Message(req, Performative.AGREE);
+        if (filename.endsWith("/") || filename.endsWith(File.separator)){
+          Path pathToBeDeleted = Paths.get(filename);
+ 
+          Files.walk(pathToBeDeleted)
+            .sorted(Comparator.reverseOrder())
+            .map(Path::toFile)
+            .forEach(File::delete);
+ 
+          rsp = new Message(req, Performative.AGREE);
+        }
+        else if (f.delete()) rsp = new Message(req, Performative.AGREE);
+      } else if (filename.endsWith("/") || filename.endsWith(File.separator)){
+        if(!f.exists()){
+          f.mkdir();
+          rsp = new Message(req, Performative.AGREE);
+        }
       } else {
         os = new FileOutputStream(f);
         os.write(contents);
