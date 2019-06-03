@@ -47,7 +47,6 @@ import java.util.logging.Logger;
  *
  * @author  Mandar Chitre
  */
-public class Agent implements Runnable, TimestampProvider {
 
   /////////////////////// Constants
 
