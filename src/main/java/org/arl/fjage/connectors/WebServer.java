@@ -61,7 +61,7 @@ public class WebServer {
   public static WebServer getInstance(int port) {
     synchronized (servers) {
       WebServer svr = servers.get(port);
-      if (svr == null) svr = new WebServer(port);
+      if (svr == null || svr.server == null) svr = new WebServer(port);
       return svr;
     }
   }
@@ -93,7 +93,6 @@ public class WebServer {
     HandlerCollection handlerCollection = new HandlerCollection();
     GzipHandler gzipHandler = new GzipHandler();
     gzipHandler.setIncludedMimeTypes("text/html", "text/plain", "text/xml", "text/css", "application/javascript", "text/javascript");
-
     handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });
     gzipHandler.setHandler(handlerCollection);
     server.setHandler(gzipHandler);
