@@ -89,10 +89,22 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   public GroovyScriptEngine() {
     binding = new ConcurrentBinding();
-    init();
+    GroovyClassLoader gcl = new GroovyClassLoader(getClass().getClassLoader());
+    init(gcl);
   }
 
-  private void init() {
+  public GroovyScriptEngine(GroovyClassLoader gcl) {
+    binding = new ConcurrentBinding();
+    init(gcl);
+  }
+
+  public GroovyScriptEngine(ClassLoader cl) {
+    binding = new ConcurrentBinding();
+    GroovyClassLoader gcl = new GroovyClassLoader(cl);
+    init(gcl);
+  }
+
+  private void init(GroovyClassLoader gcl) {
     CompilerConfiguration compiler = new CompilerConfiguration();
     compiler.setScriptBaseClass(BaseGroovyScript.class.getName());
     imports = new ImportCustomizer();
@@ -101,7 +113,6 @@ public class GroovyScriptEngine implements ScriptEngine {
     binding.setVariable("ntf", null);
     compiler.addCompilationCustomizers(imports);
     compiler.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
-    GroovyClassLoader gcl = new GroovyClassLoader(getClass().getClassLoader());
     groovy = new GroovyShell(gcl, binding, compiler);
     binding.setVariable("__groovy__", groovy);
     binding.setVariable("__doc__", doc);
