@@ -12,6 +12,7 @@ package org.arl.fjage.connectors;
 
 import java.util.*;
 import java.io.*;
+import java.net.InetSocketAddress;
 import javax.servlet.http.*;
 import javax.servlet.ServletException;
 import org.eclipse.jetty.util.log.*;
@@ -85,8 +86,12 @@ public class WebServer {
   protected int port;
 
   protected WebServer(int port) {
+    this(port, "127.0.0.1");
+  }
+
+  protected WebServer(int port, String ip){
     this.port = port;
-    server = new Server(port);
+    server = new Server(InetSocketAddress.createUnresolved(ip, port));
     server.setStopAtShutdown(true);
     if (port > 0) servers.put(port, this);
     contexts = new ContextHandlerCollection();
