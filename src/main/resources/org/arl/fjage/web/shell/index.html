@@ -66,6 +66,9 @@
     term.decorate(document.querySelector('#terminal'));
     term.installKeyboard();
     term.setCursorBlink(true);
+    const urlParams = new URLSearchParams(window.location.search);
+    const scbVis = urlParams.get('scrollbar');
+    term.prefs_.set('scrollbar-visible', scbVis != "false");
     window.term = term;
   }
   function connectIO(io, term){
