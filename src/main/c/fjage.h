@@ -137,10 +137,10 @@ int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* ag
 int fjage_send(fjage_gw_t gw, const fjage_msg_t msg);
 
 /// Receive a message. The received message should be freed by the caller using fjage_msg_destroy().
-/// If clazz is not NULL, only messages of a specified message class are recevied. If id is not
-/// NULL, only messages that are in response to the message specified by the id are received.
+/// If clazz is not NULL, only the first message of a specified message class is received. If id is not
+/// NULL, only the first message that is in response to the message specified by the id is received.
 ///
-/// Recevied messages are open in read-only mode, where the getter fjage_msg_get_* functions may
+/// Received message are open in read-only mode, where the getter fjage_msg_get_* functions may
 /// be called, but not the setters. Messages of class org.arl.fjage.GenericMessage are currently
 /// unsupported.
 ///
@@ -152,11 +152,29 @@ int fjage_send(fjage_gw_t gw, const fjage_msg_t msg);
 
 fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long timeout);
 
+/// Receive any message whose name is contained in the array 'clazzes'. The first message whose name
+/// matches any of the message names in the array will be returned. If the array is NULL or it's
+/// length is less than 1, no message will be returned. The received message should be freed by
+/// the caller using fjage_msg_destroy().
+///
+///
+/// Received message is open in read-only mode, where the getter fjage_msg_get_* functions may
+/// be called, but not the setters. Messages of class org.arl.fjage.GenericMessage are currently
+/// unsupported.
+///
+/// @param gw             Gateway
+/// @param clazzes        An array of fully qualified name of message class.
+/// @param clazzlen       Length of the array of fully qualified name of message class.
+/// @param timeout        Timeout in milliseconds
+/// @return               The received message in read-only mode, or NULL on timeout
+
+fjage_msg_t fjage_receive_any(fjage_gw_t gw, const char** clazzes, int clazzlen, long timeout);
+
 /// Send a message and wait for a response. The message object passed in is considered consumed
 /// after the call, and should not be used or freed by the caller. If a response is returned,
 /// it should be freed by the caller using fjage_msg_destroy().
 ///
-/// Recevied messages are open in read-only mode, where the getter fjage_msg_get_* functions may
+/// Received messages are open in read-only mode, where the getter fjage_msg_get_* functions may
 /// be called, but not the setters. Messages of class org.arl.fjage.GenericMessage are currently
 /// unsupported.
 ///

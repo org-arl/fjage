@@ -112,6 +112,31 @@ static fjage_msg_t mqueue_get(fjage_gw_t gw, const char* clazz, const char* id) 
   return msg;
 }
 
+static bool mqueue_compare_any(const char* clazzt,  const char** clazzes, int clazzlen){
+  for (int i=0;i<clazzlen;i++){
+    if (strcmp(clazzes[i], clazzt) == 0) return true;
+  }
+  return false;
+}
+
+static fjage_msg_t mqueue_get_any(fjage_gw_t gw, const char** clazzes, int clazzlen) {
+  if (gw == NULL) return NULL;
+  _fjage_gw_t* fgw = gw;
+  fjage_msg_t msg = NULL;
+  if (clazzes == NULL || clazzlen < 1) return msg;
+  for (int i = fgw->mqueue_tail; i != fgw->mqueue_head && msg == NULL; i++) {
+    if (fgw->mqueue[i] != NULL) {
+      const char* clazz1 = fjage_msg_get_clazz(fgw->mqueue[i]);
+      if (clazz1 == NULL || ! mqueue_compare_any(clazz1, clazzes, clazzlen)) continue;
+      msg = fgw->mqueue[i];
+      fgw->mqueue[i] = NULL;
+      if (i == fgw->mqueue_tail) fgw->mqueue_tail = (fgw->mqueue_tail+1) % QUEUE_LEN;
+      // break out
+    }
+  }
+  return msg;
+}
+
 static jsmntok_t* json_parse(const char* json) {
   jsmn_parser parser;
   jsmn_init(&parser);
@@ -517,10 +542,22 @@ int fjage_send(fjage_gw_t gw, const fjage_msg_t msg) {
 fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long timeout) {
   long t0 = get_time_ms();
   long timeout1 = timeout;
-  fjage_msg_t msg = NULL;
+  fjage_msg_t msg = mqueue_get(gw, clazz, id);
   while (msg == NULL && timeout1 > 0) {
     if (json_reader(gw, NULL, timeout1) < 0) break;
     msg = mqueue_get(gw, clazz, id);
+    if (msg == NULL) timeout1 = t0+timeout - get_time_ms();
+  }
+  return msg;
+}
+
+fjage_msg_t fjage_receive_any(fjage_gw_t gw, const char** clazzes, int clazzlen, long timeout) {
+  long t0 = get_time_ms();
+  long timeout1 = timeout;
+  fjage_msg_t msg = mqueue_get_any(gw, clazzes, clazzlen);
+  while (msg == NULL && timeout1 > 0) {
+    if (json_reader(gw, NULL, timeout1) < 0) break;
+    msg = mqueue_get_any(gw, clazzes, clazzlen);
     if (msg == NULL) timeout1 = t0+timeout - get_time_ms();
   }
   return msg;
