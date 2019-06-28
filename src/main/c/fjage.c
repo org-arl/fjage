@@ -230,12 +230,12 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
   return rv;
 }
 
+/// @return               -1 if interrupted; 0 otherwise
 static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
   long t0 = get_time_ms();
   uint8_t dummy;
-  while (read(fgw->intfd[0], &dummy, 1) > 0);
   struct pollfd fds[2];
   memset(fds, 0, sizeof(fds));
   fds[0].fd = fgw->sockfd;
@@ -499,6 +499,8 @@ fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
   writes(fgw->sockfd, "\"}\n");
   fgw->aid_count = 0;
   fgw->aids = NULL;
+  uint8_t dummy;
+  while (read(fgw->intfd[0], &dummy, 1) > 0);
   json_reader(gw, uuid, 1000);
   if (fgw->aid_count == 0) return NULL;
   return (fjage_aid_t)(fgw->aids);
@@ -516,6 +518,8 @@ int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* ag
   writes(fgw->sockfd, "\"}\n");
   fgw->aid_count = 0;
   fgw->aids = NULL;
+  uint8_t dummy;
+  while (read(fgw->intfd[0], &dummy, 1) > 0);
   json_reader(gw, uuid, 1000);
   if (fgw->aid_count == 0) return 0;
   for (int i = 0; i < fgw->aid_count; i++) {
@@ -540,9 +544,12 @@ int fjage_send(fjage_gw_t gw, const fjage_msg_t msg) {
 }
 
 fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long timeout) {
+  _fjage_gw_t* fgw = gw;
+  uint8_t dummy;
   long t0 = get_time_ms();
   long timeout1 = timeout;
   fjage_msg_t msg = mqueue_get(gw, clazz, id);
+  while (read(fgw->intfd[0], &dummy, 1) > 0);
   while (msg == NULL && timeout1 > 0) {
     if (json_reader(gw, NULL, timeout1) < 0) break;
     msg = mqueue_get(gw, clazz, id);
@@ -552,9 +559,12 @@ fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long
 }
 
 fjage_msg_t fjage_receive_any(fjage_gw_t gw, const char** clazzes, int clazzlen, long timeout) {
+    _fjage_gw_t* fgw = gw;
+  uint8_t dummy;
   long t0 = get_time_ms();
   long timeout1 = timeout;
   fjage_msg_t msg = mqueue_get_any(gw, clazzes, clazzlen);
+  while (read(fgw->intfd[0], &dummy, 1) > 0);
   while (msg == NULL && timeout1 > 0) {
     if (json_reader(gw, NULL, timeout1) < 0) break;
     msg = mqueue_get_any(gw, clazzes, clazzlen);
