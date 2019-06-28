@@ -205,7 +205,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
-      log.info("New connection from "+session.getRemoteAddress());
+      log.fine("New connection from "+session.getRemoteAddress());
       this.session = session;
       wsHandlers.add(this);
       if (listener != null) listener.connected(conn);
@@ -213,7 +213,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
 
     @OnWebSocketClose
     public void onClose(int statusCode, String reason) {
-      log.info("Connection from "+session.getRemoteAddress()+" closed");
+      log.fine("Connection from "+session.getRemoteAddress()+" closed");
       session = null;
       wsHandlers.remove(this);
     }
