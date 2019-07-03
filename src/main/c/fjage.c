@@ -428,6 +428,17 @@ fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings)
   return fgw;
 }
 
+int fjage_rs232_wakeup(const char* devname, int baud, const char* settings) {
+  _fjage_gw_t* fgw = fjage_rs232_open(devname, baud, settings);
+  if (gw == NULL) {
+    return -1;
+  }
+  char write_buffer[] = "A";
+  int  bytes_written  = 0;  
+  bytes_written = write(fgw->sockfd, write_buffer, sizeof(write_buffer));
+  return 0;
+}
+
 int fjage_close(fjage_gw_t gw) {
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
