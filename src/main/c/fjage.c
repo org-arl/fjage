@@ -430,7 +430,7 @@ fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings)
 
 int fjage_rs232_wakeup(const char* devname, int baud, const char* settings) {
   _fjage_gw_t* fgw = fjage_rs232_open(devname, baud, settings);
-  if (gw == NULL) {
+  if (fgw == NULL) {
     return -1;
   }
   char write_buffer = 'A';
