@@ -433,9 +433,8 @@ int fjage_rs232_wakeup(const char* devname, int baud, const char* settings) {
   if (gw == NULL) {
     return -1;
   }
-  char write_buffer[] = "A";
-  int  bytes_written  = 0;  
-  bytes_written = write(fgw->sockfd, write_buffer, sizeof(write_buffer));
+  char write_buffer = 'A';
+  write(fgw->sockfd, &write_buffer, sizeof(char));
   return 0;
 }
 
