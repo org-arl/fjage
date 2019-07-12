@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2015-2018, Mandar Chitre
+Copyright (c) 2015-2019, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -10,19 +10,12 @@ for full license details.
 
 package org.arl.fjage.remote;
 
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.logging.Logger;
 import org.arl.fjage.AgentID;
 import org.arl.fjage.connectors.Connector;
-
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 
 /**
  * Handles a JSON/TCP connection with remote container.
@@ -39,7 +32,7 @@ class ConnectionHandler extends Thread {
   private RemoteContainer container;
   private boolean alive, keepAlive;
   private ExecutorService pool = Executors.newSingleThreadExecutor();
-
+  private Set<AgentID> watchList = new HashSet<>();
 
   public ConnectionHandler(Connector conn, RemoteContainer container) {
     this.conn = conn;
@@ -189,6 +182,13 @@ class ConnectionHandler extends Thread {
     return conn == null;
   }
 
+  boolean wantsMessagesFor(AgentID aid) {
+    synchronized(watchList) {
+      if (watchList.isEmpty()) return true;
+      return watchList.contains(aid);
+    }
+  }
+
   //////// Private inner class representing task to run
 
   private class RemoteTask implements Runnable {
@@ -223,6 +223,13 @@ class ConnectionHandler extends Thread {
           break;
         case SHUTDOWN:
           container.shutdown();
+          break;
+        case WANTS_MESSAGES_FOR:
+          synchronized(watchList) {
+            watchList.clear();
+            for (AgentID aid: rq.agentIDs)
+              watchList.add(aid);
+          }
           break;
       }
     }

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2015-2018, Mandar Chitre
+Copyright (c) 2015-2019, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -10,16 +10,10 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import org.arl.fjage.AgentID;
-import org.arl.fjage.Message;
-import org.arl.fjage.Platform;
-import org.arl.fjage.connectors.ConnectionListener;
-import org.arl.fjage.connectors.Connector;
-import org.arl.fjage.connectors.SerialPortConnector;
-import org.arl.fjage.connectors.TcpServer;
-
-import java.io.IOException;
 import java.util.*;
+import java.io.IOException;
+import org.arl.fjage.*;
+import org.arl.fjage.connectors.*;
 
 /**
  * Master container supporting multiple remote slave containers. Agents in linked
@@ -211,7 +205,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves)
-        slave.printlnQueued(json);
+        if (slave.wantsMessagesFor(aid)) slave.printlnQueued(json);
     }
     return true;
   }

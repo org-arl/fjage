@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2015, Mandar Chitre
+Copyright (c) 2015-2019, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -22,5 +22,6 @@ enum Action {
   @SerializedName("agentForService")  AGENT_FOR_SERVICE,
   @SerializedName("agentsForService") AGENTS_FOR_SERVICE,
   @SerializedName("send")             SEND,
+  @SerializedName("wantsMessagesFor") WANTS_MESSAGES_FOR,
   @SerializedName("shutdown")         SHUTDOWN
 }

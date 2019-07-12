@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2015-2018, Mandar Chitre
+Copyright (c) 2015-2019, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -10,18 +10,10 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import org.arl.fjage.AgentID;
-import org.arl.fjage.Message;
-import org.arl.fjage.Platform;
-import org.arl.fjage.connectors.Connector;
-import org.arl.fjage.connectors.SerialPortConnector;
-import org.arl.fjage.connectors.TcpConnector;
-
+import java.util.*;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import org.arl.fjage.*;
+import org.arl.fjage.connectors.*;
 
 /**
  * Slave container attached to a master container. Agents in linked
@@ -42,6 +34,7 @@ public class SlaveContainer extends RemoteContainer {
   private int port, baud;
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
   private boolean quit = false;
+  private String watchListCache = null;
 
   ////////////// Constructors
 
@@ -256,6 +249,37 @@ public class SlaveContainer extends RemoteContainer {
     // do nothing
   }
 
+  /////////////// Observers
+
+  public AgentID add(String name, Agent agent) {
+    AgentID aid = super.add(name, agent);
+    if (aid != null) updateWatchList();
+    return aid;
+  }
+
+  public boolean kill(AgentID aid) {
+    boolean rv = super.kill(aid);
+    if (rv) updateWatchList();
+    return rv;
+  }
+
+  public boolean subscribe(AgentID aid, AgentID topic) {
+    boolean rv = super.subscribe(aid, topic);
+    if (rv) updateWatchList();
+    return rv;
+  }
+
+  public boolean unsubscribe(AgentID aid, AgentID topic) {
+    boolean rv = super.unsubscribe(aid, topic);
+    if (rv) updateWatchList();
+    return rv;
+  }
+
+  public void unsubscribe(AgentID aid) {
+    super.unsubscribe(aid);
+    updateWatchList();
+  }
+
   /////////////// Private stuff
 
   private void connectToMaster() {
@@ -281,6 +305,25 @@ public class SlaveContainer extends RemoteContainer {
         log.warning("Connection manager interrupted!");
       }
     }).start();
+  }
+
+  private synchronized void updateWatchList() {
+    if (master == null) return;
+    List<AgentID> watchList = new ArrayList<>();
+    for (AgentID aid: getLocalAgents())
+      watchList.add(aid);
+    for (AgentID aid: topics.keySet())
+      if (topics.get(aid).size() > 0)
+        watchList.add(aid);
+    JsonMessage rq = new JsonMessage();
+    rq.action = Action.WANTS_MESSAGES_FOR;
+    rq.agentIDs = new AgentID[watchList.size()];
+    rq.agentIDs = watchList.toArray(rq.agentIDs);
+    String json = rq.toJson();
+    if (watchListCache == null || !watchListCache.equals(json)) {
+      master.println(json);
+      watchListCache = json;
+    }
   }
 
 }
