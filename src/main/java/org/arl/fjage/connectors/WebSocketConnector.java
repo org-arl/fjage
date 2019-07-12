@@ -82,7 +82,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
       @Override
       public void configure(WebSocketServletFactory factory) {
         factory.setCreator(WebSocketConnector.this);
-        if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize​(maxMsgSize);
+        if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize(maxMsgSize);
       }
     });
     server.add(handler);
@@ -92,7 +92,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   }
 
   @Override
-  public Object createWebSocket​(ServletUpgradeRequest req, ServletUpgradeResponse resp) {
+  public Object createWebSocket(ServletUpgradeRequest req, ServletUpgradeResponse resp) {
     return new WSHandler(this);
   }
 
