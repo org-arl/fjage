@@ -86,6 +86,7 @@ class Action:
     AGENT_FOR_SERVICE = "agentForService"
     AGENTS_FOR_SERVICE = "agentsForService"
     SEND = "send"
+    WANTS_MESSAGES_FOR = "wantsMessagesFor"
     SHUTDOWN = "shutdown"
 
 
@@ -318,6 +319,7 @@ class Gateway:
         self.socket_file = self.socket.makefile('r', 65536)
         self.connection = True
         self.socket.sendall('{"alive": true}\n'.encode())
+        self._update_watch()
 
     def isConnected(self):
         if self.connection == False:
@@ -403,6 +405,10 @@ class Gateway:
                     _time.sleep(5)
         else:
             self.logger.info('The remote connection is closed..\n')
+
+    def _update_watch(self):
+        rq = {'action': Action.WANTS_MESSAGES_FOR, 'agentIDs': [self.name]+['#'+topic for topic in self.subscribers]}
+        self.socket.sendall((_json.dumps(rq) + '\n').encode())
 
     def __recv_proc(self, q, subscribers):
         """Receive process.
@@ -591,6 +597,7 @@ class Gateway:
                 self.logger.critical("Warning: Already subscribed to topic")
                 return False
             self.subscribers.append(new_topic.name)
+            self._update_watch()
             return True
         else:
             self.logger.critical("Invalid AgentID")
@@ -613,6 +620,7 @@ class Gateway:
             except:
                 self.logger.critical("Exception: No such topic subscribed: " + new_topic.name)
                 return False
+            self._update_watch()
             return True
         else:
             self.logger.critical("Invalid AgentID")
