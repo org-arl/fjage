@@ -38,6 +38,8 @@ class ConnectionHandler extends Thread {
   private Logger log = Logger.getLogger(getClass().getName());
   private RemoteContainer container;
   private boolean alive, keepAlive;
+  private ExecutorService pool = Executors.newSingleThreadExecutor();
+
 
   public ConnectionHandler(Connector conn, RemoteContainer container) {
     this.conn = conn;
@@ -49,7 +51,6 @@ class ConnectionHandler extends Thread {
 
   @Override
   public void run() {
-    ExecutorService pool = Executors.newSingleThreadExecutor();
     BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
     out = new DataOutputStream(conn.getOutputStream());
     if (keepAlive) println(ALIVE);
@@ -147,6 +148,10 @@ class ConnectionHandler extends Thread {
         close();
       }
     }
+  }
+
+  void printlnQueued(String s) {
+    if (pool != null) pool.execute(() -> println(s));
   }
 
   JsonMessage printlnAndGetResponse(String s, String id, long timeout) {

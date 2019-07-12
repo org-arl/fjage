@@ -211,7 +211,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves)
-        slave.println(json);
+        slave.printlnQueued(json);
     }
     return true;
   }
