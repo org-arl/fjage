@@ -292,10 +292,10 @@ class Gateway:
                     self.logger.critical("Exception: Cannot assign name to gateway: " + str(e))
                     raise
             self.q = list()
-            self.subscribers = list()
+            self.subscriptions = list()
             self.pending = dict()
             self.cv = _td.Condition()
-            self.recv_thread = _td.Thread(target=self.__recv_proc, args=(self.q, self.subscribers, ))
+            self.recv_thread = _td.Thread(target=self.__recv_proc, args=(self.q, self.subscriptions, ))
             self.recv_thread.daemon = True
             self.logger.info("Connecting to " + str(hostname) + ":" + str(port))
             try:
@@ -373,7 +373,7 @@ class Gateway:
                         self.cv.notify()
                         self.cv.release()
                     if self._is_topic(msg["data"]["recipient"]):
-                        if self.subscribers.count(msg["data"]["recipient"].replace("#", "")):
+                        if self.subscriptions.count(msg["data"]["recipient"].replace("#", "")):
                             q.append(msg)
                             self.cv.acquire()
                             self.cv.notify()
@@ -409,10 +409,10 @@ class Gateway:
             self.logger.info('The remote connection is closed..\n')
 
     def _update_watch(self):
-        rq = {'action': Action.WANTS_MESSAGES_FOR, 'agentIDs': [self.name]+['#'+topic for topic in self.subscribers]}
+        rq = {'action': Action.WANTS_MESSAGES_FOR, 'agentIDs': [self.name]+['#'+topic for topic in self.subscriptions]}
         self.socket.sendall((_json.dumps(rq) + '\n').encode())
 
-    def __recv_proc(self, q, subscribers):
+    def __recv_proc(self, q, subscriptions):
         """Receive process.
         """
         parenthesis_count = 0
@@ -590,10 +590,10 @@ class Gateway:
                 new_topic = AgentID(self, topic.name + "__ntf", True)
             else:
                 new_topic = topic
-            if new_topic.name in self.subscribers:
+            if new_topic.name in self.subscriptions:
                 self.logger.critical("Warning: Already subscribed to topic")
                 return False
-            self.subscribers.append(new_topic.name)
+            self.subscriptions.append(new_topic.name)
             self._update_watch()
             return True
         else:
@@ -610,10 +610,10 @@ class Gateway:
                 new_topic = AgentID(self, topic.name + "__ntf", True)
             else:
                 new_topic = topic
-            if len(self.subscribers) == 0:
+            if len(self.subscriptions) == 0:
                 return False
             try:
-                self.subscribers.remove(new_topic.name)
+                self.subscriptions.remove(new_topic.name)
             except:
                 self.logger.critical("Exception: No such topic subscribed: " + new_topic.name)
                 return False

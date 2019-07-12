@@ -26,26 +26,26 @@ class FjageTest(unittest.TestCase):
     def test_subscribe_unsubscribe_topic(self):
         """Test: Should be able to add the subscriptions in the list"""
         self.g.subscribe(self.g.topic("abc"))
-        self.assertIn("abc", self.g.subscribers)
+        self.assertIn("abc", self.g.subscriptions)
         self.g.subscribe(self.g.topic("def"))
-        self.assertIn("def", self.g.subscribers)
+        self.assertIn("def", self.g.subscriptions)
         self.g.unsubscribe(self.g.topic("abc"))
-        self.assertNotIn("abc", self.g.subscribers)
+        self.assertNotIn("abc", self.g.subscriptions)
         self.g.subscribe(self.g.topic("ghi"))
-        self.assertIn("ghi", self.g.subscribers)
+        self.assertIn("ghi", self.g.subscriptions)
         self.g.unsubscribe(self.g.topic("def"))
-        self.assertNotIn("def", self.g.subscribers)
+        self.assertNotIn("def", self.g.subscriptions)
 
     def test_subscribe_unsubscribe_agent(self):
         """Test: Should be able to remove the subscriptions from the list"""
         self.g.subscribe(AgentID(self.g, "abc"))
-        self.assertIn("abc__ntf", self.g.subscribers)
+        self.assertIn("abc__ntf", self.g.subscriptions)
         self.g.subscribe(AgentID(self.g, "def", True))
-        self.assertIn("def", self.g.subscribers)
+        self.assertIn("def", self.g.subscriptions)
         self.g.unsubscribe(AgentID(self.g, "abc"))
-        self.assertNotIn("abc__ntf", self.g.subscribers)
+        self.assertNotIn("abc__ntf", self.g.subscriptions)
         self.g.unsubscribe(AgentID(self.g, "def", True))
-        self.assertNotIn("def", self.g.subscribers)
+        self.assertNotIn("def", self.g.subscriptions)
 
     def test_send_Message(self):
         """Test: Should be able to send a message to a agent running in master container"""
