@@ -382,6 +382,8 @@ class Gateway:
                     self.logger.critical("Exception: Error adding to queue - " + str(e))
             elif req["action"] == Action.SHUTDOWN:
                 self.logger.debug("ACTION: " + Action.SHUTDOWN)
+                if not self.keepalive:
+                    self.close()
                 return None
             else:
                 self.logger.warning("Invalid message, discarding")
@@ -444,11 +446,6 @@ class Gateway:
             self.socket.close()
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
-
-    def shutdown(self):
-        """Closes the gateway. The gateway functionality may not longer be accessed after this method is called.
-        """
-        self.close()
 
     def close(self):
         """Closes the gateway. The gateway functionality may not longer be accessed after this method is called.

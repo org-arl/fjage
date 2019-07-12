@@ -635,13 +635,6 @@ export class Gateway {
     return false;
   }
 
-  /**
-   * Shuts down the gateway.
-   * @returns {void}
-   */
-  shutdown() {
-    this.close();
-  }
 }
 
 /**

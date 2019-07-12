@@ -174,7 +174,7 @@ public class BasicTests {
     req = new NuisanceMessage(server.getAgentID());
     rsp = gw.request(req, 100);
     assertNull(rsp);
-    gw.shutdown();
+    gw.close();
     platform.shutdown();
   }
 

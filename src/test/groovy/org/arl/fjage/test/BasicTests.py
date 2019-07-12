@@ -77,4 +77,4 @@ if __name__ == "__main__":
         m.performative = Performative.AGREE
         print("Test passed")
     g.send(m)
-    g.shutdown()
+    g.close()

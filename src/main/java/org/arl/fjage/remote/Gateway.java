@@ -158,7 +158,7 @@ public class Gateway {
    * Closes the gateway. The gateway functionality may not longer be accessed after
    * this method is called.
    */
-  public void shutdown() {
+  public void close() {
     if (container != null) {
       if (shutdownContainer) container.shutdown();
       else container.kill(getAgentID());
@@ -410,7 +410,7 @@ public class Gateway {
 
   @Override
   public void finalize() {
-    shutdown();
+    close();
   }
 
 }
