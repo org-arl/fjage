@@ -317,6 +317,7 @@ class Gateway:
         self.socket.connect((hostname, port))
         self.socket_file = self.socket.makefile('r', 65536)
         self.connection = True
+        self.socket.sendall('{"alive": true}\n'.encode())
 
     def isConnected(self):
         if self.connection == False:
@@ -439,11 +440,9 @@ class Gateway:
             self.logger.critical("Exception: " + str(e))
 
     def shutdown(self):
-        """Shutdown the platform.
+        """Closes the gateway. The gateway functionality may not longer be accessed after this method is called.
         """
-        j_dict = dict()
-        j_dict["action"] = Action.SHUTDOWN
-        self.socket.sendall((_json.dumps(j_dict) + '\n').encode())
+        self.close()
 
     def close(self):
         """Closes the gateway. The gateway functionality may not longer be accessed after this method is called.
@@ -451,6 +450,7 @@ class Gateway:
         try:
             self.keepalive = False
             self.connection = False
+            self.socket.sendall('{"alive": false}\n'.encode())
             self.socket.shutdown(_socket.SHUT_RDWR)
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
@@ -467,7 +467,7 @@ class Gateway:
                 tmsg.perf = Performative.REQUEST
             else:
                 tmsg.perf = Performative.INFORM
-        rq = _json.dumps({'action': 'send', 'relay': relay, 'message': '###MSG###'})
+        rq = _json.dumps({'action': Action.SEND, 'relay': relay, 'message': '###MSG###'})
         rq = rq.replace('"###MSG###"', tmsg._serialize())
         try:
             name = self.socket.getpeername()
@@ -587,16 +587,14 @@ class Gateway:
                 new_topic = AgentID(self, topic.name + "__ntf", True)
             else:
                 new_topic = topic
-
-            if len(self.subscribers) == 0:
-                self.subscribers.append(new_topic.name)
-            else:
-                if new_topic.name in self.subscribers:
-                    self.logger.critical("Warning: Already subscribed to topic")
-                    return
-                self.subscribers.append(new_topic.name)
+            if new_topic.name in self.subscribers:
+                self.logger.critical("Warning: Already subscribed to topic")
+                return False
+            self.subscribers.append(new_topic.name)
+            return True
         else:
             self.logger.critical("Invalid AgentID")
+            return False
 
     def unsubscribe(self, topic):
         """Unsubscribes the gateway from a given topic.
@@ -608,16 +606,17 @@ class Gateway:
                 new_topic = AgentID(self, topic.name + "__ntf", True)
             else:
                 new_topic = topic
-
             if len(self.subscribers) == 0:
                 return False
             try:
                 self.subscribers.remove(new_topic.name)
             except:
                 self.logger.critical("Exception: No such topic subscribed: " + new_topic.name)
+                return False
             return True
         else:
             self.logger.critical("Invalid AgentID")
+            return False
 
     def agentForService(self, service, timeout=1000):
         """Finds an agent that provides a named service. If multiple agents are registered
@@ -627,7 +626,7 @@ class Gateway:
         :returns: an agent id for an agent that provides the service.
         """
         req_id = _uuid.uuid4()
-        rq = {'action': 'agentForService', 'service': service, 'id': str(req_id)}
+        rq = {'action': Action.AGENT_FOR_SERVICE, 'service': service, 'id': str(req_id)}
         self.socket.sendall((_json.dumps(rq) + '\n').encode())
         res_event = _td.Event()
         self.pending[req_id] = (res_event, None)
