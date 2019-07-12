@@ -308,6 +308,7 @@ export class Gateway {
       this._onWebsockRx.call(this,event.data);
     };
     this.sock.send('{"alive": true}\n');
+    this._update_watch();
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
   }
@@ -432,6 +433,12 @@ export class Gateway {
     }
   }
 
+  _update_watch() {
+    let watch = Object.keys(this.subscriptions);
+    watch.push(this.aid.getName())
+    let rq = { action: 'wantsMessagesFor', agentIDs: watch };
+    this._websockTx(rq);
+  }
 
   /**
    * Add a new listener to listen to all {Message}s sent to this Gateway
@@ -497,6 +504,7 @@ export class Gateway {
   subscribe(topic) {
     if (!topic.isTopic()) topic = new AgentID(topic, true, this);
     this.subscriptions[topic.toString()] = true;
+    this._update_watch();
   }
 
   /**
@@ -508,6 +516,7 @@ export class Gateway {
   unsubscribe(topic) {
     if (!topic.isTopic()) topic = new AgentID(topic, true, this);
     delete this.subscriptions[topic.toString()];
+    this._update_watch();
   }
 
   /**
