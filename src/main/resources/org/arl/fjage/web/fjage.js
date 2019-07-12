@@ -484,7 +484,7 @@ export class Gateway {
     if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic, true, this);
     if (topic instanceof AgentID) {
       if (topic.isTopic()) return topic;
-      return new AgentID(topic.getName()+(topic2 ? topic2 + '__' : '')+'__ntf', true, this);
+      return new AgentID(topic.getName()+(topic2 ? '__' + topic2 : '')+'__ntf', true, this);
     }
   }
 
