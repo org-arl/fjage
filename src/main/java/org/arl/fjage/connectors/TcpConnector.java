@@ -26,6 +26,7 @@ public class TcpConnector implements Connector {
    */
   public TcpConnector(String hostname, int port) throws IOException {
     sock = new Socket(hostname, port);
+    sock.setTcpNoDelay(true);
     out = new BufferedOutputStream(sock.getOutputStream());
   }
 
