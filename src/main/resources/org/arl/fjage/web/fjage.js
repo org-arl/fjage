@@ -435,7 +435,7 @@ export class Gateway {
 
   _update_watch() {
     let watch = Object.keys(this.subscriptions);
-    watch.push(this.aid.getName())
+    watch.push(this.aid)
     let rq = { action: 'wantsMessagesFor', agentIDs: watch };
     this._websockTx(rq);
   }

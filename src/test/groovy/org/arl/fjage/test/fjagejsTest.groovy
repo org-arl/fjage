@@ -53,7 +53,7 @@ class fjagejsTest {
       proc.consumeProcessOutput(sout, serr)
       proc.waitFor()
       ret = proc.exitValue()
-      println "NPM : out> $sout err> $serr \n ret = $ret \n testStatus = $testStatus"
+      println "NPM : out = $sout \n err = $serr \n ret = $ret \n testStatus = $testStatus"
     }else{
       println "waiting for user to run manual tests"
       while (!testStatus){

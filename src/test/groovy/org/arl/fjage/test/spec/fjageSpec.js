@@ -27,7 +27,7 @@ function fjageMessageChecker() {
 
       if (!msg.message) return ret;
 
-      ret = ret && (!msg.message.clazz || msg.message.clazz instanceof String);
+      ret = ret && (!msg.message.clazz || typeof msg.message.clazz === "string");
 
       if (!msg.message.data) return ret;
 
