@@ -113,6 +113,8 @@ class AgentID:
     """
 
     def __init__(self, gw, name, is_topic=False):
+        if len(name) == 0 or name[0] == '#':
+            raise ValueError('Bad agent name')
         self.is_topic = is_topic
         self.name = name
         self.index = -1
@@ -284,10 +286,10 @@ class Gateway:
         self.logger = _log.getLogger('org.arl.fjage')
         try:
             if name == None:
-                self.name = "PythonGW-" + str(_uuid.uuid4())
+                self.aid = AgentID(self, "PythonGW-" + str(_uuid.uuid4()))
             else:
                 try:
-                    self.name = name
+                    self.aid = AgentID(self, name)
                 except Exception as e:
                     self.logger.critical("Exception: Cannot assign name to gateway: " + str(e))
                     raise
@@ -338,14 +340,14 @@ class Gateway:
             if req["action"] == Action.AGENTS:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
-                rsp["agentIDs"] = [self.name]
+                rsp["agentIDs"] = [self.aid.name]
                 self.socket.sendall((_json.dumps(rsp) + '\n').encode())
             elif req["action"] == Action.CONTAINS_AGENT:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
                 answer = False
                 if req["agentID"]:
-                    if req["agentID"] == self.name:
+                    if req["agentID"] == self.aid.name:
                         answer = True
                 rsp["answer"] = answer
                 self.socket.sendall((_json.dumps(rsp) + '\n').encode())
@@ -367,7 +369,7 @@ class Gateway:
             elif req["action"] == Action.SEND:
                 try:
                     msg = req["message"]
-                    if msg["data"]["recipient"] == self.name:
+                    if msg["data"]["recipient"] == self.aid.name:
                         q.append(msg)
                         self.cv.acquire()
                         self.cv.notify()
@@ -409,7 +411,7 @@ class Gateway:
             self.logger.info('The remote connection is closed..\n')
 
     def _update_watch(self):
-        rq = {'action': Action.WANTS_MESSAGES_FOR, 'agentIDs': [self.name]+['#'+topic for topic in self.subscriptions]}
+        rq = {'action': Action.WANTS_MESSAGES_FOR, 'agentIDs': [self.aid.name]+['#'+topic for topic in self.subscriptions]}
         self.socket.sendall((_json.dumps(rq) + '\n').encode())
 
     def __recv_proc(self, q, subscriptions):
@@ -464,7 +466,7 @@ class Gateway:
         tmsg = _copy.deepcopy(msg)
         if not tmsg.recipient:
             return False
-        tmsg.sender = self.name
+        tmsg.sender = self.aid.name
         if tmsg.perf == None:
             if tmsg.__clazz__.endswith('Req'):
                 tmsg.perf = Performative.REQUEST
@@ -688,14 +690,14 @@ class Gateway:
     def getAgentID(self):
         """Returns the gateway Agent ID.
         """
-        return self.name
+        return self.aid
 
     def _is_duplicate(self):
         req_id = _uuid.uuid4()
         req = dict()
         req["action"] = Action.CONTAINS_AGENT
         req["id"] = str(req_id)
-        req["agentID"] = self.name
+        req["agentID"] = self.aid.name
         self.socket.sendall((_json.dumps(req) + '\n').encode())
         res_event = _td.Event()
         self.pending[req_id] = (res_event, None)

@@ -21,7 +21,7 @@ class FjageTest(unittest.TestCase):
 
     def test_gateway_agentid(self):
         """Test: should be able to retrieve the AgentID of the gateway"""
-        self.assertEqual(self.g.getAgentID(), "PythonGW")
+        self.assertEqual(self.g.getAgentID().name, "PythonGW")
 
     def test_subscribe_unsubscribe_topic(self):
         """Test: Should be able to add the subscriptions in the list"""
