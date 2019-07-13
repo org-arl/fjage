@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2018, Mandar Chitre
+Copyright (c) 2018-2019, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -258,6 +258,31 @@ static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
   return rv;
 }
 
+static void update_watch(_fjage_gw_t* fgw) {
+  int i = 0;
+  int n = 0;
+  while (fgw->sublist[i]) {
+    i += strlen(fgw->sublist+i)+1;
+    n++;
+  }
+  char* s = (char*)malloc(i+1+2*n+strlen(fgw->aid)+3+47);
+  if (s == NULL) {
+    writes(fgw->sockfd, "{\"action\": \"wantsMessagesFor\", \"agentIDs\": []}\n");
+    return;
+  }
+  sprintf(s, "{\"action\": \"wantsMessagesFor\", \"agentIDs\": [\"%s\"", fgw->aid);
+  i = 0;
+  while (fgw->sublist[i]) {
+    strcat(s, ",\"");
+    strcat(s, fgw->sublist+i);
+    strcat(s, "\"");
+    i += strlen(fgw->sublist+i)+1;
+  }
+  strcat(s, "]}\n");
+  writes(fgw->sockfd, s);
+  free(s);
+}
+
 bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic) {
   if (gw == NULL) return false;
   _fjage_gw_t* fgw = gw;
@@ -314,6 +339,7 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
   sprintf(s, "CGatewayAgent@%08x", rand());
   fgw->aid = fjage_aid_create(s);
   fgw->head = 0;
+  update_watch(fgw);
   return fgw;
 }
 
@@ -403,6 +429,7 @@ int fjage_subscribe(fjage_gw_t gw, const fjage_aid_t topic) {
     i += strlen(fgw->sublist+i)+1;
   if (i+strlen(topic)+1 > SUBLIST_LEN) return -1;
   strcpy(fgw->sublist+i, topic);
+  update_watch(fgw);
   return 0;
 }
 
@@ -414,6 +441,7 @@ int fjage_subscribe_agent(fjage_gw_t gw, const fjage_aid_t aid) {
   sprintf(topic, "#%s__ntf", aid);
   int rv = fjage_subscribe(gw, topic);
   free(topic);
+  update_watch((_fjage_gw_t*)gw);
   return rv;
 }
 
@@ -426,6 +454,7 @@ int fjage_unsubscribe(fjage_gw_t gw, const fjage_aid_t topic) {
       int n = strlen(fgw->sublist+i);
       memmove(fgw->sublist+i, fgw->sublist+i+n+1, SUBLIST_LEN-(i+n+1));
       memset(fgw->sublist+SUBLIST_LEN-(n+1), 0, n+1);
+      update_watch(gw);
       return 0;
     }
     i += strlen(fgw->sublist+i)+1;
