@@ -24,7 +24,8 @@ class fjagejsTest {
 
   @Test
   void fjageJSTest() {
-    def testStatus = false
+    def testResult = false
+    def testPending = true
     def platform = new RealTimePlatform()
     def container = new MasterContainer(platform, 5081)
     container.add("shell", new ShellAgent(new EchoScriptEngine()))
@@ -39,7 +40,8 @@ class fjagejsTest {
           @Override
           void onReceive(Message msg) {
             println("Received: " + msg.performative + ',' + msg.recipient + ',' + msg.sender)
-            testStatus = msg.performative != Performative.FAILURE
+            testResult = msg.performative == Performative.AGREE
+            testPending = false
           }
         })
       }
@@ -53,16 +55,17 @@ class fjagejsTest {
       proc.consumeProcessOutput(sout, serr)
       proc.waitFor()
       ret = proc.exitValue()
-      println "NPM : out = $sout \n err = $serr \n ret = $ret \n testStatus = $testStatus"
+      println "NPM : out = $sout \n err = $serr \n ret = $ret \n testStatus = $testResult"
     }else{
       println "waiting for user to run manual tests"
-      while (!testStatus){
+      while (testPending){
         platform.delay(1000)
       }
+      println "test complete " + testPending + " : " + testResult
     }
     container.shutdown()
     platform.shutdown()
-    assertTrue(ret == 0 && testStatus)
+    assertTrue(ret == 0 && testResult)
   }
 }
 

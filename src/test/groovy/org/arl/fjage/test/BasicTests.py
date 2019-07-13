@@ -71,10 +71,10 @@ if __name__ == "__main__":
     g = Gateway('localhost', 5081, "PythonGW")
     m = Message(recipient='test')
     if (failures > 0):
-        m.performative = Performative.FAILURE
+        m.perf = Performative.FAILURE
         print("Test failed")
     else:
-        m.performative = Performative.AGREE
+        m.perf = Performative.AGREE
         print("Test passed")
     g.send(m)
     g.close()

@@ -423,7 +423,7 @@ function sendTestStatus(status) {
   var gw = new Gateway();
   let msg = new Message();
   msg.recipient = gw.agent('test');
-  msg.performative = status ? Performative.AGREE : Performative.FAILURE;
+  msg.perf = status ? Performative.AGREE : Performative.FAILURE;
   gw.send(msg);
   gw.close();
 }
