@@ -13,7 +13,11 @@ julia> ShellExecReq = MessageClass("org.arl.fjage.shell.ShellExecReq");
 julia> gw = Gateway("localhost", 1100);
 julia> shell = agentforservice(gw, "org.arl.fjage.shell.Services.SHELL")
 shell
+julia> request(gw, ShellExecReq(recipient=shell, cmd="ps"))
+AGREE
 julia> request(shell, ShellExecReq(cmd="ps"))
+AGREE
+julia> shell << ShellExecReq(cmd="ps")
 AGREE
 julia> close(gw)
 ```
@@ -462,6 +466,15 @@ function request(aid::AgentID, msg::Message, timeout::Integer=1000)
   send(aid, msg)
   return receive(aid.owner, msg, timeout)
 end
+
+"""
+    rsp = aid << msg
+
+Send a request via the gateway to the specified agent, and wait for a response.
+
+See also: [`request`](@ref), [`Fjage`](@ref)
+"""
+Base.:<<(aid::AgentID, msg::Message) = request(aid, msg)
 
 "Flush the incoming message queue."
 function flush(gw::Gateway)
