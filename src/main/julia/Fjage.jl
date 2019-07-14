@@ -210,6 +210,30 @@ function _prepare!(gw::Gateway, msg::Message)
   end
 end
 
+function _b64toarray(v)
+  try
+    dtype = v["clazz"]
+    if dtype == "[B"  # byte array
+      dtype = Int8
+    elseif dtype == "[S"  # short array
+      dtype = Int16
+    elseif dtype == "[I"  # integer array
+      dtype = Int32
+    elseif dtype == "[J"  # long array
+      dtype = Int64
+    elseif dtype == "[F"  # float array
+      dtype = Float32
+    elseif dtype == "[D"  # double array
+      dtype = Float64
+    else
+      return v
+    end
+    return Array{dtype}(reinterpret(dtype, base64decode(v["data"])))
+  catch ex
+    return v
+  end
+end
+
 function _inflate(json)
   if typeof(json) == String
     json = JSON.parse(json)
@@ -222,6 +246,9 @@ function _inflate(json)
     v = data[k]
     if k == "sender" || k == "recipient"
       v = AgentID(v)
+    end
+    if typeof(v) <: Dict && haskey(v, "clazz") && match(r"^\[.$", v["clazz"]) != nothing
+      v = _b64toarray(v)
     end
     if typeof(v) <: Array && length(v) > 0
       t = typeof(v[1])
@@ -360,6 +387,15 @@ function Base.setproperty!(s::Message, p::Symbol, v)
   end
 end
 
+function _repr(x)
+  x = repr(x)
+  m = match(r"[A-Za-z0-9]+(\[.+\])", x)
+  if m != nothing
+    x = m[1]
+  end
+  return x
+end
+
 function Base.show(io::IO, msg::Message)
   ndx = findlast(".", msg.__clazz__)
   s = ndx == nothing ? msg.__clazz__ : msg.__clazz__[ndx[1]+1:end]
@@ -376,7 +412,7 @@ function Base.show(io::IO, msg::Message)
       if typeof(x) <: Array
         data_suffix *= "($(length(x)) bytes)"
       else
-        p *= " $k:" * repr(data[k])
+        p *= " $k:" * _repr(data[k])
       end
     elseif k == "signal"
       if typeof(x) <: Array
@@ -386,11 +422,11 @@ function Base.show(io::IO, msg::Message)
           signal_suffix *= "($(length(x)) samples)"
         end
       else
-        p *= " $k:" * repr(data[k])
+        p *= " $k:" * _repr(data[k])
       end
     elseif k != "sender" && k != "recipient" && k != "msgID" && k != "inReplyTo"
       if typeof(x) <: Number || typeof(x) == String || typeof(x) <: Array || typeof(x) == Bool
-        p *= " $k:" * repr(x)
+        p *= " $k:" * _repr(x)
       else
         suffix = "..."
       end
