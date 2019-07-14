@@ -194,7 +194,14 @@ macro _define_message(sname::Symbol, clazz, perf)
   end
 end
 
-function MessageClass(clazz::String, perf=Performative.INFORM)
+function MessageClass(clazz::String, perf=nothing)
+  if perf == nothing
+    if match(r"Req$", clazz) != nothing
+      perf = Performative.REQUEST
+    else
+      perf = Performative.INFORM
+    end
+  end
   sname = Symbol(replace(clazz, "." => "_"))
   return @eval @_define_message($sname, $clazz, $perf)
 end
@@ -445,9 +452,17 @@ function Base.show(io::IO, msg::Message)
   if length(p) > 0
     s *= " [$p]"
   end
+  if msg.__clazz__ == "org.arl.fjage.Message"
+    m = match(r"^Message: (.*)$", s)
+    if m != nothing
+      s = m[1]
+    end
+  end
   print(io, s)
 end
 
 GenericMessage = MessageClass("org.arl.fjage.GenericMessage", Performative.INFORM)
+
+Message(perf::String=Performative.INFORM) = GenericMessage(performative=perf)
 
 end
