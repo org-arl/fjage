@@ -332,6 +332,9 @@ function _inflate(json)
   obj = @eval $stype()
   for k in keys(data)
     v = data[k]
+    if endswith(k, "__isComplex")
+      continue
+    end
     if k == "sender" || k == "recipient"
       v = AgentID(v)
     end
@@ -341,7 +344,8 @@ function _inflate(json)
     if typeof(v) <: Array && length(v) > 0
       t = typeof(v[1])
       v = Array{t}(v)
-      if k == "signal" && haskey(data, "fc") && data["fc"] == 0
+      kcplx = k*"__isComplex"
+      if haskey(data, kcplx) && data[kcplx]
         v = Array{Complex{t}}(reinterpret(Complex{t}, v))
       end
     end
@@ -551,11 +555,7 @@ function Base.show(io::IO, msg::Message)
       end
     elseif k == "signal"
       if typeof(x) <: Array
-        if haskey(data, "fc") && data["fc"] == 0
-          signal_suffix *= "($(length(x)) baseband samples)"
-        else
-          signal_suffix *= "($(length(x)) samples)"
-        end
+        signal_suffix *= "($(length(x)) samples)"
       else
         p *= " $k:" * _repr(data[k])
       end

@@ -185,8 +185,11 @@ class Message(object):
         return '{ "clazz": "' + clazz + '", "data": ' + data + ' }'
 
     def _inflate(self, data):
+        cplx = [x for x in data.keys() if x.endswith('__isComplex') and data[x]]
         for key, value in data.items():
-            if key == 'signal' and 'fc' in list(data.keys()) and data['fc'] != 0:
+            if key.endswith('__isComplex'):
+                continue
+            if (key+'__isComplex') in cplx:
                 self.__dict__[key] = numpy.asarray(data[key][0::2]) + 1j * numpy.asarray(data[key][1::2])
             else:
                 self.__dict__[key] = data[key]
@@ -232,7 +235,7 @@ class Message(object):
                 suffix = ' ...'
                 continue
             if type(self.__dict__[k]) in (numpy.ndarray, list) and k == 'signal':
-                sigrepr = '(' + str(len(self.__dict__[k])) + ' samples' + ')' if self.__dict__['fc'] == 0 else '(' + str(len(self.__dict__[k])) + ' baseband samples' + ')'
+                sigrepr = '(' + str(len(self.__dict__[k])) + ' samples' + ')'
                 continue
             if type(self.__dict__[k]) in (numpy.ndarray, list) and k == 'data':
                 datarepr = '(' + str(len(self.__dict__[k])) + ' bytes' + ')'
