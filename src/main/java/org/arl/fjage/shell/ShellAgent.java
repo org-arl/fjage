@@ -190,8 +190,8 @@ public class ShellAgent extends Agent {
               if (engine == null) s = null;
               else if (exec == null && !engine.isBusy() && enabled) {
                 final String cmd = s.trim();
-                final String p1 = prompt1;
-                final String p2 = "\n"+prompt2;
+                final String p1 = prompt1==null ? "" : prompt1;
+                final String p2 = prompt2==null ? "\n" : "\n"+prompt2;
                 s = null;
                 if (cmd.length() > 0) {
                   synchronized(executor) {
@@ -566,12 +566,12 @@ public class ShellAgent extends Agent {
       if (contents == null) {
         if (filename.endsWith("/") || filename.endsWith(File.separator)){
           Path pathToBeDeleted = Paths.get(filename);
- 
+
           Files.walk(pathToBeDeleted)
             .sorted(Comparator.reverseOrder())
             .map(Path::toFile)
             .forEach(File::delete);
- 
+
           rsp = new Message(req, Performative.AGREE);
         }
         else if (f.delete()) rsp = new Message(req, Performative.AGREE);

@@ -178,7 +178,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
 
   @Override
   public void input(Object obj) {
-    if (obj == null || console == null) return;
+    if (obj == null || console == null || isDumb()) return;
     console.printAbove(new AttributedString(obj.toString(), inputStyle));
   }
 
