@@ -68,6 +68,8 @@ public class BlockingByteQueue {
    * Writes a byte array to the queue.
    */
   public synchronized void write(byte[] buf) {
+    //for (int i = 0; i < buf.length; i++)
+    //  write(buf[i]);
     bytes += buf.length;
     if (wlen == 0 && buf.length > BLOCK_SIZE) {
       queue.add(buf);
@@ -84,7 +86,7 @@ public class BlockingByteQueue {
     int len1 = BLOCK_SIZE - wlen;
     System.arraycopy(buf, 0, wbuf, wlen, len1);
     if (rbuf == wbuf) rlen = BLOCK_SIZE;
-    queue.add(wbuf);
+    else queue.add(wbuf);
     int len2 = buf.length - len1;
     if (len2 > BLOCK_SIZE) {
       wbuf = new byte[len2];

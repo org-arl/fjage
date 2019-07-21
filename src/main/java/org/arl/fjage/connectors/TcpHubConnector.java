@@ -163,12 +163,13 @@ public class TcpHubConnector extends Thread implements Connector {
 
     @Override
     public void run() {
-      while (true) {
+      while (pout.available() >= 0) {
         int c = pout.read();
-        if (c < 0) break;
-        synchronized(clientThreads) {
-          for (ClientThread t: clientThreads)
-            t.write(c);
+        if (c >= 0) {
+          synchronized(clientThreads) {
+            for (ClientThread t: clientThreads)
+              t.write(c);
+          }
         }
       }
     }
