@@ -187,6 +187,7 @@ public class TcpHubConnector extends Thread implements Connector {
     Socket client;
     OutputStream out = null;
     TcpHubConnector conn;
+    boolean negotiated = false;
 
     ClientThread(TcpHubConnector conn, Socket client) {
       setName(getClass().getSimpleName());
@@ -220,6 +221,7 @@ public class TcpHubConnector extends Thread implements Connector {
         }
         while (!Thread.interrupted() && in.available() > 0)
           in.read();
+        negotiated = true;
         // process incoming data
         while (!Thread.interrupted()) {
           int c = in.read();
@@ -239,6 +241,7 @@ public class TcpHubConnector extends Thread implements Connector {
     }
 
     void write(int c) {
+      if (!negotiated) return;
       try {
         if (out != null) {
           out.write(c);
