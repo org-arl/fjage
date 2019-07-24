@@ -75,11 +75,8 @@ public class ConsoleShell implements Shell, ConnectionListener {
    */
   public ConsoleShell(InputStream in, OutputStream out, boolean dumb) {
     try {
-      if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
-      else {
-        term = TerminalBuilder.builder().streams(in, out).dumb(false).build();
-        setupStyles();
-      }
+      term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
+      if (!dumb) setupStyles();
     } catch (IOException ex) {
       log.warning("Unable to open terminal: "+ex.toString());
     }
@@ -115,11 +112,8 @@ public class ConsoleShell implements Shell, ConnectionListener {
       OutputStream out = connector.getOutputStream();
       connector.setConnectionListener(this);
       this.connector = connector;
-      if (dumb) term = new org.jline.terminal.impl.DumbTerminal(in, out);
-      else {
-        term = TerminalBuilder.builder().streams(in, out).dumb(false).build();
-        setupStyles();
-      }
+      term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
+      if (!dumb) setupStyles();
     } catch (IOException ex) {
       log.warning("Unable to open terminal: "+ex.toString());
     }
@@ -150,6 +144,11 @@ public class ConsoleShell implements Shell, ConnectionListener {
   public void init(ScriptEngine engine) {
     if (term == null) return;
     scriptEngine = engine;
+    if (term.getType().equals(Terminal.TYPE_DUMB)) {
+      console = LineReaderBuilder.builder().terminal(term).build();
+      console.setVariable(LineReader.DISABLE_COMPLETION, true);
+      return;
+    }
     if (scriptEngine == null) console = LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).build();
     else {
       Parser parser = new Parser() {
@@ -162,6 +161,10 @@ public class ConsoleShell implements Shell, ConnectionListener {
         @Override
         public CompletingParsedLine parse(String s, int cursor, Parser.ParseContext context) {
           return parse(s, cursor);
+        }
+        @Override
+        public boolean isEscapeChar(char ch) {
+          return false;
         }
       };
       console = LineReaderBuilder.builder().parser(parser).terminal(term).build();

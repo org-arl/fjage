@@ -19,7 +19,7 @@ repositories {
 
 dependencies {
   compile 'org.codehaus.groovy:groovy-all:2.4.4'
-  compile 'org.jline:jline:3.9.0'
+  compile 'org.jline:jline:3.12.1'
   compile 'org.apache.commons:commons-lang3:3.1'
   compile 'uk.com.robust-it:cloning:1.9.0'
   compile 'org.eclipse.jetty:jetty-server:9.4.12.v20180830'
