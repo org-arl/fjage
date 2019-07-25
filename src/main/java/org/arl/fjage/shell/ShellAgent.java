@@ -411,6 +411,12 @@ public class ShellAgent extends Agent {
     return enabled;
   }
 
+  @Override
+  public String toString() {
+    if (shell == null || engine == null) return super.toString();
+    return super.toString()+" >> "+shell.toString()+" ["+engine.getClass().getSimpleName()+"]";
+  }
+
   ////// private methods
 
   private void shutdownPlatform() {

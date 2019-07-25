@@ -42,7 +42,11 @@ public class TcpHubConnector extends Thread implements Connector {
   public TcpHubConnector(int port, boolean telnet) {
     this.port = port;
     charmode = telnet;
-    setName("tcphub:[listening on port "+port+"]");
+    try {
+      setName("tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port);
+    } catch (UnknownHostException ex) {
+      setName("tcp://0.0.0.0:"+port);
+    }
     setDaemon(true);
     start();
   }
@@ -115,7 +119,11 @@ public class TcpHubConnector extends Thread implements Connector {
         port = sock.getLocalPort();
         notify();
       }
-      setName("tcphub:[listening on port "+port+"]");
+      try {
+        setName("tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port);
+      } catch (UnknownHostException ex) {
+        setName("tcp://0.0.0.0:"+port);
+      }
       log.info("Listening on port "+port);
       while (sock != null) {
         try {

@@ -239,4 +239,10 @@ public class ConsoleShell implements Shell, ConnectionListener {
     console = null;
   }
 
+  @Override
+  public String toString() {
+    if (connector == null) return "console://-";
+    else return connector.toString();
+  }
+
 }

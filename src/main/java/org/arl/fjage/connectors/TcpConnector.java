@@ -40,8 +40,8 @@ public class TcpConnector implements Connector {
 
   @Override
   public String getName() {
-    if (sock == null) return "tcp:[closed]";
-    return "tcp:[from "+sock.getLocalAddress()+":"+sock.getLocalPort()+" to "+sock.getInetAddress()+":"+sock.getPort()+"]";
+    if (sock == null) return "tcp://[closed]";
+    return "tcp://"+sock.getLocalAddress()+":"+sock.getLocalPort()+"/"+sock.getInetAddress()+"."+sock.getPort();
   }
 
   @Override

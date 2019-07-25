@@ -75,7 +75,11 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   }
 
   protected void init(int port, String context, int maxMsgSize) {
-    name = "ws:["+port+":"+context+"]";
+    try {
+      name = "ws://"+InetAddress.getLocalHost().getHostAddress()+":"+port+context;
+    } catch (UnknownHostException ex) {
+      name = "ws://0.0.0.0:"+port+context;
+    }
     server = WebServer.getInstance(port);
     handler = new ContextHandler(context);
     handler.setHandler(new WebSocketHandler() {
