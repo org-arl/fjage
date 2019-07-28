@@ -165,6 +165,19 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     t.start();
   }
 
+  /**
+   * Gets a list of connector URLs that slaves can use to access the master container.
+   */
+  public String[] getConnectors() {
+    synchronized(slaves) {
+      String[] url = new String[1+slaves.size()];
+      url[0] = listener.toString();
+      for (int i = 0; i < slaves.size(); i++)
+        url[i+1] = slaves.get(i).toString();
+      return url;
+    }
+  }
+
   /////////////// Container interface methods to override
 
   @Override

@@ -414,7 +414,7 @@ public class ShellAgent extends Agent {
   @Override
   public String toString() {
     if (shell == null || engine == null) return super.toString();
-    return super.toString()+" >> "+shell.toString()+" ["+engine.getClass().getSimpleName()+"]";
+    return super.toString()+": "+shell.toString()+" ["+engine.getClass().getSimpleName()+"]";
   }
 
   ////// private methods

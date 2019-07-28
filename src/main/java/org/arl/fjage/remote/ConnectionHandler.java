@@ -97,6 +97,12 @@ class ConnectionHandler extends Thread {
     pool.shutdown();
   }
 
+  @Override
+  public String toString() {
+    if (conn == null) return super.toString();
+    return conn.toString();
+  }
+
   private void respond(JsonMessage rq, boolean answer) {
     JsonMessage rsp = new JsonMessage();
     rsp.inResponseTo = rq.action;
