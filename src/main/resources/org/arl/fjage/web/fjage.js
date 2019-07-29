@@ -415,7 +415,7 @@ export class Gateway {
     return new Promise((resolve, reject) => {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
-        reject(new Error('Receive Timeout'));
+        reject(new Error('Receive Timeout : ' + rq));
       }, TIMEOUT);
       this.pending[rq.id] = rsp => {
         clearTimeout(timer);
@@ -424,7 +424,7 @@ export class Gateway {
       if (!this._websockTx.call(this,rq)) {
         clearTimeout(timer);
         delete this.pending[rq.id];
-        reject(new Error('Transmit Error'));
+        reject(new Error('Transmit Error : ' + rq));
       }
     });
   }
@@ -619,7 +619,7 @@ export class Gateway {
       let lid = _guid(8);
       let timer = setTimeout(() => {
         delete this.listener[lid];
-        reject(new Error('Receive Timeout'));
+        reject(new Error('Receive Timeout : ' + filter));
       }, timeout);
       this.listener[lid] = () => {
         msg = this._getMessageFromQueue.call(this,filter);
