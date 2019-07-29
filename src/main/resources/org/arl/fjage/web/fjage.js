@@ -248,7 +248,14 @@ export class Message {
 
   // convert a dictionary (usually from decoding JSON) into a message
   static _deserialize(obj) {
-    if (typeof obj == 'string' || obj instanceof String) obj = JSON.parse(obj);
+    if (typeof obj == 'string' || obj instanceof String) {
+      try {
+         obj = JSON.parse(obj);
+      }catch(e){
+        console.warn("JSON Parsing error: " + e + "\nJSON : " + obj);
+        return null
+      }
+    }
     let qclazz = obj.clazz;
     let clazz = qclazz.replace(/^.*\./, '');
     let rv = eval('try { new '+clazz+'() } catch(ex) { new Message() }');
@@ -314,8 +321,14 @@ export class Gateway {
   }
 
   _onWebsockRx(data) {
-    let obj = JSON.parse(data, _decodeBase64);
+    var obj;
     if (this.debug) console.log('< '+data);
+    try {
+      obj = JSON.parse(data, _decodeBase64);
+    }catch(e){
+      console.warn("JSON Parsing error: " + e + "\nJSON : " + data);
+      return;
+    }
     if ('id' in obj && obj.id in this.pending) {
       // response to a pending request to master
       this.pending[obj.id](obj);
@@ -323,6 +336,7 @@ export class Gateway {
     } else if (obj.action == 'send') {
       // incoming message from master
       let msg = Message._deserialize(obj.message);
+      if (!msg) return;
       if (msg.recipient == this.aid || this.subscriptions[msg.recipient]) {
         for (var i = 0; i < this.observers.length; i++)
           if (this.observers[i](msg)) return;
