@@ -5,6 +5,7 @@
 // libdot/js/lib.js
 // libdot/js/lib_polyfill.js
 // libdot/js/lib_array.js
+// libdot/js/lib_codec.js
 // libdot/js/lib_colors.js
 // libdot/js/lib_f.js
 // libdot/js/lib_i18n.js
@@ -15,9 +16,31 @@
 // libdot/js/lib_storage_chrome.js
 // libdot/js/lib_storage_local.js
 // libdot/js/lib_storage_memory.js
-// libdot/js/lib_test_manager.js
-// libdot/js/lib_utf8.js
+// libdot/third_party/fast-text-encoding/text.js
+// libdot/third_party/intl-segmenter/intl-segmenter.js
 // libdot/third_party/wcwidth/lib_wc.js
+// hterm/js/hterm.js
+// hterm/js/hterm_accessibility_reader.js
+// hterm/js/hterm_contextmenu.js
+// hterm/js/hterm_frame.js
+// hterm/js/hterm_keyboard.js
+// hterm/js/hterm_keyboard_bindings.js
+// hterm/js/hterm_keyboard_keymap.js
+// hterm/js/hterm_keyboard_keypattern.js
+// hterm/js/hterm_options.js
+// hterm/js/hterm_parser.js
+// hterm/js/hterm_parser_identifiers.js
+// hterm/js/hterm_preference_manager.js
+// hterm/js/hterm_pubsub.js
+// hterm/js/hterm_screen.js
+// hterm/js/hterm_scrollport.js
+// hterm/js/hterm_terminal.js
+// hterm/js/hterm_terminal_io.js
+// hterm/js/hterm_text_attributes.js
+// hterm/js/hterm_vt.js
+// hterm/js/hterm_vt_character_map.js
+// hterm/audio/bell.ogg
+// hterm/images/icon-96.png
 
 'use strict';
 
@@ -26,18 +49,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-if (typeof lib != 'undefined')
-  throw new Error('Global "lib" object already exists.');
+const lib = {};
 
-var lib = {};
-
-/**
- * Map of "dependency" to ["source", ...].
- *
- * Each dependency is a object name, like "lib.fs", "source" is the url that
- * depends on the object.
- */
-lib.runtimeDependencies_ = {};
+// Export for node environments.
+if (typeof exports !== 'undefined') {
+  module.exports = lib;
+}
 
 /**
  * List of functions that need to be invoked during library initialization.
@@ -47,86 +64,6 @@ lib.runtimeDependencies_ = {};
  * for debugging.  Element 1 is the callback function.
  */
 lib.initCallbacks_ = [];
-
-/**
- * Records a runtime dependency.
- *
- * This can be useful when you want to express a run-time dependency at
- * compile time.  It is not intended to be a full-fledged library system or
- * dependency tracker.  It's just there to make it possible to debug the
- * deps without running all the code.
- *
- * Object names are specified as strings.  For example...
- *
- *     lib.rtdep('lib.colors', 'lib.PreferenceManager');
- *
- * Object names need not be rooted by 'lib'.  You may use this to declare a
- * dependency on any object.
- *
- * The client program may call lib.ensureRuntimeDependencies() at startup in
- * order to ensure that all runtime dependencies have been met.
- *
- * @param {string} var_args One or more objects specified as strings.
- */
-lib.rtdep = function(var_args) {
-  var source;
-
-  try {
-    throw new Error();
-  } catch (ex) {
-    var stackArray = ex.stack.split('\n');
-    // In Safari, the resulting stackArray will only have 2 elements and the
-    // individual strings are formatted differently.
-    if (stackArray.length >= 3) {
-      source = stackArray[2].replace(/^\s*at\s+/, '');
-    } else {
-      source = stackArray[1].replace(/^\s*global code@/, '');
-    }
-  }
-
-  for (var i = 0; i < arguments.length; i++) {
-    var path = arguments[i];
-    if (path instanceof Array) {
-      lib.rtdep.apply(lib, path);
-    } else {
-      var ary = this.runtimeDependencies_[path];
-      if (!ary)
-        ary = this.runtimeDependencies_[path] = [];
-      ary.push(source);
-    }
-  }
-};
-
-/**
- * Ensures that all runtime dependencies are met, or an exception is thrown.
- *
- * Every unmet runtime dependency will be logged to the JS console.  If at
- * least one dependency is unmet this will raise an exception.
- */
-lib.ensureRuntimeDependencies_ = function() {
-  var passed = true;
-
-  for (var path in lib.runtimeDependencies_) {
-    var sourceList = lib.runtimeDependencies_[path];
-    var names = path.split('.');
-
-    // In a document context 'window' is the global object.  In a worker it's
-    // called 'self'.
-    var obj = (window || self);
-    for (var i = 0; i < names.length; i++) {
-      if (!(names[i] in obj)) {
-        console.warn('Missing "' + path + '" is needed by', sourceList);
-        passed = false;
-        break;
-      }
-
-      obj = obj[names[i]];
-    }
-  }
-
-  if (!passed)
-    throw new Error('Failed runtime dependency check');
-};
 
 /**
  * Register an initialization function.
@@ -167,7 +104,7 @@ lib.init = function(onInit, opt_logFunction) {
       var rec = ary.shift();
       if (opt_logFunction)
         opt_logFunction('init: ' + rec[0]);
-      rec[1](lib.f.alarm(initNext));
+      rec[1](initNext);
     } else {
       onInit();
     }
@@ -175,8 +112,6 @@ lib.init = function(onInit, opt_logFunction) {
 
   if (typeof onInit != 'function')
     throw new Error('Missing or invalid argument: onInit');
-
-  lib.ensureRuntimeDependencies_();
 
   setTimeout(initNext, 0);
 };
@@ -249,6 +184,54 @@ if (!Object.values || !Object.entries) {
     };
   }
 }
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally
+// https://github.com/tc39/proposal-promise-finally/blob/master/polyfill.js
+if (typeof Promise.prototype.finally !== 'function') {
+  const speciesConstructor = function(O, defaultConstructor) {
+    if (!O || (typeof O !== 'object' && typeof O !== 'function')) {
+      throw new TypeError('Assertion failed: Type(O) is not Object');
+    }
+    const C = O.constructor;
+    if (typeof C === 'undefined') {
+      return defaultConstructor;
+    }
+    if (!C || (typeof C !== 'object' && typeof C !== 'function')) {
+      throw new TypeError('O.constructor is not an Object');
+    }
+    const S =
+        typeof Symbol === 'function' && typeof Symbol.species === 'symbol' ?
+        C[Symbol.species] : undefined;
+    if (S == null) {
+      return defaultConstructor;
+    }
+    if (typeof S === 'function' && S.prototype) {
+      return S;
+    }
+    throw new TypeError('no constructor found');
+  };
+
+  const shim = {
+    finally(onFinally) {
+      const promise = this;
+      if (typeof promise !== 'object' || promise === null) {
+        throw new TypeError('"this" value is not an Object');
+      }
+      const C = speciesConstructor(promise, Promise);
+      if (typeof onFinally !== 'function') {
+        return Promise.prototype.then.call(promise, onFinally, onFinally);
+      }
+      return Promise.prototype.then.call(
+        promise,
+        x => new C(resolve => resolve(onFinally())).then(() => x),
+        e => new C(resolve => resolve(onFinally())).then(() => { throw e; })
+      );
+    }
+  };
+  Object.defineProperty(Promise.prototype, 'finally', {
+    configurable: true, writable: true, value: shim.finally,
+  });
+}
 // SOURCE FILE: libdot/js/lib_array.js
 // Copyright 2017 The Chromium OS Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
@@ -259,36 +242,6 @@ if (!Object.values || !Object.entries) {
  */
 
 lib.array = {};
-
-/**
- * Convert an array of four unsigned bytes into an unsigned 32-bit integer (big
- * endian).
- *
- * @param {!Array.<!number>} array
- * @returns {!number}
- */
-lib.array.arrayBigEndianToUint32 = function(array) {
-  const maybeSigned =
-      (array[0] << 24) | (array[1] << 16) | (array[2] << 8) | (array[3] << 0);
-  // Interpret the result of the bit operations as an unsigned integer.
-  return maybeSigned >>> 0;
-};
-
-/**
- * Convert an unsigned 32-bit integer into an array of four unsigned bytes (big
- * endian).
- *
- * @param {!number} uint32
- * @returns {!Array.<!number>}
- */
-lib.array.uint32ToArrayBigEndian = function(uint32) {
-  return [
-    (uint32 >>> 24) & 0xFF,
-    (uint32 >>> 16) & 0xFF,
-    (uint32 >>> 8) & 0xFF,
-    (uint32 >>> 0) & 0xFF,
-  ];
-};
 
 /**
  * Concatenate an arbitrary number of typed arrays of the same type into a new
@@ -336,6 +289,54 @@ lib.array.compare = function(a, b) {
     }
   }
   return true;
+};
+// SOURCE FILE: libdot/js/lib_codec.js
+// Copyright 2018 The Chromium OS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+lib.codec = {};
+
+/**
+ * Join an array of code units to a string.
+ *
+ * The code units must not be larger than 65535.  The individual code units may
+ * be for UTF-8 or UTF-16 -- it doesn't matter since UTF-16 can handle all UTF-8
+ * code units.
+ *
+ * The input array type may be an Array or a typed Array (e.g. Uint8Array).
+ *
+ * @param {Array<number>} array The code units to generate for the string.
+ * @return {string} A UTF-16 encoded string.
+ */
+lib.codec.codeUnitArrayToString = function(array) {
+  // String concat is faster than Array.join.
+  //
+  // String.fromCharCode.apply is faster than this if called less frequently
+  // and with smaller array sizes (like <32K).  But it's a recursive call so
+  // larger arrays will blow the stack and fail.  We also seem to be faster
+  // (or at least more constant time) when called frequently.
+  let ret = '';
+  for (let i = 0; i < array.length; ++i) {
+    ret += String.fromCharCode(array[i]);
+  }
+  return ret;
+};
+
+/**
+ * Create an array of code units from a UTF-16 encoded string.
+ *
+ * @param {string} str The string to extract code units from.
+ * @param {type=} type The type of the return value.
+ * @return {Array<number>} The array of code units.
+ */
+lib.codec.stringToCodeUnitArray = function(str, type=Array) {
+  // Indexing string directly is faster than Array.map.
+  const ret = new type(str.length);
+  for (let i = 0; i < str.length; ++i) {
+    ret[i] = str.charCodeAt(i);
+  }
+  return ret;
 };
 // SOURCE FILE: libdot/js/lib_colors.js
 // Copyright (c) 2012 The Chromium OS Authors. All rights reserved.
@@ -657,14 +658,14 @@ lib.colors.crackRGB = function(color) {
     var ary = color.match(lib.colors.re_.rgba);
     if (ary) {
       ary.shift();
-      return ary;
+      return Array.from(ary);
     }
   } else {
     var ary = color.match(lib.colors.re_.rgb);
     if (ary) {
       ary.shift();
       ary.push('1');
-      return ary;
+      return Array.from(ary);
     }
   }
 
@@ -1438,20 +1439,6 @@ lib.colors.colorNames = {
 lib.f = {};
 
 /**
- * Create a unique enum value.
- *
- * @suppress {lintChecks}
- * @param {string} name A human friendly name for debugging.
- * @return {Object} A unique enum that won't compare equal to anything else.
- */
-lib.f.createEnum = function(name) {
-  // We use a String object as nothing else should be using them -- we want to
-  // use string primitives normally.  But debuggers will include our name.
-  // eslint-disable-next-line no-new-wrappers
-  return new String(name);
-};
-
-/**
  * Replace variable references in a string.
  *
  * Variables are of the form %FUNCTION(VARNAME).  FUNCTION is an optional
@@ -1502,49 +1489,6 @@ lib.f.replaceVars.functions = {
   }
 };
 
-/**
- * Parse a query string into a hash.
- *
- * This takes a url query string in the form 'name1=value&name2=value' and
- * converts it into an object of the form { name1: 'value', name2: 'value' }.
- * If a given name appears multiple times in the query string, only the
- * last value will appear in the result.  If the name ends with [], it is
- * turned into an array.
- *
- * Names and values are passed through decodeURIComponent before being added
- * to the result object.
- *
- * @param {string} queryString The string to parse.  If it starts with a
- *     leading '?', the '?' will be ignored.
- */
-lib.f.parseQuery = function(queryString) {
-  if (queryString.startsWith('?'))
-    queryString = queryString.substr(1);
-
-  var rv = {};
-
-  var pairs = queryString.split('&');
-  for (var i = 0; i < pairs.length; i++) {
-    var pair = pairs[i].split('=');
-    let key = decodeURIComponent(pair[0]);
-    let val = decodeURIComponent(pair[1]);
-
-    if (key.endsWith('[]')) {
-      // It's an array.
-      key = key.slice(0, -2);
-      // The key doesn't exist, or wasn't an array before.
-      if (!(rv[key] instanceof Array))
-        rv[key] = [];
-      rv[key].push(val);
-    } else {
-      // It's a plain string.
-      rv[key] = val;
-    }
-  }
-
-  return rv;
-};
-
 lib.f.getURL = function(path) {
   if (lib.f.getURL.chromeSupported())
     return chrome.runtime.getURL(path);
@@ -1580,96 +1524,6 @@ lib.f.clamp = function(v, min, max) {
  */
 lib.f.zpad = function(number, length) {
   return String(number).padStart(length, '0');
-};
-
-/**
- * Return a string containing a given number of space characters.
- *
- * This method maintains a static cache of the largest amount of whitespace
- * ever requested.  It shouldn't be used to generate an insanely huge amount of
- * whitespace.
- *
- * @param {integer} length The desired amount of whitespace.
- * @param {string} A string of spaces of the requested length.
- */
-lib.f.getWhitespace = function(length) {
-  if (length <= 0)
-    return '';
-
-  var f = this.getWhitespace;
-  if (!f.whitespace)
-    f.whitespace = '          ';
-
-  while (length > f.whitespace.length) {
-    f.whitespace += f.whitespace;
-  }
-
-  return f.whitespace.substr(0, length);
-};
-
- /**
- * Ensure that a function is called within a certain time limit.
- *
- * Simple usage looks like this...
- *
- *  lib.registerInit(lib.f.alarm(onInit));
- *
- * This will log a warning to the console if onInit() is not invoked within
- * 5 seconds.
- *
- * If you're performing some operation that may take longer than 5 seconds you
- * can pass a duration in milliseconds as the optional second parameter.
- *
- * If you pass a string identifier instead of a callback function, you'll get a
- * wrapper generator rather than a single wrapper.  Each call to the
- * generator will return a wrapped version of the callback wired to
- * a shared timeout.  This is for cases where you want to ensure that at least
- * one of a set of callbacks is invoked before a timeout expires.
- *
- *   var alarm = lib.f.alarm('fetch object');
- *   lib.foo.fetchObject(alarm(onSuccess), alarm(onFailure));
- *
- * @param {function(*)} callback The function to wrap in an alarm.
- * @param {int} opt_ms Optional number of milliseconds to wait before raising
- *     an alarm.  Default is 5000 (5 seconds).
- * @return {function} If callback is a function then the return value will be
- *     the wrapped callback.  If callback is a string then the return value will
- *     be a function that generates new wrapped callbacks.
- */
-lib.f.alarm = function(callback, opt_ms) {
-  var ms = opt_ms || 5 * 1000;
-  var stack = lib.f.getStack(1);
-
-  return (function() {
-    // This outer function is called immediately.  It's here to capture a new
-    // scope for the timeout variable.
-
-    // The 'timeout' variable is shared by this timeout function, and the
-    // callback wrapper.
-    var timeout = setTimeout(function() {
-      var name = (typeof callback == 'string') ? name : callback.name;
-      name = name ? (': ' + name) : '';
-      console.warn('lib.f.alarm: timeout expired: ' + (ms / 1000) + 's' + name);
-      console.log(stack);
-      timeout = null;
-    }, ms);
-
-    var wrapperGenerator = function(callback) {
-      return function() {
-        if (timeout) {
-          clearTimeout(timeout);
-          timeout = null;
-        }
-
-        return callback.apply(null, arguments);
-      };
-    };
-
-    if (typeof callback == 'string')
-      return wrapperGenerator;
-
-    return wrapperGenerator(callback);
-  })();
 };
 
 /**
@@ -1779,6 +1633,11 @@ lib.f.getOs = function() {
       return Promise.resolve('windows');
   }
 
+  // Probe node environment.
+  if (typeof process != 'undefined') {
+    return Promise.resolve('node');
+  }
+
   // Still here?  No idea.
   return Promise.reject(null);
 };
@@ -1819,6 +1678,37 @@ lib.f.lastError = function(defaultMsg = null) {
     return lastError.message;
   else
     return defaultMsg;
+};
+
+/**
+ * Just like window.open, but enforce noopener.
+ *
+ * If we're not careful, the website we open will have access to use via its
+ * window.opener field.  Newer browser support putting 'noopener' into the
+ * features argument, but there are many which still don't.  So hack it.
+ *
+ * @param {string=} url The URL to point the new window to.
+ * @param {string=} name The name of the new window.
+ * @param {string=} features The window features to enable.
+ * @return {Window} The newly opened window.
+ */
+lib.f.openWindow = function(url, name=undefined, features=undefined) {
+  // We create the window first without the URL loaded.
+  const win = window.open(undefined, name, features);
+
+  // If the system is blocking window.open, don't crash.
+  if (win !== null) {
+    // Clear the opener setting before redirecting.
+    win.opener = null;
+
+    // Now it's safe to redirect.  Skip this step if the url is not set so we
+    // mimic the window.open behavior more precisely.
+    if (url) {
+      win.location = url;
+    }
+  }
+
+  return win;
 };
 // SOURCE FILE: libdot/js/lib_i18n.js
 // Copyright 2018 The Chromium OS Authors. All rights reserved.
@@ -2153,6 +2043,10 @@ lib.PreferenceManager = function(storage, opt_prefix) {
 
   this.prefix = prefix;
 
+  // Internal state for when we're doing a bulk import from JSON and we want
+  // to elide redundant storage writes (for quota reasons).
+  this.isImportingJson_ = false;
+
   this.prefRecords_ = {};
   this.globalObservers_ = [];
 
@@ -2181,7 +2075,7 @@ lib.PreferenceManager = function(storage, opt_prefix) {
  *
  * Equality tests against this value MUST use '===' or '!==' to be accurate.
  */
-lib.PreferenceManager.prototype.DEFAULT_VALUE = lib.f.createEnum('DEFAULT');
+lib.PreferenceManager.prototype.DEFAULT_VALUE = Symbol('DEFAULT_VALUE');
 
 /**
  * An individual preference.
@@ -2495,7 +2389,7 @@ lib.PreferenceManager.prototype.createChild = function(listName, opt_hint,
   this.childLists_[listName][id] = childManager;
 
   ids.push(id);
-  this.set(listName, ids);
+  this.set(listName, ids, undefined, !this.isImportingJson_);
 
   return childManager;
 };
@@ -2517,7 +2411,7 @@ lib.PreferenceManager.prototype.removeChild = function(listName, id) {
   var i = ids.indexOf(id);
   if (i != -1) {
     ids.splice(i, 1);
-    this.set(listName, ids);
+    this.set(listName, ids, undefined, !this.isImportingJson_);
   }
 
   delete this.childLists_[listName][id];
@@ -2716,12 +2610,22 @@ lib.PreferenceManager.prototype.resetAll = function() {
  * @param {*} b A value to compare.
  */
 lib.PreferenceManager.prototype.diff = function(a, b) {
-  // If the types are different, or the type is not a simple primitive one.
-  if ((typeof a) !== (typeof b) ||
-      !(/^(undefined|boolean|number|string)$/.test(typeof a))) {
+  // If the types are different.
+  if ((typeof a) !== (typeof b)) {
     return true;
   }
 
+  // Or if the type is not a simple primitive one.
+  if (!(/^(undefined|boolean|number|string)$/.test(typeof a))) {
+    // Special case the null object.
+    if (a === null && b === null) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  // Do a normal compare for primitive types.
   return a !== b;
 };
 
@@ -2776,11 +2680,15 @@ lib.PreferenceManager.prototype.changeDefaults = function(map) {
  * This will dispatch the onChange handler if the preference value actually
  * changes.
  *
- * @param {string} key The preference to set.
- * @param {*} value The value to set.  Anything that can be represented in
+ * @param {string} name The preference to set.
+ * @param {*} newValue The value to set.  Anything that can be represented in
  *     JSON is a valid value.
+ * @param {function()=} onComplete Callback when the set call completes.
+ * @param {boolean=} saveToStorage Whether to commit the change to the backing
+ *     storage or only the in-memory record copy.
  */
-lib.PreferenceManager.prototype.set = function(name, newValue) {
+lib.PreferenceManager.prototype.set = function(
+    name, newValue, onComplete=undefined, saveToStorage=true) {
   var record = this.prefRecords_[name];
   if (!record)
     throw new Error('Unknown preference: ' + name);
@@ -2792,10 +2700,12 @@ lib.PreferenceManager.prototype.set = function(name, newValue) {
 
   if (this.diff(record.defaultValue, newValue)) {
     record.currentValue = newValue;
-    this.storage.setItem(this.prefix + name, newValue);
+    if (saveToStorage)
+      this.storage.setItem(this.prefix + name, newValue, onComplete);
   } else {
     record.currentValue = this.DEFAULT_VALUE;
-    this.storage.removeItem(this.prefix + name);
+    if (saveToStorage)
+      this.storage.removeItem(this.prefix + name, onComplete);
   }
 
   // We need to manually send out the notification on this instance.  If we
@@ -2855,10 +2765,21 @@ lib.PreferenceManager.prototype.exportAsJson = function() {
  * This will create nested preference managers as well.
  */
 lib.PreferenceManager.prototype.importFromJson = function(json, opt_onComplete) {
+  this.isImportingJson_ = true;
+
   let pendingWrites = 0;
   const onWriteStorage = () => {
-    if (--pendingWrites < 1 && opt_onComplete)
-      opt_onComplete();
+    if (--pendingWrites < 1) {
+      if (opt_onComplete)
+        opt_onComplete();
+
+      // We've delayed updates to the child arrays, so flush them now.
+      for (let name in json)
+        if (name in this.childLists_)
+          this.set(name, this.get(name));
+
+      this.isImportingJson_ = false;
+    }
   };
 
   for (var name in json) {
@@ -3559,1257 +3480,419 @@ lib.Storage.Memory.prototype.removeItems = function(ary, opt_callback) {
   if (opt_callback)
   setTimeout(opt_callback, 0);
 };
-// SOURCE FILE: libdot/js/lib_test_manager.js
-// Copyright (c) 2012 The Chromium OS Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-/**
- * @fileoverview JavaScript unit testing framework for synchronous and
- *     asynchronous tests.
+// SOURCE FILE: libdot/third_party/fast-text-encoding/text.js
+/*
+ * Copyright 2017 Sam Thorogood. All rights reserved.
  *
- * This file contains the lib.TestManager and related classes.  At the moment
- * it's all collected in a single file since it's reasonably small
- * (=~1k lines), and it's a lot easier to include one file into your test
- * harness than it is to include seven.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- * The following classes are defined...
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
- *   lib.TestManager - The root class and entrypoint for creating test runs.
- *   lib.TestManager.Log - Logging service.
- *   lib.TestManager.Suite - A collection of tests.
- *   lib.TestManager.Test - A single test.
- *   lib.TestManager.TestRun - Manages the execution of a set of tests.
- *   lib.TestManager.Result - A single test result.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 /**
- * Root object in the unit test hierarchy, and keeper of the log object.
+ * @fileoverview Polyfill for TextEncoder and TextDecoder.
  *
- * @param {lib.TestManager.Log} opt_log Optional lib.TestManager.Log object.
- *     Logs to the JavaScript console if omitted.
+ * You probably want `text.min.js`, and not this file directly.
  */
-lib.TestManager = function(opt_log) {
-  this.log = opt_log || new lib.TestManager.Log();
-};
 
-/**
- * Create a new test run object for this test manager.
- *
- * @param {Object} opt_cx An object to be passed to test suite setup(),
- *     preamble(), and test cases during this test run.  This object is opaque
- *     to lib.TestManager.* code.  It's entirely up to the test suite what it's
- *     used for.
- */
-lib.TestManager.prototype.createTestRun = function(opt_cx) {
-  return new lib.TestManager.TestRun(this, opt_cx);
-};
+(function(scope) {
+'use strict';
 
-/**
- * Called when a test run associated with this test manager completes.
- *
- * Clients may override this to call an appropriate function.
- */
-lib.TestManager.prototype.onTestRunComplete = function(testRun) {};
-
-/**
- * Called before a test associated with this test manager is run.
- *
- * @param {lib.TestManager.Result} result The result object for the upcoming
- *     test.
- * @param {Object} cx The context object for a test run.
- */
-lib.TestManager.prototype.testPreamble = function(result, cx) {};
-
-/**
- * Called after a test associated with this test manager finishes.
- *
- * @param {lib.TestManager.Result} result The result object for the finished
- *     test.
- * @param {Object} cx The context object for a test run.
- */
-lib.TestManager.prototype.testPostamble = function(result, cx) {};
-
-/**
- * Destination for test case output.
- *
- * Thw API will be the same as the console object.  e.g. We support info(),
- * warn(), error(), etc... just like console.info(), etc...
- *
- * @param {Object} opt_console The console object to route all logging through.
- *     Should provide saome API as the standard console API.
- */
-lib.TestManager.Log = function(opt_console=console) {
-  this.save = false;
-  this.data = '';
-  this.prefix_ = '';
-  this.prefixStack_ = 0;
-
-  // Capture all the console entry points in case code at runtime calls these
-  // directly.  We want to be able to still see things.
-  // We also expose the direct API to our callers (e.g. we provide warn()).
-  this.console_ = opt_console;
-  ['log', 'debug', 'info', 'warn', 'error'].forEach((level) => {
-    let msgPrefix = '';
-    switch (level) {
-      case 'debug':
-      case 'warn':
-      case 'error':
-        msgPrefix = level.toUpperCase() + ': ';
-        break;
-    }
-
-    const oLog = this.console_[level];
-    this[level] = this.console_[level] = (...args) => {
-      if (this.save)
-        this.data += this.prefix_ + msgPrefix + args.join(' ') + '\n';
-      oLog.apply(this.console_, args);
-    };
-  });
-
-  // Wrap/bind the group functions.
-  ['group', 'groupCollapsed'].forEach((group) => {
-    const oGroup = this.console_[group];
-    this[group] = this.console_[group] = (label='') => {
-      oGroup(label);
-      if (this.save)
-        this.data += this.prefix_ + label + '\n';
-      this.prefix_ = '  '.repeat(++this.prefixStack_);
-    };
-  });
-
-  const oGroupEnd = this.console_.groupEnd;
-  this.groupEnd = this.console_.groupEnd = () => {
-    oGroupEnd();
-    if (this.prefixStack_)
-      this.prefix_ = '  '.repeat(--this.prefixStack_);
-  };
-};
-
-/**
- * Returns a new constructor function that will inherit from
- * lib.TestManager.Suite.
- *
- * Use this function to create a new test suite subclass.  It will return a
- * properly initialized constructor function for the subclass.  You can then
- * override the setup() and preamble() methods if necessary and add test cases
- * to the subclass.
- *
- *   var MyTests = new lib.TestManager.Suite('MyTests');
- *
- *   MyTests.prototype.setup = function(cx) {
- *     // Sets this.size to cx.size if it exists, or the default value of 10
- *     // if not.
- *     this.setDefault(cx, {size: 10});
- *   };
- *
- *   MyTests.prototype.preamble = function(result, cx) {
- *     // Some tests (even successful ones) may side-effect this list, so
- *     // recreate it before every test.
- *     this.list = [];
- *     for (var i = 0; i < this.size; i++) {
- *       this.list[i] = i;
- *     }
- *   };
- *
- *   // Basic synchronous test case.
- *   MyTests.addTest('pop-length', function(result, cx) {
- *       this.list.pop();
- *
- *       // If this assertion fails, the testcase will stop here.
- *       result.assertEQ(this.list.length, this.size - 1);
- *
- *       // A test must indicate it has passed by calling this method.
- *       result.pass();
- *     });
- *
- *   // Sample asynchronous test case.
- *   MyTests.addTest('async-pop-length', function(result, cx) {
- *       var callback = () => {
- *           result.assertEQ(this.list.length, this.size - 1);
- *           result.pass();
- *       };
- *
- *       // Wait 100ms to check the array length for the sake of this example.
- *       setTimeout(callback, 100);
- *
- *       this.list.pop();
- *
- *       // Indicate that this test needs another 200ms to complete.
- *       // If the test does not report pass/fail by then, it is considered to
- *       // have timed out.
- *       result.requestTime(200);
- *     });
- *
- *   ...
- *
- * @param {string} suiteName The name of the test suite.
- */
-lib.TestManager.Suite = function(suiteName) {
-  function ctor(testManager, cx) {
-    this.testManager_ = testManager;
-    this.suiteName = suiteName;
-
-    this.setup(cx);
-  }
-
-  ctor.suiteName = suiteName;
-  ctor.addTest = lib.TestManager.Suite.addTest;
-  ctor.disableTest = lib.TestManager.Suite.disableTest;
-  ctor.getTest = lib.TestManager.Suite.getTest;
-  ctor.getTestList = lib.TestManager.Suite.getTestList;
-  ctor.testList_ = [];
-  ctor.testMap_ = {};
-  ctor.prototype = Object.create(lib.TestManager.Suite.prototype);
-  ctor.constructor = lib.TestManager.Suite;
-
-  lib.TestManager.Suite.subclasses.push(ctor);
-
-  return ctor;
-};
-
-/**
- * List of lib.TestManager.Suite subclasses, in the order they were defined.
- */
-lib.TestManager.Suite.subclasses = [];
-
-/**
- * Add a test to a lib.TestManager.Suite.
- *
- * This method is copied to new subclasses when they are created.
- */
-lib.TestManager.Suite.addTest = function(testName, testFunction) {
-  if (testName in this.testMap_)
-    throw 'Duplicate test name: ' + testName;
-
-  var test = new lib.TestManager.Test(this, testName, testFunction);
-  this.testMap_[testName] = test;
-  this.testList_.push(test);
-};
-
-/**
- * Defines a disabled test.
- */
-lib.TestManager.Suite.disableTest = function(testName, testFunction) {
-  if (testName in this.testMap_)
-    throw 'Duplicate test name: ' + testName;
-
-  var test = new lib.TestManager.Test(this, testName, testFunction);
-  console.log('Disabled test: ' + test.fullName);
-};
-
-/**
- * Get a lib.TestManager.Test instance by name.
- *
- * This method is copied to new subclasses when they are created.
- *
- * @param {string} testName The name of the desired test.
- * @return {lib.TestManager.Test} The requested test, or undefined if it was not
- *     found.
- */
-lib.TestManager.Suite.getTest = function(testName) {
-  return this.testMap_[testName];
-};
-
-/**
- * Get an array of lib.TestManager.Tests associated with this Suite.
- *
- * This method is copied to new subclasses when they are created.
- */
-lib.TestManager.Suite.getTestList = function() {
-  return this.testList_;
-};
-
-/**
- * Set properties on a test suite instance, pulling the property value from
- * the context if it exists and from the defaults dictionary if not.
- *
- * This is intended to be used in your test suite's setup() method to
- * define parameters for the test suite which may be overridden through the
- * context object.  For example...
- *
- *   MySuite.prototype.setup = function(cx) {
- *     this.setDefaults(cx, {size: 10});
- *   };
- *
- * If the context object has a 'size' property then this.size will be set to
- * the value of cx.size, otherwise this.size will get a default value of 10.
- *
- * @param {Object} cx The context object for a test run.
- * @param {Object} defaults An object containing name/value pairs to set on
- *     this test suite instance.  The value listed here will be used if the
- *     name is not defined on the context object.
- */
-lib.TestManager.Suite.prototype.setDefaults = function(cx, defaults) {
-  for (var k in defaults) {
-    this[k] = (k in cx) ? cx[k] : defaults[k];
-  }
-};
-
-/**
- * Subclassable method called to set up the test suite.
- *
- * The default implementation of this method is a no-op.  If your test suite
- * requires some kind of suite-wide setup, this is the place to do it.
- *
- * It's fine to store state on the test suite instance, that state will be
- * accessible to all tests in the suite.  If any test case fails, the entire
- * test suite object will be discarded and a new one will be created for
- * the remaining tests.
- *
- * Any side effects outside of this test suite instance must be idempotent.
- * For example, if you're adding DOM nodes to a document, make sure to first
- * test that they're not already there.  If they are, remove them rather than
- * reuse them.  You should not count on their state, since they were probably
- * left behind by a failed testcase.
- *
- * Any exception here will abort the remainder of the test run.
- *
- * @param {Object} cx The context object for a test run.
- */
-lib.TestManager.Suite.prototype.setup = function(cx) {};
-
-/**
- * Subclassable method called to do pre-test set up.
- *
- * The default implementation of this method is a no-op.  If your test suite
- * requires some kind of pre-test setup, this is the place to do it.
- *
- * This can be used to avoid a bunch of boilerplate setup/teardown code in
- * this suite's testcases.
- *
- * Any exception here will abort the remainder of the test run.
- *
- * @param {lib.TestManager.Result} result The result object for the upcoming
- *     test.
- * @param {Object} cx The context object for a test run.
- */
-lib.TestManager.Suite.prototype.preamble = function(result, cx) {};
-
-/**
- * Subclassable method called to do post-test tear-down.
- *
- * The default implementation of this method is a no-op.  If your test suite
- * requires some kind of pre-test setup, this is the place to do it.
- *
- * This can be used to avoid a bunch of boilerplate setup/teardown code in
- * this suite's testcases.
- *
- * Any exception here will abort the remainder of the test run.
- *
- * @param {lib.TestManager.Result} result The result object for the finished
- *     test.
- * @param {Object} cx The context object for a test run.
- */
-lib.TestManager.Suite.prototype.postamble = function(result, cx) {};
-
-/**
- * Object representing a single test in a test suite.
- *
- * These are created as part of the lib.TestManager.Suite.addTest() method.
- * You should never have to construct one by hand.
- *
- * @param {lib.TestManager.Suite} suiteClass The test suite class containing
- *     this test.
- * @param {string} testName The local name of this test case, not including the
- *     test suite name.
- * @param {function(lib.TestManager.Result, Object)} testFunction The function
- *     to invoke for this test case.  This is passed a Result instance and the
- *     context object associated with the test run.
- *
- */
-lib.TestManager.Test = function(suiteClass, testName, testFunction) {
-  /**
-   * The test suite class containing this function.
-   */
-  this.suiteClass = suiteClass;
-
-  /**
-   * The local name of this test, not including the test suite name.
-   */
-  this.testName = testName;
-
-  /**
-   * The global name of this test, including the test suite name.
-   */
-  this.fullName = suiteClass.suiteName + '[' + testName + ']';
-
-  // The function to call for this test.
-  this.testFunction_ = testFunction;
-};
-
-/**
- * Execute this test.
- *
- * This is called by a lib.TestManager.Result instance, as part of a
- * lib.TestManager.TestRun.  You should not call it by hand.
- *
- * @param {lib.TestManager.Result} result The result object for the test.
- */
-lib.TestManager.Test.prototype.run = function(result) {
-  try {
-    // Tests are applied to the parent lib.TestManager.Suite subclass.
-    this.testFunction_.apply(result.suite,
-                             [result, result.testRun.cx]);
-  } catch (ex) {
-    if (ex instanceof lib.TestManager.Result.TestComplete)
-      return;
-
-    result.println('Test raised an exception: ' + ex);
-
-    if (ex.stack) {
-      if (ex.stack instanceof Array) {
-        result.println(ex.stack.join('\n'));
-      } else {
-        result.println(ex.stack);
-      }
-    }
-
-    result.completeTest_(result.FAILED, false);
-  }
-};
-
-/**
- * Used to choose a set of tests and run them.
- *
- * It's slightly more convenient to construct one of these from
- * lib.TestManager.prototype.createTestRun().
- *
- * @param {lib.TestManager} testManager The testManager associated with this
- *     TestRun.
- * @param {Object} cx A context to be passed into the tests.  This can be used
- *     to set parameters for the test suite or individual test cases.
- */
-lib.TestManager.TestRun = function(testManager, cx) {
-  /**
-   * The associated lib.TestManager instance.
-   */
-  this.testManager = testManager;
-
-  /**
-   * Shortcut to the lib.TestManager's log.
-   */
-  this.log = testManager.log;
-
-  /**
-   * The test run context.  It's entirely up to the test suite and test cases
-   * how this is used.  It is opaque to lib.TestManager.* classes.
-   */
-  this.cx = cx || {};
-
-  /**
-   * The list of test cases that encountered failures.
-   */
-  this.failures = [];
-
-  /**
-   * The list of test cases that passed.
-   */
-  this.passes = [];
-
-  /**
-   * The time the test run started, or null if it hasn't been started yet.
-   */
-  this.startDate = null;
-
-  /**
-   * The time in milliseconds that the test run took to complete, or null if
-   * it hasn't completed yet.
-   */
-  this.duration = null;
-
-  /**
-   * The most recent result object, or null if the test run hasn't started
-   * yet.  In order to detect late failures, this is not cleared when the test
-   * completes.
-   */
-  this.currentResult = null;
-
-  /**
-   * Number of maximum failures.  The test run will stop when this number is
-   * reached.  If 0 or omitted, the entire set of selected tests is run, even
-   * if some fail.
-   */
-  this.maxFailures = 0;
-
-  /**
-   * True if this test run ended early because of an unexpected condition.
-   */
-  this.panic = false;
-
-  // List of pending test cases.
-  this.testQueue_ = [];
-
-};
-
-/**
- * This value can be passed to select() to indicate that all tests should
- * be selected.
- */
-lib.TestManager.TestRun.prototype.ALL_TESTS = lib.f.createEnum('<all-tests>');
-
-/**
- * Add a single test to the test run.
- */
-lib.TestManager.TestRun.prototype.selectTest = function(test) {
-  this.testQueue_.push(test);
-};
-
-lib.TestManager.TestRun.prototype.selectSuite = function(
-    suiteClass, opt_pattern) {
-  var pattern = opt_pattern || this.ALL_TESTS;
-  var selectCount = 0;
-  var testList = suiteClass.getTestList();
-
-  for (var j = 0; j < testList.length; j++) {
-    var test = testList[j];
-    // Note that we're using "!==" rather than "!=" so that we're matching
-    // the ALL_TESTS String object, rather than the contents of the string.
-    if (pattern !== this.ALL_TESTS) {
-      if (pattern instanceof RegExp) {
-        if (!pattern.test(test.testName))
-          continue;
-      } else if (test.testName != pattern) {
-        continue;
-      }
-    }
-
-    this.selectTest(test);
-    selectCount++;
-  }
-
-  return selectCount;
-};
-
-/**
- * Selects one or more tests to gather results for.
- *
- * Selecting the same test more than once is allowed.
- *
- * @param {string|RegExp} pattern Pattern used to select tests.
- *     If TestRun.prototype.ALL_TESTS, all tests are selected.
- *     If a string, only the test that exactly matches is selected.
- *     If a RegExp, only tests matching the RegExp are added.
- *
- * @return {int} The number of additional tests that have been selected into
- *     this TestRun.
- */
-lib.TestManager.TestRun.prototype.selectPattern = function(pattern) {
-  var selectCount = 0;
-
-  for (var i = 0; i < lib.TestManager.Suite.subclasses.length; i++) {
-    selectCount += this.selectSuite(lib.TestManager.Suite.subclasses[i],
-                                    pattern);
-  }
-
-  if (!selectCount) {
-    this.log.warn('No tests matched selection criteria: ' + pattern);
-  }
-
-  return selectCount;
-};
-
-/**
- * Hooked up to window.onerror during a test run in order to catch exceptions
- * that would otherwise go uncaught.
- */
-lib.TestManager.TestRun.prototype.onUncaughtException_ = function(
-    message, file, line) {
-
-  if (message.indexOf('Uncaught lib.TestManager.Result.TestComplete') == 0 ||
-      message.indexOf('status: passed') != -1) {
-    // This is a result.pass() or result.fail() call from a callback.  We're
-    // already going to deal with it as part of the completeTest_() call
-    // that raised it.  We can safely squelch this error message.
-    return true;
-  }
-
-  if (!this.currentResult)
-    return;
-
-  if (message == 'Uncaught ' + this.currentResult.expectedErrorMessage_) {
-    // Test cases may need to raise an unhandled exception as part of the test.
-    return;
-  }
-
-  var when = 'during';
-
-  if (this.currentResult.status != this.currentResult.PENDING)
-    when = 'after';
-
-  this.log.error('Uncaught exception ' + when + ' test case: ' +
-                 this.currentResult.test.fullName);
-  this.log.error(message + ', ' + file + ':' + line);
-
-  this.currentResult.completeTest_(this.currentResult.FAILED, false);
-
+// fail early
+if (scope['TextEncoder'] && scope['TextDecoder']) {
   return false;
-};
+}
 
 /**
- * Called to when this test run has completed.
- *
- * This method typically re-runs itself asynchronously, in order to let the
- * DOM stabilize and short-term timeouts to complete before declaring the
- * test run complete.
- *
- * @param {boolean} opt_skipTimeout If true, the timeout is skipped and the
- *     test run is completed immediately.  This should only be used from within
- *     this function.
+ * @constructor
+ * @param {string=} utfLabel
  */
-lib.TestManager.TestRun.prototype.onTestRunComplete_ = function(
-    opt_skipTimeout) {
-  if (!opt_skipTimeout) {
-    // The final test may have left a lingering setTimeout(..., 0), or maybe
-    // poked at the DOM in a way that will trigger a event to fire at the end
-    // of this stack, so we give things a chance to settle down before our
-    // final cleanup...
-    setTimeout(this.onTestRunComplete_.bind(this), 0, true);
-    return;
+function FastTextEncoder(utfLabel='utf-8') {
+  if (utfLabel !== 'utf-8') {
+    throw new RangeError(
+      `Failed to construct 'TextEncoder': The encoding label provided ('${utfLabel}') is invalid.`);
   }
+}
 
-  this.duration = (new Date()) - this.startDate;
-
-  this.log.groupEnd();
-  this.log.info(this.passes.length + ' passed, ' +
-                this.failures.length + ' failed, '  +
-                this.msToSeconds_(this.duration));
-
-  this.summarize();
-
-  window.onerror = null;
-
-  this.testManager.onTestRunComplete(this);
-};
+Object.defineProperty(FastTextEncoder.prototype, 'encoding', {value: 'utf-8'});
 
 /**
- * Called by the lib.TestManager.Result object when a test completes.
- *
- * @param {lib.TestManager.Result} result The result object which has just
- *     completed.
+ * @param {string} string
+ * @param {{stream: boolean}=} options
+ * @return {!Uint8Array}
  */
-lib.TestManager.TestRun.prototype.onResultComplete = function(result) {
-  try {
-    this.testManager.testPostamble(result, this.cx);
-    result.suite.postamble(result, this.ctx);
-  } catch (ex) {
-    this.log.error('Unexpected exception in postamble: ' +
-                   (ex.stack ? ex.stack : ex));
-    this.panic = true;
+FastTextEncoder.prototype.encode = function(string, options={stream: false}) {
+  if (options.stream) {
+    throw new Error(`Failed to encode: the 'stream' option is unsupported.`);
   }
 
-  if (result.status != result.PASSED)
-    this.log.error(result.status);
-  else if (result.duration > 500)
-    this.log.warn('Slow test took ' + this.msToSeconds_(result.duration));
-  this.log.groupEnd();
+  let pos = 0;
+  const len = string.length;
+  const out = [];
 
-  if (result.status == result.FAILED) {
-    this.failures.push(result);
-    this.currentSuite = null;
-  } else if (result.status == result.PASSED) {
-    this.passes.push(result);
-  } else {
-    this.log.error('Unknown result status: ' + result.test.fullName + ': ' +
-                   result.status);
-    this.panic = true;
-    return;
-  }
+  let at = 0;  // output position
+  let tlen = Math.max(32, len + (len >> 1) + 7);  // 1.5x size
+  let target = new Uint8Array((tlen >> 3) << 3);  // ... but at 8 byte offset
 
-  this.runNextTest_();
-};
-
-/**
- * Called by the lib.TestManager.Result object when a test which has already
- * completed reports another completion.
- *
- * This is usually indicative of a buggy testcase.  It is probably reporting a
- * result on exit and then again from an asynchronous callback.
- *
- * It may also be the case that the last act of the testcase causes a DOM change
- * which triggers some event to run after the test returns.  If the event
- * handler reports a failure or raises an uncaught exception, the test will
- * fail even though it has already completed.
- *
- * In any case, re-completing a test ALWAYS moves it into the failure pile.
- *
- * @param {lib.TestManager.Result} result The result object which has just
- *     completed.
- * @param {string} lateStatus The status that the test attempted to record this
- *     time around.
- */
-lib.TestManager.TestRun.prototype.onResultReComplete = function(
-    result, lateStatus) {
-  this.log.error('Late complete for test: ' + result.test.fullName + ': ' +
-                 lateStatus);
-
-  // Consider any late completion a failure, even if it's a double-pass, since
-  // it's a misuse of the testing API.
-  var index = this.passes.indexOf(result);
-  if (index >= 0) {
-    this.passes.splice(index, 1);
-    this.failures.push(result);
-  }
-};
-
-/**
- * Run the next test in the queue.
- */
-lib.TestManager.TestRun.prototype.runNextTest_ = function() {
-  if (this.panic || !this.testQueue_.length) {
-    this.onTestRunComplete_();
-    return;
-  }
-
-  if (this.maxFailures && this.failures.length >= this.maxFailures) {
-    this.log.error('Maximum failure count reached, aborting test run.');
-    this.onTestRunComplete_();
-    return;
-  }
-
-  // Peek at the top test first.  We remove it later just before it's about
-  // to run, so that we don't disturb the incomplete test count in the
-  // event that we fail before running it.
-  var test = this.testQueue_[0];
-  var suite = this.currentResult ? this.currentResult.suite : null;
-
-  try {
-    if (!suite || !(suite instanceof test.suiteClass)) {
-      if (suite)
-        this.log.groupEnd();
-      this.log.group(test.suiteClass.suiteName);
-      suite = new test.suiteClass(this.testManager, this.cx);
+  while (pos < len) {
+    let value = string.charCodeAt(pos++);
+    if (value >= 0xd800 && value <= 0xdbff) {
+      // high surrogate
+      if (pos < len) {
+        const extra = string.charCodeAt(pos);
+        if ((extra & 0xfc00) === 0xdc00) {
+          ++pos;
+          value = ((value & 0x3ff) << 10) + (extra & 0x3ff) + 0x10000;
+        }
+      }
+      if (value >= 0xd800 && value <= 0xdbff) {
+        continue;  // drop lone surrogate
+      }
     }
-  } catch (ex) {
-    // If test suite setup fails we're not even going to try to run the tests.
-    this.log.error('Exception during setup: ' + (ex.stack ? ex.stack : ex));
-    this.panic = true;
-    this.onTestRunComplete_();
-    return;
-  }
 
-  try {
-    this.log.group(test.testName);
+    // expand the buffer if we couldn't write 4 bytes
+    if (at + 4 > target.length) {
+      tlen += 8;  // minimum extra
+      tlen *= (1.0 + (pos / string.length) * 2);  // take 2x the remaining
+      tlen = (tlen >> 3) << 3;  // 8 byte offset
 
-    this.currentResult = new lib.TestManager.Result(this, suite, test);
-    this.testManager.testPreamble(this.currentResult, this.cx);
-    suite.preamble(this.currentResult, this.cx);
-
-    this.testQueue_.shift();
-  } catch (ex) {
-    this.log.error('Unexpected exception during test preamble: ' +
-                   (ex.stack ? ex.stack : ex));
-    this.log.groupEnd();
-
-    this.panic = true;
-    this.onTestRunComplete_();
-    return;
-  }
-
-  try {
-    this.currentResult.run();
-  } catch (ex) {
-    // Result.run() should catch test exceptions and turn them into failures.
-    // If we got here, it means there is trouble in the testing framework.
-    this.log.error('Unexpected exception during test run: ' +
-                   (ex.stack ? ex.stack : ex));
-    this.panic = true;
-  }
-};
-
-/**
- * Run the selected list of tests.
- *
- * Some tests may need to run asynchronously, so you cannot assume the run is
- * complete when this function returns.  Instead, pass in a function to be
- * called back when the run has completed.
- *
- * This function will log the results of the test run as they happen into the
- * log defined by the associated lib.TestManager.  By default this is
- * console.log, which can be viewed in the JavaScript console of most browsers.
- *
- * The browser state is determined by the last test to run.  We intentionally
- * don't do any cleanup so that you can inspect the state of a failed test, or
- * leave the browser ready for manual testing.
- *
- * Any failures in lib.TestManager.* code or test suite setup or test case
- * preamble will cause the test run to abort.
- */
-lib.TestManager.TestRun.prototype.run = function() {
-  this.log.info('Running ' + this.testQueue_.length + ' test(s)');
-
-  window.onerror = this.onUncaughtException_.bind(this);
-  this.startDate = new Date();
-  this.runNextTest_();
-};
-
-/**
- * Format milliseconds as fractional seconds.
- */
-lib.TestManager.TestRun.prototype.msToSeconds_ = function(ms) {
-  var secs = (ms / 1000).toFixed(2);
-  return secs + 's';
-};
-
-/**
- * Log the current result summary.
- */
-lib.TestManager.TestRun.prototype.summarize = function() {
-  if (this.failures.length) {
-    for (var i = 0; i < this.failures.length; i++) {
-      this.log.error('FAILED: ' + this.failures[i].test.fullName);
+      const update = new Uint8Array(tlen);
+      update.set(target);
+      target = update;
     }
-  }
 
-  if (this.testQueue_.length) {
-    this.log.warn('Test run incomplete: ' + this.testQueue_.length +
-                  ' test(s) were not run.');
-  }
-};
-
-/**
- * Record of the result of a single test.
- *
- * These are constructed during a test run, you shouldn't have to make one
- * on your own.
- *
- * An instance of this class is passed in to each test function.  It can be
- * used to add messages to the test log, to record a test pass/fail state, to
- * test assertions, or to create exception-proof wrappers for callback
- * functions.
- *
- * @param {lib.TestManager.TestRun} testRun The TestRun instance associated with
- *     this result.
- * @param {lib.TestManager.Suit} suite The Suite containing the test we're
- *     collecting this result for.
- * @param {lib.TestManager.Test} test The test we're collecting this result for.
- */
-lib.TestManager.Result = function(testRun, suite, test) {
-  /**
-   * The TestRun instance associated with this result.
-   */
-  this.testRun = testRun;
-
-  /**
-   * The Suite containing the test we're collecting this result for.
-   */
-  this.suite = suite;
-
-  /**
-   * The test we're collecting this result for.
-   */
-  this.test = test;
-
-  /**
-   * The time we started to collect this result, or null if we haven't started.
-   */
-  this.startDate = null;
-
-  /**
-   * The time in milliseconds that the test took to complete, or null if
-   * it hasn't completed yet.
-   */
-  this.duration = null;
-
-  /**
-   * The current status of this test result.
-   */
-  this.status = this.PENDING;
-
-  // An error message that the test case is expected to generate.
-  this.expectedErrorMessage_ = null;
-};
-
-/**
- * Possible values for this.status.
- */
-lib.TestManager.Result.prototype.PENDING = 'pending';
-lib.TestManager.Result.prototype.FAILED  = 'FAILED';
-lib.TestManager.Result.prototype.PASSED  = 'passed';
-
-/**
- * Exception thrown when a test completes (pass or fail), to ensure no more of
- * the test is run.
- */
-lib.TestManager.Result.TestComplete = function(result) {
-  this.result = result;
-};
-
-lib.TestManager.Result.TestComplete.prototype.toString = function() {
-  return 'lib.TestManager.Result.TestComplete: ' + this.result.test.fullName +
-      ', status: ' + this.result.status;
-};
-
-/**
- * Start the test associated with this result.
- */
-lib.TestManager.Result.prototype.run = function() {
-  this.startDate = new Date();
-  this.test.run(this);
-
-  if (this.status == this.PENDING && !this.timeout_) {
-    this.println('Test did not return a value and did not request more time.');
-    this.completeTest_(this.FAILED, false);
-  }
-};
-
-/**
- * Unhandled error message this test expects to generate.
- *
- * This must be the exact string that would appear in the JavaScript console,
- * minus the 'Uncaught ' prefix.
- *
- * The test case does *not* automatically fail if the error message is not
- * encountered.
- */
-lib.TestManager.Result.prototype.expectErrorMessage = function(str) {
-  this.expectedErrorMessage_ = str;
-};
-
-/**
- * Function called when a test times out.
- */
-lib.TestManager.Result.prototype.onTimeout_ = function() {
-  this.timeout_ = null;
-
-  if (this.status != this.PENDING)
-    return;
-
-  this.println('Test timed out.');
-  this.completeTest_(this.FAILED, false);
-};
-
-/**
- * Indicate that a test case needs more time to complete.
- *
- * Before a test case returns it must report a pass/fail result, or request more
- * time to do so.
- *
- * If a test does not report pass/fail before the time expires it will
- * be reported as a timeout failure.  Any late pass/fails will be noted in the
- * test log, but will not affect the final result of the test.
- *
- * Test cases may call requestTime more than once.  If you have a few layers
- * of asynchronous API to go through, you should call this once per layer with
- * an estimate of how long each callback will take to complete.
- *
- * @param {int} ms Number of milliseconds requested.
- */
-lib.TestManager.Result.prototype.requestTime = function(ms) {
-  if (this.timeout_)
-    clearTimeout(this.timeout_);
-
-  this.timeout_ = setTimeout(this.onTimeout_.bind(this), ms);
-};
-
-/**
- * Report the completion of a test.
- *
- * @param {string} status The status of the test case.
- * @param {boolean} opt_throw Optional boolean indicating whether or not
- *     to throw the TestComplete exception.
- */
-lib.TestManager.Result.prototype.completeTest_ = function(status, opt_throw) {
-  if (this.status == this.PENDING) {
-    this.duration = (new Date()) - this.startDate;
-    this.status = status;
-
-    this.testRun.onResultComplete(this);
-  } else {
-    this.testRun.onResultReComplete(this, status);
-  }
-
-  if (arguments.length < 2 || opt_throw)
-    throw new lib.TestManager.Result.TestComplete(this);
-};
-
-/**
- * Assert that an actual value is exactly equal to the expected value.
- *
- * This uses the JavaScript '===' operator in order to avoid type coercion.
- *
- * If the assertion fails, the test is marked as a failure and a TestCompleted
- * exception is thrown.
- *
- * @param {*} actual The actual measured value.
- * @param {*} expected The value expected.
- * @param {string} opt_name An optional name used to identify this
- *     assertion in the test log.  If omitted it will be the file:line
- *     of the caller.
- */
-lib.TestManager.Result.prototype.assertEQ = function(
-    actual, expected, opt_name) {
-  // Utility function to pretty up the log.
-  function format(value) {
-    if (typeof value == 'number')
-      return value;
-
-    var str = String(value);
-    var ary = str.split('\n').map((e) => JSON.stringify(e));
-    if (ary.length > 1) {
-      // If the string has newlines, start it off on its own line so that
-      // it's easier to compare against another string with newlines.
-      return '\n' + ary.join('\n');
+    if ((value & 0xffffff80) === 0) {  // 1-byte
+      target[at++] = value;  // ASCII
+      continue;
+    } else if ((value & 0xfffff800) === 0) {  // 2-byte
+      target[at++] = ((value >>  6) & 0x1f) | 0xc0;
+    } else if ((value & 0xffff0000) === 0) {  // 3-byte
+      target[at++] = ((value >> 12) & 0x0f) | 0xe0;
+      target[at++] = ((value >>  6) & 0x3f) | 0x80;
+    } else if ((value & 0xffe00000) === 0) {  // 4-byte
+      target[at++] = ((value >> 18) & 0x07) | 0xf0;
+      target[at++] = ((value >> 12) & 0x3f) | 0x80;
+      target[at++] = ((value >>  6) & 0x3f) | 0x80;
     } else {
-      return ary.join('\n');
+      // FIXME: do we care
+      continue;
+    }
+
+    target[at++] = (value & 0x3f) | 0x80;
+  }
+
+  return target.slice(0, at);
+}
+
+/**
+ * @constructor
+ * @param {string=} utfLabel
+ * @param {{fatal: boolean}=} options
+ */
+function FastTextDecoder(utfLabel='utf-8', options={fatal: false}) {
+  if (utfLabel !== 'utf-8') {
+    throw new RangeError(
+      `Failed to construct 'TextDecoder': The encoding label provided ('${utfLabel}') is invalid.`);
+  }
+  if (options.fatal) {
+    throw new Error(`Failed to construct 'TextDecoder': the 'fatal' option is unsupported.`);
+  }
+}
+
+Object.defineProperty(FastTextDecoder.prototype, 'encoding', {value: 'utf-8'});
+
+Object.defineProperty(FastTextDecoder.prototype, 'fatal', {value: false});
+
+Object.defineProperty(FastTextDecoder.prototype, 'ignoreBOM', {value: false});
+
+/**
+ * @param {(!ArrayBuffer|!ArrayBufferView)} buffer
+ * @param {{stream: boolean}=} options
+ */
+FastTextDecoder.prototype.decode = function(buffer, options={stream: false}) {
+  if (options['stream']) {
+    throw new Error(`Failed to decode: the 'stream' option is unsupported.`);
+  }
+
+  const bytes = new Uint8Array(buffer);
+  let pos = 0;
+  const len = bytes.length;
+  const out = [];
+
+  while (pos < len) {
+    const byte1 = bytes[pos++];
+    if (byte1 === 0) {
+      break;  // NULL
+    }
+
+    if ((byte1 & 0x80) === 0) {  // 1-byte
+      out.push(byte1);
+    } else if ((byte1 & 0xe0) === 0xc0) {  // 2-byte
+      const byte2 = bytes[pos++] & 0x3f;
+      out.push(((byte1 & 0x1f) << 6) | byte2);
+    } else if ((byte1 & 0xf0) === 0xe0) {
+      const byte2 = bytes[pos++] & 0x3f;
+      const byte3 = bytes[pos++] & 0x3f;
+      out.push(((byte1 & 0x1f) << 12) | (byte2 << 6) | byte3);
+    } else if ((byte1 & 0xf8) === 0xf0) {
+      const byte2 = bytes[pos++] & 0x3f;
+      const byte3 = bytes[pos++] & 0x3f;
+      const byte4 = bytes[pos++] & 0x3f;
+
+      // this can be > 0xffff, so possibly generate surrogates
+      let codepoint = ((byte1 & 0x07) << 0x12) | (byte2 << 0x0c) | (byte3 << 0x06) | byte4;
+      if (codepoint > 0xffff) {
+        // codepoint &= ~0x10000;
+        codepoint -= 0x10000;
+        out.push((codepoint >>> 10) & 0x3ff | 0xd800)
+        codepoint = 0xdc00 | codepoint & 0x3ff;
+      }
+      out.push(codepoint);
+    } else {
+      // FIXME: we're ignoring this
     }
   }
 
-  if (actual === expected)
-    return;
+  return String.fromCharCode.apply(null, out);
+}
 
-  // Deal with common object types since JavaScript can't.
-  if (expected instanceof Array)
-    if (lib.array.compare(actual, expected))
-      return;
+scope['TextEncoder'] = FastTextEncoder;
+scope['TextDecoder'] = FastTextDecoder;
 
-  var name = opt_name ? '[' + opt_name + ']' : '';
-
-  this.fail('assertEQ' + name + ': ' + this.getCallerLocation_(1) + ': ' +
-            format(actual) + ' !== ' + format(expected));
-};
-
-/**
- * Assert that a value is true.
- *
- * This uses the JavaScript '===' operator in order to avoid type coercion.
- * The must be the boolean value `true`, not just some "truish" value.
- *
- * If the assertion fails, the test is marked as a failure and a TestCompleted
- * exception is thrown.
- *
- * @param {boolean} actual The actual measured value.
- * @param {string} opt_name An optional name used to identify this
- *     assertion in the test log.  If omitted it will be the file:line
- *     of the caller.
- */
-lib.TestManager.Result.prototype.assert = function(actual, opt_name) {
-  if (actual === true)
-    return;
-
-  var name = opt_name ? '[' + opt_name + ']' : '';
-
-  this.fail('assert' + name + ': ' + this.getCallerLocation_(1) + ': ' +
-            String(actual));
-};
-
-/**
- * Return the filename:line of a calling stack frame.
- *
- * This uses a dirty hack.  It throws an exception, catches it, and examines
- * the stack property of the caught exception.
- *
- * @param {int} frameIndex The stack frame to return.  0 is the frame that
- *     called this method, 1 is its caller, and so on.
- * @return {string} A string of the format "filename:linenumber".
- */
-lib.TestManager.Result.prototype.getCallerLocation_ = function(frameIndex) {
-  try {
-    throw new Error();
-  } catch (ex) {
-    var frame = ex.stack.split('\n')[frameIndex + 2];
-    var ary = frame.match(/([^/]+:\d+):\d+\)?$/);
-    return ary ? ary[1] : '???';
-  }
-};
-
-/**
- * Write a message to the result log.
- */
-lib.TestManager.Result.prototype.println = function(message) {
-  this.testRun.log.info(message);
-};
-
-/**
- * Mark a failed test and exit out of the rest of the test.
- *
- * This will throw a TestCompleted exception, causing the current test to stop.
- *
- * @param {string} opt_message Optional message to add to the log.
- */
-lib.TestManager.Result.prototype.fail = function(opt_message) {
-  if (arguments.length)
-    this.println(opt_message);
-
-  this.completeTest_(this.FAILED, true);
-};
-
-/**
- * Mark a passed test and exit out of the rest of the test.
- *
- * This will throw a TestCompleted exception, causing the current test to stop.
- */
-lib.TestManager.Result.prototype.pass = function() {
-  this.completeTest_(this.PASSED, true);
-};
-// SOURCE FILE: libdot/js/lib_utf8.js
-// Copyright (c) 2012 The Chromium OS Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-// TODO(davidben): When the string encoding API is implemented,
-// replace this with the native in-browser implementation.
+}(typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : this)));
+// SOURCE FILE: libdot/third_party/intl-segmenter/intl-segmenter.js
+// Rough polyfill for Intl.Segmenter proposal
 //
-// https://wiki.whatwg.org/wiki/StringEncoding
-// https://encoding.spec.whatwg.org/
+// https://github.com/tc39/proposal-intl-segmenter/blob/master/README.md
+//
+// Caveats and Limitations
+//  * granularity: 'line': 'strictness' option is not supported (ignored)
+//  * In Chrome, uses v8BreakIterator
+//  * Otherwise, uses very simplistic rules
+//    * Ignores locale; only "usable" on English
+//    * granularity: 'grapheme' does not understand combining characters
+//    * granularity: 'sentence' does not understand decimals
 
-/**
- * A stateful UTF-8 decoder.
- */
-lib.UTF8Decoder = function() {
-  // The number of bytes left in the current sequence.
-  this.bytesLeft = 0;
-  // The in-progress code point being decoded, if bytesLeft > 0.
-  this.codePoint = 0;
-  // The lower bound on the final code point, if bytesLeft > 0.
-  this.lowerBound = 0;
-};
+(function(global) {
+  if ('Intl' in global && 'Segmenter' in global.Intl)
+    return;
 
-/**
- * Decodes a some UTF-8 data, taking into account state from previous
- * data streamed through the encoder.
- *
- * @param {String} str data to decode, represented as a JavaScript
- *     String with each code unit representing a byte between 0x00 to
- *     0xFF.
- * @return {String} The data decoded into a JavaScript UTF-16 string.
- */
-lib.UTF8Decoder.prototype.decode = function(str) {
-  var ret = '';
-  for (var i = 0; i < str.length; i++) {
-    var c = str.charCodeAt(i);
-    if (this.bytesLeft == 0) {
-      if (c <= 0x7F) {
-        ret += str.charAt(i);
-      } else if (0xC0 <= c && c <= 0xDF) {
-        this.codePoint = c - 0xC0;
-        this.bytesLeft = 1;
-        this.lowerBound = 0x80;
-      } else if (0xE0 <= c && c <= 0xEF) {
-        this.codePoint = c - 0xE0;
-        this.bytesLeft = 2;
-        this.lowerBound = 0x800;
-      } else if (0xF0 <= c && c <= 0xF7) {
-        this.codePoint = c - 0xF0;
-        this.bytesLeft = 3;
-        this.lowerBound = 0x10000;
-      } else if (0xF8 <= c && c <= 0xFB) {
-        this.codePoint = c - 0xF8;
-        this.bytesLeft = 4;
-        this.lowerBound = 0x200000;
-      } else if (0xFC <= c && c <= 0xFD) {
-        this.codePoint = c - 0xFC;
-        this.bytesLeft = 5;
-        this.lowerBound = 0x4000000;
-      } else {
-        ret += '\ufffd';
+  global.Intl = global.Intl || {};
+
+  const GRANULARITIES = ['grapheme', 'word','sentence', 'line'];
+
+  // TODO: Implement https://www.unicode.org/reports/tr29/
+  const RULES = {
+    grapheme: {
+      grapheme: /^(.|\n)/
+    },
+    word: {
+      letter: /^[a-z](?:'?[a-z])*/i,
+      number: /^\d+([,.]\d+)*/
+    },
+    sentence: {
+      terminator: /^[^.?!\r\n]+[.?!]+[\r\n]?/,
+      separator: /^[^.?!\r\n]+[\r\n]?/
+    },
+    line: {
+      hard: /^\S*[\r\n]/,
+      soft: /^\S*\s*/
+    }
+  };
+
+  // Work around bug in v8BreakIterator where ICU's UWordBreak enum is
+  // used even if granularity is not "word". See the code in
+  // Runtime_BreakIteratorBreakType in runtime/runtime-i18n.cc for
+  // details.
+  function fixBreakType(value, granularity) {
+    // Undo the mapping of UWordBreak to string
+    const ruleStatus = {
+      none: 0, // UBRK_WORD_NONE
+      number: 100, // UBRK_WORD_NUMBER
+      letter: 200, // UBRK_WORD_LETTER
+      kana: 300, // UBRK_WORD_KANA
+      ideo: 400, // UBRK_WORD_IDEO
+      unknown: -1
+    }[value] || 0;
+
+
+    switch (granularity) {
+    case 'character':
+      return undefined;
+    case 'word':
+      return value;
+    case 'sentence':
+      // Map ULineBreakTag rule status to string.
+      return {
+        0: 'terminator',
+        100: 'separator'
+      }[ruleStatus] || value;
+    case 'line':
+      // Map ULineBreakTag rule status to string.
+      return {
+        0: 'soft',
+        100: 'hard'
+      }[ruleStatus] || value;
+    default:
+      return value;
+    }
+  }
+
+  function segment(locale, granularity, string) {
+    const breaks = [];
+    if ('v8BreakIterator' in global.Intl) {
+      if (granularity === 'grapheme')
+        granularity = 'character';
+      const vbi = new global.Intl.v8BreakIterator(locale, {type: granularity});
+      vbi.adoptText(string);
+      let last = 0;
+      let pos = vbi.next();
+      while (pos !== -1) {
+        breaks.push({
+          pos: vbi.current(),
+          segment: string.slice(last, pos),
+          breakType: fixBreakType(vbi.breakType(), granularity)
+        });
+        last = pos;
+        pos = vbi.next();
       }
     } else {
-      if (0x80 <= c && c <= 0xBF) {
-        this.bytesLeft--;
-        this.codePoint = (this.codePoint << 6) + (c - 0x80);
-        if (this.bytesLeft == 0) {
-          // Got a full sequence. Check if it's within bounds and
-          // filter out surrogate pairs.
-          var codePoint = this.codePoint;
-          if (codePoint < this.lowerBound
-              || (0xD800 <= codePoint && codePoint <= 0xDFFF)
-              || codePoint > 0x10FFFF) {
-            ret += '\ufffd';
-          } else {
-            // Encode as UTF-16 in the output.
-            if (codePoint < 0x10000) {
-              ret += String.fromCharCode(codePoint);
-            } else {
-              // Surrogate pair.
-              codePoint -= 0x10000;
-              ret += String.fromCharCode(
-                0xD800 + ((codePoint >>> 10) & 0x3FF),
-                0xDC00 + (codePoint & 0x3FF));
-            }
+      const rules = RULES[granularity];
+      let pos = 0;
+      while (pos < string.length) {
+        let found = false;
+        for (let rule of Object.keys(rules)) {
+          const re = rules[rule];
+          const m = string.slice(pos).match(re);
+          if (m) {
+            pos += m[0].length;
+            breaks.push({
+              pos: pos,
+              segment: m[0],
+              breakType: granularity === 'grapheme' ? undefined : rule
+            });
+            found = true;
+            break;
           }
         }
-      } else {
-        // Too few bytes in multi-byte sequence. Rewind stream so we
-        // don't lose the next byte.
-        ret += '\ufffd';
-        this.bytesLeft = 0;
-        i--;
-      }
-    }
-  }
-  return ret;
-};
-
-/**
- * Decodes UTF-8 data. This is a convenience function for when all the
- * data is already known.
- *
- * @param {String} str data to decode, represented as a JavaScript
- *     String with each code unit representing a byte between 0x00 to
- *     0xFF.
- * @return {String} The data decoded into a JavaScript UTF-16 string.
- */
-lib.decodeUTF8 = function(utf8) {
-  return (new lib.UTF8Decoder()).decode(utf8);
-};
-
-/**
- * Encodes a UTF-16 string into UTF-8.
- *
- * TODO(davidben): Do we need a stateful version of this that can
- * handle a surrogate pair split in two calls? What happens if a
- * keypress event would have contained a character outside the BMP?
- *
- * @param {String} str The string to encode.
- * @return {String} The string encoded as UTF-8, as a JavaScript
- *     string with bytes represented as code units from 0x00 to 0xFF.
- */
-lib.encodeUTF8 = function(str) {
-  var ret = '';
-  for (var i = 0; i < str.length; i++) {
-    // Get a unicode code point out of str.
-    var c = str.charCodeAt(i);
-    if (0xDC00 <= c && c <= 0xDFFF) {
-      c = 0xFFFD;
-    } else if (0xD800 <= c && c <= 0xDBFF) {
-      if (i+1 < str.length) {
-        var d = str.charCodeAt(i+1);
-        if (0xDC00 <= d && d <= 0xDFFF) {
-          // Swallow a surrogate pair.
-          c = 0x10000 + ((c & 0x3FF) << 10) + (d & 0x3FF);
-          i++;
-        } else {
-          c = 0xFFFD;
+        if (!found) {
+          breaks.push({
+            pos: pos + 1,
+            segment: string.slice(pos, ++pos),
+            breakType: 'none'
+          });
         }
-      } else {
-        c = 0xFFFD;
       }
     }
+    breaks.initial = 0;
+    return breaks;
+  }
 
-    // Encode c in UTF-8.
-    var bytesLeft;
-    if (c <= 0x7F) {
-      ret += str.charAt(i);
-      continue;
-    } else if (c <= 0x7FF) {
-      ret += String.fromCharCode(0xC0 | (c >>> 6));
-      bytesLeft = 1;
-    } else if (c <= 0xFFFF) {
-      ret += String.fromCharCode(0xE0 | (c >>> 12));
-      bytesLeft = 2;
-    } else /* if (c <= 0x10FFFF) */ {
-      ret += String.fromCharCode(0xF0 | (c >>> 18));
-      bytesLeft = 3;
+  class $SegmentIterator$ {
+    constructor(string, breaks) {
+      this._cur = -1;
+      this._type = undefined;
+      this._breaks = breaks;
     }
 
-    while (bytesLeft > 0) {
-      bytesLeft--;
-      ret += String.fromCharCode(0x80 | ((c >>> (6 * bytesLeft)) & 0x3F));
+    [Symbol.iterator]() { return this; }
+
+    next() {
+      if (this._cur < this._breaks.length)
+        ++this._cur;
+
+      if (this._cur >= this._breaks.length) {
+        this._type = undefined;
+        return {done: true, value: undefined};
+      }
+
+      this._type = this._breaks[this._cur].breakType;
+      return {
+        done: false,
+        value: {
+          segment: this._breaks[this._cur].segment,
+          breakType: this._breaks[this._cur].breakType
+        }
+      };
+    }
+
+    following(index = undefined) {
+      if (!this._breaks.length)
+        return true;
+      if (index === undefined) {
+        if (this._cur < this._breaks.length)
+          ++this._cur;
+      } else {
+        // TODO: binary search
+        for (this._cur = 0;
+             this._cur < this._breaks.length
+             && this._breaks[this._cur].pos < index;
+             ++this._cur) {}
+      }
+
+      this._type = this._cur < this._breaks.length
+        ? this._breaks[this._cur].breakType : undefined;
+      return this._cur + 1 >= this._breaks.length;
+    }
+
+    preceding(index = undefined) {
+      if (!this._breaks.length)
+        return true;
+      if (index === undefined) {
+        if (this._cur >= this._breaks.length)
+          --this._cur;
+        if (this._cur >= 0)
+          --this._cur;
+      } else {
+        // TODO: binary search
+        for (this._cur = this._breaks.length - 1;
+             this._cur >= 0
+             && this._breaks[this._cur].pos >= index;
+             --this._cur) {}
+      }
+
+      this._type =
+        this._cur + 1 >= this._breaks.length ? undefined :
+        this._breaks[this._cur + 1].breakType;
+      return this._cur < 0;
+    }
+
+    get position() {
+      if (this._cur < 0 || !this._breaks.length)
+        return this._breaks.initial;
+      if (this._cur >= this._breaks.length)
+        return this._breaks[this._breaks.length - 1].pos;
+      return this._breaks[this._cur].pos;
+    }
+
+    get breakType() {
+      return this._type;
     }
   }
-  return ret;
-};
+
+  global.Intl.Segmenter = class Segmenter {
+    constructor(locale, options) {
+      this._locale = Array.isArray(locale)
+        ? locale.map(s => String(s)) : String(locale || navigator.language);
+      options = Object.assign({granularity: 'grapheme'}, options);
+      this._granularity = GRANULARITIES.includes(options.granularity)
+        ? options.granularity : 'grapheme';
+    }
+
+    segment(string) {
+      return new $SegmentIterator$(
+        string, segment(this._locale, this._granularity, string));
+    }
+  };
+}(typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : this)));
 // SOURCE FILE: libdot/third_party/wcwidth/lib_wc.js
 // Copyright (c) 2014 The Chromium OS Authors. All rights reserved.
 // Use of lib.wc source code is governed by a BSD-style license that can be
@@ -4829,8 +3912,8 @@ lib.encodeUTF8 = function(str) {
  * This is an implementation of wcwidth() and wcswidth() (defined in
  * IEEE Std 1002.1-2001) for Unicode.
  *
- * http://www.opengroup.org/onlinepubs/007904975/functions/wcwidth.html
- * http://www.opengroup.org/onlinepubs/007904975/functions/wcswidth.html
+ * https://www.opengroup.org/onlinepubs/007904975/functions/wcwidth.html
+ * https://www.opengroup.org/onlinepubs/007904975/functions/wcswidth.html
  *
  * In fixed-width output devices, Latin characters all occupy a single
  * "cell" position of equal width, whereas ideographic CJK characters
@@ -4875,7 +3958,7 @@ lib.encodeUTF8 = function(str) {
  * but also of each presentation form, something the author of these
  * routines has avoided to do so far.
  *
- * http://www.unicode.org/unicode/reports/tr11/
+ * https://www.unicode.org/unicode/reports/tr11/
  *
  * Markus Kuhn -- 2007-05-26 (Unicode 5.0)
  *
@@ -4883,7 +3966,7 @@ lib.encodeUTF8 = function(str) {
  * for any purpose and without fee is hereby granted. The author
  * disclaims all warranties with regard to lib.wc software.
  *
- * Latest version: http://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c
+ * Latest version: https://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c
  */
 
 /**
@@ -4957,82 +4040,84 @@ lib.wc.combining = [
     [0x0d4d, 0x0d4d], [0x0d62, 0x0d63], [0x0dca, 0x0dca],
     [0x0dd2, 0x0dd4], [0x0dd6, 0x0dd6], [0x0e31, 0x0e31],
     [0x0e34, 0x0e3a], [0x0e47, 0x0e4e], [0x0eb1, 0x0eb1],
-    [0x0eb4, 0x0eb9], [0x0ebb, 0x0ebc], [0x0ec8, 0x0ecd],
-    [0x0f18, 0x0f19], [0x0f35, 0x0f35], [0x0f37, 0x0f37],
-    [0x0f39, 0x0f39], [0x0f71, 0x0f7e], [0x0f80, 0x0f84],
-    [0x0f86, 0x0f87], [0x0f8d, 0x0f97], [0x0f99, 0x0fbc],
-    [0x0fc6, 0x0fc6], [0x102d, 0x1030], [0x1032, 0x1037],
-    [0x1039, 0x103a], [0x103d, 0x103e], [0x1058, 0x1059],
-    [0x105e, 0x1060], [0x1071, 0x1074], [0x1082, 0x1082],
-    [0x1085, 0x1086], [0x108d, 0x108d], [0x109d, 0x109d],
-    [0x1160, 0x11ff], [0x135d, 0x135f], [0x1712, 0x1714],
-    [0x1732, 0x1734], [0x1752, 0x1753], [0x1772, 0x1773],
-    [0x17b4, 0x17b5], [0x17b7, 0x17bd], [0x17c6, 0x17c6],
-    [0x17c9, 0x17d3], [0x17dd, 0x17dd], [0x180b, 0x180e],
-    [0x1885, 0x1886], [0x18a9, 0x18a9], [0x1920, 0x1922],
-    [0x1927, 0x1928], [0x1932, 0x1932], [0x1939, 0x193b],
-    [0x1a17, 0x1a18], [0x1a1b, 0x1a1b], [0x1a56, 0x1a56],
-    [0x1a58, 0x1a5e], [0x1a60, 0x1a60], [0x1a62, 0x1a62],
-    [0x1a65, 0x1a6c], [0x1a73, 0x1a7c], [0x1a7f, 0x1a7f],
-    [0x1ab0, 0x1abe], [0x1b00, 0x1b03], [0x1b34, 0x1b34],
-    [0x1b36, 0x1b3a], [0x1b3c, 0x1b3c], [0x1b42, 0x1b42],
-    [0x1b6b, 0x1b73], [0x1b80, 0x1b81], [0x1ba2, 0x1ba5],
-    [0x1ba8, 0x1ba9], [0x1bab, 0x1bad], [0x1be6, 0x1be6],
-    [0x1be8, 0x1be9], [0x1bed, 0x1bed], [0x1bef, 0x1bf1],
-    [0x1c2c, 0x1c33], [0x1c36, 0x1c37], [0x1cd0, 0x1cd2],
-    [0x1cd4, 0x1ce0], [0x1ce2, 0x1ce8], [0x1ced, 0x1ced],
-    [0x1cf4, 0x1cf4], [0x1cf8, 0x1cf9], [0x1dc0, 0x1df9],
-    [0x1dfb, 0x1dff], [0x200b, 0x200f], [0x202a, 0x202e],
-    [0x2060, 0x2064], [0x2066, 0x206f], [0x20d0, 0x20f0],
-    [0x2cef, 0x2cf1], [0x2d7f, 0x2d7f], [0x2de0, 0x2dff],
-    [0x302a, 0x302d], [0x3099, 0x309a], [0xa66f, 0xa672],
-    [0xa674, 0xa67d], [0xa69e, 0xa69f], [0xa6f0, 0xa6f1],
-    [0xa802, 0xa802], [0xa806, 0xa806], [0xa80b, 0xa80b],
-    [0xa825, 0xa826], [0xa8c4, 0xa8c5], [0xa8e0, 0xa8f1],
-    [0xa8ff, 0xa8ff], [0xa926, 0xa92d], [0xa947, 0xa951],
-    [0xa980, 0xa982], [0xa9b3, 0xa9b3], [0xa9b6, 0xa9b9],
-    [0xa9bc, 0xa9bc], [0xa9e5, 0xa9e5], [0xaa29, 0xaa2e],
-    [0xaa31, 0xaa32], [0xaa35, 0xaa36], [0xaa43, 0xaa43],
-    [0xaa4c, 0xaa4c], [0xaa7c, 0xaa7c], [0xaab0, 0xaab0],
-    [0xaab2, 0xaab4], [0xaab7, 0xaab8], [0xaabe, 0xaabf],
-    [0xaac1, 0xaac1], [0xaaec, 0xaaed], [0xaaf6, 0xaaf6],
-    [0xabe5, 0xabe5], [0xabe8, 0xabe8], [0xabed, 0xabed],
-    [0xfb1e, 0xfb1e], [0xfe00, 0xfe0f], [0xfe20, 0xfe2f],
-    [0xfeff, 0xfeff], [0xfff9, 0xfffb], [0x101fd, 0x101fd],
-    [0x102e0, 0x102e0], [0x10376, 0x1037a], [0x10a01, 0x10a03],
-    [0x10a05, 0x10a06], [0x10a0c, 0x10a0f], [0x10a38, 0x10a3a],
-    [0x10a3f, 0x10a3f], [0x10ae5, 0x10ae6], [0x10d24, 0x10d27],
-    [0x10f46, 0x10f50], [0x11001, 0x11001], [0x11038, 0x11046],
-    [0x1107f, 0x11081], [0x110b3, 0x110b6], [0x110b9, 0x110ba],
-    [0x11100, 0x11102], [0x11127, 0x1112b], [0x1112d, 0x11134],
-    [0x11173, 0x11173], [0x11180, 0x11181], [0x111b6, 0x111be],
-    [0x111c9, 0x111cc], [0x1122f, 0x11231], [0x11234, 0x11234],
-    [0x11236, 0x11237], [0x1123e, 0x1123e], [0x112df, 0x112df],
-    [0x112e3, 0x112ea], [0x11300, 0x11301], [0x1133b, 0x1133c],
-    [0x11340, 0x11340], [0x11366, 0x1136c], [0x11370, 0x11374],
-    [0x11438, 0x1143f], [0x11442, 0x11444], [0x11446, 0x11446],
-    [0x1145e, 0x1145e], [0x114b3, 0x114b8], [0x114ba, 0x114ba],
-    [0x114bf, 0x114c0], [0x114c2, 0x114c3], [0x115b2, 0x115b5],
-    [0x115bc, 0x115bd], [0x115bf, 0x115c0], [0x115dc, 0x115dd],
-    [0x11633, 0x1163a], [0x1163d, 0x1163d], [0x1163f, 0x11640],
-    [0x116ab, 0x116ab], [0x116ad, 0x116ad], [0x116b0, 0x116b5],
-    [0x116b7, 0x116b7], [0x1171d, 0x1171f], [0x11722, 0x11725],
-    [0x11727, 0x1172b], [0x1182f, 0x11837], [0x11839, 0x1183a],
-    [0x11a01, 0x11a0a], [0x11a33, 0x11a38], [0x11a3b, 0x11a3e],
-    [0x11a47, 0x11a47], [0x11a51, 0x11a56], [0x11a59, 0x11a5b],
-    [0x11a8a, 0x11a96], [0x11a98, 0x11a99], [0x11c30, 0x11c36],
-    [0x11c38, 0x11c3d], [0x11c3f, 0x11c3f], [0x11c92, 0x11ca7],
-    [0x11caa, 0x11cb0], [0x11cb2, 0x11cb3], [0x11cb5, 0x11cb6],
-    [0x11d31, 0x11d36], [0x11d3a, 0x11d3a], [0x11d3c, 0x11d3d],
-    [0x11d3f, 0x11d45], [0x11d47, 0x11d47], [0x11d90, 0x11d91],
-    [0x11d95, 0x11d95], [0x11d97, 0x11d97], [0x11ef3, 0x11ef4],
-    [0x16af0, 0x16af4], [0x16b30, 0x16b36], [0x16f8f, 0x16f92],
-    [0x1bc9d, 0x1bc9e], [0x1bca0, 0x1bca3], [0x1d167, 0x1d169],
-    [0x1d173, 0x1d182], [0x1d185, 0x1d18b], [0x1d1aa, 0x1d1ad],
-    [0x1d242, 0x1d244], [0x1da00, 0x1da36], [0x1da3b, 0x1da6c],
-    [0x1da75, 0x1da75], [0x1da84, 0x1da84], [0x1da9b, 0x1da9f],
-    [0x1daa1, 0x1daaf], [0x1e000, 0x1e006], [0x1e008, 0x1e018],
-    [0x1e01b, 0x1e021], [0x1e023, 0x1e024], [0x1e026, 0x1e02a],
+    [0x0eb4, 0x0ebc], [0x0ec8, 0x0ecd], [0x0f18, 0x0f19],
+    [0x0f35, 0x0f35], [0x0f37, 0x0f37], [0x0f39, 0x0f39],
+    [0x0f71, 0x0f7e], [0x0f80, 0x0f84], [0x0f86, 0x0f87],
+    [0x0f8d, 0x0f97], [0x0f99, 0x0fbc], [0x0fc6, 0x0fc6],
+    [0x102d, 0x1030], [0x1032, 0x1037], [0x1039, 0x103a],
+    [0x103d, 0x103e], [0x1058, 0x1059], [0x105e, 0x1060],
+    [0x1071, 0x1074], [0x1082, 0x1082], [0x1085, 0x1086],
+    [0x108d, 0x108d], [0x109d, 0x109d], [0x1160, 0x11ff],
+    [0x135d, 0x135f], [0x1712, 0x1714], [0x1732, 0x1734],
+    [0x1752, 0x1753], [0x1772, 0x1773], [0x17b4, 0x17b5],
+    [0x17b7, 0x17bd], [0x17c6, 0x17c6], [0x17c9, 0x17d3],
+    [0x17dd, 0x17dd], [0x180b, 0x180e], [0x1885, 0x1886],
+    [0x18a9, 0x18a9], [0x1920, 0x1922], [0x1927, 0x1928],
+    [0x1932, 0x1932], [0x1939, 0x193b], [0x1a17, 0x1a18],
+    [0x1a1b, 0x1a1b], [0x1a56, 0x1a56], [0x1a58, 0x1a5e],
+    [0x1a60, 0x1a60], [0x1a62, 0x1a62], [0x1a65, 0x1a6c],
+    [0x1a73, 0x1a7c], [0x1a7f, 0x1a7f], [0x1ab0, 0x1abe],
+    [0x1b00, 0x1b03], [0x1b34, 0x1b34], [0x1b36, 0x1b3a],
+    [0x1b3c, 0x1b3c], [0x1b42, 0x1b42], [0x1b6b, 0x1b73],
+    [0x1b80, 0x1b81], [0x1ba2, 0x1ba5], [0x1ba8, 0x1ba9],
+    [0x1bab, 0x1bad], [0x1be6, 0x1be6], [0x1be8, 0x1be9],
+    [0x1bed, 0x1bed], [0x1bef, 0x1bf1], [0x1c2c, 0x1c33],
+    [0x1c36, 0x1c37], [0x1cd0, 0x1cd2], [0x1cd4, 0x1ce0],
+    [0x1ce2, 0x1ce8], [0x1ced, 0x1ced], [0x1cf4, 0x1cf4],
+    [0x1cf8, 0x1cf9], [0x1dc0, 0x1df9], [0x1dfb, 0x1dff],
+    [0x200b, 0x200f], [0x202a, 0x202e], [0x2060, 0x2064],
+    [0x2066, 0x206f], [0x20d0, 0x20f0], [0x2cef, 0x2cf1],
+    [0x2d7f, 0x2d7f], [0x2de0, 0x2dff], [0x302a, 0x302d],
+    [0x3099, 0x309a], [0xa66f, 0xa672], [0xa674, 0xa67d],
+    [0xa69e, 0xa69f], [0xa6f0, 0xa6f1], [0xa802, 0xa802],
+    [0xa806, 0xa806], [0xa80b, 0xa80b], [0xa825, 0xa826],
+    [0xa8c4, 0xa8c5], [0xa8e0, 0xa8f1], [0xa8ff, 0xa8ff],
+    [0xa926, 0xa92d], [0xa947, 0xa951], [0xa980, 0xa982],
+    [0xa9b3, 0xa9b3], [0xa9b6, 0xa9b9], [0xa9bc, 0xa9bd],
+    [0xa9e5, 0xa9e5], [0xaa29, 0xaa2e], [0xaa31, 0xaa32],
+    [0xaa35, 0xaa36], [0xaa43, 0xaa43], [0xaa4c, 0xaa4c],
+    [0xaa7c, 0xaa7c], [0xaab0, 0xaab0], [0xaab2, 0xaab4],
+    [0xaab7, 0xaab8], [0xaabe, 0xaabf], [0xaac1, 0xaac1],
+    [0xaaec, 0xaaed], [0xaaf6, 0xaaf6], [0xabe5, 0xabe5],
+    [0xabe8, 0xabe8], [0xabed, 0xabed], [0xfb1e, 0xfb1e],
+    [0xfe00, 0xfe0f], [0xfe20, 0xfe2f], [0xfeff, 0xfeff],
+    [0xfff9, 0xfffb], [0x101fd, 0x101fd], [0x102e0, 0x102e0],
+    [0x10376, 0x1037a], [0x10a01, 0x10a03], [0x10a05, 0x10a06],
+    [0x10a0c, 0x10a0f], [0x10a38, 0x10a3a], [0x10a3f, 0x10a3f],
+    [0x10ae5, 0x10ae6], [0x10d24, 0x10d27], [0x10f46, 0x10f50],
+    [0x11001, 0x11001], [0x11038, 0x11046], [0x1107f, 0x11081],
+    [0x110b3, 0x110b6], [0x110b9, 0x110ba], [0x11100, 0x11102],
+    [0x11127, 0x1112b], [0x1112d, 0x11134], [0x11173, 0x11173],
+    [0x11180, 0x11181], [0x111b6, 0x111be], [0x111c9, 0x111cc],
+    [0x1122f, 0x11231], [0x11234, 0x11234], [0x11236, 0x11237],
+    [0x1123e, 0x1123e], [0x112df, 0x112df], [0x112e3, 0x112ea],
+    [0x11300, 0x11301], [0x1133b, 0x1133c], [0x11340, 0x11340],
+    [0x11366, 0x1136c], [0x11370, 0x11374], [0x11438, 0x1143f],
+    [0x11442, 0x11444], [0x11446, 0x11446], [0x1145e, 0x1145e],
+    [0x114b3, 0x114b8], [0x114ba, 0x114ba], [0x114bf, 0x114c0],
+    [0x114c2, 0x114c3], [0x115b2, 0x115b5], [0x115bc, 0x115bd],
+    [0x115bf, 0x115c0], [0x115dc, 0x115dd], [0x11633, 0x1163a],
+    [0x1163d, 0x1163d], [0x1163f, 0x11640], [0x116ab, 0x116ab],
+    [0x116ad, 0x116ad], [0x116b0, 0x116b5], [0x116b7, 0x116b7],
+    [0x1171d, 0x1171f], [0x11722, 0x11725], [0x11727, 0x1172b],
+    [0x1182f, 0x11837], [0x11839, 0x1183a], [0x119d4, 0x119d7],
+    [0x119da, 0x119db], [0x119e0, 0x119e0], [0x11a01, 0x11a0a],
+    [0x11a33, 0x11a38], [0x11a3b, 0x11a3e], [0x11a47, 0x11a47],
+    [0x11a51, 0x11a56], [0x11a59, 0x11a5b], [0x11a8a, 0x11a96],
+    [0x11a98, 0x11a99], [0x11c30, 0x11c36], [0x11c38, 0x11c3d],
+    [0x11c3f, 0x11c3f], [0x11c92, 0x11ca7], [0x11caa, 0x11cb0],
+    [0x11cb2, 0x11cb3], [0x11cb5, 0x11cb6], [0x11d31, 0x11d36],
+    [0x11d3a, 0x11d3a], [0x11d3c, 0x11d3d], [0x11d3f, 0x11d45],
+    [0x11d47, 0x11d47], [0x11d90, 0x11d91], [0x11d95, 0x11d95],
+    [0x11d97, 0x11d97], [0x11ef3, 0x11ef4], [0x13430, 0x13438],
+    [0x16af0, 0x16af4], [0x16b30, 0x16b36], [0x16f4f, 0x16f4f],
+    [0x16f8f, 0x16f92], [0x1bc9d, 0x1bc9e], [0x1bca0, 0x1bca3],
+    [0x1d167, 0x1d169], [0x1d173, 0x1d182], [0x1d185, 0x1d18b],
+    [0x1d1aa, 0x1d1ad], [0x1d242, 0x1d244], [0x1da00, 0x1da36],
+    [0x1da3b, 0x1da6c], [0x1da75, 0x1da75], [0x1da84, 0x1da84],
+    [0x1da9b, 0x1da9f], [0x1daa1, 0x1daaf], [0x1e000, 0x1e006],
+    [0x1e008, 0x1e018], [0x1e01b, 0x1e021], [0x1e023, 0x1e024],
+    [0x1e026, 0x1e02a], [0x1e130, 0x1e136], [0x1e2ec, 0x1e2ef],
     [0x1e8d0, 0x1e8d6], [0x1e944, 0x1e94a], [0xe0001, 0xe0001],
     [0xe0020, 0xe007f], [0xe0100, 0xe01ef],
 ];
@@ -5105,22 +4190,24 @@ lib.wc.ambiguous = [
     [0x3040, 0x4dbf], [0x4e00, 0xa4cf], [0xa960, 0xa97f],
     [0xac00, 0xd7a3], [0xe000, 0xfaff], [0xfe00, 0xfe19],
     [0xfe30, 0xfe6f], [0xff01, 0xff60], [0xffe0, 0xffe6],
-    [0xfffd, 0xfffd], [0x16fe0, 0x16fe1], [0x17000, 0x18aff],
-    [0x1b000, 0x1b12f], [0x1b170, 0x1b2ff], [0x1f004, 0x1f004],
-    [0x1f0cf, 0x1f0cf], [0x1f100, 0x1f10a], [0x1f110, 0x1f12d],
-    [0x1f130, 0x1f169], [0x1f170, 0x1f1ac], [0x1f200, 0x1f202],
-    [0x1f210, 0x1f23b], [0x1f240, 0x1f248], [0x1f250, 0x1f251],
-    [0x1f260, 0x1f265], [0x1f300, 0x1f320], [0x1f32d, 0x1f335],
-    [0x1f337, 0x1f37c], [0x1f37e, 0x1f393], [0x1f3a0, 0x1f3ca],
-    [0x1f3cf, 0x1f3d3], [0x1f3e0, 0x1f3f0], [0x1f3f4, 0x1f3f4],
-    [0x1f3f8, 0x1f43e], [0x1f440, 0x1f440], [0x1f442, 0x1f4fc],
-    [0x1f4ff, 0x1f53d], [0x1f54b, 0x1f54e], [0x1f550, 0x1f567],
-    [0x1f57a, 0x1f57a], [0x1f595, 0x1f596], [0x1f5a4, 0x1f5a4],
-    [0x1f5fb, 0x1f64f], [0x1f680, 0x1f6c5], [0x1f6cc, 0x1f6cc],
-    [0x1f6d0, 0x1f6d2], [0x1f6eb, 0x1f6ec], [0x1f6f4, 0x1f6f9],
-    [0x1f910, 0x1f93e], [0x1f940, 0x1f970], [0x1f973, 0x1f976],
-    [0x1f97a, 0x1f97a], [0x1f97c, 0x1f9a2], [0x1f9b0, 0x1f9b9],
-    [0x1f9c0, 0x1f9c2], [0x1f9d0, 0x1f9ff], [0x20000, 0x2fffd],
+    [0xfffd, 0xfffd], [0x16fe0, 0x16fe3], [0x17000, 0x18aff],
+    [0x1b000, 0x1b12f], [0x1b150, 0x1b152], [0x1b164, 0x1b167],
+    [0x1b170, 0x1b2ff], [0x1f004, 0x1f004], [0x1f0cf, 0x1f0cf],
+    [0x1f100, 0x1f10a], [0x1f110, 0x1f12d], [0x1f130, 0x1f169],
+    [0x1f170, 0x1f1ac], [0x1f200, 0x1f202], [0x1f210, 0x1f23b],
+    [0x1f240, 0x1f248], [0x1f250, 0x1f251], [0x1f260, 0x1f265],
+    [0x1f300, 0x1f320], [0x1f32d, 0x1f335], [0x1f337, 0x1f37c],
+    [0x1f37e, 0x1f393], [0x1f3a0, 0x1f3ca], [0x1f3cf, 0x1f3d3],
+    [0x1f3e0, 0x1f3f0], [0x1f3f4, 0x1f3f4], [0x1f3f8, 0x1f43e],
+    [0x1f440, 0x1f440], [0x1f442, 0x1f4fc], [0x1f4ff, 0x1f53d],
+    [0x1f54b, 0x1f54e], [0x1f550, 0x1f567], [0x1f57a, 0x1f57a],
+    [0x1f595, 0x1f596], [0x1f5a4, 0x1f5a4], [0x1f5fb, 0x1f64f],
+    [0x1f680, 0x1f6c5], [0x1f6cc, 0x1f6cc], [0x1f6d0, 0x1f6d2],
+    [0x1f6d5, 0x1f6d5], [0x1f6eb, 0x1f6ec], [0x1f6f4, 0x1f6fa],
+    [0x1f7e0, 0x1f7eb], [0x1f90d, 0x1f971], [0x1f973, 0x1f976],
+    [0x1f97a, 0x1f9a2], [0x1f9a5, 0x1f9aa], [0x1f9ae, 0x1f9ca],
+    [0x1f9cd, 0x1f9ff], [0x1fa70, 0x1fa73], [0x1fa78, 0x1fa7a],
+    [0x1fa80, 0x1fa82], [0x1fa90, 0x1fa95], [0x20000, 0x2fffd],
     [0x30000, 0x3fffd], [0xe0100, 0xe01ef], [0xf0000, 0xffffd],
     [0x100000, 0x10fffd],
 ];
@@ -5143,22 +4230,24 @@ lib.wc.unambiguous = [
     [0x2ff0, 0x303e], [0x3040, 0x3247], [0x3250, 0x4dbf],
     [0x4e00, 0xa4cf], [0xa960, 0xa97f], [0xac00, 0xd7a3],
     [0xf900, 0xfaff], [0xfe10, 0xfe19], [0xfe30, 0xfe6f],
-    [0xff01, 0xff60], [0xffe0, 0xffe6], [0x16fe0, 0x16fe1],
-    [0x17000, 0x18aff], [0x1b000, 0x1b12f], [0x1b170, 0x1b2ff],
-    [0x1f004, 0x1f004], [0x1f0cf, 0x1f0cf], [0x1f18e, 0x1f18e],
-    [0x1f191, 0x1f19a], [0x1f200, 0x1f202], [0x1f210, 0x1f23b],
-    [0x1f240, 0x1f248], [0x1f250, 0x1f251], [0x1f260, 0x1f265],
-    [0x1f300, 0x1f320], [0x1f32d, 0x1f335], [0x1f337, 0x1f37c],
-    [0x1f37e, 0x1f393], [0x1f3a0, 0x1f3ca], [0x1f3cf, 0x1f3d3],
-    [0x1f3e0, 0x1f3f0], [0x1f3f4, 0x1f3f4], [0x1f3f8, 0x1f43e],
-    [0x1f440, 0x1f440], [0x1f442, 0x1f4fc], [0x1f4ff, 0x1f53d],
-    [0x1f54b, 0x1f54e], [0x1f550, 0x1f567], [0x1f57a, 0x1f57a],
-    [0x1f595, 0x1f596], [0x1f5a4, 0x1f5a4], [0x1f5fb, 0x1f64f],
-    [0x1f680, 0x1f6c5], [0x1f6cc, 0x1f6cc], [0x1f6d0, 0x1f6d2],
-    [0x1f6eb, 0x1f6ec], [0x1f6f4, 0x1f6f9], [0x1f910, 0x1f93e],
-    [0x1f940, 0x1f970], [0x1f973, 0x1f976], [0x1f97a, 0x1f97a],
-    [0x1f97c, 0x1f9a2], [0x1f9b0, 0x1f9b9], [0x1f9c0, 0x1f9c2],
-    [0x1f9d0, 0x1f9ff], [0x20000, 0x2fffd], [0x30000, 0x3fffd],
+    [0xff01, 0xff60], [0xffe0, 0xffe6], [0x16fe0, 0x16fe3],
+    [0x17000, 0x18aff], [0x1b000, 0x1b12f], [0x1b150, 0x1b152],
+    [0x1b164, 0x1b167], [0x1b170, 0x1b2ff], [0x1f004, 0x1f004],
+    [0x1f0cf, 0x1f0cf], [0x1f18e, 0x1f18e], [0x1f191, 0x1f19a],
+    [0x1f200, 0x1f202], [0x1f210, 0x1f23b], [0x1f240, 0x1f248],
+    [0x1f250, 0x1f251], [0x1f260, 0x1f265], [0x1f300, 0x1f320],
+    [0x1f32d, 0x1f335], [0x1f337, 0x1f37c], [0x1f37e, 0x1f393],
+    [0x1f3a0, 0x1f3ca], [0x1f3cf, 0x1f3d3], [0x1f3e0, 0x1f3f0],
+    [0x1f3f4, 0x1f3f4], [0x1f3f8, 0x1f43e], [0x1f440, 0x1f440],
+    [0x1f442, 0x1f4fc], [0x1f4ff, 0x1f53d], [0x1f54b, 0x1f54e],
+    [0x1f550, 0x1f567], [0x1f57a, 0x1f57a], [0x1f595, 0x1f596],
+    [0x1f5a4, 0x1f5a4], [0x1f5fb, 0x1f64f], [0x1f680, 0x1f6c5],
+    [0x1f6cc, 0x1f6cc], [0x1f6d0, 0x1f6d2], [0x1f6d5, 0x1f6d5],
+    [0x1f6eb, 0x1f6ec], [0x1f6f4, 0x1f6fa], [0x1f7e0, 0x1f7eb],
+    [0x1f90d, 0x1f971], [0x1f973, 0x1f976], [0x1f97a, 0x1f9a2],
+    [0x1f9a5, 0x1f9aa], [0x1f9ae, 0x1f9ca], [0x1f9cd, 0x1f9ff],
+    [0x1fa70, 0x1fa73], [0x1fa78, 0x1fa7a], [0x1fa80, 0x1fa82],
+    [0x1fa90, 0x1fa95], [0x20000, 0x2fffd], [0x30000, 0x3fffd],
 ];
 
 /**
@@ -5352,291 +4441,17 @@ lib.wc.substring = function(str, start, end) {
   return lib.wc.substr(str, start, end - start);
 };
 lib.resource.add('libdot/changelog/version', 'text/plain',
-'2018-08-29'
+'2.0.0'
 );
 
 lib.resource.add('libdot/changelog/date', 'text/plain',
-'1.23'
+'2019-06-17'
 );
-
-// This file was generated by libdot/bin/concat.sh.
-// It has been marked read-only for your safety.  Rather than
-// edit it directly, please modify one of these source files.
-//
-// hterm/audio/bell.ogg
-// hterm/images/icon-96.png
-
-'use strict';
-
-lib.resource.add('hterm/audio/bell', 'audio/ogg;base64',
-'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' +
-'zinmkFLKMeUcUko5p5xTzjkIHYTKMQadgxAppRxTzinHHITMQeWcg9BBKAAAIMABACDAQig0ZEUA' +
-'ECcA4HAkz5M0SxQlSxNFzxRl1xNN15U0zTQ1UVRVyxNV1VRV2xZNVbYlTRNNTfRUVRNFVRVV05ZN' +
-'VbVtzzRl2VRV3RZV1bZl2xZ+V5Z13zNNWRZV1dZNVbV115Z9X9ZtXZg0zTQ1UVRVTRRV1VRV2zZV' +
-'17Y1UXRVUVVlWVRVWXZlWfdVV9Z9SxRV1VNN2RVVVbZV2fVtVZZ94XRVXVdl2fdVWRZ+W9eF4fZ9' +
-'4RhV1dZN19V1VZZ9YdZlYbd13yhpmmlqoqiqmiiqqqmqtm2qrq1bouiqoqrKsmeqrqzKsq+rrmzr' +
-'miiqrqiqsiyqqiyrsqz7qizrtqiquq3KsrCbrqvrtu8LwyzrunCqrq6rsuz7qizruq3rxnHrujB8' +
-'pinLpqvquqm6um7runHMtm0co6rqvirLwrDKsu/rui+0dSFRVXXdlF3jV2VZ921fd55b94WybTu/' +
-'rfvKceu60vg5z28cubZtHLNuG7+t+8bzKz9hOI6lZ5q2baqqrZuqq+uybivDrOtCUVV9XZVl3zdd' +
-'WRdu3zeOW9eNoqrquirLvrDKsjHcxm8cuzAcXds2jlvXnbKtC31jyPcJz2vbxnH7OuP2daOvDAnH' +
-'jwAAgAEHAIAAE8pAoSErAoA4AQAGIecUUxAqxSB0EFLqIKRUMQYhc05KxRyUUEpqIZTUKsYgVI5J' +
-'yJyTEkpoKZTSUgehpVBKa6GU1lJrsabUYu0gpBZKaS2U0lpqqcbUWowRYxAy56RkzkkJpbQWSmkt' +
-'c05K56CkDkJKpaQUS0otVsxJyaCj0kFIqaQSU0mptVBKa6WkFktKMbYUW24x1hxKaS2kEltJKcYU' +
-'U20txpojxiBkzknJnJMSSmktlNJa5ZiUDkJKmYOSSkqtlZJSzJyT0kFIqYOOSkkptpJKTKGU1kpK' +
-'sYVSWmwx1pxSbDWU0lpJKcaSSmwtxlpbTLV1EFoLpbQWSmmttVZraq3GUEprJaUYS0qxtRZrbjHm' +
-'GkppraQSW0mpxRZbji3GmlNrNabWam4x5hpbbT3WmnNKrdbUUo0txppjbb3VmnvvIKQWSmktlNJi' +
-'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' +
-'m2L/kruPM6Q7oz4tvDQy+bZ3HzOi+gNHA4DZEgA='
-);
-
-lib.resource.add('hterm/images/icon-96', 'image/png;base64',
-'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' +
-'YII='
-);
-
-lib.resource.add('hterm/concat/date', 'text/plain',
-'Wed, 10 Oct 2018 16:00:59 +0000'
-);
-
-lib.resource.add('hterm/changelog/version', 'text/plain',
-'2018-08-29'
-);
-
-lib.resource.add('hterm/changelog/date', 'text/plain',
-'1.81'
-);
-
-lib.resource.add('hterm/git/HEAD', 'text/plain',
-'991c7a29a9f287fbb760176cde72612cfa144d42'
-);
-
-// This file was generated by libdot/bin/concat.sh.
-// It has been marked read-only for your safety.  Rather than
-// edit it directly, please modify one of these source files.
-//
-// hterm/js/hterm.js
-// hterm/js/hterm_accessibility_reader.js
-// hterm/js/hterm_contextmenu.js
-// hterm/js/hterm_frame.js
-// hterm/js/hterm_keyboard.js
-// hterm/js/hterm_keyboard_bindings.js
-// hterm/js/hterm_keyboard_keymap.js
-// hterm/js/hterm_keyboard_keypattern.js
-// hterm/js/hterm_options.js
-// hterm/js/hterm_parser.js
-// hterm/js/hterm_parser_identifiers.js
-// hterm/js/hterm_preference_manager.js
-// hterm/js/hterm_pubsub.js
-// hterm/js/hterm_screen.js
-// hterm/js/hterm_scrollport.js
-// hterm/js/hterm_terminal.js
-// hterm/js/hterm_terminal_io.js
-// hterm/js/hterm_text_attributes.js
-// hterm/js/hterm_vt.js
-// hterm/js/hterm_vt_character_map.js
-// hterm/audio/bell.ogg
-// hterm/images/icon-96.png
-
-'use strict';
 
 // SOURCE FILE: hterm/js/hterm.js
 // Copyright (c) 2012 The Chromium OS Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-lib.rtdep('lib.Storage');
 
 /**
  * @fileoverview Declares the hterm.* namespace and some basic shared utilities
@@ -5687,15 +4502,6 @@ hterm.notifyCopyMessage = '\u2702';
  * be replaced by the terminal title.
  */
 hterm.desktopNotificationTitle = '\u266A %(title) \u266A';
-
-/**
- * List of known hterm test suites.
- *
- * A test harness should ensure that they all exist before running.
- */
-hterm.testDeps = ['hterm.AccessibilityReader.Tests', 'hterm.ScrollPort.Tests',
-                  'hterm.Screen.Tests', 'hterm.Terminal.Tests',
-                  'hterm.VT.Tests', 'hterm.VT.CannedTests'];
 
 /**
  * The hterm init function, registered with lib.registerInit().
@@ -5791,17 +4597,114 @@ hterm.getClientHeight = function(dom) {
 };
 
 /**
- * Copy the current selection to the system clipboard.
+ * Copy the specified text to the system clipboard.
  *
- * @param {HTMLDocument} The document with the selection to copy.
+ * We'll create selections on demand based on the content to copy.
+ *
+ * @param {HTMLDocument} document The document with the selection to copy.
+ * @param {string} str The string data to copy out.
  */
-hterm.copySelectionToClipboard = function(document) {
-  try {
-    document.execCommand('copy');
-  } catch (firefoxException) {
-    // Ignore this. FF throws an exception if there was an error, even though
-    // the spec says just return false.
-  }
+hterm.copySelectionToClipboard = function(document, str) {
+  // Request permission if need be.
+  const requestPermission = () => {
+    // Use the Permissions API if available.
+    if (navigator.permissions && navigator.permissions.query) {
+      return navigator.permissions.query({name: 'clipboard-write'})
+        .then((status) => {
+          const checkState = (resolve, reject) => {
+            switch (status.state) {
+              case 'granted':
+                return resolve();
+              case 'denied':
+                return reject();
+              default:
+                // Wait for the user to approve/disprove.
+                return new Promise((resolve, reject) => {
+                  status.onchange = () => checkState(resolve, reject);
+                });
+            }
+          };
+
+          return new Promise(checkState);
+        })
+        // If the platform doesn't support "clipboard-write", or is denied,
+        // we move on to the copying step anyways.
+        .catch(() => Promise.resolve());
+    } else {
+      // No permissions API, so resolve right away.
+      return Promise.resolve();
+    }
+  };
+
+  // Write to the clipboard.
+  const writeClipboard = () => {
+    // Use the Clipboard API if available.
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      // If this fails (perhaps due to focus changing windows), fallback to the
+      // legacy copy method.
+      return navigator.clipboard.writeText(str)
+        .catch(execCommand);
+    } else {
+      // No Clipboard API, so use the old execCommand style.
+      return execCommand();
+    }
+  };
+
+  // Write to the clipboard using the legacy execCommand method.
+  // TODO: Once we can rely on the Clipboard API everywhere, we can simplify
+  // this a lot by deleting the custom selection logic.
+  const execCommand = () => {
+    const copySource = document.createElement('pre');
+    copySource.id = 'hterm:copy-to-clipboard-source';
+    copySource.textContent = str;
+    copySource.style.cssText = (
+        '-webkit-user-select: text;' +
+        '-moz-user-select: text;' +
+        'position: absolute;' +
+        'top: -99px');
+
+    document.body.appendChild(copySource);
+
+    const selection = document.getSelection();
+    const anchorNode = selection.anchorNode;
+    const anchorOffset = selection.anchorOffset;
+    const focusNode = selection.focusNode;
+    const focusOffset = selection.focusOffset;
+
+    // FF sometimes throws NS_ERROR_FAILURE exceptions when we make this call.
+    // Catch it because a failure here leaks the copySource node.
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1178676
+    try {
+      selection.selectAllChildren(copySource);
+    } catch (ex) {}
+
+    try {
+      document.execCommand('copy');
+    } catch (firefoxException) {
+      // Ignore this. FF throws an exception if there was an error, even
+      // though the spec says just return false.
+    }
+
+    // IE doesn't support selection.extend.  This means that the selection won't
+    // return on IE.
+    if (selection.extend) {
+      // When running in the test harness, we won't have any related nodes.
+      if (anchorNode) {
+        selection.collapse(anchorNode, anchorOffset);
+      }
+      if (focusNode) {
+        selection.extend(focusNode, focusOffset);
+      }
+    }
+
+    copySource.parentNode.removeChild(copySource);
+
+    // Since execCommand is synchronous, resolve right away.
+    return Promise.resolve();
+  };
+
+  // Kick it all off!
+  return requestPermission().then(writeClipboard);
 };
 
 /**
@@ -5878,7 +4781,7 @@ hterm.openUrl = function(url) {
     // For Chrome v2 apps, we need to use this API to properly open windows.
     chrome.browser.openTab({'url': url});
   } else {
-    const win = window.open(url, '_blank');
+    const win = lib.f.openWindow(url, '_blank');
     win.focus();
   }
 };
@@ -6600,8 +5503,6 @@ hterm.ContextMenu.prototype.hide = function() {
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-lib.rtdep('lib.f');
-
 /**
  * First draft of the interface between the terminal and a third party dialog.
  *
@@ -6818,8 +5719,6 @@ hterm.Frame.prototype.show = function() {
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-lib.rtdep('hterm.Keyboard.KeyMap');
-
 /**
  * Keyboard handler.
  *
@@ -6920,11 +5819,6 @@ hterm.Keyboard = function(terminal) {
   this.backspaceSendsBackspace = false;
 
   /**
-   * The encoding method for data sent to the host.
-   */
-  this.characterEncoding = 'utf-8';
-
-  /**
    * Set whether the meta key sends a leading escape or not.
    */
   this.metaSendsEscape = true;
@@ -6999,7 +5893,7 @@ hterm.Keyboard.KeyActions = {
    * Call preventDefault and stopPropagation for this key event and nothing
    * else.
    */
-  CANCEL: lib.f.createEnum('CANCEL'),
+  CANCEL: Symbol('CANCEL'),
 
   /**
    * This performs the default terminal action for the key.  If used in the
@@ -7025,13 +5919,13 @@ hterm.Keyboard.KeyActions = {
    *  - If meta is down and configured to send an escape, '\x1b' will be sent
    *    before the normal action is performed.
    */
-  DEFAULT: lib.f.createEnum('DEFAULT'),
+  DEFAULT: Symbol('DEFAULT'),
 
   /**
    * Causes the terminal to opt out of handling the key event, instead letting
    * the browser deal with it.
    */
-  PASS: lib.f.createEnum('PASS'),
+  PASS: Symbol('PASS'),
 
   /**
    * Insert the first or second character of the keyCap, based on e.shiftKey.
@@ -7041,17 +5935,7 @@ hterm.Keyboard.KeyActions = {
    * It is useful for a modified key action, where it essentially strips the
    * modifier while preventing the browser from reacting to the key.
    */
-  STRIP: lib.f.createEnum('STRIP')
-};
-
-/**
- * Encode a string according to the 'send-encoding' preference.
- */
-hterm.Keyboard.prototype.encode = function(str) {
-  if (this.characterEncoding == 'utf-8')
-    return this.terminal.vt.encodeUTF8(str);
-
-  return str;
+  STRIP: Symbol('STRIP')
 };
 
 /**
@@ -7110,13 +5994,14 @@ hterm.Keyboard.prototype.onTextInput_ = function(e) {
 
 /**
  * Handle onKeyPress events.
+ *
+ * TODO(vapier): Drop this event entirely and only use keydown.
  */
 hterm.Keyboard.prototype.onKeyPress_ = function(e) {
-  var code;
-
-  var key = String.fromCharCode(e.which);
-  var lowerKey = key.toLowerCase();
-  if ((e.ctrlKey || e.metaKey) && (lowerKey == 'c' || lowerKey == 'v')) {
+  // FF doesn't set keyCode reliably in keypress events.  Stick to the which
+  // field here until we can move to keydown entirely.
+  const key = String.fromCharCode(e.which).toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && (key == 'c' || key == 'v')) {
     // On FF the key press (not key down) event gets fired for copy/paste.
     // Let it fall through for the default browser behavior.
     return;
@@ -7141,7 +6026,6 @@ hterm.Keyboard.prototype.onKeyPress_ = function(e) {
     var ch = String.fromCharCode(e.keyCode);
     if (!e.shiftKey)
       ch = ch.toLowerCase();
-    code = ch.charCodeAt(0) + 128;
 
   } else if (e.charCode >= 32) {
     ch = e.charCode;
@@ -7352,7 +6236,8 @@ hterm.Keyboard.prototype.onKeyDown_ = function(e) {
     meta = false;
   }
 
-  if (action.substr(0, 2) == '\x1b[' && (alt || control || shift || meta)) {
+  if (typeof action == 'string' && action.substr(0, 2) == '\x1b[' &&
+      (alt || control || shift || meta)) {
     // The action is an escape sequence that and it was triggered in the
     // presence of a keyboard modifier, we may need to alter the action to
     // include the modifier before sending it.
@@ -7585,8 +6470,6 @@ hterm.Keyboard.Bindings.prototype.getBinding = function(keyDown) {
 // Copyright (c) 2012 The Chromium OS Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-lib.rtdep('hterm.Keyboard.KeyActions');
 
 /**
  * The default key map for hterm.
@@ -7867,7 +6750,11 @@ hterm.Keyboard.KeyMap.prototype.reset = function() {
     [221, ']}',    DEFAULT,             ctl(']'),  DEFAULT, DEFAULT],
     [220, '\\|',   DEFAULT,             ctl('\\'), DEFAULT, DEFAULT],
 
-    // Fourth row. (We let Ctrl-Shift-J pass for Chrome DevTools.)
+    // Fourth row. We let Ctrl-Shift-J pass for Chrome DevTools.
+    // To be compliant with xterm's behavior for modifiers on Enter
+    // would mean maximizing the window with Alt-Enter... so we don't
+    // want to do that. Our behavior on Enter is what most other
+    // modern emulators do.
     [20,  '[CAPS]',  PASS,    PASS,                           PASS,    DEFAULT],
     [65,  'aA',      DEFAULT, ctl('A'),                       DEFAULT, DEFAULT],
     [83,  'sS',      DEFAULT, ctl('S'),                       DEFAULT, DEFAULT],
@@ -7880,7 +6767,7 @@ hterm.Keyboard.KeyMap.prototype.reset = function() {
     [76,  'lL',      DEFAULT, sh(ctl('L'), PASS),             DEFAULT, DEFAULT],
     [keycapSC, ';:', DEFAULT, STRIP,                          DEFAULT, DEFAULT],
     [222, '\'"',     DEFAULT, STRIP,                          DEFAULT, DEFAULT],
-    [13,  '[ENTER]', '\r',    CANCEL,                         CANCEL,  DEFAULT],
+    [13,  '[ENTER]', '\r',    DEFAULT,                        DEFAULT, DEFAULT],
 
     // Fifth row.  This includes the copy/paste shortcuts.  On some
     // platforms it's Ctrl-C/V, on others it's Meta-C/V.  We assume either
@@ -8203,10 +7090,10 @@ hterm.Keyboard.KeyMap.prototype.onCtrlC_ = function(e, keyDef) {
  */
 hterm.Keyboard.KeyMap.prototype.onCtrlN_ = function(e, keyDef) {
   if (e.shiftKey) {
-    window.open(document.location.href, '',
-                'chrome=no,close=yes,resize=yes,scrollbars=yes,' +
-                'minimizable=yes,width=' + window.innerWidth +
-                ',height=' + window.innerHeight);
+    lib.f.openWindow(document.location.href, '',
+                     'chrome=no,close=yes,resize=yes,scrollbars=yes,' +
+                     'minimizable=yes,width=' + window.innerWidth +
+                     ',height=' + window.innerHeight);
     return hterm.Keyboard.KeyActions.CANCEL;
   }
 
@@ -8242,10 +7129,10 @@ hterm.Keyboard.KeyMap.prototype.onCtrlV_ = function(e, keyDef) {
  */
 hterm.Keyboard.KeyMap.prototype.onMetaN_ = function(e, keyDef) {
   if (e.shiftKey) {
-    window.open(document.location.href, '',
-                'chrome=no,close=yes,resize=yes,scrollbars=yes,' +
-                'minimizable=yes,width=' + window.outerWidth +
-                ',height=' + window.outerHeight);
+    lib.f.openWindow(document.location.href, '',
+                     'chrome=no,close=yes,resize=yes,scrollbars=yes,' +
+                     'minimizable=yes,width=' + window.outerWidth +
+                     ',height=' + window.outerHeight);
     return hterm.Keyboard.KeyActions.CANCEL;
   }
 
@@ -8479,8 +7366,6 @@ hterm.Options = function(opt_copy) {
 // Copyright (c) 2015 The Chromium OS Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-lib.rtdep('hterm.Keyboard.KeyActions');
 
 /**
  * @constructor
@@ -9120,8 +8005,6 @@ hterm.Parser.identifiers.actions = {
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-lib.rtdep('lib.f', 'lib.Storage');
-
 /**
  * PreferenceManager subclass managing global NaSSH preferences.
  *
@@ -9130,10 +8013,10 @@ lib.rtdep('lib.f', 'lib.Storage');
 hterm.PreferenceManager = function(profileId) {
   lib.PreferenceManager.call(this, hterm.defaultStorage,
                              hterm.PreferenceManager.prefix_ + profileId);
-  var defs = hterm.PreferenceManager.defaultPreferences;
-  Object.keys(defs).forEach(function(key) {
-    this.definePreference(key, defs[key][1]);
-  }.bind(this));
+  Object.entries(hterm.PreferenceManager.defaultPreferences).forEach(
+      ([key, entry]) => {
+        this.definePreference(key, entry['default']);
+      });
 };
 
 /**
@@ -9193,470 +8076,684 @@ hterm.PreferenceManager.categoryDefinitions = [
     text: 'Miscellaneous'}
 ];
 
+/**
+ * Internal helper to create a default preference object.
+ *
+ * @param {hterm.PreferenceManager.categories} category The pref category.
+ * @param {string} name The user readable name/title.
+ * @param {Object} defaultValue The default pref value.
+ * @param {Object} type The type for this pref (or an array for enums).
+ * @param {string} help The user readable help text.
+ * @return {Object} The default pref object.
+ */
+hterm.PreferenceManager.definePref_ = function(
+    name, category, defaultValue, type, help) {
+  return {
+    'name': name,
+    'category': category,
+    'default': defaultValue,
+    'type': type,
+    'help': help,
+  };
+};
 
 hterm.PreferenceManager.defaultPreferences = {
-  'alt-gr-mode':
-  [hterm.PreferenceManager.categories.Keyboard, null,
-   [null, 'none', 'ctrl-alt', 'left-alt', 'right-alt'],
-   'Select an AltGr detection heuristic.\n' +
-   '\n' +
-   '\'null\': Autodetect based on navigator.language:\n' +
-   '      \'en-us\' => \'none\', else => \'right-alt\'\n' +
-   '\'none\': Disable any AltGr related munging.\n' +
-   '\'ctrl-alt\': Assume Ctrl+Alt means AltGr.\n' +
-   '\'left-alt\': Assume left Alt means AltGr.\n' +
-   '\'right-alt\': Assume right Alt means AltGr.'],
+  'alt-gr-mode': hterm.PreferenceManager.definePref_(
+      'AltGr key mode',
+      hterm.PreferenceManager.categories.Keyboard,
+      null, [null, 'none', 'ctrl-alt', 'left-alt', 'right-alt'],
+      `Select an AltGr detection heuristic.\n` +
+      `\n` +
+      `'null': Autodetect based on navigator.language:\n` +
+      `      'en-us' => 'none', else => 'right-alt'\n` +
+      `'none': Disable any AltGr related munging.\n` +
+      `'ctrl-alt': Assume Ctrl+Alt means AltGr.\n` +
+      `'left-alt': Assume left Alt means AltGr.\n` +
+      `'right-alt': Assume right Alt means AltGr.`
+  ),
 
-  'alt-backspace-is-meta-backspace':
-  [hterm.PreferenceManager.categories.Keyboard, false, 'bool',
-   'If set, undoes the Chrome OS Alt-Backspace->DEL remap, so that ' +
-   'Alt-Backspace indeed is Alt-Backspace.'],
+  'alt-backspace-is-meta-backspace': hterm.PreferenceManager.definePref_(
+      'Alt-Backspace is Meta-Backspace',
+      hterm.PreferenceManager.categories.Keyboard,
+      false, 'bool',
+      `If set, undoes the Chrome OS Alt-Backspace->DEL remap, so that ` +
+      `Alt-Backspace indeed is Alt-Backspace.`
+  ),
 
-  'alt-is-meta':
-  [hterm.PreferenceManager.categories.Keyboard, false, 'bool',
-   'Whether the Alt key acts as a Meta key or as a distinct Alt key.'],
+  'alt-is-meta': hterm.PreferenceManager.definePref_(
+      'Treat Alt key as Meta key',
+      hterm.PreferenceManager.categories.Keyboard,
+      false, 'bool',
+      `Whether the Alt key acts as a Meta key or as a distinct Alt key.`
+  ),
 
-  'alt-sends-what':
-  [hterm.PreferenceManager.categories.Keyboard, 'escape',
-   ['escape', '8-bit', 'browser-key'],
-   'Controls how the Alt key is handled.\n' +
-   '\n' +
-   '  escape: Send an ESC prefix.\n' +
-   '  8-bit: Add 128 to the typed character as in xterm.\n' +
-   '  browser-key: Wait for the keypress event and see what the browser\n' +
-   '    says. (This won\'t work well on platforms where the browser\n' +
-   '    performs a default action for some Alt sequences.)'
-  ],
+  'alt-sends-what': hterm.PreferenceManager.definePref_(
+      'Alt key modifier handling',
+      hterm.PreferenceManager.categories.Keyboard,
+      'escape', ['escape', '8-bit', 'browser-key'],
+      `Controls how the Alt key is handled.\n` +
+      `\n` +
+      `  escape: Send an ESC prefix.\n` +
+      `  8-bit: Add 128 to the typed character as in xterm.\n` +
+      `  browser-key: Wait for the keypress event and see what the browser\n` +
+      `    says. (This won't work well on platforms where the browser\n` +
+      `    performs a default action for some Alt sequences.)`
+  ),
 
-  'audible-bell-sound':
-  [hterm.PreferenceManager.categories.Sounds, 'lib-resource:hterm/audio/bell',
-   'url',
-   'URL of the terminal bell sound. Empty string for no audible bell.'],
+  'audible-bell-sound': hterm.PreferenceManager.definePref_(
+      'Alert bell sound (URI)',
+      hterm.PreferenceManager.categories.Sounds,
+      'lib-resource:hterm/audio/bell', 'url',
+      `URL of the terminal bell sound. Empty string for no audible bell.`
+  ),
 
-  'desktop-notification-bell':
-  [hterm.PreferenceManager.categories.Sounds, false, 'bool',
-   'If true, terminal bells in the background will create a Web ' +
-   'Notification. https://www.w3.org/TR/notifications/\n' +
-   '\n'+
-   'Displaying notifications requires permission from the user. When this ' +
-   'option is set to true, hterm will attempt to ask the user for permission ' +
-   'if necessary. Browsers may not show this permission request if it was ' +
-   'not triggered by a user action.\n' +
-   '\n' +
-   'Chrome extensions with the "notifications" permission have permission to ' +
-   'display notifications.'],
+  'desktop-notification-bell': hterm.PreferenceManager.definePref_(
+      'Create desktop notifications for alert bells',
+      hterm.PreferenceManager.categories.Sounds,
+      false, 'bool',
+      `If true, terminal bells in the background will create a Web ` +
+      `Notification. https://www.w3.org/TR/notifications/\n` +
+      `\n` +
+      `Displaying notifications requires permission from the user. When this ` +
+      `option is set to true, hterm will attempt to ask the user for ` +
+      `permission if necessary. Browsers may not show this permission ` +
+      `request if it was not triggered by a user action.\n` +
+      `\n` +
+      `Chrome extensions with the "notifications" permission have permission ` +
+      `to display notifications.`
+  ),
 
-  'background-color':
-  [hterm.PreferenceManager.categories.Appearance, 'rgb(16, 16, 16)', 'color',
-   'The background color for text with no other color attributes.'],
+  'background-color': hterm.PreferenceManager.definePref_(
+      'Background color',
+      hterm.PreferenceManager.categories.Appearance,
+      'rgb(16, 16, 16)', 'color',
+      `The background color for text with no other color attributes.`
+  ),
 
-  'background-image':
-  [hterm.PreferenceManager.categories.Appearance, '', 'string',
-   'CSS value of the background image. Empty string for no image.\n' +
-   '\n' +
-   'For example:\n' +
-   '  url(https://goo.gl/anedTK)\n' +
-   '  linear-gradient(top bottom, blue, red)'],
+  'background-image': hterm.PreferenceManager.definePref_(
+      'Background image',
+      hterm.PreferenceManager.categories.Appearance,
+      '', 'string',
+      `CSS value of the background image. Empty string for no image.\n` +
+      `\n` +
+      `For example:\n` +
+      `  url(https://goo.gl/anedTK)\n` +
+      `  linear-gradient(top bottom, blue, red)`
+  ),
 
-  'background-size':
-  [hterm.PreferenceManager.categories.Appearance, '', 'string',
-   'CSS value of the background image size.'],
+  'background-size': hterm.PreferenceManager.definePref_(
+      'Background image size',
+      hterm.PreferenceManager.categories.Appearance,
+      '', 'string',
+      `CSS value of the background image size.`
+  ),
 
-  'background-position':
-  [hterm.PreferenceManager.categories.Appearance, '', 'string',
-   'CSS value of the background image position.\n' +
-   '\n' +
-   'For example:\n' +
-   '  10% 10%\n' +
-   '  center'],
+  'background-position': hterm.PreferenceManager.definePref_(
+      'Background image position',
+      hterm.PreferenceManager.categories.Appearance,
+      '', 'string',
+      `CSS value of the background image position.\n` +
+      `\n` +
+      `For example:\n` +
+      `  10% 10%\n` +
+      `  center`
+  ),
 
-  'backspace-sends-backspace':
-  [hterm.PreferenceManager.categories.Keyboard, false, 'bool',
-   'If true, the backspace should send BS (\'\\x08\', aka ^H). Otherwise ' +
-   'the backspace key should send \'\\x7f\'.'],
+  'backspace-sends-backspace': hterm.PreferenceManager.definePref_(
+      'Backspace key behavior',
+      hterm.PreferenceManager.categories.Keyboard,
+      false, 'bool',
+      `If true, the backspace should send BS ('\\x08', aka ^H). Otherwise ` +
+      `the backspace key should send '\\x7f'.`
+  ),
 
-  'character-map-overrides':
-  [hterm.PreferenceManager.categories.Appearance, null, 'value',
-    'This is specified as an object. It is a sparse array, where each '  +
-    'property is the character set code and the value is an object that is ' +
-    'a sparse array itself. In that sparse array, each property is the ' +
-    'received character and the value is the displayed character.\n' +
-    '\n' +
-    'For example:\n' +
-    '  {"0":{"+":"\\u2192",",":"\\u2190","-":"\\u2191",".":"\\u2193", ' +
-    '"0":"\\u2588"}}'
-  ],
+  'character-map-overrides': hterm.PreferenceManager.definePref_(
+      'Character map overrides',
+      hterm.PreferenceManager.categories.Appearance,
+      null, 'value',
+      `This is specified as an object. It is a sparse array, where each ` +
+      `property is the character set code and the value is an object that is ` +
+      `a sparse array itself. In that sparse array, each property is the ` +
+      `received character and the value is the displayed character.\n` +
+      `\n` +
+      `For example:\n` +
+      `  {"0":{"+":"\\u2192",",":"\\u2190","-":"\\u2191",".":"\\u2193", ` +
+      `"0":"\\u2588"}}`
+  ),
 
-  'close-on-exit':
-  [hterm.PreferenceManager.categories.Miscellaneous, true, 'bool',
-   'Whether to close the window when the command finishes executing.'],
+  'close-on-exit': hterm.PreferenceManager.definePref_(
+      'Close window on exit',
+      hterm.PreferenceManager.categories.Miscellaneous,
+      true, 'bool',
+      `Whether to close the window when the command finishes executing.`
+  ),
 
-  'cursor-blink':
-  [hterm.PreferenceManager.categories.Appearance, false, 'bool',
-   'Whether the text cursor blinks by default. This can be toggled at ' +
-   'runtime via terminal escape sequences.'],
+  'cursor-blink': hterm.PreferenceManager.definePref_(
+      'Cursor blink',
+      hterm.PreferenceManager.categories.Appearance,
+      false, 'bool',
+      `Whether the text cursor blinks by default. This can be toggled at ` +
+      `runtime via terminal escape sequences.`
+  ),
 
-  'cursor-blink-cycle':
-  [hterm.PreferenceManager.categories.Appearance, [1000, 500], 'value',
-   'The text cursor blink rate in milliseconds.\n' +
-   '\n' +
-   'A two element array, the first of which is how long the text cursor ' +
-   'should be on, second is how long it should be off.'],
+  'cursor-blink-cycle': hterm.PreferenceManager.definePref_(
+      'Cursor blink rate',
+      hterm.PreferenceManager.categories.Appearance,
+      [1000, 500], 'value',
+      `The text cursor blink rate in milliseconds.\n` +
+      `\n` +
+      `A two element array, the first of which is how long the text cursor ` +
+      `should be on, second is how long it should be off.`
+  ),
 
-  'cursor-color':
-  [hterm.PreferenceManager.categories.Appearance, 'rgba(255, 0, 0, 0.5)',
-   'color',
-   'The color of the visible text cursor.'],
+  'cursor-shape': hterm.PreferenceManager.definePref_(
+      'Text cursor shape',
+      hterm.PreferenceManager.categories.Appearance,
+      'BLOCK', ['BLOCK', 'BEAM', 'UNDERLINE'],
+      `The shape of the visible text cursor. This can be toggled at ` +
+      `runtime via terminal escape sequences.`
+  ),
 
-  'color-palette-overrides':
-  [hterm.PreferenceManager.categories.Appearance, null, 'value',
-   'Override colors in the default palette.\n' +
-   '\n' +
-   'This can be specified as an array or an object. If specified as an ' +
-   'object it is assumed to be a sparse array, where each property ' +
-   'is a numeric index into the color palette.\n' +
-   '\n' +
-   'Values can be specified as almost any CSS color value. This ' +
-   'includes #RGB, #RRGGBB, rgb(...), rgba(...), and any color names ' +
-   'that are also part of the standard X11 rgb.txt file.\n' +
-   '\n' +
-   'You can use \'null\' to specify that the default value should be not ' +
-   'be changed. This is useful for skipping a small number of indices ' +
-   'when the value is specified as an array.\n' +
-   '\n' +
-   'For example, these both set color index 1 to blue:\n' +
-   '  {1: "#0000ff"}\n' +
-   '  [null, "#0000ff"]'],
+  'cursor-color': hterm.PreferenceManager.definePref_(
+      'Text cursor color',
+      hterm.PreferenceManager.categories.Appearance,
+      'rgba(255, 0, 0, 0.5)', 'color',
+      `The color of the visible text cursor.`
+  ),
 
-  'copy-on-select':
-  [hterm.PreferenceManager.categories.CopyPaste, true, 'bool',
-   'Automatically copy mouse selection to the clipboard.'],
+  'color-palette-overrides': hterm.PreferenceManager.definePref_(
+      'Initial color palette',
+      hterm.PreferenceManager.categories.Appearance,
+      null, 'value',
+      `Override colors in the default palette.\n` +
+      `\n` +
+      `This can be specified as an array or an object. If specified as an ` +
+      `object it is assumed to be a sparse array, where each property ` +
+      `is a numeric index into the color palette.\n` +
+      `\n` +
+      `Values can be specified as almost any CSS color value. This ` +
+      `includes #RGB, #RRGGBB, rgb(...), rgba(...), and any color names ` +
+      `that are also part of the standard X11 rgb.txt file.\n` +
+      `\n` +
+      `You can use 'null' to specify that the default value should be not ` +
+      `be changed. This is useful for skipping a small number of indices ` +
+      `when the value is specified as an array.\n` +
+      `\n` +
+      `For example, these both set color index 1 to blue:\n` +
+      `  {1: "#0000ff"}\n` +
+      `  [null, "#0000ff"]`
+  ),
 
-  'use-default-window-copy':
-  [hterm.PreferenceManager.categories.CopyPaste, false, 'bool',
-   'Whether to use the default browser/OS\'s copy behavior.\n' +
-   '\n' +
-   'Allow the browser/OS to handle the copy event directly which might ' +
-   'improve compatibility with some systems (where copying doesn\'t work ' +
-   'at all), but makes the text selection less robust.\n' +
-   '\n' +
-   'For example, long lines that were automatically line wrapped will ' +
-   'be copied with the newlines still in them.'],
+  'copy-on-select': hterm.PreferenceManager.definePref_(
+      'Automatically copy selected content',
+      hterm.PreferenceManager.categories.CopyPaste,
+      true, 'bool',
+      `Automatically copy mouse selection to the clipboard.`
+  ),
 
-  'clear-selection-after-copy':
-  [hterm.PreferenceManager.categories.CopyPaste, true, 'bool',
-   'Whether to clear the selection after copying.'],
+  'use-default-window-copy': hterm.PreferenceManager.definePref_(
+      'Let the browser handle text copying',
+      hterm.PreferenceManager.categories.CopyPaste,
+      false, 'bool',
+      `Whether to use the default browser/OS's copy behavior.\n` +
+      `\n` +
+      `Allow the browser/OS to handle the copy event directly which might ` +
+      `improve compatibility with some systems (where copying doesn't work ` +
+      `at all), but makes the text selection less robust.\n` +
+      `\n` +
+      `For example, long lines that were automatically line wrapped will ` +
+      `be copied with the newlines still in them.`
+  ),
 
-  'ctrl-plus-minus-zero-zoom':
-  [hterm.PreferenceManager.categories.Keyboard, true, 'bool',
-   'If true, Ctrl-Plus/Minus/Zero controls zoom.\n' +
-   'If false, Ctrl-Shift-Plus/Minus/Zero controls zoom, Ctrl-Minus sends ^_, ' +
-   'Ctrl-Plus/Zero do nothing.'],
+  'clear-selection-after-copy': hterm.PreferenceManager.definePref_(
+      'Automatically clear text selection',
+      hterm.PreferenceManager.categories.CopyPaste,
+      true, 'bool',
+      `Whether to clear the selection after copying.`
+  ),
 
-  'ctrl-c-copy':
-  [hterm.PreferenceManager.categories.Keyboard, false, 'bool',
-   'Ctrl-C copies if true, send ^C to host if false.\n' +
-   'Ctrl-Shift-C sends ^C to host if true, copies if false.'],
+  'ctrl-plus-minus-zero-zoom': hterm.PreferenceManager.definePref_(
+      'Ctrl-+/-/0 zoom behavior',
+      hterm.PreferenceManager.categories.Keyboard,
+      true, 'bool',
+      `If true, Ctrl-Plus/Minus/Zero controls zoom.\n` +
+      `If false, Ctrl-Shift-Plus/Minus/Zero controls zoom, Ctrl-Minus sends ` +
+      `^_, Ctrl-Plus/Zero do nothing.`
+  ),
 
-  'ctrl-v-paste':
-  [hterm.PreferenceManager.categories.Keyboard, false, 'bool',
-   'Ctrl-V pastes if true, send ^V to host if false.\n' +
-   'Ctrl-Shift-V sends ^V to host if true, pastes if false.'],
+  'ctrl-c-copy': hterm.PreferenceManager.definePref_(
+      'Ctrl-C copy behavior',
+      hterm.PreferenceManager.categories.Keyboard,
+      false, 'bool',
+      `Ctrl-C copies if true, send ^C to host if false.\n` +
+      `Ctrl-Shift-C sends ^C to host if true, copies if false.`
+  ),
 
-  'east-asian-ambiguous-as-two-column':
-  [hterm.PreferenceManager.categories.Keyboard, false, 'bool',
-   'Whether East Asian Ambiguous characters have two column width.'],
+  'ctrl-v-paste': hterm.PreferenceManager.definePref_(
+      'Ctrl-V paste behavior',
+      hterm.PreferenceManager.categories.Keyboard,
+      false, 'bool',
+      `Ctrl-V pastes if true, send ^V to host if false.\n` +
+      `Ctrl-Shift-V sends ^V to host if true, pastes if false.`
+  ),
 
-  'enable-8-bit-control':
-  [hterm.PreferenceManager.categories.Keyboard, false, 'bool',
-   'True to enable 8-bit control characters, false to ignore them.\n' +
-   '\n' +
-   'We\'ll respect the two-byte versions of these control characters ' +
-   'regardless of this setting.'],
+  'east-asian-ambiguous-as-two-column': hterm.PreferenceManager.definePref_(
+      'East Asian Ambiguous use two columns',
+      hterm.PreferenceManager.categories.Keyboard,
+      false, 'bool',
+      `Whether East Asian Ambiguous characters have two column width.`
+  ),
 
-  'enable-bold':
-  [hterm.PreferenceManager.categories.Appearance, null, 'tristate',
-   'If true, use bold weight font for text with the bold/bright attribute. ' +
-   'False to use the normal weight font. Null to autodetect.'],
+  'enable-8-bit-control': hterm.PreferenceManager.definePref_(
+      'Support non-UTF-8 C1 control characters',
+      hterm.PreferenceManager.categories.Keyboard,
+      false, 'bool',
+      `True to enable 8-bit control characters, false to ignore them.\n` +
+      `\n` +
+      `We'll respect the two-byte versions of these control characters ` +
+      `regardless of this setting.`
+  ),
 
-  'enable-bold-as-bright':
-  [hterm.PreferenceManager.categories.Appearance, true, 'bool',
-   'If true, use bright colors (8-15 on a 16 color palette) for any text ' +
-   'with the bold attribute. False otherwise.'],
+  'enable-bold': hterm.PreferenceManager.definePref_(
+      'Bold text behavior',
+      hterm.PreferenceManager.categories.Appearance,
+      null, 'tristate',
+      `If true, use bold weight font for text with the bold/bright ` +
+      `attribute. False to use the normal weight font. Null to autodetect.`
+  ),
 
-  'enable-blink':
-  [hterm.PreferenceManager.categories.Appearance, true, 'bool',
-   'If true, respect the blink attribute. False to ignore it.'],
+  'enable-bold-as-bright': hterm.PreferenceManager.definePref_(
+      'Use bright colors with bold text',
+      hterm.PreferenceManager.categories.Appearance,
+      true, 'bool',
+      `If true, use bright colors (8-15 on a 16 color palette) for any text ` +
+      `with the bold attribute. False otherwise.`
+  ),
 
-  'enable-clipboard-notice':
-  [hterm.PreferenceManager.categories.CopyPaste, true, 'bool',
-   'Whether to show a message in the terminal when the host writes to the ' +
-   'clipboard.'],
+  'enable-blink': hterm.PreferenceManager.definePref_(
+      'Enable blinking text',
+      hterm.PreferenceManager.categories.Appearance,
+      true, 'bool',
+      `If true, respect the blink attribute. False to ignore it.`
+  ),
 
-  'enable-clipboard-write':
-  [hterm.PreferenceManager.categories.CopyPaste, true, 'bool',
-   'Allow the remote host to write directly to the local system clipboard.\n' +
-   'Read access is never granted regardless of this setting.\n' +
-   '\n' +
-   'This is used to control access to features like OSC-52.'],
+  'enable-clipboard-notice': hterm.PreferenceManager.definePref_(
+      'Show notification when copying content',
+      hterm.PreferenceManager.categories.CopyPaste,
+      true, 'bool',
+      `Whether to show a message in the terminal when the host writes to the ` +
+      `clipboard.`
+  ),
 
-  'enable-dec12':
-  [hterm.PreferenceManager.categories.Miscellaneous, false, 'bool',
-   'Respect the host\'s attempt to change the text cursor blink status using ' +
-   'DEC Private Mode 12.'],
+  'enable-clipboard-write': hterm.PreferenceManager.definePref_(
+      'Allow remote clipboard writes',
+      hterm.PreferenceManager.categories.CopyPaste,
+      true, 'bool',
+      `Allow the remote host to write directly to the local system ` +
+      `clipboard.\n` +
+      `Read access is never granted regardless of this setting.\n` +
+      `\n` +
+      `This is used to control access to features like OSC-52.`
+  ),
 
-  'enable-csi-j-3':
-  [hterm.PreferenceManager.categories.Miscellaneous, true, 'bool',
-   'Whether CSI-J (Erase Display) mode 3 may clear the terminal scrollback ' +
-   'buffer.\n' +
-   '\n' +
-   'Enabling this by default is safe.'],
+  'enable-dec12': hterm.PreferenceManager.definePref_(
+      'Allow changing of text cursor blinking',
+      hterm.PreferenceManager.categories.Miscellaneous,
+      false, 'bool',
+      `Respect the host's attempt to change the text cursor blink status ` +
+      `using DEC Private Mode 12.`
+  ),
 
-  'environment':
-  [hterm.PreferenceManager.categories.Miscellaneous,
-   {
-     // Signal ncurses based apps to use UTF-8 output instead of legacy drawing
-     // modes (which only work in ISO-2022 mode).  Since hterm is always UTF-8,
-     // this shouldn't cause problems.
-     'NCURSES_NO_UTF8_ACS': '1',
-     'TERM': 'xterm-256color',
-     // Set this env var that a bunch of mainstream terminal emulators set to
-     // indicate we support true colors.
-     // https://gist.github.com/XVilka/8346728
-     'COLORTERM': 'truecolor',
-   },
-   'value',
-   'The initial set of environment variables, as an object.'],
+  'enable-csi-j-3': hterm.PreferenceManager.definePref_(
+      'Allow clearing of scrollback buffer (CSI-J-3)',
+      hterm.PreferenceManager.categories.Miscellaneous,
+      true, 'bool',
+      `Whether CSI-J (Erase Display) mode 3 may clear the terminal ` +
+      `scrollback buffer.\n` +
+      `\n` +
+      `Enabling this by default is safe.`
+  ),
 
-  'font-family':
-  [hterm.PreferenceManager.categories.Appearance,
-   '"DejaVu Sans Mono", "Noto Sans Mono", "Everson Mono", ' +
-   'FreeMono, Menlo, Terminal, monospace', 'string',
-   'Default font family for the terminal text.'],
+  'environment': hterm.PreferenceManager.definePref_(
+      'Environment variables',
+      hterm.PreferenceManager.categories.Miscellaneous,
+      {
+        // Signal ncurses based apps to use UTF-8 output instead of legacy
+        // drawing modes (which only work in ISO-2022 mode).  Since hterm is
+        // always UTF-8, this shouldn't cause problems.
+        'NCURSES_NO_UTF8_ACS': '1',
+        'TERM': 'xterm-256color',
+        // Set this env var that a bunch of mainstream terminal emulators set
+        // to indicate we support true colors.
+        // https://gist.github.com/XVilka/8346728
+        'COLORTERM': 'truecolor',
+      },
+      'value',
+      `The initial set of environment variables, as an object.`
+  ),
 
-  'font-size':
-  [hterm.PreferenceManager.categories.Appearance, 15, 'int',
-   'The default font size in pixels.'],
+  'font-family': hterm.PreferenceManager.definePref_(
+      'Text font family',
+      hterm.PreferenceManager.categories.Appearance,
+      '"DejaVu Sans Mono", "Noto Sans Mono", "Everson Mono", FreeMono, ' +
+      'Menlo, Terminal, monospace',
+      'string',
+      `Default font family for the terminal text.`
+  ),
 
-  'font-smoothing':
-  [hterm.PreferenceManager.categories.Appearance, 'antialiased', 'string',
-   'CSS font-smoothing property.'],
+  'font-size': hterm.PreferenceManager.definePref_(
+      'Text font size',
+      hterm.PreferenceManager.categories.Appearance,
+      15, 'int',
+      `The default font size in pixels.`
+  ),
 
-  'foreground-color':
-  [hterm.PreferenceManager.categories.Appearance, 'rgb(240, 240, 240)', 'color',
-   'The foreground color for text with no other color attributes.'],
+  'font-smoothing': hterm.PreferenceManager.definePref_(
+      'Text font smoothing',
+      hterm.PreferenceManager.categories.Appearance,
+      'antialiased', 'string',
+      `CSS font-smoothing property.`
+  ),
 
-  'hide-mouse-while-typing':
-  [hterm.PreferenceManager.categories.Keyboard, null, 'tristate',
-   'Whether to automatically hide the mouse cursor when typing. ' +
-   'By default, autodetect whether the platform/OS handles this.\n' +
-   '\n' +
-   'Note: Some operating systems may override this setting and thus you ' +
-   'might not be able to always disable it.'],
+  'foreground-color': hterm.PreferenceManager.definePref_(
+      'Text color',
+      hterm.PreferenceManager.categories.Appearance,
+      'rgb(240, 240, 240)', 'color',
+      `The foreground color for text with no other color attributes.`
+  ),
 
-  'home-keys-scroll':
-  [hterm.PreferenceManager.categories.Keyboard, false, 'bool',
-   'If true, Home/End controls the terminal scrollbar and Shift-Home/' +
-   'Shift-End are sent to the remote host. If false, then Home/End are ' +
-   'sent to the remote host and Shift-Home/Shift-End scrolls.'],
+  'hide-mouse-while-typing': hterm.PreferenceManager.definePref_(
+      'Hide mouse cursor while typing',
+      hterm.PreferenceManager.categories.Keyboard,
+      null, 'tristate',
+      `Whether to automatically hide the mouse cursor when typing. ` +
+      `By default, autodetect whether the platform/OS handles this.\n` +
+      `\n` +
+      `Note: Some operating systems may override this setting and thus you ` +
+      `might not be able to always disable it.`
+  ),
 
-  'keybindings':
-  [hterm.PreferenceManager.categories.Keyboard, null, 'value',
-   'A map of key sequence to key actions. Key sequences include zero or ' +
-   'more modifier keys followed by a key code. Key codes can be decimal or ' +
-   'hexadecimal numbers, or a key identifier. Key actions can be specified ' +
-   'as a string to send to the host, or an action identifier. For a full ' +
-   'explanation of the format, see https://goo.gl/LWRndr.\n' +
-   '\n' +
-   'Sample keybindings:\n' +
-   '{\n' +
-   '  "Ctrl-Alt-K": "clearTerminal",\n' +
-   '  "Ctrl-Shift-L": "PASS",\n' +
-   '  "Ctrl-H": "\'Hello World\'"\n' +
-   '}'],
+  'home-keys-scroll': hterm.PreferenceManager.definePref_(
+      'Home/End key scroll behavior',
+      hterm.PreferenceManager.categories.Keyboard,
+      false, 'bool',
+      `If true, Home/End controls the terminal scrollbar and Shift-Home/` +
+      `Shift-End are sent to the remote host. If false, then Home/End are ` +
+      `sent to the remote host and Shift-Home/Shift-End scrolls.`
+  ),
 
-  'media-keys-are-fkeys':
-  [hterm.PreferenceManager.categories.Keyboard, false, 'bool',
-   'If true, convert media keys to their Fkey equivalent. If false, let ' +
-   'the browser handle the keys.'],
+  'keybindings': hterm.PreferenceManager.definePref_(
+      'Keyboard bindings/shortcuts',
+      hterm.PreferenceManager.categories.Keyboard,
+      null, 'value',
+      `A map of key sequence to key actions. Key sequences include zero or ` +
+      `more modifier keys followed by a key code. Key codes can be decimal ` +
+      `or hexadecimal numbers, or a key identifier. Key actions can be ` +
+      `specified as a string to send to the host, or an action identifier. ` +
+      `For a full explanation of the format, see https://goo.gl/LWRndr.\n` +
+      `\n` +
+      `Sample keybindings:\n` +
+      `{\n` +
+      `  "Ctrl-Alt-K": "clearTerminal",\n` +
+      `  "Ctrl-Shift-L": "PASS",\n` +
+      `  "Ctrl-H": "'Hello World'"\n` +
+      `}`
+  ),
 
-  'meta-sends-escape':
-  [hterm.PreferenceManager.categories.Keyboard, true, 'bool',
-   'Send an ESC prefix when pressing a key while holding the Meta key.\n' +
-   '\n' +
-   'For example, when enabled, pressing Meta-K will send ^[k as if you ' +
-   'typed Escape then k. When disabled, only k will be sent.'],
+  'media-keys-are-fkeys': hterm.PreferenceManager.definePref_(
+      'Media keys are Fkeys',
+      hterm.PreferenceManager.categories.Keyboard,
+      false, 'bool',
+      `If true, convert media keys to their Fkey equivalent. If false, let ` +
+      `the browser handle the keys.`
+  ),
 
-  'mouse-right-click-paste':
-  [hterm.PreferenceManager.categories.CopyPaste, true, 'bool',
-   'Paste on right mouse button clicks.\n' +
-   '\n' +
-   'This option is independent of the "mouse-paste-button" setting.\n' +
-   '\n' +
-   'Note: This will handle left & right handed mice correctly.'],
+  'meta-sends-escape': hterm.PreferenceManager.definePref_(
+      'Meta key modifier handling',
+      hterm.PreferenceManager.categories.Keyboard,
+      true, 'bool',
+      `Send an ESC prefix when pressing a key while holding the Meta key.\n` +
+      `\n` +
+      `For example, when enabled, pressing Meta-K will send ^[k as if you ` +
+      `typed Escape then k. When disabled, only k will be sent.`
+  ),
 
-  'mouse-paste-button':
-  [hterm.PreferenceManager.categories.CopyPaste, null,
-   [null, 0, 1, 2, 3, 4, 5, 6],
-   'Mouse paste button, or null to autodetect.\n' +
-   '\n' +
-   'For autodetect, we\'ll use the middle mouse button for non-X11 ' +
-   'platforms (including Chrome OS). On X11, we\'ll use the right mouse ' +
-   'button (since the native window manager should paste via the middle ' +
-   'mouse button).\n' +
-   '\n' +
-   '0 == left (primary) button.\n' +
-   '1 == middle (auxiliary) button.\n' +
-   '2 == right (secondary) button.\n' +
-   '\n' +
-   'This option is independent of the setting for right-click paste.\n' +
-   '\n' +
-   'Note: This will handle left & right handed mice correctly.'],
+  'mouse-right-click-paste': hterm.PreferenceManager.definePref_(
+      'Mouse right clicks paste content',
+      hterm.PreferenceManager.categories.CopyPaste,
+      true, 'bool',
+      `Paste on right mouse button clicks.\n` +
+      `\n` +
+      `This option is independent of the "mouse-paste-button" setting.\n` +
+      `\n` +
+      `Note: This will handle left & right handed mice correctly.`
+  ),
 
-  'word-break-match-left':
-  [hterm.PreferenceManager.categories.CopyPaste,
-   '[^\\s\\[\\](){}<>"\'\\^!@#$%&*,;:`]', 'string',
-   'Regular expression to halt matching to the left (start) of a selection.\n' +
-   '\n' +
-   'Normally this is a character class to reject specific characters.\n' +
-   'We allow "~" and "." by default as paths frequently start with those.'],
+  'mouse-paste-button': hterm.PreferenceManager.definePref_(
+      'Mouse button paste',
+      hterm.PreferenceManager.categories.CopyPaste,
+      null, [null, 0, 1, 2, 3, 4, 5, 6],
+      `Mouse paste button, or null to autodetect.\n` +
+      `\n` +
+      `For autodetect, we'll use the middle mouse button for non-X11 ` +
+      `platforms (including Chrome OS). On X11, we'll use the right mouse ` +
+      `button (since the native window manager should paste via the middle ` +
+      `mouse button).\n` +
+      `\n` +
+      `0 == left (primary) button.\n` +
+      `1 == middle (auxiliary) button.\n` +
+      `2 == right (secondary) button.\n` +
+      `\n` +
+      `This option is independent of the setting for right-click paste.\n` +
+      `\n` +
+      `Note: This will handle left & right handed mice correctly.`
+  ),
 
-  'word-break-match-right':
-  [hterm.PreferenceManager.categories.CopyPaste,
-   '[^\\s\\[\\](){}<>"\'\\^!@#$%&*,;:~.`]', 'string',
-   'Regular expression to halt matching to the right (end) of a selection.\n' +
-   '\n' +
-   'Normally this is a character class to reject specific characters.'],
+  'word-break-match-left': hterm.PreferenceManager.definePref_(
+      'Automatic selection halting (to the left)',
+      hterm.PreferenceManager.categories.CopyPaste,
+      '[^\\s\\[\\](){}<>"\'\\^!@#$%&*,;:`]', 'string',
+      `Regular expression to halt matching to the left (start) of a ` +
+      `selection.\n` +
+      `\n` +
+      `Normally this is a character class to reject specific characters.\n` +
+      `We allow "~" and "." by default as paths frequently start with those.`
+  ),
 
-  'word-break-match-middle':
-  [hterm.PreferenceManager.categories.CopyPaste,
-   '[^\\s\\[\\](){}<>"\'\\^]*', 'string',
-   'Regular expression to match all the characters in the middle.\n' +
-   '\n' +
-   'Normally this is a character class to reject specific characters.\n' +
-   '\n' +
-   'Used to expand the selection surrounding the starting point.'],
+  'word-break-match-right': hterm.PreferenceManager.definePref_(
+      'Automatic selection halting (to the right)',
+      hterm.PreferenceManager.categories.CopyPaste,
+      '[^\\s\\[\\](){}<>"\'\\^!@#$%&*,;:~.`]', 'string',
+      `Regular expression to halt matching to the right (end) of a ` +
+      `selection.\n` +
+      `\n` +
+      `Normally this is a character class to reject specific characters.`
+  ),
 
-  'page-keys-scroll':
-  [hterm.PreferenceManager.categories.Keyboard, false, 'bool',
-   'If true, Page Up/Page Down controls the terminal scrollbar and ' +
-   'Shift-Page Up/Shift-Page Down are sent to the remote host. If false, ' +
-   'then Page Up/Page Down are sent to the remote host and Shift-Page Up/' +
-   'Shift-Page Down scrolls.'],
+  'word-break-match-middle': hterm.PreferenceManager.definePref_(
+      'Word break characters',
+      hterm.PreferenceManager.categories.CopyPaste,
+      '[^\\s\\[\\](){}<>"\'\\^]*', 'string',
+      `Regular expression to match all the characters in the middle.\n` +
+      `\n` +
+      `Normally this is a character class to reject specific characters.\n` +
+      `\n` +
+      `Used to expand the selection surrounding the starting point.`
+  ),
 
-  'pass-alt-number':
-  [hterm.PreferenceManager.categories.Keyboard, null, 'tristate',
-   'Whether Alt-1..9 is passed to the browser.\n' +
-   '\n' +
-   'This is handy when running hterm in a browser tab, so that you don\'t ' +
-   'lose Chrome\'s "switch to tab" keyboard accelerators. When not running ' +
-   'in a tab it\'s better to send these keys to the host so they can be ' +
-   'used in vim or emacs.\n' +
-   '\n' +
-   'If true, Alt-1..9 will be handled by the browser. If false, Alt-1..9 ' +
-   'will be sent to the host. If null, autodetect based on browser platform ' +
-   'and window type.'],
+  'page-keys-scroll': hterm.PreferenceManager.definePref_(
+      'Page Up/Down key scroll behavior',
+      hterm.PreferenceManager.categories.Keyboard,
+      false, 'bool',
+      `If true, Page Up/Page Down controls the terminal scrollbar and ` +
+      `Shift-Page Up/Shift-Page Down are sent to the remote host. If false, ` +
+      `then Page Up/Page Down are sent to the remote host and Shift-Page Up/` +
+      `Shift-Page Down scrolls.`
+  ),
 
-  'pass-ctrl-number':
-  [hterm.PreferenceManager.categories.Keyboard, null, 'tristate',
-   'Whether Ctrl-1..9 is passed to the browser.\n' +
-   '\n' +
-   'This is handy when running hterm in a browser tab, so that you don\'t ' +
-   'lose Chrome\'s "switch to tab" keyboard accelerators. When not running ' +
-   'in a tab it\'s better to send these keys to the host so they can be ' +
-   'used in vim or emacs.\n' +
-   '\n' +
-   'If true, Ctrl-1..9 will be handled by the browser. If false, Ctrl-1..9 ' +
-   'will be sent to the host. If null, autodetect based on browser platform ' +
-   'and window type.'],
+  'pass-alt-number': hterm.PreferenceManager.definePref_(
+      'Pass Alt-1..9 key behavior',
+      hterm.PreferenceManager.categories.Keyboard,
+      null, 'tristate',
+      `Whether Alt-1..9 is passed to the browser.\n` +
+      `\n` +
+      `This is handy when running hterm in a browser tab, so that you don't ` +
+      `lose Chrome's "switch to tab" keyboard accelerators. When not running ` +
+      `in a tab it's better to send these keys to the host so they can be ` +
+      `used in vim or emacs.\n` +
+      `\n` +
+      `If true, Alt-1..9 will be handled by the browser. If false, Alt-1..9 ` +
+      `will be sent to the host. If null, autodetect based on browser ` +
+      `platform and window type.`
+  ),
 
-   'pass-meta-number':
-  [hterm.PreferenceManager.categories.Keyboard, null, 'tristate',
-   'Whether Meta-1..9 is passed to the browser.\n' +
-   '\n' +
-   'This is handy when running hterm in a browser tab, so that you don\'t ' +
-   'lose Chrome\'s "switch to tab" keyboard accelerators. When not running ' +
-   'in a tab it\'s better to send these keys to the host so they can be ' +
-   'used in vim or emacs.\n' +
-   '\n' +
-   'If true, Meta-1..9 will be handled by the browser. If false, Meta-1..9 ' +
-   'will be sent to the host. If null, autodetect based on browser platform ' +
-   'and window type.'],
+  'pass-ctrl-number': hterm.PreferenceManager.definePref_(
+      'Pass Ctrl-1..9 key behavior',
+      hterm.PreferenceManager.categories.Keyboard,
+      null, 'tristate',
+      `Whether Ctrl-1..9 is passed to the browser.\n` +
+      `\n` +
+      `This is handy when running hterm in a browser tab, so that you don't ` +
+      `lose Chrome's "switch to tab" keyboard accelerators. When not running ` +
+      `in a tab it's better to send these keys to the host so they can be ` +
+      `used in vim or emacs.\n` +
+      `\n` +
+      `If true, Ctrl-1..9 will be handled by the browser. If false, ` +
+      `Ctrl-1..9 will be sent to the host. If null, autodetect based on ` +
+      `browser platform and window type.`
+  ),
 
-  'pass-meta-v':
-  [hterm.PreferenceManager.categories.Keyboard, true, 'bool',
-   'Whether Meta-V gets passed to host.'],
+  'pass-meta-number': hterm.PreferenceManager.definePref_(
+      'Pass Meta-1..9 key behavior',
+      hterm.PreferenceManager.categories.Keyboard,
+      null, 'tristate',
+      `Whether Meta-1..9 is passed to the browser.\n` +
+      `\n` +
+      `This is handy when running hterm in a browser tab, so that you don't ` +
+      `lose Chrome's "switch to tab" keyboard accelerators. When not running ` +
+      `in a tab it's better to send these keys to the host so they can be ` +
+      `used in vim or emacs.\n` +
+      `\n` +
+      `If true, Meta-1..9 will be handled by the browser. If false, ` +
+      `Meta-1..9 will be sent to the host. If null, autodetect based on ` +
+      `browser platform and window type.`
+  ),
 
-  'receive-encoding':
-  [hterm.PreferenceManager.categories.Encoding, 'utf-8', ['utf-8', 'raw'],
-   'Set the expected encoding for data received from the host.\n' +
-   'If the encodings do not match, visual bugs are likely to be observed.\n' +
-   '\n' +
-   'Valid values are \'utf-8\' and \'raw\'.'],
+  'pass-meta-v': hterm.PreferenceManager.definePref_(
+      'Pass Meta-V key behavior',
+      hterm.PreferenceManager.categories.Keyboard,
+      true, 'bool',
+      `Whether Meta-V gets passed to host.`
+  ),
 
-  'scroll-on-keystroke':
-  [hterm.PreferenceManager.categories.Scrolling, true, 'bool',
-   'Whether to scroll to the bottom on any keystroke.'],
+  'paste-on-drop': hterm.PreferenceManager.definePref_(
+      'Allow drag & drop to paste',
+      hterm.PreferenceManager.categories.CopyPaste,
+      true, 'bool',
+      `If true, Drag and dropped text will paste into terminal.\n` +
+      `If false, dropped text will be ignored.`
+  ),
 
-  'scroll-on-output':
-  [hterm.PreferenceManager.categories.Scrolling, false, 'bool',
-   'Whether to scroll to the bottom on terminal output.'],
+  'receive-encoding': hterm.PreferenceManager.definePref_(
+      'Receive encoding',
+      hterm.PreferenceManager.categories.Encoding,
+      'utf-8', ['utf-8', 'raw'],
+      `Set the expected encoding for data received from the host.\n` +
+      `If the encodings do not match, visual bugs are likely to be ` +
+      `observed.\n` +
+      `\n` +
+      `Valid values are 'utf-8' and 'raw'.`
+  ),
 
-  'scrollbar-visible':
-  [hterm.PreferenceManager.categories.Scrolling, true, 'bool',
-   'The vertical scrollbar mode.'],
+  'scroll-on-keystroke': hterm.PreferenceManager.definePref_(
+      'Scroll to bottom after keystroke',
+      hterm.PreferenceManager.categories.Scrolling,
+      true, 'bool',
+      `Whether to scroll to the bottom on any keystroke.`
+  ),
 
-  'scroll-wheel-may-send-arrow-keys':
-  [hterm.PreferenceManager.categories.Scrolling, false, 'bool',
-   'When using the alternative screen buffer, and DECCKM (Application Cursor ' +
-   'Keys) is active, mouse wheel scroll events will emulate arrow keys.\n' +
-   '\n' +
-   'It can be temporarily disabled by holding the Shift key.\n' +
-   '\n' +
-   'This frequently comes up when using pagers (less) or reading man pages ' +
-   'or text editors (vi/nano) or using screen/tmux.'],
+  'scroll-on-output': hterm.PreferenceManager.definePref_(
+      'Scroll to bottom after new output',
+      hterm.PreferenceManager.categories.Scrolling,
+      false, 'bool',
+      `Whether to scroll to the bottom on terminal output.`
+  ),
 
-  'scroll-wheel-move-multiplier':
-  [hterm.PreferenceManager.categories.Scrolling, 1, 'int',
-   'The multiplier for scroll wheel events when measured in pixels.\n' +
-   '\n' +
-   'Alters how fast the page scrolls.'],
+  'scrollbar-visible': hterm.PreferenceManager.definePref_(
+      'Scrollbar visibility',
+      hterm.PreferenceManager.categories.Scrolling,
+      true, 'bool',
+      `The vertical scrollbar mode.`
+  ),
 
-  'send-encoding':
-  [hterm.PreferenceManager.categories.Encoding, 'utf-8', ['utf-8', 'raw'],
-   'Set the encoding for data sent to host.'],
+  'scroll-wheel-may-send-arrow-keys': hterm.PreferenceManager.definePref_(
+      'Emulate arrow keys with scroll wheel',
+      hterm.PreferenceManager.categories.Scrolling,
+      false, 'bool',
+      `When using the alternative screen buffer, and DECCKM (Application ` +
+      `Cursor Keys) is active, mouse wheel scroll events will emulate arrow ` +
+      `keys.\n` +
+      `\n` +
+      `It can be temporarily disabled by holding the Shift key.\n` +
+      `\n` +
+      `This frequently comes up when using pagers (less) or reading man ` +
+      `pages or text editors (vi/nano) or using screen/tmux.`
+  ),
 
-  'terminal-encoding':
-  [hterm.PreferenceManager.categories.Encoding, 'utf-8',
-   ['iso-2022', 'utf-8', 'utf-8-locked'],
-   'The default terminal encoding (DOCS).\n' +
-   '\n' +
-   'ISO-2022 enables character map translations (like graphics maps).\n' +
-   'UTF-8 disables support for those.\n' +
-   '\n' +
-   'The locked variant means the encoding cannot be changed at runtime ' +
-   'via terminal escape sequences.\n' +
-   '\n' +
-   'You should stick with UTF-8 unless you notice broken rendering with ' +
-   'legacy applications.'],
+  'scroll-wheel-move-multiplier': hterm.PreferenceManager.definePref_(
+      'Mouse scroll wheel multiplier',
+      hterm.PreferenceManager.categories.Scrolling,
+      1, 'int',
+      `The multiplier for scroll wheel events when measured in pixels.\n` +
+      `\n` +
+      `Alters how fast the page scrolls.`
+  ),
 
-  'shift-insert-paste':
-  [hterm.PreferenceManager.categories.Keyboard, true, 'bool',
-   'Whether Shift-Insert is used for pasting or is sent to the remote host.'],
+  'terminal-encoding': hterm.PreferenceManager.definePref_(
+      'Terminal encoding',
+      hterm.PreferenceManager.categories.Encoding,
+      'utf-8', ['iso-2022', 'utf-8', 'utf-8-locked'],
+      `The default terminal encoding (DOCS).\n` +
+      `\n` +
+      `ISO-2022 enables character map translations (like graphics maps).\n` +
+      `UTF-8 disables support for those.\n` +
+      `\n` +
+      `The locked variant means the encoding cannot be changed at runtime ` +
+      `via terminal escape sequences.\n` +
+      `\n` +
+      `You should stick with UTF-8 unless you notice broken rendering with ` +
+      `legacy applications.`
+  ),
 
-  'user-css':
-  [hterm.PreferenceManager.categories.Appearance, '', 'url',
-   'URL of user stylesheet to include in the terminal document.'],
+  'shift-insert-paste': hterm.PreferenceManager.definePref_(
+      'Shift-Insert paste',
+      hterm.PreferenceManager.categories.Keyboard,
+      true, 'bool',
+      `Whether Shift-Insert is used for pasting or is sent to the remote host.`
+  ),
 
-  'user-css-text':
-  [hterm.PreferenceManager.categories.Appearance, '', 'multiline-string',
-   'Custom CSS text for styling the terminal.'],
+  'user-css': hterm.PreferenceManager.definePref_(
+      'Custom CSS (URI)',
+      hterm.PreferenceManager.categories.Appearance,
+      '', 'url',
+      `URL of user stylesheet to include in the terminal document.`
+  ),
 
-  'allow-images-inline':
-  [hterm.PreferenceManager.categories.Extensions, null, 'tristate',
-   'Whether to allow the remote host to display images in the terminal.\n' +
-   '\n' +
-   'By default, we prompt until a choice is made.'],
+  'user-css-text': hterm.PreferenceManager.definePref_(
+      'Custom CSS (inline text)',
+      hterm.PreferenceManager.categories.Appearance,
+      '', 'multiline-string',
+      `Custom CSS text for styling the terminal.`
+  ),
+
+  'allow-images-inline': hterm.PreferenceManager.definePref_(
+      'Allow inline image display',
+      hterm.PreferenceManager.categories.Extensions,
+      null, 'tristate',
+      `Whether to allow the remote host to display images in the terminal.\n` +
+      `\n` +
+      `By default, we prompt until a choice is made.`
+  ),
 };
 
 hterm.PreferenceManager.prototype =
@@ -9765,9 +8862,6 @@ hterm.PubSub.prototype.publish = function(subject, e, opt_lastCallback) {
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-lib.rtdep('lib.f', 'lib.wc',
-          'hterm.RowCol', 'hterm.Size', 'hterm.TextAttributes');
-
 /**
  * @fileoverview This class represents a single terminal screen full of text.
  *
@@ -9803,19 +8897,19 @@ lib.rtdep('lib.f', 'lib.wc',
  *
  * The screen initially has no rows and a maximum column count of 0.
  *
- * @param {integer} opt_columnCount The maximum number of columns for this
+ * @param {integer=} columnCount The maximum number of columns for this
  *    screen.  See insertString() and overwriteString() for information about
  *    what happens when too many characters are added too a row.  Defaults to
  *    0 if not provided.
  */
-hterm.Screen = function(opt_columnCount) {
+hterm.Screen = function(columnCount=0) {
   /**
    * Public, read-only access to the rows in this screen.
    */
   this.rowsArray = [];
 
   // The max column width for this screen.
-  this.columnCount_ = opt_columnCount || 80;
+  this.columnCount_ = columnCount;
 
   // The current color, bold, underline and blink attributes.
   this.textAttributes = new hterm.TextAttributes(window.document);
@@ -10029,7 +9123,7 @@ hterm.Screen.prototype.clearCursorRow = function() {
   if (this.textAttributes.isDefault()) {
     text = '';
   } else {
-    text = lib.f.getWhitespace(this.columnCount_);
+    text = ' '.repeat(this.columnCount_);
   }
 
   // We shouldn't honor inverse colors when clearing an area, to match
@@ -10254,7 +9348,7 @@ hterm.Screen.prototype.insertString = function(str, wcwidth=undefined) {
     // A negative reverse offset means the cursor is positioned past the end
     // of the characters on this line.  We'll need to insert the missing
     // whitespace.
-    var ws = lib.f.getWhitespace(-reverseOffset);
+    const ws = ' '.repeat(-reverseOffset);
 
     // This whitespace should be completely unstyled.  Underline, background
     // color, and strikethrough would be visible on whitespace, so we can't use
@@ -10370,7 +9464,7 @@ hterm.Screen.prototype.insertString = function(str, wcwidth=undefined) {
 hterm.Screen.prototype.overwriteString = function(str, wcwidth=undefined) {
   var maxLength = this.columnCount_ - this.cursorPosition.column;
   if (!maxLength)
-    return [str];
+    return;
 
   if (wcwidth === undefined)
     wcwidth = lib.wc.strWidth(str);
@@ -10813,8 +9907,6 @@ hterm.Screen.CursorState.prototype.restore = function(vt) {
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-lib.rtdep('lib.f', 'hterm.PubSub', 'hterm.Size');
-
 /**
  * A 'viewport' view of fixed-height rows with support for selection and
  * copy-to-clipboard.
@@ -10896,6 +9988,11 @@ hterm.ScrollPort = function(rowProvider) {
    */
   this.ctrlVPaste = false;
 
+  /**
+   * Whether to paste on dropped text.
+   */
+  this.pasteOnDrop = true;
+
   this.div_ = null;
   this.document_ = null;
 
@@ -10903,6 +10000,10 @@ hterm.ScrollPort = function(rowProvider) {
   this.timeouts_ = {};
 
   this.observers_ = {};
+
+  // Offscreen selection rows that are set with 'aria-hidden'.
+  // They must be unset when selection changes or the rows are visible.
+  this.ariaHiddenSelectionRows_ = [];
 
   this.DEBUG_ = false;
 };
@@ -11086,7 +10187,7 @@ hterm.ScrollPort.Selection.prototype.sync = function() {
 /**
  * Turn a div into this hterm.ScrollPort.
  */
-hterm.ScrollPort.prototype.decorate = function(div) {
+hterm.ScrollPort.prototype.decorate = function(div, callback) {
   this.div_ = div;
 
   this.iframe_ = div.ownerDocument.createElement('iframe');
@@ -11096,13 +10197,31 @@ hterm.ScrollPort.prototype.decorate = function(div) {
       'position: absolute;' +
       'width: 100%');
 
-  // Set the iframe src to # in FF.  Otherwise when the frame's
-  // load event fires in FF it clears out the content of the iframe.
-  if ('mozInnerScreenX' in window)  // detect a FF only property
-    this.iframe_.src = '#';
-
   div.appendChild(this.iframe_);
 
+  const onLoad = () => {
+    this.paintIframeContents_();
+    if (callback) {
+      callback();
+    }
+  };
+
+  // Insert Iframe content asynchronously in FF.  Otherwise when the frame's
+  // load event fires in FF it clears out the content of the iframe.
+  if ('mozInnerScreenX' in window) { // detect a FF only property
+    this.iframe_.addEventListener('load', () => onLoad());
+  } else {
+    onLoad();
+  }
+};
+
+
+/**
+ * Initialises the content of this.iframe_. This needs to be done asynchronously
+ * in FF after the Iframe's load event has fired.
+ * @private
+ */
+hterm.ScrollPort.prototype.paintIframeContents_ = function() {
   this.iframe_.contentWindow.addEventListener('resize',
                                               this.onResize_.bind(this));
 
@@ -11130,29 +10249,12 @@ hterm.ScrollPort.prototype.decorate = function(div) {
   }
 
   var style = doc.createElement('style');
-
-  // Hide rows that are above or below the x-fold elements. This is necessary to
-  // ensure that these rows aren't visible to a screen reader. First hide all
-  // rows that are children of the <x-screen>. Then display the nodes that are
-  // after the top fold. Then rehide nodes that are after the bottom fold.
-  style.textContent = `
-      x-row {
-        display: block;
-        height: var(--hterm-charsize-height);
-        line-height: var(--hterm-charsize-height);
-      }
-
-      x-screen x-row {
-        visibility: hidden;
-      }
-
-      #hterm\\:top-fold-for-row-selection ~ x-row {
-        visibility: visible;
-      }
-
-      #hterm\\:bottom-fold-for-row-selection ~ x-row {
-        visibility: hidden;
-      }`;
+  style.textContent = (
+      'x-row {' +
+      '  display: block;' +
+      '  height: var(--hterm-charsize-height);' +
+      '  line-height: var(--hterm-charsize-height);' +
+      '}');
   doc.head.appendChild(style);
 
   this.userCssLink_ = doc.createElement('link');
@@ -11274,11 +10376,7 @@ hterm.ScrollPort.prototype.decorate = function(div) {
     const accessibilityEnabled = this.accessibilityReader_ &&
         this.accessibilityReader_.accessibilityEnabled;
 
-    const selection = this.document_.getSelection();
-    let selectedElement;
-    if (selection.anchorNode && selection.anchorNode.parentElement) {
-      selectedElement = selection.anchorNode.parentElement;
-    }
+    const selectedElement = this.document_.getSelection().anchorNode;
     if (accessibilityEnabled && selectedElement == this.scrollUpButton_) {
       this.scrollUpButton_.style.top = '0px';
     } else {
@@ -11508,6 +10606,10 @@ hterm.ScrollPort.prototype.setCtrlVPaste = function(ctrlVPaste) {
   this.ctrlVPaste = ctrlVPaste;
 };
 
+hterm.ScrollPort.prototype.setPasteOnDrop = function(pasteOnDrop) {
+  this.pasteOnDrop = pasteOnDrop;
+};
+
 /**
  * Get the usable size of the scrollport screen.
  *
@@ -11675,7 +10777,6 @@ hterm.ScrollPort.prototype.measureCharacterSize = function(opt_weight) {
                             rulerSize.height / numberOfLines);
 
   this.ruler_.appendChild(this.rulerBaseline_);
-  size.baseline = this.rulerBaseline_.offsetTop;
   this.ruler_.removeChild(this.rulerBaseline_);
 
   this.rowNodes_.removeChild(this.ruler_);
@@ -11852,6 +10953,7 @@ hterm.ScrollPort.prototype.redraw_ = function() {
   this.drawTopFold_(topRowIndex);
   this.drawBottomFold_(bottomRowIndex);
   this.drawVisibleRows_(topRowIndex, bottomRowIndex);
+  this.ariaHideOffscreenSelectionRows_(topRowIndex, bottomRowIndex);
 
   this.syncRowNodesDimensions_();
 
@@ -12082,6 +11184,36 @@ hterm.ScrollPort.prototype.drawVisibleRows_ = function(
 };
 
 /**
+ * Ensure aria-hidden is set on any selection rows that are offscreen.
+ *
+ * The attribute aria-hidden is set to 'true' so that hidden rows are ignored
+ * by screen readers.  We keep a list of currently hidden rows so they can be
+ * reset each time this function is called as the selection and/or scrolling
+ * may have changed.
+ *
+ * @param {number} topRowIndex Index of top row on screen.
+ * @param {number} bottomRowIndex Index of bottom row on screen.
+ */
+hterm.ScrollPort.prototype.ariaHideOffscreenSelectionRows_ = function(
+    topRowIndex, bottomRowIndex) {
+  // Reset previously hidden selection rows.
+  const hiddenRows = this.ariaHiddenSelectionRows_;
+  let row;
+  while (row = hiddenRows.pop()) {
+    row.removeAttribute('aria-hidden');
+  }
+
+  function checkRow(row) {
+    if (row && (row.rowIndex < topRowIndex || row.rowIndex > bottomRowIndex)) {
+      row.setAttribute('aria-hidden', 'true');
+      hiddenRows.push(row);
+    }
+  }
+  checkRow(this.selection.startRow);
+  checkRow(this.selection.endRow);
+};
+
+/**
  * Empty out both select bags and remove them from the document.
  *
  * These nodes hold the text between the start and end of the selection
@@ -12291,7 +11423,11 @@ hterm.ScrollPort.prototype.onScrollWheel = function(e) {};
 hterm.ScrollPort.prototype.onScrollWheel_ = function(e) {
   this.onScrollWheel(e);
 
-  if (e.defaultPrevented)
+  // Ignore the event if it was already handled (preventDefault was called),
+  // or if it is non-cancelable since preventDefault is ignored for these.
+  // See https://crbug.com/894223 where blink sends non-cancelable touchpad
+  // scrollWheel events.
+  if (e.defaultPrevented || !e.cancelable)
     return;
 
   // Figure out how far this event wants us to scroll.
@@ -12384,6 +11520,16 @@ hterm.ScrollPort.prototype.onTouch_ = function(e) {
   var i, touch;
   switch (e.type) {
     case 'touchstart':
+      // Workaround focus bug on CrOS if possible.
+      // TODO(vapier): Drop this once https://crbug.com/919222 is fixed.
+      if (hterm.os == 'cros' && window.chrome && chrome.windows) {
+        chrome.windows.getCurrent((win) => {
+          if (!win.focused) {
+            chrome.windows.update(win.id, {focused: true});
+          }
+        });
+      }
+
       // Save the current set of touches.
       for (i = 0; i < e.changedTouches.length; ++i) {
         touch = scrubTouch(e.changedTouches[i]);
@@ -12519,9 +11665,7 @@ hterm.ScrollPort.prototype.onBodyKeyDown_ = function(e) {
   if (!this.ctrlVPaste)
     return;
 
-  var key = String.fromCharCode(e.which);
-  var lowerKey = key.toLowerCase();
-  if ((e.ctrlKey || e.metaKey) && lowerKey == "v")
+  if ((e.ctrlKey || e.metaKey) && e.keyCode == 86 /* 'V' */)
     this.pasteTarget_.focus();
 };
 
@@ -12560,6 +11704,9 @@ hterm.ScrollPort.prototype.handlePasteTargetTextInput_ = function(e) {
  * @param {DragEvent} e The drag event that fired us.
  */
 hterm.ScrollPort.prototype.onDragAndDrop_ = function(e) {
+  if (!this.pasteOnDrop)
+    return;
+
   e.preventDefault();
 
   let data;
@@ -12604,11 +11751,6 @@ hterm.ScrollPort.prototype.setScrollWheelMoveMultipler = function(multiplier) {
 // Copyright (c) 2012 The Chromium OS Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-lib.rtdep('lib.colors', 'lib.PreferenceManager', 'lib.resource', 'lib.wc',
-          'lib.f', 'hterm.AccessibilityReader', 'hterm.Keyboard',
-          'hterm.Options', 'hterm.PreferenceManager', 'hterm.Screen',
-          'hterm.ScrollPort', 'hterm.Size', 'hterm.TextAttributes', 'hterm.VT');
 
 /**
  * Constructor for the Terminal class.
@@ -12911,6 +12053,10 @@ hterm.Terminal.prototype.setProfile = function(profileId, opt_callback) {
       terminal.setCursorBlink(!!v);
     },
 
+    'cursor-shape': function(v) {
+      terminal.setCursorShape(v);
+    },
+
     'cursor-blink-cycle': function(v) {
         if (v instanceof Array &&
             typeof v[0] == 'number' &&
@@ -12980,6 +12126,10 @@ hterm.Terminal.prototype.setProfile = function(profileId, opt_callback) {
     'ctrl-v-paste': function(v) {
       terminal.keyboard.ctrlVPaste = v;
       terminal.scrollPort_.setCtrlVPaste(v);
+    },
+
+    'paste-on-drop': function(v) {
+      terminal.scrollPort_.setPasteOnDrop(v);
     },
 
     'east-asian-ambiguous-as-two-column': function(v) {
@@ -13144,15 +12294,6 @@ hterm.Terminal.prototype.setProfile = function(profileId, opt_callback) {
 
     'scroll-wheel-move-multiplier': function(v) {
       terminal.setScrollWheelMoveMultipler(v);
-    },
-
-    'send-encoding': function(v) {
-       if (!(/^(utf-8|raw)$/).test(v)) {
-         console.warn('Invalid value for "send-encoding": ' + v);
-         v = 'utf-8';
-       }
-
-       terminal.keyboard.characterEncoding = v;
     },
 
     'shift-insert-paste': function(v) {
@@ -13509,7 +12650,7 @@ hterm.Terminal.prototype.syncMouseStyle = function() {
   this.setCssVar('mouse-cursor-style',
                  this.vt.mouseReport == this.vt.MOUSE_REPORT_DISABLED ?
                      'var(--hterm-mouse-cursor-text)' :
-                     'var(--hterm-mouse-cursor-pointer)');
+                     'var(--hterm-mouse-cursor-default)');
 };
 
 /**
@@ -13672,14 +12813,22 @@ hterm.Terminal.prototype.setHeight = function(rowCount) {
  * @param {number} rowCount The number of rows.
  */
 hterm.Terminal.prototype.realizeSize_ = function(columnCount, rowCount) {
-  if (columnCount != this.screenSize.width)
-    this.realizeWidth_(columnCount);
+  let notify = false;
 
-  if (rowCount != this.screenSize.height)
+  if (columnCount != this.screenSize.width) {
+    notify = true;
+    this.realizeWidth_(columnCount);
+  }
+
+  if (rowCount != this.screenSize.height) {
+    notify = true;
     this.realizeHeight_(rowCount);
+  }
 
   // Send new terminal size to plugin.
-  this.io.onTerminalResize_(columnCount, rowCount);
+  if (notify) {
+    this.io.onTerminalResize_(columnCount, rowCount);
+  }
 };
 
 /**
@@ -13700,6 +12849,10 @@ hterm.Terminal.prototype.realizeWidth_ = function(columnCount) {
     throw new Error('Attempt to realize bad width: ' + columnCount);
 
   var deltaColumns = columnCount - this.screen_.getWidth();
+  if (deltaColumns == 0) {
+    // No change, so don't bother recalculating things.
+    return;
+  }
 
   this.screenSize.width = columnCount;
   this.screen_.setColumnCount(columnCount);
@@ -13737,6 +12890,10 @@ hterm.Terminal.prototype.realizeHeight_ = function(rowCount) {
     throw new Error('Attempt to realize bad height: ' + rowCount);
 
   var deltaRows = rowCount - this.screen_.getHeight();
+  if (deltaRows == 0) {
+    // No change, so don't bother recalculating things.
+    return;
+  }
 
   this.screenSize.height = rowCount;
 
@@ -14056,7 +13213,15 @@ hterm.Terminal.prototype.decorate = function(div) {
 
   this.accessibilityReader_ = new hterm.AccessibilityReader(div);
 
-  this.scrollPort_.decorate(div);
+  this.scrollPort_.decorate(div, () => this.setupScrollPort_());
+};
+
+/**
+ * Initialisation of ScrollPort properties which need to be set after its DOM
+ * has been initialised.
+ * @private
+ */
+hterm.Terminal.prototype.setupScrollPort_ = function() {
   this.scrollPort_.setBackgroundImage(this.prefs_.get('background-image'));
   this.scrollPort_.setBackgroundSize(this.prefs_.get('background-size'));
   this.scrollPort_.setBackgroundPosition(
@@ -14140,13 +13305,14 @@ hterm.Terminal.prototype.decorate = function(div) {
        '  --hterm-cursor-offset-col: -1;' +
        '  --hterm-cursor-offset-row: -1;' +
        '  --hterm-blink-node-duration: 0.7s;' +
+       '  --hterm-mouse-cursor-default: default;' +
        '  --hterm-mouse-cursor-text: text;' +
-       '  --hterm-mouse-cursor-pointer: default;' +
+       '  --hterm-mouse-cursor-pointer: pointer;' +
        '  --hterm-mouse-cursor-style: var(--hterm-mouse-cursor-text);' +
        '}' +
        '.uri-node:hover {' +
        '  text-decoration: underline;' +
-       '  cursor: var(--hterm-mouse-cursor-pointer), pointer;' +
+       '  cursor: var(--hterm-mouse-cursor-pointer);' +
        '}' +
        '@keyframes blink {' +
        '  from { opacity: 1.0; }' +
@@ -14634,7 +13800,7 @@ hterm.Terminal.prototype.eraseToLeft = function() {
   var cursor = this.saveCursor();
   this.setCursorColumn(0);
   const count = cursor.column + 1;
-  this.screen_.overwriteString(lib.f.getWhitespace(count), count);
+  this.screen_.overwriteString(' '.repeat(count), count);
   this.restoreCursor(cursor);
 };
 
@@ -14674,7 +13840,7 @@ hterm.Terminal.prototype.eraseToRight = function(opt_count) {
   }
 
   var cursor = this.saveCursor();
-  this.screen_.overwriteString(lib.f.getWhitespace(count), count);
+  this.screen_.overwriteString(' '.repeat(count), count);
   this.restoreCursor(cursor);
   this.clearCursorOverflow();
 };
@@ -14862,7 +14028,7 @@ hterm.Terminal.prototype.deleteLines = function(count) {
 hterm.Terminal.prototype.insertSpace = function(count) {
   var cursor = this.saveCursor();
 
-  var ws = lib.f.getWhitespace(count || 1);
+  const ws = ' '.repeat(count || 1);
   this.screen_.insertString(ws, ws.length);
   this.screen_.maybeClipCurrentRow();
 
@@ -14881,7 +14047,7 @@ hterm.Terminal.prototype.deleteChars = function(count) {
   if (deleted && !this.screen_.textAttributes.isDefault()) {
     var cursor = this.saveCursor();
     this.setCursorColumn(this.screenSize.width - deleted);
-    this.screen_.insertString(lib.f.getWhitespace(deleted));
+    this.screen_.insertString(' '.repeat(deleted));
     this.restoreCursor(cursor);
   }
 
@@ -15166,11 +14332,11 @@ hterm.Terminal.prototype.cursorRight = function(count) {
 hterm.Terminal.prototype.setReverseVideo = function(state) {
   this.options_.reverseVideo = state;
   if (state) {
-    this.scrollPort_.setForegroundColor(this.prefs_.get('background-color'));
-    this.scrollPort_.setBackgroundColor(this.prefs_.get('foreground-color'));
+    this.scrollPort_.setForegroundColor(this.backgroundColor_);
+    this.scrollPort_.setBackgroundColor(this.foregroundColor_);
   } else {
-    this.scrollPort_.setForegroundColor(this.prefs_.get('foreground-color'));
-    this.scrollPort_.setBackgroundColor(this.prefs_.get('background-color'));
+    this.scrollPort_.setForegroundColor(this.foregroundColor_);
+    this.scrollPort_.setBackgroundColor(this.backgroundColor_);
   }
 };
 
@@ -15463,22 +14629,18 @@ hterm.Terminal.prototype.restyleCursor_ = function() {
 
   switch (shape) {
     case hterm.Terminal.cursorShape.BEAM:
-      style.height = 'var(--hterm-charsize-height)';
       style.backgroundColor = 'transparent';
       style.borderBottomStyle = null;
       style.borderLeftStyle = 'solid';
       break;
 
     case hterm.Terminal.cursorShape.UNDERLINE:
-      style.height = this.scrollPort_.characterSize.baseline + 'px';
       style.backgroundColor = 'transparent';
       style.borderBottomStyle = 'solid';
-      // correct the size to put it exactly at the baseline
       style.borderLeftStyle = null;
       break;
 
     default:
-      style.height = 'var(--hterm-charsize-height)';
       style.backgroundColor = 'var(--hterm-cursor-color)';
       style.borderBottomStyle = null;
       style.borderLeftStyle = null;
@@ -15550,7 +14712,7 @@ hterm.Terminal.prototype.showZoomWarning_ = function(state) {
     });
   }
 
-  this.zoomWarningNode_.textContent = lib.MessageManager.replaceReferences(
+  this.zoomWarningNode_.textContent = lib.i18n.replaceReferences(
       hterm.zoomWarningMessage,
       [parseInt(this.scrollPort_.characterSize.zoomFactor * 100)]);
 
@@ -15665,44 +14827,13 @@ hterm.Terminal.prototype.copyStringToClipboard = function(str) {
   if (this.prefs_.get('enable-clipboard-notice'))
     setTimeout(this.showOverlay.bind(this, hterm.notifyCopyMessage, 500), 200);
 
-  var copySource = this.document_.createElement('pre');
-  copySource.id = 'hterm:copy-to-clipboard-source';
-  copySource.textContent = str;
-  copySource.style.cssText = (
-      '-webkit-user-select: text;' +
-      '-moz-user-select: text;' +
-      'position: absolute;' +
-      'top: -99px');
-
-  this.document_.body.appendChild(copySource);
-
-  var selection = this.document_.getSelection();
-  var anchorNode = selection.anchorNode;
-  var anchorOffset = selection.anchorOffset;
-  var focusNode = selection.focusNode;
-  var focusOffset = selection.focusOffset;
-
-  // FF sometimes throws NS_ERROR_FAILURE exceptions when we make this call.
-  // Catch it because a failure here leaks the copySource node.
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=1178676
-  try {
-    selection.selectAllChildren(copySource);
-  } catch (ex) {}
-
-  hterm.copySelectionToClipboard(this.document_);
-
-  // IE doesn't support selection.extend. This means that the selection
-  // won't return on IE.
-  if (selection.extend) {
-    selection.collapse(anchorNode, anchorOffset);
-    selection.extend(focusNode, focusOffset);
-  }
-
-  copySource.parentNode.removeChild(copySource);
+  hterm.copySelectionToClipboard(this.document_, str);
 };
 
 /**
  * Display an image.
+ *
+ * Either URI or buffer or blob fields must be specified.
  *
  * @param {Object} options The image to display.
  * @param {string=} options.name A human readable string for the image.
@@ -15712,18 +14843,36 @@ hterm.Terminal.prototype.copyStringToClipboard = function(str) {
  * @param {string|number=} options.width The width of the image.
  * @param {string|number=} options.height The height of the image.
  * @param {string=} options.align Direction to align the image.
- * @param {string} options.uri The source URI for the image.
+ * @param {string=} options.uri The source URI for the image.
+ * @param {ArrayBuffer=} options.buffer The ArrayBuffer image data.
+ * @param {Blob=} options.blob The Blob image data.
+ * @param {string=} options.type The MIME type of the image data.
  * @param {function=} onLoad Callback when loading finishes.
  * @param {function(Event)=} onError Callback when loading fails.
  */
 hterm.Terminal.prototype.displayImage = function(options, onLoad, onError) {
   // Make sure we're actually given a resource to display.
-  if (options.uri === undefined)
+  if (options.uri === undefined && options.buffer === undefined &&
+      options.blob === undefined)
     return;
 
   // Set up the defaults to simplify code below.
   if (!options.name)
     options.name = '';
+
+  // See if the mime type is available.  If not, guess from the filename.
+  // We don't list all possible mime types because the browser can usually
+  // guess it correctly.  So list the ones that need a bit more help.
+  if (!options.type) {
+    const ary = options.name.split('.');
+    const ext = ary[ary.length - 1].trim();
+    switch (ext) {
+      case 'svg':
+      case 'svgz':
+        options.type = 'image/svg+xml';
+        break;
+    }
+  }
 
   // Has the user approved image display yet?
   if (this.allowImagesInline !== true) {
@@ -15789,7 +14938,15 @@ hterm.Terminal.prototype.displayImage = function(options, onLoad, onError) {
     // Initialize this new image.
     const img =
         /** @type {!HTMLImageElement} */ (this.document_.createElement('img'));
-    img.src = options.uri;
+    if (options.uri !== undefined) {
+      img.src = options.uri;
+    } else if (options.buffer !== undefined) {
+      const blob = new Blob([options.buffer], {type: options.type});
+      img.src = URL.createObjectURL(blob);
+    } else {
+      const blob = new Blob([options.blob], {type: options.type});
+      img.src = URL.createObjectURL(options.blob);
+    }
     img.title = img.alt = options.name;
 
     // Attach the image to the page to let it load/render.  It won't stay here.
@@ -15855,6 +15012,11 @@ hterm.Terminal.prototype.displayImage = function(options, onLoad, onError) {
                                   this.getCursorRow() - 1);
       row.appendChild(div);
 
+      // Now that the image has been read, we can revoke the source.
+      if (options.uri === undefined) {
+        URL.revokeObjectURL(img.src);
+      }
+
       io.hideOverlay();
       io.pop();
 
@@ -15876,11 +15038,21 @@ hterm.Terminal.prototype.displayImage = function(options, onLoad, onError) {
     // We can't use chrome.downloads.download as that requires "downloads"
     // permissions, and that works only in extensions, not apps.
     const a = this.document_.createElement('a');
-    a.href = options.uri;
+    if (options.uri !== undefined) {
+      a.href = options.uri;
+    } else if (options.buffer !== undefined) {
+      const blob = new Blob([options.buffer]);
+      a.href = URL.createObjectURL(blob);
+    } else {
+      a.href = URL.createObjectURL(options.blob);
+    }
     a.download = options.name;
     this.document_.body.appendChild(a);
     a.click();
     a.remove();
+    if (options.uri === undefined) {
+      URL.revokeObjectURL(a.href);
+    }
   }
 };
 
@@ -15969,7 +15141,7 @@ hterm.Terminal.prototype.onVTKeystroke = function(string) {
   if (this.scrollOnKeystroke_)
     this.scrollPort_.scrollRowToBottom(this.getRowCount());
 
-  this.io.onVTKeystroke(this.keyboard.encode(string));
+  this.io.onVTKeystroke(string);
 };
 
 /**
@@ -16126,7 +15298,7 @@ hterm.Terminal.prototype.onMouse_ = function(e) {
     if (e.type == 'dblclick') {
       this.screen_.expandSelection(this.document_.getSelection());
       if (this.copyOnSelect)
-        this.copySelectionToClipboard(this.document_);
+        this.copySelectionToClipboard();
     }
 
     if (e.type == 'click' && !e.shiftKey && (e.ctrlKey || e.metaKey)) {
@@ -16152,7 +15324,7 @@ hterm.Terminal.prototype.onMouse_ = function(e) {
 
     if (e.type == 'mouseup' && e.button == 0 && this.copyOnSelect &&
         !this.document_.getSelection().isCollapsed) {
-      this.copySelectionToClipboard(this.document_);
+      this.copySelectionToClipboard();
     }
 
     if ((e.type == 'mousemove' || e.type == 'mouseup') &&
@@ -16260,7 +15432,6 @@ hterm.Terminal.prototype.onScroll_ = function() {
  */
 hterm.Terminal.prototype.onPaste_ = function(e) {
   var data = e.text.replace(/\n/mg, '\r');
-  data = this.keyboard.encode(data);
   if (this.options_.bracketedPaste) {
     // We strip out most escape sequences as they can cause issues (like
     // inserting an \x1b[201~ midstream).  We pass through whitespace
@@ -16397,8 +15568,6 @@ hterm.Terminal.prototype.onScrollportFocus_ = function() {
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-lib.rtdep('lib.encodeUTF8');
-
 /**
  * Input/Output interface used by commands to communicate with the terminal.
  *
@@ -16428,6 +15597,9 @@ hterm.Terminal.IO = function(terminal) {
 
   // Any data this object accumulated while not active.
   this.buffered_ = '';
+
+  // Decoder to maintain UTF-8 decode state.
+  this.textDecoder_ = new TextDecoder();
 };
 
 /**
@@ -16539,9 +15711,6 @@ hterm.Terminal.IO.prototype.sendString = function(string) {
  *
  * Clients should override this to receive notification of keystrokes.
  *
- * The keystroke data will be encoded according to the 'send-encoding'
- * preference.
- *
  * @param {string} string The VT key sequence.
  */
 hterm.Terminal.IO.prototype.onVTKeystroke = function(string) {
@@ -16578,6 +15747,45 @@ hterm.Terminal.IO.prototype.onTerminalResize = function(width, height) {
  * @param {string} string The UTF-8 encoded string to print.
  */
 hterm.Terminal.IO.prototype.writeUTF8 = function(string) {
+  // We can't use instanceof here on string to see if it's an ArrayBuffer as it
+  // might be constructed in a different runtime context whose ArrayBuffer was
+  // not the same.  See https://crbug.com/930171#5 for more details.
+  if (typeof string == 'string') {
+    if (this.terminal_.characterEncoding != 'raw') {
+      const bytes = lib.codec.stringToCodeUnitArray(string, Uint8Array);
+      string = this.textDecoder_.decode(bytes, {stream: true});
+    }
+  } else {
+    // Handle array buffers & typed arrays by normalizing into a typed array.
+    const u8 = new Uint8Array(string);
+    if (this.terminal_.characterEncoding == 'raw') {
+      string = lib.codec.codeUnitArrayToString(u8);
+    } else {
+      string = this.textDecoder_.decode(u8, {stream: true});
+    }
+  }
+
+  this.print(string);
+};
+
+/**
+ * Write a UTF-8 encoded byte string to the terminal followed by crlf.
+ *
+ * @param {string} string The UTF-8 encoded string to print.
+ */
+hterm.Terminal.IO.prototype.writelnUTF8 = function(string) {
+  this.writeUTF8(string);
+  // We need to use writeUTF8 to make sure we flush the decoder state.
+  this.writeUTF8('\r\n');
+};
+
+/**
+ * Write a UTF-16 JavaScript string to the terminal.
+ *
+ * @param {string} string The string to print.
+ */
+hterm.Terminal.IO.prototype.print =
+hterm.Terminal.IO.prototype.writeUTF16 = function(string) {
   // If another process has the foreground IO, buffer new data sent to this IO
   // (since it's in the background).  When we're made the foreground IO again,
   // we'll flush everything.
@@ -16590,39 +15798,18 @@ hterm.Terminal.IO.prototype.writeUTF8 = function(string) {
 };
 
 /**
- * Write a UTF-8 encoded byte string to the terminal followed by crlf.
- *
- * @param {string} string The UTF-8 encoded string to print.
- */
-hterm.Terminal.IO.prototype.writelnUTF8 = function(string) {
-  this.writeUTF8(string + '\r\n');
-};
-
-/**
- * Write a UTF-16 JavaScript string to the terminal.
- *
- * @param {string} string The string to print.
- */
-hterm.Terminal.IO.prototype.print =
-hterm.Terminal.IO.prototype.writeUTF16 = function(string) {
-  this.writeUTF8(lib.encodeUTF8(string));
-};
-
-/**
  * Print a UTF-16 JavaScript string to the terminal followed by a newline.
  *
  * @param {string} string The string to print.
  */
 hterm.Terminal.IO.prototype.println =
 hterm.Terminal.IO.prototype.writelnUTF16 = function(string) {
-  this.writelnUTF8(lib.encodeUTF8(string));
+  this.print(string + '\r\n');
 };
 // SOURCE FILE: hterm/js/hterm_text_attributes.js
 // Copyright (c) 2012 The Chromium OS Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-lib.rtdep('lib.colors');
 
 /**
  * Constructor for TextAttribute objects.
@@ -16696,12 +15883,12 @@ hterm.TextAttributes.prototype.enableBoldAsBright = true;
 /**
  * A sentinel constant meaning "whatever the default color is in this context".
  */
-hterm.TextAttributes.prototype.DEFAULT_COLOR = lib.f.createEnum('');
+hterm.TextAttributes.prototype.DEFAULT_COLOR = Symbol('DEFAULT_COLOR');
 
 /**
  * A constant string used to specify that source color is context default.
  */
-hterm.TextAttributes.prototype.SRC_DEFAULT = 'default';
+hterm.TextAttributes.prototype.SRC_DEFAULT = Symbol('SRC_DEFAULT');
 
 /**
  * The document object which should own the DOM nodes created by this instance.
@@ -16853,7 +16040,7 @@ hterm.TextAttributes.prototype.createContainer = function(opt_textContent) {
     textDecorationLine += ' underline';
     style.textDecorationStyle = this.underline;
   }
-  if (this.underlineSource != this.SRC_DEFAULT)
+  if (this.underlineColor != this.DEFAULT_COLOR)
     style.textDecorationColor = this.underlineColor;
   if (this.strikethrough) {
     textDecorationLine += ' line-through';
@@ -16918,9 +16105,12 @@ hterm.TextAttributes.prototype.matchesContainer = function(obj) {
           this.asciiNode == obj.asciiNode &&
           !(this.tileData != null || obj.tileNode) &&
           this.uriId == obj.uriId &&
-          this.foreground == style.color &&
-          this.background == style.backgroundColor &&
-          this.underlineColor == style.textDecorationColor &&
+          (this.foreground == this.DEFAULT_COLOR &&
+           style.color == '') &&
+          (this.background == this.DEFAULT_COLOR &&
+           style.backgroundColor == '') &&
+          (this.underlineColor == this.DEFAULT_COLOR &&
+           style.textDecorationColor == '') &&
           (this.enableBold && this.bold) == !!style.fontWeight &&
           this.blink == !!obj.blinkNode &&
           this.italic == !!style.fontStyle &&
@@ -17004,7 +16194,7 @@ hterm.TextAttributes.prototype.syncColors = function() {
     this.foreground = this.background;
 
   if (this.underlineSource == this.SRC_DEFAULT)
-    this.underlineColor = '';
+    this.underlineColor = this.DEFAULT_COLOR;
   else if (Number.isInteger(this.underlineSource))
     this.underlineColor = this.colorPalette[this.underlineSource];
   else
@@ -17120,53 +16310,52 @@ hterm.TextAttributes.nodeSubstring = function(node, start, end) {
  *     only ASCII content, its asciiNode property is set to true.
  */
 hterm.TextAttributes.splitWidecharString = function(str) {
-  var rv = [];
-  var base = 0, length = 0, wcStrWidth = 0, wcCharWidth;
-  var asciiNode = true;
+  const asciiRegex = new RegExp('^[\u0020-\u007f]*$');
 
-  for (var i = 0; i < str.length;) {
-    var c = str.codePointAt(i);
-    var increment;
-    if (c < 128) {
-      wcStrWidth += 1;
-      length += 1;
-      increment = 1;
-    } else {
-      increment = (c <= 0xffff) ? 1 : 2;
-      wcCharWidth = lib.wc.charWidth(c);
-      if (wcCharWidth <= 1) {
-        wcStrWidth += wcCharWidth;
-        length += increment;
-        asciiNode = false;
-      } else {
-        if (length) {
-          rv.push({
-            str: str.substr(base, length),
-            asciiNode: asciiNode,
-            wcStrWidth: wcStrWidth,
-          });
-          asciiNode = true;
-          wcStrWidth = 0;
-        }
-        rv.push({
-          str: str.substr(i, increment),
-          wcNode: true,
-          asciiNode: false,
-          wcStrWidth: 2,
-        });
-        base = i + increment;
-        length = 0;
-      }
-    }
-    i += increment;
+  // Optimize for printable ASCII.  This should only take ~1ms/MB, but cuts out
+  // 40ms+/MB when true.  If we're dealing with UTF8, then it's already slow.
+  if (asciiRegex.test(str)) {
+    return [{
+      str: str,
+      wcNode: false,
+      asciiNode: true,
+      wcStrWidth: str.length,
+    }];
   }
 
-  if (length) {
-    rv.push({
-      str: str.substr(base, length),
-      asciiNode: asciiNode,
-      wcStrWidth: wcStrWidth,
-    });
+  // Iterate over each grapheme and merge them together in runs of similar
+  // strings.  We want to keep narrow and wide characters separate, and the
+  // fewer overall segments we have, the faster we'll be as processing each
+  // segment in the terminal print code is a bit slow.
+  const segmenter = new Intl.Segmenter(undefined, {type: 'grapheme'});
+  const it = segmenter.segment(str);
+
+  const rv = [];
+  let segment = it.next();
+  while (!segment.done) {
+    const grapheme = segment.value.segment;
+    const isAscii = asciiRegex.test(grapheme);
+    const strWidth = isAscii ? 1 : lib.wc.strWidth(grapheme);
+    const isWideChar =
+        isAscii ? false : (lib.wc.charWidth(grapheme.codePointAt(0)) == 2);
+
+    // Only merge non-wide characters together.  Every wide character needs to
+    // be separate so it can get a unique container.
+    const prev = rv[rv.length - 1];
+    if (prev && !isWideChar && !prev.wcNode) {
+      prev.str += grapheme;
+      prev.wcStrWidth += strWidth;
+      prev.asciiNode = prev.asciiNode && isAscii;
+    } else {
+      rv.push({
+        str: grapheme,
+        wcNode: isWideChar,
+        asciiNode: isAscii,
+        wcStrWidth: strWidth,
+      });
+    }
+
+    segment = it.next();
   }
 
   return rv;
@@ -17175,9 +16364,6 @@ hterm.TextAttributes.splitWidecharString = function(str) {
 // Copyright (c) 2012 The Chromium OS Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-lib.rtdep('lib.colors', 'lib.f', 'lib.UTF8Decoder',
-          'hterm.VT.CharacterMap');
 
 /**
  * Constructor for the VT escape sequence interpreter.
@@ -17223,9 +16409,6 @@ hterm.VT = function(terminal) {
 
   // The amount of time we're willing to wait for the end of an OSC sequence.
   this.oscTimeLimit_ = 20000;
-
-  // Decoder to maintain UTF-8 decode state.
-  this.utf8Decoder_ = new lib.UTF8Decoder();
 
   /**
    * Whether to accept the 8-bit control characters.
@@ -17572,7 +16755,10 @@ hterm.VT.prototype.onTerminalMouse_ = function(e) {
   // X & Y coordinate reporting.
   let x;
   let y;
-  let limit = 255;
+  // Normally X10 has a limit of 255, but since we only want to emit UTF-8 valid
+  // streams, we limit ourselves to 127 to avoid setting the 8th bit.  If we do
+  // re-enable this, we should re-enable the hterm_vt_tests.js too.
+  let limit = 127;
   switch (this.mouseCoordinates) {
     case this.MOUSE_COORDINATES_UTF8:
       // UTF-8 mode is the same as X10 but with higher limits.
@@ -17699,7 +16885,7 @@ hterm.VT.prototype.onTerminalMouse_ = function(e) {
  * The buffer will be decoded according to the 'receive-encoding' preference.
  */
 hterm.VT.prototype.interpret = function(buf) {
-  this.parseState_.resetBuf(this.decode(buf));
+  this.parseState_.resetBuf(buf);
 
   while (!this.parseState_.isComplete()) {
     var func = this.parseState_.func;
@@ -17713,32 +16899,6 @@ hterm.VT.prototype.interpret = function(buf) {
       throw 'Parser did not alter the state!';
     }
   }
-};
-
-/**
- * Decode a string according to the 'receive-encoding' preference.
- */
-hterm.VT.prototype.decode = function(str) {
-  if (this.characterEncoding == 'utf-8')
-    return this.decodeUTF8(str);
-
-  return str;
-};
-
-/**
- * Encode a UTF-16 string as UTF-8.
- *
- * See also: https://en.wikipedia.org/wiki/UTF-16
- */
-hterm.VT.prototype.encodeUTF8 = function(str) {
-  return lib.encodeUTF8(str);
-};
-
-/**
- * Decode a UTF-8 string into UTF-16.
- */
-hterm.VT.prototype.decodeUTF8 = function(str) {
-  return this.utf8Decoder_.decode(str);
 };
 
 /**
@@ -18554,7 +17714,7 @@ hterm.VT.ESC[']'] = function(parseState) {
     }
 
     // We're done.
-    var ary = parseState.args[0].match(/^(\d+);(.*)$/);
+    var ary = parseState.args[0].match(/^(\d+);?(.*)$/);
     if (ary) {
       parseState.args[0] = ary[2];
       this.dispatch('OSC', ary[1], parseState);
@@ -19074,9 +18234,20 @@ hterm.VT.OSC['52'] = function(parseState) {
   if (!args)
     return;
 
-  var data = window.atob(args[1]);
+  let data;
+  try {
+    data = window.atob(args[1]);
+  } catch (e) {
+    // If the user sent us invalid base64 content, silently ignore it.
+    return;
+  }
+  if (this.characterEncoding == 'utf-8') {
+    const decoder = new TextDecoder();
+    const bytes = lib.codec.stringToCodeUnitArray(data, Uint8Array);
+    data = decoder.decode(bytes);
+  }
   if (data)
-    this.terminal.copyStringToClipboard(this.decode(data));
+    this.terminal.copyStringToClipboard(data);
 };
 
 /**
@@ -19141,7 +18312,8 @@ hterm.VT.OSC['1337'] = function(parseState) {
     width: 'auto',
     height: 'auto',
     align: 'left',
-    uri: 'data:application/octet-stream;base64,' + args[2].replace(/[\n\r]+/gm, ''),
+    type: '',
+    buffer: lib.codec.stringToCodeUnitArray(atob(args[2]), Uint8Array).buffer,
   };
   // Walk the "key=value;" sets.
   args[1].split(';').forEach((ele) => {
@@ -19177,6 +18349,9 @@ hterm.VT.OSC['1337'] = function(parseState) {
       case 'align':
         options.align = kv[2];
         break;
+      case 'type':
+        options.type = kv[2];
+        break;
       default:
         // Ignore unknown keys.  Don't want remote stuffing our JS env.
         break;
@@ -19192,7 +18367,7 @@ hterm.VT.OSC['1337'] = function(parseState) {
     const queued = parseState.peekRemainingBuf();
     parseState.advance(queued.length);
     this.terminal.displayImage(options);
-    io.writeUTF8(queued);
+    io.print(queued);
   } else
     this.terminal.displayImage(options);
 };
@@ -20145,8 +19320,6 @@ hterm.VT.CSI['\'~'] = hterm.VT.ignore;
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-lib.rtdep('lib.f');
-
 /**
  * Character map object.
  *
@@ -20794,18 +19967,18 @@ lib.resource.add('hterm/images/icon-96', 'image/png;base64',
 );
 
 lib.resource.add('hterm/concat/date', 'text/plain',
-'Wed, 10 Oct 2018 16:00:59 +0000'
+'Thu, 01 Aug 2019 15:02:54 +0000'
 );
 
 lib.resource.add('hterm/changelog/version', 'text/plain',
-'2018-08-29'
+'1.85'
 );
 
 lib.resource.add('hterm/changelog/date', 'text/plain',
-'1.81'
+'2019-06-17'
 );
 
 lib.resource.add('hterm/git/HEAD', 'text/plain',
-'991c7a29a9f287fbb760176cde72612cfa144d42'
+'50b5c3dd0b0d041ac97f9c0974f30a198b0e8eea'
 );
 
