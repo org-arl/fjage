@@ -10,7 +10,7 @@ if (typeof window.fjage === 'undefined') {
   window.fjage.gateways = [];
   window.fjage.MessageClass = MessageClass;
   window.fjage.getGateway = function (url){
-    var f = window.fjage.gateways.filter(g => g.sock.url == url);
+    var f = window.fjage.gateways.filter(g => (new URL(g.sock.url)).toString() == (new URL(url)).toString());
     if (f.length ) return f[0];
   };
 }
