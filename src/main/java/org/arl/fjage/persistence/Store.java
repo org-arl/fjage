@@ -12,7 +12,7 @@ import org.arl.fjage.FjageError;
 
 /**
  * Persistent storage API. The default store is in the user's home directory under
- * a folder called ".fjstore", but may be changed using the {@link setRoot()} method.
+ * a folder called ".fjstore", but may be changed using the {@link #setRoot(java.io.File)} method.
  */
 public class Store {
 
@@ -117,6 +117,8 @@ public class Store {
       fout = new FileOutputStream(f);
       out = new ObjectOutputStream(fout);
       out.writeObject(obj);
+      out.flush();
+      fout.getFD().sync();
       return true;
     } catch (IOException ex) {
       return false;

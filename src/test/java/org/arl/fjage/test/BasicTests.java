@@ -14,6 +14,7 @@ import org.arl.fjage.*;
 import org.arl.fjage.remote.Gateway;
 import org.arl.fjage.remote.MasterContainer;
 import org.arl.fjage.remote.SlaveContainer;
+import org.arl.fjage.persistence.Store;
 import org.arl.fjage.shell.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -279,6 +280,43 @@ public class BasicTests {
   }
 
   @Test
+  public void testPersistence() {
+    log.info("testPersistence");
+    ShellTestAgent agent = new ShellTestAgent();
+    Store.setRoot(new File("build/test/fjstore"));
+    Store.setClassLoader(getClass().getClassLoader());
+    Store store = Store.getInstance(agent);
+    store.delete();
+    store = Store.getInstance(agent);
+    store.persist(new Bean1(1));
+    store.persist(new Bean1(2));
+    store.persist(new Bean1(3));
+    store.persist(new Bean1(1));
+    store.persist(new Bean2(7));
+    store.persist(new Bean2(8));
+    store.persist(new Bean2(9));
+    store.persist(new Bean2(10));
+    store.persist(new Bean2(7));
+    List<Bean1> recs1 = store.findAll(Bean1.class);
+    assertTrue(recs1.size() == 3);
+    List<Bean2> recs2 = store.findAll(Bean2.class);
+    assertTrue(recs2.size() == 4);
+    Bean2 b2 = store.findById(Bean2.class, "7");
+    assertTrue(b2.x == 7);
+    store.delete(b2);
+    b2 = store.findById(Bean2.class, "7");
+    assertTrue(b2 == null);
+    assertTrue(store.findById(Bean2.class, "8") != null);
+    store.deleteById(Bean2.class, "8");
+    assertTrue(store.findById(Bean2.class, "8") == null);
+    assertTrue(store.findById(Bean2.class, "9") != null);
+    store.delete();
+    store = Store.getInstance(agent);
+    assertTrue(store.findById(Bean2.class, "9") == null);
+    store.close();
+  }
+
+  @Test
   public void testShell() {
     log.info("testShell");
     Platform platform = new RealTimePlatform();
@@ -474,6 +512,25 @@ public class BasicTests {
           done = true;
         }
       });
+    }
+  }
+
+  public static class Bean1 implements java.io.Serializable {
+    private static final long serialVersionUID = -1;
+    public int x;
+    public Bean1(int x) {
+      this.x = x;
+    }
+  }
+
+  public static class Bean2 implements java.io.Serializable {
+    private static final long serialVersionUID = -1;
+    public int x;
+    public Bean2(int x) {
+      this.x = x;
+    }
+    public String getId() {
+      return String.valueOf(x);
     }
   }
 
