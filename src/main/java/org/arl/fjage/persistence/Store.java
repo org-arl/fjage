@@ -106,7 +106,7 @@ public class Store {
   /**
    * Stores an object.
    */
-  public boolean put(Serializable obj) {
+  public void put(Serializable obj) {
     if (root == null) throw new FjageError("Store has been closed");
     File d = new File(root, obj.getClass().getName());
     d.mkdirs();
@@ -119,9 +119,8 @@ public class Store {
       out.writeObject(obj);
       out.flush();
       fout.getFD().sync();
-      return true;
-    } catch (IOException ex) {
-      return false;
+    } catch (Exception ex) {
+      throw new FjageError(ex.toString());
     } finally {
       closeQuietly(out);
       closeQuietly(fout);
@@ -149,7 +148,7 @@ public class Store {
       T rv = (T) in.readObject();
       return rv;
     } catch (Exception ex) {
-      return null;
+      throw new FjageError(ex.toString());
     } finally {
       closeQuietly(in);
       closeQuietly(fin);
