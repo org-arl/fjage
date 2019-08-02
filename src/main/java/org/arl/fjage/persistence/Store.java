@@ -106,7 +106,7 @@ public class Store {
   /**
    * Stores an object.
    */
-  public boolean persist(Serializable obj) {
+  public boolean put(Serializable obj) {
     if (root == null) throw new FjageError("Store has been closed");
     File d = new File(root, obj.getClass().getName());
     d.mkdirs();
@@ -157,25 +157,25 @@ public class Store {
   }
 
   /**
-   * Finds an object in the store.
+   * Gets an object in the store.
    *
    * @param type object class
    * @param id object ID
    * @return object with given ID, or null if not found
    */
-  public <T> T findById(Class<T> type, String id) {
+  public <T> T getById(Class<T> type, String id) {
     if (root == null) throw new FjageError("Store has been closed");
     File f = new File(new File(root, type.getName()), id);
     return load(type, f);
   }
 
   /**
-   * Finds all objects of a given class in the store.
+   * Gets all objects of a given class in the store.
    *
    * @param type object class
    * @return list of objects with specified class
    */
-  public <T> List<T> findAll(Class<T> type) {
+  public <T> List<T> getByType(Class<T> type) {
     if (root == null) throw new FjageError("Store has been closed");
     List<T> out = new ArrayList<T>();
     File[] list = new File(root, type.getName()).listFiles();
@@ -188,26 +188,43 @@ public class Store {
   }
 
   /**
-   * Deletes an object from the store.
+   * Removes an object from the store.
+   *
+   * @param obj object to remove
+   * @return true if removed, false otherwise
+   */
+  public boolean remove(Serializable obj) {
+    return removeById(obj.getClass(), getId(obj));
+  }
+
+  /**
+   * Removes an object from the store.
    *
    * @param type object class
-   * @param id object ID to delete
-   * @return true if deleted, false otherwise
+   * @param id object ID to remove
+   * @return true if removed, false otherwise
    */
-  public <T> boolean deleteById(Class<T> type, String id) {
+  public <T> boolean removeById(Class<T> type, String id) {
     if (root == null) throw new FjageError("Store has been closed");
     File f = new File(new File(root, type.getName()), id);
     return f.delete();
   }
 
   /**
-   * Deletes an object from the store.
+   * Removes all objects of a given type from the store.
    *
-   * @param obj object to delete
-   * @return true if deleted, false otherwise
+   * @param type objet class
+   * @return true if removed, false otherwise
    */
-  public boolean delete(Serializable obj) {
-    return deleteById(obj.getClass(), getId(obj));
+  public <T> boolean removeByType(Class<T> type) {
+    if (root == null) throw new FjageError("Store has been closed");
+    try {
+      File f = new File(root, type.getName());
+      FileUtils.deleteDirectory(f);
+      return true;
+    } catch (IOException ex) {
+      return false;
+    }
   }
 
   /**
@@ -223,6 +240,18 @@ public class Store {
       return true;
     } catch (IOException ex) {
       return false;
+    }
+  }
+
+  /**
+   * Gets the size of the data store (in bytes).
+   */
+  public long size() {
+    if (root == null) throw new FjageError("Store has been closed");
+    try {
+      return FileUtils.sizeOfDirectory(root);
+    } catch (IllegalArgumentException ex) {
+      return 0;
     }
   }
 
