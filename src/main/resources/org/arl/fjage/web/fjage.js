@@ -250,10 +250,10 @@ export class Message {
   static _deserialize(obj) {
     if (typeof obj == 'string' || obj instanceof String) {
       try {
-         obj = JSON.parse(obj);
+        obj = JSON.parse(obj);
       }catch(e){
-        console.warn("JSON Parsing error: " + e + "\nJSON : " + obj);
-        return null
+        console.warn('JSON Parsing error: ' + e + '\nJSON : ' + obj);
+        return null;
       }
     }
     let qclazz = obj.clazz;
@@ -326,7 +326,7 @@ export class Gateway {
     try {
       obj = JSON.parse(data, _decodeBase64);
     }catch(e){
-      console.warn("JSON Parsing error: " + e + "\nJSON : " + data);
+      console.warn('JSON Parsing error: ' + e + '\nJSON : ' + data);
       return;
     }
     if ('id' in obj && obj.id in this.pending) {
@@ -449,7 +449,7 @@ export class Gateway {
 
   _update_watch() {
     let watch = Object.keys(this.subscriptions);
-    watch.push(this.aid)
+    watch.push(this.aid);
     let rq = { action: 'wantsMessagesFor', agentIDs: watch };
     this._websockTx(rq);
   }
@@ -668,9 +668,15 @@ export class Gateway {
 export function MessageClass(name) {
   let sname = name.replace(/^.*\./, '');
   window[sname] = class extends Message {
-    constructor() {
+    constructor(params) {
       super();
       this.__clazz__ = name;
+      if (params){
+        const keys = Object.keys(params);
+        for (let k of keys) {
+          this[k] = params[k];
+        }
+      }
     }
   };
   return window[sname];
