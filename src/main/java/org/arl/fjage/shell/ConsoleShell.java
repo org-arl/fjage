@@ -144,7 +144,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
   public void init(ScriptEngine engine) {
     if (term == null) return;
     scriptEngine = engine;
-    if (term.getType().equals(Terminal.TYPE_DUMB)) {
+    if (Terminal.TYPE_DUMB.equals(term.getType())) {
       console = LineReaderBuilder.builder().terminal(term).build();
       console.setVariable(LineReader.DISABLE_COMPLETION, true);
       return;
