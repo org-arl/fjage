@@ -15,7 +15,7 @@ package org.arl.fjage;
  *
  * @author  Mandar Chitre
  */
-public class FjageError extends Error {
+public class FjageError extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
 

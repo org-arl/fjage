@@ -17,6 +17,7 @@ import java.util.Queue;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.arl.fjage.persistence.Store;
 
 /**
  * Base class to be extended by all agents. An agent must be added to a container
@@ -624,12 +625,19 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   }
 
   /**
-   * Log a message at an INFO level.
+   * Logs a message at an INFO level.
    *
    * @param msg message to log.
    */
   public void println(Object msg) {
     log.info(msg.toString());
+  }
+
+  /**
+   * Gets a persistent store for the agent.
+   */
+  public Store getStore() {
+    return Store.getInstance(this);
   }
 
   /**
