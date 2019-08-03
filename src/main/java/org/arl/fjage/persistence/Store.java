@@ -147,6 +147,8 @@ public class Store {
       @SuppressWarnings("unchecked")
       T rv = (T) in.readObject();
       return rv;
+    } catch (IOException ex) {
+      return null;
     } catch (Exception ex) {
       throw new FjageError(ex.toString());
     } finally {
