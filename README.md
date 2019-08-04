@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/org-arl/fjage.svg?branch=1.5)](https://travis-ci.org/org-arl/fjage)
+[![Build Status](https://travis-ci.org/org-arl/fjage.svg?branch=master)](https://travis-ci.org/org-arl/fjage)
 
 fjåge
 =====

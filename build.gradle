@@ -8,7 +8,6 @@ defaultTasks 'jars'
 archivesBaseName = 'fjage'
 group = 'com.github.org-arl'
 version = new File('VERSION').text.trim()
-docsDirName = '../docs'
 
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
