@@ -11,7 +11,7 @@ class FjageTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.g = Gateway('localhost', 5081, "PythonGW")
+        cls.g = Gateway('localhost', 5082, "PythonGW")
         if cls.g is None:
             print('Could not connect to fjage master container on localhost:5081')
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     test_result = unittest.TextTestRunner(verbosity=1).run(suite)
     failures = len(test_result.errors) + len(test_result.failures)
 
-    g = Gateway('localhost', 5081, "PythonGW")
+    g = Gateway('localhost', 5082, "PythonGW")
     m = Message(recipient='test')
     if (failures > 0):
         m.perf = Performative.FAILURE
