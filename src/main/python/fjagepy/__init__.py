@@ -307,8 +307,9 @@ class Gateway:
                 self._socket_connect(hostname, port)
             except Exception as e:
                 self.logger.critical("Exception: " + str(e))
-                self.keepalive = True
+                self.keepalive = False
                 self._socket_reconnect(self.keepalive)
+                raise
             self.recv_thread.start()
             if self._is_duplicate():
                 self.logger.critical("Duplicate Gateway found. Shutting down.")
