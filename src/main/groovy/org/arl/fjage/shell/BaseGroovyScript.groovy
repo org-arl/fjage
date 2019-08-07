@@ -663,10 +663,10 @@ abstract class BaseGroovyScript extends Script {
         GroovyShell groovy = binding.getVariable('__groovy__')
         return groovy.evaluate(name+'()')
       }
-      throw new MissingPropertyException(name, getClass())
-    } catch (MissingMethodException ex) {
-      throw new MissingPropertyException(name, getClass())
+    } catch (FjageException ex) {
+      // rethrow this below
     }
+    throw new FjageException("Unknown command or property: ${name}")
   }
 
   /**
@@ -676,7 +676,7 @@ abstract class BaseGroovyScript extends Script {
     try {
       run(name, args as String[])
     } catch (FileNotFoundException ex) {
-      throw new MissingMethodException(name, getClass(), args)
+      throw new FjageException("Unknown method: ${name}(...)")
     }
   }
 
