@@ -211,9 +211,11 @@ public class ConsoleShell implements Shell, ConnectionListener {
       return console.readLine(prompt1, null, (Character)null, line);
     } catch (UserInterruptException ex) {
       return ABORT;
+    } catch (EndOfFileException ex) {
+      return null;
     } catch (Throwable ex) {
       log.warning(ex.toString());
-      return null;
+      return "";
     }
   }
 

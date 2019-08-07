@@ -145,6 +145,8 @@ public class GroovyScriptEngine implements ScriptEngine {
       if (s.contains("unexpected token")) return false;
       if (s.contains("expecting")) return false;
       return true;
+    } catch (Throwable ex) {
+      return true;
     }
   }
 
