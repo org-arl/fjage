@@ -85,7 +85,7 @@ public abstract class Platform implements TimestampProvider {
    * @param container the container.
    */
   public void addContainer(Container container) {
-    if (running) throw new FjageError("Cannot add container to running platform");
+    if (running) throw new FjageException("Cannot add container to running platform");
     containers.add(container);
   }
 

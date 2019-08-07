@@ -11,16 +11,22 @@ for full license details.
 package org.arl.fjage;
 
 /**
- * Java agent framework error.
+ * Java agent framework unchecked exception.
  *
  * @author  Mandar Chitre
  */
-public class FjageError extends RuntimeException {
+public class FjageException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
 
-  public FjageError(String message) {
+  public FjageException(String message) {
     super(message);
+  }
+
+  public String toString() {
+    String s = getMessage();
+    if (s != null) return s;
+    return getClass().getName();
   }
 
 }

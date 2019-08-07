@@ -412,7 +412,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   @Override
   public synchronized Message receive(MessageFilter filter, long timeout) {
     if (Thread.currentThread().getId() != tid)
-      throw new FjageError("receive() should only be called from agent thread");
+      throw new FjageException("receive() should only be called from agent thread");
     long deadline = 0;
     Message m = queue.get(filter);
     if (m == null && timeout != NON_BLOCKING) {
@@ -477,7 +477,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   @Override
   public Message request(final Message msg, long timeout) {
     if (Thread.currentThread().getId() != tid)
-      throw new FjageError("request() should only be called from agent thread "+tid+", but called from "+Thread.currentThread().getId());
+      throw new FjageException("request() should only be called from agent thread "+tid+", but called from "+Thread.currentThread().getId());
     if (!send(msg)) return null;
     return receive(msg, timeout);
   }
