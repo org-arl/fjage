@@ -8,7 +8,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.apache.commons.io.FileUtils;
 import org.arl.fjage.Agent;
-import org.arl.fjage.FjageError;
+import org.arl.fjage.FjageException;
 
 /**
  * Persistent storage API. The default store is in the user's home directory under
@@ -31,7 +31,7 @@ public class Store {
     try {
       md = MessageDigest.getInstance("SHA-256");
     } catch (NoSuchAlgorithmException ex) {
-      throw new FjageError("SHA-256 not available");
+      throw new FjageException("SHA-256 not available");
     }
     root = new File(storeRoot, clazz);
   }
@@ -107,7 +107,7 @@ public class Store {
    * Stores an object.
    */
   public void put(Serializable obj) {
-    if (root == null) throw new FjageError("Store has been closed");
+    if (root == null) throw new FjageException("Store has been closed");
     File d = new File(root, obj.getClass().getName());
     d.mkdirs();
     File f = new File(d, getId(obj));
@@ -120,7 +120,7 @@ public class Store {
       out.flush();
       fout.getFD().sync();
     } catch (Exception ex) {
-      throw new FjageError(ex.toString());
+      throw new FjageException(ex.toString());
     } finally {
       closeQuietly(out);
       closeQuietly(fout);
@@ -150,7 +150,7 @@ public class Store {
     } catch (IOException ex) {
       return null;
     } catch (Exception ex) {
-      throw new FjageError(ex.toString());
+      throw new FjageException(ex.toString());
     } finally {
       closeQuietly(in);
       closeQuietly(fin);
@@ -165,7 +165,7 @@ public class Store {
    * @return object with given ID, or null if not found
    */
   public <T> T getById(Class<T> type, String id) {
-    if (root == null) throw new FjageError("Store has been closed");
+    if (root == null) throw new FjageException("Store has been closed");
     File f = new File(new File(root, type.getName()), id);
     return load(type, f);
   }
@@ -177,7 +177,7 @@ public class Store {
    * @return list of objects with specified class
    */
   public <T> List<T> getByType(Class<T> type) {
-    if (root == null) throw new FjageError("Store has been closed");
+    if (root == null) throw new FjageException("Store has been closed");
     List<T> out = new ArrayList<T>();
     File[] list = new File(root, type.getName()).listFiles();
     if (list == null) return out;
@@ -206,7 +206,7 @@ public class Store {
    * @return true if removed, false otherwise
    */
   public <T> boolean removeById(Class<T> type, String id) {
-    if (root == null) throw new FjageError("Store has been closed");
+    if (root == null) throw new FjageException("Store has been closed");
     File f = new File(new File(root, type.getName()), id);
     return f.delete();
   }
@@ -218,7 +218,7 @@ public class Store {
    * @return true if removed, false otherwise
    */
   public <T> boolean removeByType(Class<T> type) {
-    if (root == null) throw new FjageError("Store has been closed");
+    if (root == null) throw new FjageException("Store has been closed");
     try {
       File f = new File(root, type.getName());
       FileUtils.deleteDirectory(f);
@@ -234,7 +234,7 @@ public class Store {
    * no longer be used.
    */
   public boolean delete() {
-    if (root == null) throw new FjageError("Store has been closed");
+    if (root == null) throw new FjageException("Store has been closed");
     try {
       FileUtils.deleteDirectory(root);
       close();
@@ -248,7 +248,7 @@ public class Store {
    * Gets the size of the data store (in bytes).
    */
   public long size() {
-    if (root == null) throw new FjageError("Store has been closed");
+    if (root == null) throw new FjageException("Store has been closed");
     try {
       return FileUtils.sizeOfDirectory(root);
     } catch (IllegalArgumentException ex) {

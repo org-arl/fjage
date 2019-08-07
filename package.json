@@ -7,8 +7,8 @@
     "doc": "docs"
   },
   "dependencies": {
-    "jsdoc": "^3.6.2",
-    "puppeteer": "^1.18.1"
+    "jsdoc": "^3.6.3",
+    "puppeteer": "^1.19.0"
   },
   "devDependencies": {
     "documentation": "^12.0.1"
