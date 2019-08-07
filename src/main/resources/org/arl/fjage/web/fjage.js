@@ -295,6 +295,7 @@ export class Gateway {
     url = url || 'ws://'+window.location.hostname+':'+(window.location.port||80)+'/ws/';
     let existing = window.fjage.getGateway(url);
     if (existing) return existing;
+    this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.aid = 'WebGW-'+_guid(4);         // gateway agent name
@@ -316,6 +317,7 @@ export class Gateway {
     };
     this.sock.send('{"alive": true}\n');
     this._update_watch();
+    this._firstConn = false;
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
   }
@@ -382,7 +384,7 @@ export class Gateway {
   }
 
   _websockReconnect(){
-    if (!this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
+    if (this._firstConn || !this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
     if(this.debug) console.log('Reconnecting to ', this.sock.url);
     setTimeout(() => {
       this.pending = {};
