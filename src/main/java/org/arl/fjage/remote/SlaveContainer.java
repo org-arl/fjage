@@ -45,7 +45,7 @@ public class SlaveContainer extends RemoteContainer {
    * @param hostname hostname of the master container.
    * @param port port on which the master container's TCP server runs.
    */
-  public SlaveContainer(Platform platform, String hostname, int port) {
+  public SlaveContainer(Platform platform, String hostname, int port) throws IOException {
     super(platform);
     this.hostname = hostname;
     this.port = port;
@@ -61,7 +61,7 @@ public class SlaveContainer extends RemoteContainer {
    * @param hostname hostname of the master container.
    * @param port port on which the master container's TCP server runs.
    */
-  public SlaveContainer(Platform platform, String name, String hostname, int port) {
+  public SlaveContainer(Platform platform, String name, String hostname, int port) throws IOException {
     super(platform, name);
     this.hostname = hostname;
     this.port = port;
@@ -77,7 +77,7 @@ public class SlaveContainer extends RemoteContainer {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public SlaveContainer(Platform platform, String devname, int baud, String settings) {
+  public SlaveContainer(Platform platform, String devname, int baud, String settings) throws IOException {
     super(platform);
     this.hostname = devname;
     this.port = -1;
@@ -97,7 +97,7 @@ public class SlaveContainer extends RemoteContainer {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public SlaveContainer(Platform platform, String name, String devname, int baud, String settings) {
+  public SlaveContainer(Platform platform, String name, String devname, int baud, String settings) throws IOException {
     super(platform, name);
     this.hostname = devname;
     this.port = -1;
@@ -282,29 +282,37 @@ public class SlaveContainer extends RemoteContainer {
 
   /////////////// Private stuff
 
-  private void connectToMaster() {
-    new Thread(() -> {
-      try {
-        while (!quit) {
-          try {
-            log.info("Connecting to "+hostname+":"+(port>=0?":"+port:"@"+baud));
-            Connector conn;
-            if (port >= 0) conn = new TcpConnector(hostname, port);
-            else conn = new SerialPortConnector(hostname, baud, settings);
-            master = new ConnectionHandler(conn, SlaveContainer.this);
-            master.start();
-            master.join();
-            log.info("Connection to "+hostname+(port>=0?":"+port:"@"+baud)+" lost");
-            master = null;
-          } catch (IOException ex) {
-            log.warning("Connection failed: "+ex.toString());
+  private void tryConnecting() throws IOException {
+    Connector conn;
+    if (port >= 0) conn = new TcpConnector(hostname, port);
+    else conn = new SerialPortConnector(hostname, baud, settings);
+    master = new ConnectionHandler(conn, SlaveContainer.this);
+  }
+
+  private void connectToMaster() throws IOException {
+    tryConnecting();
+    new Thread(getClass().getSimpleName()+">"+hostname) {
+      @Override
+      public void run() {
+        try {
+          while (!quit) {
+            try {
+              tryConnecting();
+              log.info("Connected to "+hostname+":"+(port>=0?":"+port:"@"+baud));
+              master.start();
+              master.join();
+              log.info("Connection to "+hostname+(port>=0?":"+port:"@"+baud)+" lost");
+              master = null;
+            } catch (IOException ex) {
+              // do nothing
+            }
+            if (!quit) Thread.sleep(1000);
           }
-          Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+          log.warning("Connection manager interrupted!");
         }
-      } catch (InterruptedException ex) {
-        log.warning("Connection manager interrupted!");
       }
-    }).start();
+    }.start();
   }
 
   private synchronized void updateWatchList() {

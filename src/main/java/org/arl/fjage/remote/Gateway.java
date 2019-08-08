@@ -39,7 +39,7 @@ public class Gateway implements Messenger {
 
   protected Container container = null;
   protected Agent agent = null;
-  protected boolean shutdownContainer = false;
+  protected boolean shutdownContainer = true;
 
   protected Gateway() {
     // empty constructor to allow extending gateway
@@ -56,7 +56,7 @@ public class Gateway implements Messenger {
    * @param hostname hostname to connect to.
    * @param port TCP port to connect to.
    */
-  public Gateway(Platform platform, String hostname, int port) {
+  public Gateway(Platform platform, String hostname, int port) throws IOException {
     container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
     init();
     platform.start();
@@ -68,7 +68,7 @@ public class Gateway implements Messenger {
    * @param hostname hostname to connect to.
    * @param port TCP port to connect to.
    */
-  public Gateway(String hostname, int port) {
+  public Gateway(String hostname, int port) throws IOException {
     Platform platform = new RealTimePlatform();
     container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
     init();
@@ -85,7 +85,7 @@ public class Gateway implements Messenger {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public Gateway(Platform platform, String devname, int baud, String settings) {
+  public Gateway(Platform platform, String devname, int baud, String settings) throws IOException {
     container = new SlaveContainer(platform, "Gateway@"+hashCode(), devname, baud, settings);
     init();
     platform.start();
@@ -98,7 +98,7 @@ public class Gateway implements Messenger {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public Gateway(String devname, int baud, String settings) {
+  public Gateway(String devname, int baud, String settings) throws IOException {
     Platform platform = new RealTimePlatform();
     container = new SlaveContainer(platform, "Gateway@"+hashCode(), devname, baud, settings);
     init();

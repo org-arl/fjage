@@ -50,7 +50,7 @@ class ConnectionHandler extends Thread {
     out = new DataOutputStream(conn.getOutputStream());
     if (keepAlive) {
       if (closeOnDead) {
-        (new Thread() {
+        (new Thread(getName()+":init") {
           @Override
           public void run() {
             println(ALIVE);
