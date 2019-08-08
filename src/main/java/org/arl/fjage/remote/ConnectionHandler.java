@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 import org.arl.fjage.AgentID;
-import org.arl.fjage.connectors.Connector;
+import org.arl.fjage.connectors.*;
 
 /**
  * Handles a JSON/TCP connection with remote container.
@@ -24,13 +24,14 @@ class ConnectionHandler extends Thread {
 
   private final String ALIVE = "{\"alive\": true}";
   private final String SIGN_OFF = "{\"alive\": false}";
+  private final int TIMEOUT = 5000;
 
   private Connector conn;
   private DataOutputStream out;
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
   private Logger log = Logger.getLogger(getClass().getName());
   private RemoteContainer container;
-  private boolean alive, keepAlive;
+  private boolean alive, keepAlive, closeOnDead;
   private ExecutorService pool = Executors.newSingleThreadExecutor();
   private Set<AgentID> watchList = new HashSet<>();
 
@@ -40,13 +41,34 @@ class ConnectionHandler extends Thread {
     setName(conn.toString());
     alive = false;
     keepAlive = true;
+    closeOnDead = (conn instanceof TcpConnector) && (container instanceof MasterContainer);
   }
 
   @Override
   public void run() {
     BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
     out = new DataOutputStream(conn.getOutputStream());
-    if (keepAlive) println(ALIVE);
+    if (keepAlive) {
+      if (closeOnDead) {
+        (new Thread() {
+          @Override
+          public void run() {
+            println(ALIVE);
+            try {
+              Thread.sleep(TIMEOUT);
+            } catch (InterruptedException ex) {
+              // do nothing
+            }
+            if (!alive) {
+              log.fine("Connection dead");
+              close();
+            }
+          }
+        }).start();
+      } else {
+        println(ALIVE);
+      }
+    }
     while (conn != null) {
       String s = null;
       try {
@@ -171,6 +193,7 @@ class ConnectionHandler extends Thread {
     if (keepAlive && alive) {
       alive = false;
       log.fine("Connection dead");
+      if (closeOnDead) close();
     }
     return null;
   }
