@@ -68,6 +68,19 @@ public class WebServer {
   }
 
   /**
+   * Checks if an instance of a web server is running on the specified port.
+   *
+   * @param port HTTP port number.
+   * @return true if running, false otherwise.
+   */
+  public static boolean hasInstance(int port) {
+    synchronized (servers) {
+      WebServer svr = servers.get(port);
+      return svr != null;
+    }
+  }
+
+  /**
    * Shutdown all web servers.
    */
   public static void shutdown() {
@@ -89,7 +102,7 @@ public class WebServer {
     this(port, "127.0.0.1");
   }
 
-  protected WebServer(int port, String ip){
+  protected WebServer(int port, String ip) {
     this.port = port;
     server = new Server(InetSocketAddress.createUnresolved(ip, port));
     server.setStopAtShutdown(true);
@@ -141,6 +154,7 @@ public class WebServer {
     }
     server = null;
     contexts = null;
+    if (port > 0) servers.remove(port);
   }
 
 
@@ -223,6 +237,16 @@ public class WebServer {
     if (handler == null) return;
     staticContexts.remove(context);
     remove(handler);
+  }
+
+  /**
+   * Checks if a context is already configured to serve documents.
+   *
+   * @param context context path.
+   * @return true if configured, false otherwise
+   */
+  public boolean hasContext(String context) {
+    return staticContexts.get(context) != null;
   }
 
 }
