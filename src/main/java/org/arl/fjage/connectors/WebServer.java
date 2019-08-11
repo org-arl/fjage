@@ -26,6 +26,11 @@ import org.eclipse.jetty.server.handler.gzip.GzipHandler;
  */
 public class WebServer {
 
+  //////// constants
+
+  public static final String NOCACHE = "no-cache, no-store, must-revalidate";
+  public static final String CACHE = "public, max-age=31536000";
+
   //////// static attributes and methods
 
   private static Map<Integer,WebServer> servers = new HashMap<Integer,WebServer>();
@@ -195,15 +200,45 @@ public class WebServer {
    *
    * @param context context path.
    * @param resource resource path.
+   * @param cacheControl cache control header.
    */
-  public void add(String context, String resource) {
+  public void add(String context, String resource, String cacheControl) {
     String staticWebResDir = getClass().getResource(resource).toExternalForm();
     ContextHandler handler = new ContextHandler(context);
     ResourceHandler resHandler = new ResourceHandler();
     resHandler.setResourceBase(staticWebResDir);
     resHandler.setWelcomeFiles(new String[]{ "index.html" });
     resHandler.setDirectoriesListed(false);
-    resHandler.setCacheControl("public, max-age=31536000");
+    resHandler.setCacheControl(cacheControl);
+    handler.setHandler(resHandler);
+    staticContexts.put(context, handler);
+    add(handler);
+  }
+
+  /**
+   * Adds a context to serve static documents.
+   *
+   * @param context context path.
+   * @param resource resource path.
+   */
+  public void add(String context, String resource) {
+    add(context, resource, "public, max-age=31536000");
+  }
+
+  /**
+   * Adds a context to serve static documents.
+   *
+   * @param context context path.
+   * @param dir filesystem path of directory to serve files from.
+   * @param cacheControl cache control header.
+   */
+  public void add(String context, File dir, String cacheControl) {
+    ContextHandler handler = new ContextHandler(context);
+    ResourceHandler resHandler = new ResourceHandler();
+    resHandler.setResourceBase(dir.getAbsolutePath());
+    resHandler.setWelcomeFiles(new String[]{ "index.html" });
+    resHandler.setDirectoriesListed(false);
+    resHandler.setCacheControl(cacheControl);
     handler.setHandler(resHandler);
     staticContexts.put(context, handler);
     add(handler);
@@ -216,15 +251,7 @@ public class WebServer {
    * @param dir filesystem path of directory to serve files from.
    */
   public void add(String context, File dir) {
-    ContextHandler handler = new ContextHandler(context);
-    ResourceHandler resHandler = new ResourceHandler();
-    resHandler.setResourceBase(dir.getAbsolutePath());
-    resHandler.setWelcomeFiles(new String[]{ "index.html" });
-    resHandler.setDirectoriesListed(false);
-    resHandler.setCacheControl("public, max-age=31536000");
-    handler.setHandler(resHandler);
-    staticContexts.put(context, handler);
-    add(handler);
+    add(context, dir, "public, max-age=31536000");
   }
 
   /**
