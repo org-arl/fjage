@@ -169,6 +169,13 @@ public class Gateway implements Messenger {
   }
 
   /**
+   * Flushes the incoming message queue.
+   */
+  public void flush() {
+    while (receive() != null);
+  }
+
+  /**
    * Closes the gateway. The gateway functionality may not longer be accessed after
    * this method is called.
    */

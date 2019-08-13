@@ -222,12 +222,18 @@ end
 function subscribe(gw::Gateway, aid::AgentID)
   gw.subscriptions[string(topic(gw, aid))] = true
   _update_watch(gw)
+  return true
 end
 
 "Unsubscribe from receiving messages sent to the given topic."
 function unsubscribe(gw::Gateway, aid::AgentID)
-  delete!(gw.subscriptions, string(topic(gw, aid)))
-  _update_watch(gw)
+  k = string(topic(gw, aid))
+  if haskey(gw.subscriptions, k)
+    delete!(gw.subscriptions, k)
+    _update_watch(gw)
+    return true
+  end
+  return false
 end
 
 "Close a gateway connection to the master container."
@@ -396,7 +402,8 @@ end
     msg = receive(gw[, filter][, timeout])
 
 Receive an incoming message from other agents or topics. Timeout is specified in
-milliseconds. If no timeout is specified, the call is non-blocking.
+milliseconds. If no timeout is specified, the call is non-blocking. If a negative timeout
+is specified, the call is blocking until a message is available.
 
 If a `filter` is specified, only messages matching the filter are retrieved. A filter
 may be a message type, a message or a function. If it is a message type, only messages
@@ -405,25 +412,21 @@ field is set to the `msgID` of the specified message is retrieved. If it is a fu
 it must take in a message and return `true` or `false`. A message for which it returns
 `true` is retrieved.
 """
-function receive(gw::Gateway)
+function receive(gw::Gateway, timeout::Integer=0)
   if isready(gw.queue)
     return take!(gw.queue)
   end
-end
-
-function receive(gw::Gateway, timeout::Integer)
-  if isready(gw.queue)
-    return take!(gw.queue)
-  end
-  if timeout <= 0
+  if timeout == 0
     return nothing
   end
   waiting = true
-  @async begin
-    timer = Timer(timeout/1000.0)
-    wait(timer)
-    if waiting
-      push!(gw.queue, nothing)
+  if timeout > 0
+    @async begin
+      timer = Timer(timeout/1000.0)
+      wait(timer)
+      if waiting
+        push!(gw.queue, nothing)
+      end
     end
   end
   rv = take!(gw.queue)
@@ -431,7 +434,7 @@ function receive(gw::Gateway, timeout::Integer)
   return rv
 end
 
-function receive(gw::Gateway, filt, timeout::Integer)
+function receive(gw::Gateway, filt, timeout::Integer=0)
   t1 = now() + Millisecond(timeout)
   cache = []
   while true
@@ -594,11 +597,14 @@ GenericMessage = MessageClass("org.arl.fjage.GenericMessage", Performative.INFOR
 
 """
     msg = Message([perf])
+    msg = Message(inreplyto[, perf])
 
 Create a message with just a performative (`perf`) and no data. If the performative
-is not specified, it defaults to INFORM.
+is not specified, it defaults to INFORM. If the inreplyto is specified, the message
+`inReplyTo` and `recipient` fields are set accordingly.
 """
 Message(perf::String=Performative.INFORM) = GenericMessage(performative=perf)
+Message(inreplyto::Message, perf::String=Performative.INFORM) = GenericMessage(performative=perf, inReplyTo=inreplyto.msgID, recipient=inreplyto.sender)
 
 # Base functions to add local methods
 Base.close(gw::Gateway) = close(gw)
