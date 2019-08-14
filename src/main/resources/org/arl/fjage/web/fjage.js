@@ -1,6 +1,6 @@
 ////// settings
 
-const TIMEOUT = 5000;              // ms, timeout to get response from to master container
+const TIMEOUT = 1000;              // ms, timeout to get response from to master container
 const RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
 
 ////// global
@@ -10,7 +10,7 @@ if (typeof window.fjage === 'undefined') {
   window.fjage.gateways = [];
   window.fjage.MessageClass = MessageClass;
   window.fjage.getGateway = function (url){
-    var f = window.fjage.gateways.filter(g => (new URL(g.sock.url)).toString() == (new URL(url)).toString());
+    var f = window.fjage.gateways.filter(g => g.sock.url == url);
     if (f.length ) return f[0];
   };
 }
@@ -110,12 +110,12 @@ export class AgentID {
     * Create an AgentID
     * @param {string} name - name of the agent.
     * @param {boolean} topic - name of topic.
-    * @param {Gateway} gw - Gateway owner for this AgentID.
+    * @param {Gateway} owner - Gateway owner for this AgentID.
     */
-  constructor(name, topic, gw) {
+  constructor(name, topic, owner) {
     this.name = name;
     this.topic = topic;
-    this.gw = gw;
+    this.owner = owner;
   }
 
   /**
@@ -145,7 +145,7 @@ export class AgentID {
    */
   send(msg) {
     msg.recipient = this;
-    this.gw.send(msg);
+    this.owner.send(msg);
   }
 
   /**
@@ -158,7 +158,7 @@ export class AgentID {
    */
   request(msg, timeout=1000) {
     msg.recipient = this;
-    return this.gw.request(msg, timeout);
+    return this.owner.request(msg, timeout);
   }
 
   /**
@@ -191,13 +191,16 @@ export class Message {
 
   /**
    * Creates an empty message.
+   * @param {Message} inReplyTo - message to which this response corresponds to.
+   * @param {Performative} perf  - performative
    */
-  constructor() {
+  constructor(inReplyTo={msgID:null, sender:null}, perf='') {
     this.__clazz__ = 'org.arl.fjage.Message';
     this.msgID = _guid(8);
-    this.sender = '';
-    this.recipient = '';
-    this.perf = '';
+    this.sender = null;
+    this.recipient = inReplyTo.sender;
+    this.perf = perf;
+    this.inReplyTo = inReplyTo.msgID || null;
   }
 
   /**
@@ -289,22 +292,27 @@ export class Gateway {
   /**
    * Creates a gateway connecting to a specified master container over Websockets.
    *
-   * @param {string} url - of the platform to connect to
+   * @param {string} hostname - hostname of the master container to connect to
+   * @param {int} port        - port of the master container to connect to
+   * @param {string} pathname - path of the master container to connect to
    */
-  constructor(url) {
-    url = url || 'ws://'+window.location.hostname+':'+(window.location.port||80)+'/ws/';
+  constructor(hostname=window.location.hostname, port=window.location.port, pathname='/ws/') {
+    var url = new URL('ws://locahost');
+    url.hostname = hostname;
+    url.port = port || 80;
+    url.pathname = pathname;
     let existing = window.fjage.getGateway(url);
     if (existing) return existing;
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
-    this.aid = 'WebGW-'+_guid(4);         // gateway agent name
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
     this.observers = [];                  // external observers wanting to listen incoming messages
     this.queue = [];                      // incoming message queue
     this.keepAlive = true;                // reconnect if websocket connection gets closed/errored
     this.debug = false;                   // debug info to be logged to console?
+    this.aid = new AgentID('WebGW-'+_guid(4));         // gateway agent name
     this._websockSetup(url);
     window.fjage.gateways.push(this);
   }
@@ -339,7 +347,7 @@ export class Gateway {
       // incoming message from master
       let msg = Message._deserialize(obj.message);
       if (!msg) return;
-      if (msg.recipient == this.aid || this.subscriptions[msg.recipient]) {
+      if (msg.recipient == this.aid.getName() || this.subscriptions[msg.recipient]) {
         for (var i = 0; i < this.observers.length; i++)
           if (this.observers[i](msg)) return;
         this.queue.push(msg);
@@ -351,10 +359,10 @@ export class Gateway {
       let rsp = { id: obj.id, inResponseTo: obj.action };
       switch (obj.action) {
       case 'agents':
-        rsp.agentIDs = [this.aid];
+        rsp.agentIDs = [this.aid.getName()];
         break;
       case 'containsAgent':
-        rsp.answer = (obj.agentID == this.aid);
+        rsp.answer = (obj.agentID == this.aid.getName());
         break;
       case 'services':
         rsp.services = [];
@@ -438,6 +446,8 @@ export class Gateway {
     var filtMsgs = this.queue.filter( msg => {
       if (typeof filter == 'string' || filter instanceof String) {
         return 'inReplyTo' in msg && msg.inReplyTo == filter;
+      }else if (typeof filter ==  'function' ){
+        return filter(msg);
       }else{
         return msg instanceof filter;
       }
@@ -451,7 +461,7 @@ export class Gateway {
 
   _update_watch() {
     let watch = Object.keys(this.subscriptions);
-    watch.push(this.aid);
+    watch.push(this.aid.getName());
     let rq = { action: 'wantsMessagesFor', agentIDs: watch };
     this._websockTx(rq);
   }
@@ -500,7 +510,7 @@ export class Gateway {
    * Returns an object representing the named topic.
    *
    * @param {string|AgentID} topic - name of the topic or AgentID.
-   * @param {string|AgentID} topic2 - name of the topic.
+   * @param {string} topic2 - name of the topic if the topic param is an AgentID.
    * @returns {AgentID} object representing the topic.
    */
   topic(topic, topic2) {
@@ -514,11 +524,11 @@ export class Gateway {
   /**
    * Subscribes the gateway to receive all messages sent to the given topic.
    *
-   * @param {string} topic - the topic to subscribe to.
+   * @param {AgentID} topic - the topic to subscribe to.
    * @return {boolean} true if the subscription is successful, false otherwise.
    */
   subscribe(topic) {
-    if (!topic.isTopic()) topic = new AgentID(topic, true, this);
+    if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
     this.subscriptions[topic.toString()] = true;
     this._update_watch();
   }
@@ -526,11 +536,11 @@ export class Gateway {
   /**
    * Unsubscribes the gateway from a given topic.
    *
-   * @param {string} topic - the topic to unsubscribe.
+   * @param {AgentID} topic - the topic to unsubscribe.
    * @returns {void}
    */
   unsubscribe(topic) {
-    if (!topic.isTopic()) topic = new AgentID(topic, true, this);
+    if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
     delete this.subscriptions[topic.toString()];
     this._update_watch();
   }
@@ -568,18 +578,17 @@ export class Gateway {
    * may be an agent or a topic.
    *
    * @param {Message} msg - message to be sent.
-   * @param {boolean} [relay=true] - enable relaying to associated remote containers.
-   * @returns {void}
+   * @returns {Boolean} status - if sending was successful.
    */
-  send(msg, relay=true) {
-    msg.sender = this.aid;
+  send(msg) {
+    msg.sender = this.aid.getName();
     if (msg.perf == '') {
       if (msg.__clazz__.endsWith('Req')) msg.perf = Performative.REQUEST;
       else msg.perf = Performative.INFORM;
     }
-    let rq = JSON.stringify({ action: 'send', relay: relay, message: '###MSG###' });
+    let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
     rq = rq.replace('"###MSG###"', msg._serialize());
-    this._websockTx(rq);
+    return !!this._websockTx(rq);
   }
 
   /**
@@ -598,7 +607,7 @@ export class Gateway {
    * @param {number} [timeout=10000] - timeout in milliseconds.
    * @return {Promise} a promise which resolves with the received response message, null on timeout.
    */
-  async request(msg, timeout=10000) {
+  async request(msg, timeout=1000) {
     this.send(msg);
     let rsp = await this.receive(msg.msgID, timeout);
     return rsp;
@@ -607,26 +616,33 @@ export class Gateway {
   /**
    * Returns a response message received by the gateway. This method returns a {Promise} which resolves when a response is received or if no response is received after the timeout.
    *
-   * @param {function} [filter=undefined] - original message to which a response is expected.
-   * @param {number} [timeout=1000] - timeout in milliseconds.
+   * @param {function} [filter=undefined] - original message to which a response is expected, or a MessageClass of the type of message to match, or a closure to use to match against the message.
+   * @param {number} [timeout=0] - timeout in milliseconds.
    * @return {Message} received response message, null on timeout.
    */
-  receive(filter=undefined, timeout=1000) {
+  receive(filter=undefined, timeout=0) {
     return new Promise((resolve, reject) => {
       let msg = this._getMessageFromQueue.call(this,filter);
       if (msg) {
         resolve(msg);
         return;
       }
-      let lid = _guid(8);
-      let timer = setTimeout(() => {
-        delete this.listener[lid];
+      if (timeout == 0) {
         reject(new Error('Receive Timeout : ' + filter));
-      }, timeout);
+        return;
+      }
+      let lid = _guid(8);
+      let timer;
+      if (timeout > 0){
+        timer = setTimeout(() => {
+          delete this.listener[lid];
+          reject(new Error('Receive Timeout : ' + filter));
+        }, timeout);
+      }
       this.listener[lid] = () => {
         msg = this._getMessageFromQueue.call(this,filter);
         if (!msg) return false;
-        clearTimeout(timer);
+        if(timer) clearTimeout(timer);
         delete this.listener[lid];
         resolve(msg);
         return true;
@@ -648,16 +664,13 @@ export class Gateway {
         var index = window.fjage.gateways.indexOf(this);
         window.fjage.gateways.splice(index,1);
       });
-      return true;
     } else if (this.sock.readyState == this.sock.OPEN) {
       this.sock.send('{"alive": false}\n');
       this.sock.onclose = null;
       this.sock.close();
       var index = window.fjage.gateways.indexOf(this);
       window.fjage.gateways.splice(index,1);
-      return true;
     }
-    return false;
   }
 
 }
