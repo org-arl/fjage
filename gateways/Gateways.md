@@ -9,7 +9,7 @@ All fjåge Gateway implementations should implement the following classes and me
 ### `Gateway()` :: String hostname, Int port, (String settings) -> Gateway
 - Creates a gateway connecting to a specified master container specified by the arguments.
 - Must accept `String hostname, Int port` arguments for TCP connections.
-- May support `String devname, Int baud, String settings` arguments if Serial connections are supported
+- May support `String devname, Int baud, String settings` arguments if Serial connections are supported.
 
 ### `getAgentID()` :: Void -> AgentID
 -  Returns the _AgentID_ associated with the gateway.
@@ -34,7 +34,7 @@ All fjåge Gateway implementations should implement the following classes and me
 - Must default timeout to 1000 millisecond if not specified.
 
 ### `request()` :: Message, (Int timeout) -> Message
-- Sends a request and waits for a response
+- Sends a request and waits for a response.
 - Must not **block** if timeout is 0.
 - Must **block** indefinitely if timeout is -1.
 - Must **block** for timeout milliseconds otherwise.
@@ -44,7 +44,7 @@ All fjåge Gateway implementations should implement the following classes and me
 - Returns an object representing a named notification topic for an agent.
 - Convenience method to create an _AgentID_ with a reference to this _Gateway_ object.
 - Optional if the language doesn't support self-referencing.
-- May ignore the second argument if the first argument is a String.
+- May ignore the second argument if the first argument is a `String`.
 - Must create a topic if the first argument is a `String`.
 - Must create an agent topic if the first argument is an `AgentID`.
 - Must create a named topic for an Agent if the first argument is an `AgentID` and second argument is a `String`.
@@ -64,11 +64,11 @@ All fjåge Gateway implementations should implement the following classes and me
 - Finds an agent that provides a named service.
 
 ### `agentsForService()` :: String -> [AgentID]
-- Finds all agents that provides a named service.
+- Find all agents that provides a named service.
 - Returns an array/list.
 
 ### `flush()` :: Void -> Void
-- Flushes the incoming queue in the Gateway
+- Flushes the incoming queue in the `Gateway`.
 
 
 
@@ -76,7 +76,7 @@ All fjåge Gateway implementations should implement the following classes and me
 
 ### `AgentID()` :: String name, (Boolean isTopic) -> AgentID
 - Create an agent id for an agent or a topic.
-- Must set `Boolean isTopic` to False if unspecified.
+- Must set `Boolean isTopic` to `False` if unspecified.
 
 ### `getName()` :: Void -> String
 - Gets the name of the agent or topic.
