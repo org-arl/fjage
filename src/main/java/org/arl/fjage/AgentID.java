@@ -35,7 +35,6 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    * @param name name of the agent.
    */
   public AgentID(String name) {
-    if (name.contains("#")) throw new FjageException("# not allowed in agent name");
     this.name = name;
     isTopic = false;
     owner = null;
@@ -49,7 +48,6 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    *                false if it is to represent an agent.
    */
   public AgentID(String name, boolean isTopic) {
-    if (name.contains("#")) throw new FjageException("# not allowed in agent name");
     this.name = name;
     this.isTopic = isTopic;
     owner = null;
@@ -62,7 +60,6 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    * @param owner owner agent.
    */
   public AgentID(String name, Messenger owner) {
-    if (name.contains("#")) throw new FjageException("# not allowed in agent name");
     this.name = name;
     isTopic = false;
     this.owner = owner;
@@ -77,7 +74,6 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    * @param owner owner agent.
    */
   public AgentID(String name, boolean isTopic, Messenger owner) {
-    if (name.contains("#")) throw new FjageException("# not allowed in agent name");
     this.name = name;
     this.isTopic = isTopic;
     this.owner = owner;
