@@ -112,13 +112,13 @@ class AgentID:
     """An identifier for an agent or a topic.
     """
 
-    def __init__(self, gw, name, is_topic=False):
+    def __init__(self, name, is_topic=False, owner=None):
         if len(name) == 0 or name[0] == '#':
             raise ValueError('Bad agent name')
         self.is_topic = is_topic
         self.name = name
         self.index = -1
-        self.gw = gw
+        self.owner = owner
 
     def send(self, msg):
         """Sends a message to the agent represented by this id.
@@ -126,7 +126,7 @@ class AgentID:
         :param msg: message to send.
         """
         msg.recipient = self.name
-        self.gw.send(msg)
+        self.owner.send(msg)
 
     def request(self, msg, timeout=1000):
         """Sends a request to the agent represented by this id and waits for
@@ -137,7 +137,10 @@ class AgentID:
         :returns: response.
         """
         msg.recipient = self.name
-        return self.gw.request(msg, timeout)
+        return self.owner.request(msg, timeout)
+
+    def __lshift__(self, msg):
+        return self.request(msg)
 
 
 class Message(object):
@@ -147,13 +150,13 @@ class Message(object):
     on remote containers, all attributes of a message must be serializable.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, inReplyto=None, perf=None, **kwargs):
         self.__clazz__ = 'org.arl.fjage.Message'
         self.msgID = str(_uuid.uuid4())
-        self.perf = None
+        self.perf = perf
         self.recipient = None
         self.sender = None
-        self.inReplyTo = None
+        self.inReplyTo = inReplyto
         for k, v in kwargs.items():
             if not k.startswith('_') and k.endswith('_'):
                 k = k[:-1]
@@ -281,21 +284,14 @@ class Gateway:
     NON_BLOCKING = 0
     BLOCKING = -1
 
-    def __init__(self, hostname, port, name=None):
+    def __init__(self, hostname, port=1100):
         self.hostname = hostname
         self.port = port
         self.connection = None
         self.keepalive = True
         self.logger = _log.getLogger('org.arl.fjage')
         try:
-            if name == None:
-                self.aid = AgentID(self, "PythonGW-" + str(_uuid.uuid4()))
-            else:
-                try:
-                    self.aid = AgentID(self, name)
-                except Exception as e:
-                    self.logger.critical("Exception: Cannot assign name to gateway: " + str(e))
-                    raise
+            self.aid = AgentID("PythonGW-" + str(_uuid.uuid4()), owner=self)
             self.q = list()
             self.subscriptions = list()
             self.pending = dict()
@@ -464,7 +460,7 @@ class Gateway:
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
 
-    def send(self, msg, relay=True):
+    def send(self, msg):
         """Sends a message to the recipient indicated in the message. The recipient may be an agent or a topic.
         """
         tmsg = _copy.deepcopy(msg)
@@ -476,7 +472,7 @@ class Gateway:
                 tmsg.perf = Performative.REQUEST
             else:
                 tmsg.perf = Performative.INFORM
-        rq = _json.dumps({'action': Action.SEND, 'relay': relay, 'message': '###MSG###'})
+        rq = _json.dumps({'action': Action.SEND, 'relay': True, 'message': '###MSG###'})
         rq = rq.replace('"###MSG###"', tmsg._serialize())
         try:
             name = self.socket.getpeername()
@@ -574,17 +570,26 @@ class Gateway:
         """
         if topic2 is None:
             if isinstance(topic, str):
-                return AgentID(self, topic, True)
+                return AgentID(topic, True, owner=self)
             elif isinstance(topic, AgentID):
                 if topic.is_topic:
                     return topic
-                return AgentID(self, topic.name + "__ntf", True)
+                return AgentID(topic.name + "__ntf", True, owner=self)
             else:
-                return AgentID(self, topic.__class__.__name__ + "." + str(topic), True)
+                return AgentID(topic.__class__.__name__ + "." + str(topic), True, owner=self)
         else:
             if not isinstance(topic2, str):
                 topic2 = topic2.__class__.__name__ + "." + str(topic2)
-            return AgentID(self, topic.name + "__" + topic2 + "__ntf", True)
+            return AgentID(topic.name + "__" + topic2 + "__ntf", True, owner=self)
+
+    def agent(name):
+        """Returns an object representing a named agent.
+
+        :param name: name of the agent.
+        :returns: object representing the agent.
+        """
+        return AgentID(name, owner=self)
+
 
     def subscribe(self, topic):
         """Subscribes the gateway to receive all messages sent to the given topic.
@@ -593,7 +598,7 @@ class Gateway:
         """
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
-                new_topic = AgentID(self, topic.name + "__ntf", True)
+                new_topic = AgentID(topic.name + "__ntf", True, owner=self)
             else:
                 new_topic = topic
             if new_topic.name in self.subscriptions:
@@ -613,7 +618,7 @@ class Gateway:
         """
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
-                new_topic = AgentID(self, topic.name + "__ntf", True)
+                new_topic = AgentID(topic.name + "__ntf", True, owner=self)
             else:
                 new_topic = topic
             if len(self.subscriptions) == 0:
@@ -629,7 +634,7 @@ class Gateway:
             self.logger.critical("Invalid AgentID")
             return False
 
-    def agentForService(self, service, timeout=1000):
+    def agentForService(self, service):
         """Finds an agent that provides a named service. If multiple agents are registered
         to provide a given service, any of the agents' id may be returned.
 
@@ -641,7 +646,7 @@ class Gateway:
         self.socket.sendall((_json.dumps(rq) + '\n').encode())
         res_event = _td.Event()
         self.pending[req_id] = (res_event, None)
-        ret = res_event.wait(timeout)
+        ret = res_event.wait(self.DEFAULT_TIMEOUT)
         if not ret:
             return None
         else:
@@ -652,12 +657,12 @@ class Gateway:
                 a = None
             if a is not None:
                 if isinstance(a, str):
-                    a = AgentID(self, a)
+                    a = AgentID(a, owner=self)
                 else:
-                    a = AgentID(self, a.name, a.is_topic)
+                    a = AgentID(a.name, a.is_topic, owner=self)
             return a
 
-    def agentsForService(self, service, timeout=1000):
+    def agentsForService(self, service):
         """Finds all agents that provides a named service.
 
         :param service: the named service of interest.
@@ -674,7 +679,7 @@ class Gateway:
         self.socket.sendall((_json.dumps(j_dict) + '\n').encode())
         res_event = _td.Event()
         self.pending[req_id] = (res_event, None)
-        ret = res_event.wait(timeout)
+        ret = res_event.wait(self.DEFAULT_TIMEOUT)
         if not ret:
             return None
         else:
@@ -686,9 +691,9 @@ class Gateway:
             if a is not None:
                 for j in range(len(a)):
                     if isinstance(a[j], str):
-                        a[j] = AgentID(self, a[j])
+                        a[j] = AgentID(a[j], owner=self)
                     else:
-                        a[j] = AgentID(self, a[j].name)
+                        a[j] = AgentID(a[j].name, owner=self)
             return a
 
     def getAgentID(self):
