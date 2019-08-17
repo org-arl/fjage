@@ -425,10 +425,10 @@ abstract class BaseGroovyScript extends Script {
           if (args != null && args.length > 0)
             for (a in args)
               arglist.add(a)
-          String folder = null
+          def folder = null
           if (!name.startsWith(File.pathSeparator) && binding.hasVariable('scripts'))
             folder = binding.getVariable('scripts')
-          File f = new File((String)folder, name)
+          File f = folder ? new File(folder, name) : new File(name)
           binding.setVariable('script', f.getAbsoluteFile())
           groovy.run(f, arglist)
         }
