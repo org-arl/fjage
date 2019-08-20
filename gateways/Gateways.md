@@ -83,6 +83,7 @@ All fjåge Gateway implementations should implement the following classes and me
 ### `getName()` :: Void -> String
 - Gets the name of the agent or topic.
 - May be implemented as a `name` property on the _AgentID_ object.
+- Can be used to generate a JSON string for serialization.
 
 ### `isTopic()`:: Void -> Bool
 - Returns true if the agent id represents a topic.
@@ -105,7 +106,8 @@ All fjåge Gateway implementations should implement the following classes and me
 - Convenience method to send a _Message_ to an Agent represented by this id and wait for a response.
 - Optional if the language doesn't support self-referencing.
 
-
+### Notes
+- When serializing an AgentID, a `#` must be prepended to the AgentID name if the AgentID is a topic.
 
 ## MessageClass Class
 
