@@ -144,7 +144,7 @@ export class AgentID {
    * @returns {void}
    */
   send(msg) {
-    msg.recipient = this;
+    msg.recipient = this.toString();
     this.owner.send(msg);
   }
 
@@ -157,7 +157,7 @@ export class AgentID {
    * @return {Message} response.
    */
   request(msg, timeout=1000) {
-    msg.recipient = this;
+    msg.recipient = this.toString();
     return this.owner.request(msg, timeout);
   }
 
@@ -347,7 +347,7 @@ export class Gateway {
       // incoming message from master
       let msg = Message._deserialize(obj.message);
       if (!msg) return;
-      if (msg.recipient == this.aid.getName() || this.subscriptions[msg.recipient]) {
+      if ((msg.recipient == this.aid.toString() )|| this.subscriptions[msg.recipient]) {
         for (var i = 0; i < this.observers.length; i++)
           if (this.observers[i](msg)) return;
         this.queue.push(msg);
@@ -584,7 +584,7 @@ export class Gateway {
    * @returns {Boolean} status - if sending was successful.
    */
   send(msg) {
-    msg.sender = this.aid.getName();
+    msg.sender = this.aid.toString();
     if (msg.perf == '') {
       if (msg.__clazz__.endsWith('Req')) msg.perf = Performative.REQUEST;
       else msg.perf = Performative.INFORM;
