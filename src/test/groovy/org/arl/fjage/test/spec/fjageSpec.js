@@ -226,7 +226,7 @@ describe('An AgentID', function () {
     const aid = new AgentID('agent-name', true, gw);
     expect(aid.getName()).toBe('agent-name');
     expect(aid.isTopic()).toBe(true);
-    expect(aid.toString()).toBe('#agent-name');
+    expect(aid.toJSON()).toBe('#agent-name');
   });
 });
 

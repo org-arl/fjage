@@ -144,7 +144,7 @@ export class AgentID {
    * @returns {void}
    */
   send(msg) {
-    msg.recipient = this.toString();
+    msg.recipient = this.toJSON();
     this.owner.send(msg);
   }
 
@@ -157,7 +157,7 @@ export class AgentID {
    * @return {Message} response.
    */
   request(msg, timeout=1000) {
-    msg.recipient = this.toString();
+    msg.recipient = this.toJSON();
     return this.owner.request(msg, timeout);
   }
 
@@ -167,8 +167,7 @@ export class AgentID {
    * @return {string} string representation of the agent id.
    */
   toString() {
-    if (this.topic) return '#'+this.name;
-    return this.name;
+    return this.toJSON() + ((this.owner && this.owner.sock) ? ` on ${this.owner.sock.url}` : '');
   }
 
   /**
@@ -177,7 +176,7 @@ export class AgentID {
    * @return {string} JSON string representation of the agent id.
    */
   toJSON() {
-    return this.toString();
+    return (this.topic ? '#' : '') + this.name;
   }
 }
 
@@ -347,7 +346,7 @@ export class Gateway {
       // incoming message from master
       let msg = Message._deserialize(obj.message);
       if (!msg) return;
-      if ((msg.recipient == this.aid.toString() )|| this.subscriptions[msg.recipient]) {
+      if ((msg.recipient == this.aid.toJSON() )|| this.subscriptions[msg.recipient]) {
         for (var i = 0; i < this.observers.length; i++)
           if (this.observers[i](msg)) return;
         this.queue.push(msg);
@@ -532,7 +531,7 @@ export class Gateway {
    */
   subscribe(topic) {
     if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
-    this.subscriptions[topic.toString()] = true;
+    this.subscriptions[topic.toJSON()] = true;
     this._update_watch();
   }
 
@@ -544,7 +543,7 @@ export class Gateway {
    */
   unsubscribe(topic) {
     if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
-    delete this.subscriptions[topic.toString()];
+    delete this.subscriptions[topic.toJSON()];
     this._update_watch();
   }
 
@@ -584,7 +583,7 @@ export class Gateway {
    * @returns {Boolean} status - if sending was successful.
    */
   send(msg) {
-    msg.sender = this.aid.toString();
+    msg.sender = this.aid.toJSON();
     if (msg.perf == '') {
       if (msg.__clazz__.endsWith('Req')) msg.perf = Performative.REQUEST;
       else msg.perf = Performative.INFORM;
