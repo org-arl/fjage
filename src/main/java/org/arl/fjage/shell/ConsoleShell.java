@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2018, Mandar Chitre
+Copyright (c) 2018-2019, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import java.io.*;
+import java.util.logging.Logger;
 import org.arl.fjage.connectors.ConnectionListener;
 import org.arl.fjage.connectors.Connector;
 import org.jline.reader.*;
@@ -18,13 +20,9 @@ import org.jline.terminal.TerminalBuilder;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStyle;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.logging.Logger;
-
 /**
- * Shell input/output driver for console devices.
+ * Shell input/output driver for console devices with line editing and
+ * color support.
  */
 public class ConsoleShell implements Shell, ConnectionListener {
 
@@ -67,22 +65,6 @@ public class ConsoleShell implements Shell, ConnectionListener {
   }
 
   /**
-   * Create a console shell attached to a specified input and output stream.
-   *
-   * @param in input stream.
-   * @param out output stream.
-   * @param dumb true to force a dumb terminal, false otherwise.
-   */
-  public ConsoleShell(InputStream in, OutputStream out, boolean dumb) {
-    try {
-      term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
-      if (!dumb) setupStyles();
-    } catch (IOException ex) {
-      log.warning("Unable to open terminal: "+ex.toString());
-    }
-  }
-
-  /**
    * Create a console shell attached to a specified connector.
    *
    * @param connector input/output streams.
@@ -95,25 +77,6 @@ public class ConsoleShell implements Shell, ConnectionListener {
       this.connector = connector;
       term = TerminalBuilder.builder().streams(in, out).build();
       setupStyles();
-    } catch (IOException ex) {
-      log.warning("Unable to open terminal: "+ex.toString());
-    }
-  }
-
-  /**
-   * Create a console shell attached to a specified connector.
-   *
-   * @param connector input/output streams.
-   * @param dumb true to force a dumb terminal, false otherwise.
-   */
-  public ConsoleShell(Connector connector, boolean dumb) {
-    try {
-      InputStream in = connector.getInputStream();
-      OutputStream out = connector.getOutputStream();
-      connector.setConnectionListener(this);
-      this.connector = connector;
-      term = TerminalBuilder.builder().streams(in, out).dumb(dumb).build();
-      if (!dumb) setupStyles();
     } catch (IOException ex) {
       log.warning("Unable to open terminal: "+ex.toString());
     }
@@ -149,7 +112,8 @@ public class ConsoleShell implements Shell, ConnectionListener {
       console.setVariable(LineReader.DISABLE_COMPLETION, true);
       return;
     }
-    if (scriptEngine == null) console = LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).build();
+    if (scriptEngine == null)
+      console = LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).build();
     else {
       Parser parser = new Parser() {
         @Override
@@ -221,7 +185,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
 
   @Override
   public boolean isDumb() {
-    return errorStyle == null;
+    return Terminal.TYPE_DUMB.equals(term.getType());
   }
 
   @Override

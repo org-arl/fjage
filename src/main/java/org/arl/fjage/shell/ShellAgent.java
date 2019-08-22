@@ -151,6 +151,7 @@ public class ShellAgent extends Agent {
         @Override
         public void run() {
           String s = null;
+          long backoff = 0;
           while (!quit) {
             if (!enabled) {
               try {
@@ -165,6 +166,17 @@ public class ShellAgent extends Agent {
             if (engine != null) {
               prompt1 = engine.getPrompt(false);
               prompt2 = engine.getPrompt(true);
+            }
+            if (s != null) {
+              // this usually means that the engine is still processing
+              // earlier command so give it time to finish
+              try {
+                if (backoff > 0) Thread.sleep(backoff);
+              } catch (InterruptedException ex) {
+                interrupt();
+              }
+              if (backoff == 0) backoff = 1;
+              else if (backoff < 256) backoff *= 2;
             }
             s = shell.readLine(prompt1, prompt2, s);
             if (s == null) {
@@ -189,6 +201,7 @@ public class ShellAgent extends Agent {
             } else {
               if (engine == null) s = null;
               else if (exec == null && !engine.isBusy() && enabled) {
+                backoff = 0;
                 final String cmd = s.trim();
                 final String p1 = prompt1==null ? "" : prompt1;
                 final String p2 = prompt2==null ? "\n" : "\n"+prompt2;
