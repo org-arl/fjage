@@ -276,7 +276,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
         JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
-        if (rsp != null && rsp.agentID != null) return rsp.agentID;
+        if (rsp != null && rsp.agentID != null && rsp.agentID.getName().length() > 0) return rsp.agentID;
       }
     }
     return null;
