@@ -73,6 +73,21 @@ public class WebServer {
   }
 
   /**
+   * Gets an instance of a web server running on the specified port. If an instance is not
+   * already available, a new one is created.
+   *
+   * @param port HTTP port number.
+   * @param ip IP address to bind HTTP server to.
+   */
+  public static WebServer getInstance(int port, String ip) {
+    synchronized (servers) {
+      WebServer svr = servers.get(port);
+      if (svr == null || svr.server == null) svr = new WebServer(port, ip);
+      return svr;
+    }
+  }
+
+  /**
    * Checks if an instance of a web server is running on the specified port.
    *
    * @param port HTTP port number.
