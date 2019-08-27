@@ -307,8 +307,8 @@ export class Gateway {
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
-    this.msgObservers = [];               // external msgObservers wanting to listen incoming messages
-    this.connObservers = [];              // external connObservers for socket connection opening and closing
+    this.msgObservers = [];               // external observers wanting to listen incoming messages
+    this.connObservers = [];              // external observers for socket connection opening and closing
     this.queue = [];                      // incoming message queue
     this.keepAlive = true;                // reconnect if websocket connection gets closed/errored
     this.debug = false;                   // debug info to be logged to console?
