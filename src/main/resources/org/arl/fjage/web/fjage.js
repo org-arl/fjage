@@ -312,12 +312,14 @@ export class Gateway {
     this.keepAlive = true;                // reconnect if websocket connection gets closed/errored
     this.debug = false;                   // debug info to be logged to console?
     this.aid = new AgentID('WebGW-'+_guid(4));         // gateway agent name
+    this.connListener;                    // callback when a socket connection gets opened and closed
     this._websockSetup(url);
     window.fjage.gateways.push(this);
   }
 
   _onWebsockOpen() {
     if(this.debug) console.log('Connected to ', this.sock.url);
+    if (this.connListener) this.connListener(true);
     this.sock.onclose = this._websockReconnect.bind(this);
     this.sock.onmessage = event => {
       this._onWebsockRx.call(this,event.data);
@@ -392,6 +394,7 @@ export class Gateway {
 
   _websockReconnect(){
     if (this._firstConn || !this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
+    if (this.connListener) this.connListener(false);
     if(this.debug) console.log('Reconnecting to ', this.sock.url);
     setTimeout(() => {
       this.pending = {};
