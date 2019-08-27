@@ -493,9 +493,9 @@ export class Gateway {
   }
 
   /**
-   * Add a new listener to listen to all {Message}s sent to this Gateway
+   * Add a new listener to get notified when the connection to master is created and terminated.
    *
-   * @param {function} listener - new callback/function to be called when a {Message} is received.
+   * @param {function} listener - new callback/function to be called connection to master is created and terminated.
    * @returns {void}
    */
   addConnListener(listener) {
@@ -503,7 +503,7 @@ export class Gateway {
   }
 
   /**
-   * Remove a message listener.
+   * Remove a connection listener.
    *
    * @param {function} listener - removes a previously registered listener/callback.
    * @returns {void}
