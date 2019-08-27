@@ -303,6 +303,7 @@ export class Gateway {
     let existing = window.fjage.getGateway(url);
     if (existing) return existing;
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
+    this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.subscriptions = {};              // hashset for all topics that are subscribed
@@ -327,6 +328,7 @@ export class Gateway {
     this.sock.send('{"alive": true}\n');
     this._update_watch();
     this._firstConn = false;
+    this._firstReConn = true;
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
   }
@@ -394,7 +396,8 @@ export class Gateway {
 
   _websockReconnect(){
     if (this._firstConn || !this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
-    this.connObservers.forEach(co => {if(co) co(false);});
+    if (this._firstReConn) this.connObservers.forEach(co => {if(co) co(false);});
+    this._firstReConn = false;
     if(this.debug) console.log('Reconnecting to ', this.sock.url);
     setTimeout(() => {
       this.pending = {};
