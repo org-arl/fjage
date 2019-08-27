@@ -307,19 +307,19 @@ export class Gateway {
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
-    this.observers = [];                  // external observers wanting to listen incoming messages
+    this.msgObservers = [];               // external msgObservers wanting to listen incoming messages
+    this.connObservers = [];              // external connObservers for socket connection opening and closing
     this.queue = [];                      // incoming message queue
     this.keepAlive = true;                // reconnect if websocket connection gets closed/errored
     this.debug = false;                   // debug info to be logged to console?
     this.aid = new AgentID('WebGW-'+_guid(4));         // gateway agent name
-    this.connListener;                    // callback when a socket connection gets opened and closed
     this._websockSetup(url);
     window.fjage.gateways.push(this);
   }
 
   _onWebsockOpen() {
     if(this.debug) console.log('Connected to ', this.sock.url);
-    if (this.connListener) this.connListener(true);
+    this.connObservers.forEach(co => {if(co) co(true);});
     this.sock.onclose = this._websockReconnect.bind(this);
     this.sock.onmessage = event => {
       this._onWebsockRx.call(this,event.data);
@@ -349,8 +349,8 @@ export class Gateway {
       let msg = Message._deserialize(obj.message);
       if (!msg) return;
       if ((msg.recipient == this.aid.toJSON() )|| this.subscriptions[msg.recipient]) {
-        for (var i = 0; i < this.observers.length; i++)
-          if (this.observers[i](msg)) return;
+        for (var i = 0; i < this.msgObservers.length; i++)
+          if (this.msgObservers[i](msg)) return;
         this.queue.push(msg);
         for (var key in this.listener)        // iterate over internal callbacks, until one consumes the message
           if (this.listener[key]()) break;    // callback returns true if it has consumed the message
@@ -394,7 +394,7 @@ export class Gateway {
 
   _websockReconnect(){
     if (this._firstConn || !this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
-    if (this.connListener) this.connListener(false);
+    this.connObservers.forEach(co => {if(co) co(false);});
     if(this.debug) console.log('Reconnecting to ', this.sock.url);
     setTimeout(() => {
       this.pending = {};
@@ -478,7 +478,7 @@ export class Gateway {
    * @returns {void}
    */
   addMessageListener(listener) {
-    this.observers.push(listener);
+    this.msgObservers.push(listener);
   }
 
   /**
@@ -488,8 +488,29 @@ export class Gateway {
    * @returns {void}
    */
   removeMessageListener(listener) {
-    let ndx = this.observers.indexOf(listener);
-    if (ndx >= 0) this.observers.splice(ndx, 1);
+    let ndx = this.msgObservers.indexOf(listener);
+    if (ndx >= 0) this.msgObservers.splice(ndx, 1);
+  }
+
+  /**
+   * Add a new listener to listen to all {Message}s sent to this Gateway
+   *
+   * @param {function} listener - new callback/function to be called when a {Message} is received.
+   * @returns {void}
+   */
+  addConnListener(listener) {
+    this.connObservers.push(listener);
+  }
+
+  /**
+   * Remove a message listener.
+   *
+   * @param {function} listener - removes a previously registered listener/callback.
+   * @returns {void}
+   */
+  removeConnListener(listener) {
+    let ndx = this.connObservers.indexOf(listener);
+    if (ndx >= 0) this.connObservers.splice(ndx, 1);
   }
 
   /**
