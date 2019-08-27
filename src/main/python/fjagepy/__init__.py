@@ -143,6 +143,16 @@ class AgentID:
         return self.request(msg)
 
 
+class _CustomEncoder(_json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, AgentID):
+            if obj.is_topic:
+                return '#'+obj.name
+            else:
+                return obj.name
+        return _json.JSONEncoder.default(self, obj)
+
+
 class Message(object):
     """Base class for messages transmitted by one agent to another. This class provides
     the basic attributes of messages and is typically extended by application-specific
@@ -180,11 +190,12 @@ class Message(object):
         for i in t:
             m.pop(i)
         for key, value in m.items():
+            print(value)
             if type(value) == numpy.ndarray:
                 if value.dtype == 'complex':
                     value = numpy.vstack((value.real, value.imag)).reshape((-1,), order='F')
                 m[key] = value.tolist()
-        data = _json.dumps(m, separators=(',', ':'))
+        data = _json.dumps(m, separators=(',', ':'), cls=_CustomEncoder)
         return '{ "clazz": "' + clazz + '", "data": ' + data + ' }'
 
     def _inflate(self, data):
@@ -341,7 +352,7 @@ class Gateway:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
                 rsp["agentIDs"] = [self.aid.name]
-                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+                self.socket.sendall((_json.dumps(rsp, cls=_CustomEncoder) + '\n').encode())
             elif req["action"] == Action.CONTAINS_AGENT:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
@@ -350,22 +361,22 @@ class Gateway:
                     if req["agentID"] == self.aid.name:
                         answer = True
                 rsp["answer"] = answer
-                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+                self.socket.sendall((_json.dumps(rsp, cls=_CustomEncoder) + '\n').encode())
             elif req["action"] == Action.SERVICES:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
                 rsp["services"] = []
-                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+                self.socket.sendall((_json.dumps(rsp, cls=_CustomEncoder) + '\n').encode())
             elif req["action"] == Action.AGENT_FOR_SERVICE:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
                 rsp["agentID"] = ""
-                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+                self.socket.sendall((_json.dumps(rsp, cls=_CustomEncoder) + '\n').encode())
             elif req["action"] == Action.AGENTS_FOR_SERVICE:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
                 rsp["agentIDs"] = []
-                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+                self.socket.sendall((_json.dumps(rsp, cls=_CustomEncoder) + '\n').encode())
             elif req["action"] == Action.SEND:
                 try:
                     msg = req["message"]
@@ -412,7 +423,7 @@ class Gateway:
 
     def _update_watch(self):
         rq = {'action': Action.WANTS_MESSAGES_FOR, 'agentIDs': [self.aid.name]+['#'+topic for topic in self.subscriptions]}
-        self.socket.sendall((_json.dumps(rq) + '\n').encode())
+        self.socket.sendall((_json.dumps(rq, cls=_CustomEncoder) + '\n').encode())
 
     def __recv_proc(self, q, subscriptions):
         """Receive process.
@@ -463,7 +474,7 @@ class Gateway:
     def send(self, msg):
         """Sends a message to the recipient indicated in the message. The recipient may be an agent or a topic.
         """
-        tmsg = _copy.deepcopy(msg)
+        tmsg = msg
         if not tmsg.recipient:
             return False
         tmsg.sender = self.aid.name
@@ -472,7 +483,7 @@ class Gateway:
                 tmsg.perf = Performative.REQUEST
             else:
                 tmsg.perf = Performative.INFORM
-        rq = _json.dumps({'action': Action.SEND, 'relay': True, 'message': '###MSG###'})
+        rq = _json.dumps({'action': Action.SEND, 'relay': True, 'message': '###MSG###'}, cls=_CustomEncoder)
         rq = rq.replace('"###MSG###"', tmsg._serialize())
         try:
             name = self.socket.getpeername()
@@ -643,7 +654,7 @@ class Gateway:
         """
         req_id = _uuid.uuid4()
         rq = {'action': Action.AGENT_FOR_SERVICE, 'service': service, 'id': str(req_id)}
-        self.socket.sendall((_json.dumps(rq) + '\n').encode())
+        self.socket.sendall((_json.dumps(rq, cls=_CustomEncoder) + '\n').encode())
         res_event = _td.Event()
         self.pending[req_id] = (res_event, None)
         ret = res_event.wait(self.DEFAULT_TIMEOUT)
@@ -676,7 +687,7 @@ class Gateway:
             j_dict["service"] = service
         else:
             j_dict["service"] = service.__class__.__name__ + "." + str(service)
-        self.socket.sendall((_json.dumps(j_dict) + '\n').encode())
+        self.socket.sendall((_json.dumps(j_dict, cls=_CustomEncoder) + '\n').encode())
         res_event = _td.Event()
         self.pending[req_id] = (res_event, None)
         ret = res_event.wait(self.DEFAULT_TIMEOUT)
@@ -707,7 +718,7 @@ class Gateway:
         req["action"] = Action.CONTAINS_AGENT
         req["id"] = str(req_id)
         req["agentID"] = self.aid.name
-        self.socket.sendall((_json.dumps(req) + '\n').encode())
+        self.socket.sendall((_json.dumps(req, cls=_CustomEncoder) + '\n').encode())
         res_event = _td.Event()
         self.pending[req_id] = (res_event, None)
         ret = res_event.wait(self.DEFAULT_TIMEOUT)

@@ -50,19 +50,19 @@ We have seen earlier that the agents interact with each other using messages. Th
 Request message::
 
     msg = Message()
-    msg.recipient = 'abc'
+    msg.recipient = abc
     gw.send(msg)
 
-where `'abc'` is the name of the agent you are trying to send the message to.
+where `abc` is the AgentID of the agent you are trying to send the message to.
 
 Another alternative to send a message is following::
 
-    msg = Message(recipient = 'abc')
+    msg = Message(recipient = abc)
     rsp = gw.request(msg, timeout)
 
 In the above code snippet, a request method is used to send a message and receive the response back. Different responses that can be received are documented `here <http://org-arl.github.io/fjage/javadoc/>`_.
 
-`msg` is an instance of `Message` class and in the ablove example, the intended recipient is set to an agent with name 'abc'. The constructed message `msg` can sent to the agents running on master container using `gw.send(msg)`.
+`msg` is an instance of `Message` class and in the ablove example, the intended recipient is set to the AgentID `abc`. The constructed message `msg` is sent to the agents running on master container using `gw.send(msg)`.
 
 A simple example of executing a shell command from remote connection opened using Gateway class is as shown below::
 
