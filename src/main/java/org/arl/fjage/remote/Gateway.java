@@ -10,7 +10,7 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import java.io.IOException;
+import java.io.*;
 import org.arl.fjage.*;
 
 /**
@@ -19,7 +19,7 @@ import org.arl.fjage.*;
  *
  * @author  Mandar Chitre
  */
-public class Gateway implements Messenger {
+public class Gateway implements Messenger, Closeable {
 
   /////////////////////// Constants
 
@@ -179,6 +179,7 @@ public class Gateway implements Messenger {
    * Closes the gateway. The gateway functionality may not longer be accessed after
    * this method is called.
    */
+  @Override
   public void close() {
     if (container != null) {
       if (shutdownContainer) container.shutdown();

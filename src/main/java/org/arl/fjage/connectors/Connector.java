@@ -15,7 +15,7 @@ import java.io.*;
 /**
  * Any data transport service implemets this interface.
  */
-public interface Connector {
+public interface Connector extends Closeable {
 
   /**
    * Get a string representation of the connection.
@@ -58,6 +58,7 @@ public interface Connector {
   /**
    * Close the connection.
    */
+  @Override
   public void close();
 
 }

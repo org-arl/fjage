@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * TCP server. For each incoming connection, this invokes a listener callback with a
  * TcpConnector object for that connection.
  */
-public class TcpServer extends Thread {
+public class TcpServer extends Thread implements Closeable {
 
   protected int port;
   protected ServerSocket sock = null;
@@ -56,6 +56,7 @@ public class TcpServer extends Thread {
   /**
    * Shutdown the TCP server.
    */
+  @Override
   public void close() {
     if (sock == null) return;
     try {

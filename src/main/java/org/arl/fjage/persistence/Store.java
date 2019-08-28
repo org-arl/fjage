@@ -14,7 +14,7 @@ import org.arl.fjage.FjageException;
  * Persistent storage API. The default store is in the user's home directory under
  * a folder called ".fjstore", but may be changed using the {@link #setRoot(java.io.File)} method.
  */
-public class Store {
+public class Store implements Closeable {
 
   protected static File storeRoot = new File(FileUtils.getUserDirectory(), ".fjstore");
   protected static ClassLoader defaultClazzLoader = null;
@@ -259,6 +259,7 @@ public class Store {
   /**
    * Closes the store. The instance of the store should no longer be used.
    */
+  @Override
   public void close() {
     if (root == null) return;
     synchronized (instances) {
