@@ -142,14 +142,14 @@ class AgentID:
     def __lshift__(self, msg):
         return self.request(msg)
 
+    def _to_json(self):
+        return '#'+self.name if self.is_topic else self.name
+
 
 class _CustomEncoder(_json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, AgentID):
-            if obj.is_topic:
-                return '#'+obj.name
-            else:
-                return obj.name
+        if '_to_json' in obj.__dir__():
+            return obj._to_json()
         return _json.JSONEncoder.default(self, obj)
 
 
