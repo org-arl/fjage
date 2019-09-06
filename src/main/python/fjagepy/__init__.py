@@ -190,7 +190,6 @@ class Message(object):
         for i in t:
             m.pop(i)
         for key, value in m.items():
-            print(value)
             if type(value) == numpy.ndarray:
                 if value.dtype == 'complex':
                     value = numpy.vstack((value.real, value.imag)).reshape((-1,), order='F')
