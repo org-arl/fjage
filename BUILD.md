@@ -51,7 +51,7 @@ To generate API documentation:
 
     gradle javadoc
 
-The javadoc is available at `htdocs/javadoc/index.html`.
+The javadoc is available at `docs/javadoc/index.html`.
 
 Generating Developer's Guide
 ----------------------------

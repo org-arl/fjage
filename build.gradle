@@ -74,6 +74,14 @@ task jars(dependsOn: jar, type: Copy) {
 
 jars.outputs.upToDateWhen { false }
 
+javadoc.doLast {
+  mkdir 'docs/javadoc'
+  copy {
+    from javadoc.destinationDir
+    into 'docs/javadoc'
+  }
+}
+
 ////// tasks for MavenCentral deployment
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
