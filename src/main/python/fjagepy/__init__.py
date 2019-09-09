@@ -56,27 +56,6 @@ def _decodeBase64(m):
                 m = x
     return m
 
-
-def MessageClass(name):
-    """Creates a unqualified message class based on a fully qualified name.
-    """
-
-    def setclazz(self, **kwargs):
-        super(class_, self).__init__()
-        self.__clazz__ = name
-        for k, v in kwargs.items():
-            if not k.startswith('_') and k.endswith('_'):
-                k = k[:-1]
-            self.__dict__[k] = v
-            if isinstance(v, AgentID):
-                self.__dict__[k] = v.name
-    sname = name.split('.')[-1]
-    class_ = type(sname, (Message,), {"__init__": setclazz})
-    globals()[sname] = class_
-    mod = __import__('fjagepy')
-    return getattr(mod, str(class_.__name__))
-
-
 class Action:
     """JSON message actions.
     """
@@ -160,13 +139,13 @@ class Message(object):
     on remote containers, all attributes of a message must be serializable.
     """
 
-    def __init__(self, inReplyto=None, perf=None, **kwargs):
+    def __init__(self, inReplyTo=None, perf=Performative.INFORM, **kwargs):
         self.__clazz__ = 'org.arl.fjage.Message'
         self.msgID = str(_uuid.uuid4())
         self.perf = perf
         self.recipient = None
         self.sender = None
-        self.inReplyTo = inReplyto
+        self.inReplyTo = inReplyTo
         for k, v in kwargs.items():
             if not k.startswith('_') and k.endswith('_'):
                 k = k[:-1]
@@ -261,7 +240,38 @@ class Message(object):
             s += ' ' + sigrepr
         if datarepr != '':
             s += ' ' + datarepr
+        if self.__clazz__ == 'org.arl.fjage.Message' and s == '':
+            return perf
         return clazz + ':' + perf + '[' + s + ']'
+
+    def _repr_pretty_(self, p, cycle):
+        if cycle:
+            p.text('...')
+            return
+        return p.text(self.__str__())
+
+def MessageClass(name, parent=Message, perf=None):
+    """Creates a unqualified message class based on a fully qualified name.
+    """
+
+    def setclazz(self, **kwargs):
+        super(class_, self).__init__()
+        self.__clazz__ = name
+        if perf is not None:
+            self.perf = perf
+        elif name.endswith('Req'):
+            self.perf = Performative.REQUEST
+        for k, v in kwargs.items():
+            if not k.startswith('_') and k.endswith('_'):
+                k = k[:-1]
+            self.__dict__[k] = v
+            if isinstance(v, AgentID):
+                self.__dict__[k] = v.name
+    sname = name.split('.')[-1]
+    class_ = type(sname, (parent,), {"__init__": setclazz})
+    globals()[sname] = class_
+    mod = __import__('fjagepy')
+    return getattr(mod, str(class_.__name__))
 
 
 class GenericMessage(Message):
@@ -380,13 +390,23 @@ class Gateway:
                 try:
                     msg = req["message"]
                     if msg["data"]["recipient"] == self.aid.name:
-                        q.append(msg)
+                        try:
+                            m = Message()
+                            demsg = m._deserialize(msg)
+                        except Exception as e:
+                            self.logger.critical("Exception: Class loading failed - " + str(e))
+                        q.append(demsg)
                         self.cv.acquire()
                         self.cv.notify()
                         self.cv.release()
                     if self._is_topic(msg["data"]["recipient"]):
                         if self.subscriptions.count(msg["data"]["recipient"].replace("#", "")):
-                            q.append(msg)
+                            try:
+                                m = Message()
+                                demsg = m._deserialize(msg)
+                            except Exception as e:
+                                self.logger.critical("Exception: Class loading failed - " + str(e))
+                            q.append(demsg)
                             self.cv.acquire()
                             self.cv.notify()
                             self.cv.release()
@@ -500,19 +520,19 @@ class Gateway:
             if filter == None and len(self.q):
                 rmsg = self.q.pop()
             # If filter is a Message, look for a Message in the
-            # receive Queue which was inReplyto that message.
+            # receive Queue which was inReplyTo that message.
             elif isinstance(filter, Message):
                 if filter.msgID:
                     for i in self.q:
-                        if "inReplyTo" in i["data"] and filter.msgID == i["data"]["inReplyTo"]:
+                        if filter.msgID == i.inReplyTo:
                             try:
                                 rmsg = self.q.pop(self.q.index(i))
                             except Exception as e:
                                 self.logger.critical("Error: Getting item from list - " + str(e))
             # If filter is a class, look for a Message of that class.
-            elif type(filter) == type(Message):
+            elif isinstance(filter, type):
                 for i in self.q:
-                    if i["clazz"].split(".")[-1] == filter.__name__:
+                    if (isinstance(i, Message) and isinstance(i, filter)):
                         try:
                             rmsg = self.q.pop(self.q.index(i))
                         except Exception as e:
@@ -553,13 +573,7 @@ class Gateway:
                 rmsg = self._retrieveFromQueue(filter)
         if not rmsg:
             return None
-        try:
-            m = Message()
-            rsp = m._deserialize(rmsg)
-        except Exception as e:
-            self.logger.critical("Exception: Class loading failed - " + str(e))
-            return None
-        return rsp
+        return rmsg
 
     def request(self, msg, timeout=1000):
         """Sends a request and waits for a response. This method blocks until timeout if no response is received.
