@@ -1,5 +1,19 @@
 # Release Notes
 
+## v1.6.1
+
+* Minor fixes in fjagepy
+* Minor hterm fixes for compatibility with Firefox
+
+## v1.6
+
+* New persistence API
+* Improved consistency of Gateway API
+* New Julia gateway
+* Refactoring of connector and shell framework
+* Minor changes to core API for consistency
+* UI enhancements, bug fixes, performance improvements
+
 ## v1.5.1
 
 * Major improvements to shell agent for usability, support for user input, clickable URLs, etc
@@ -20,12 +34,3 @@
 * Use of Travis CI for continuous integration & regression testing
 * Use of ReadTheDocs for hosting developer's documentation
 * Various bug fixes
-
-## v1.6
-
-* New persistence API
-* Improved consistency of Gateway API
-* New Julia gateway
-* Refactoring of connector and shell framework
-* Minor changes to core API for consistency
-* UI enhancements, bug fixes, performance improvements
