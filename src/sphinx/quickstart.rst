@@ -45,7 +45,7 @@ Your directory structure should now look something like this:
       04_weatherStation.groovy
       WeatherForecastReqMsg.groovy
 
-.. note:: The `build/libs` folder contains all the necessary libraries. The `etc` folder contains startup files. The `samples` folder contains the example programs used in this documentation. `initrc.groovy` in the initialization script where you create your agents and configure them. `fjage.sh` is your startup script that simply sets up the classpath and boots up fjåge with the `initrc.groovy` script. The organization of the directory structure and names of the files are all customizable by editing `fjage.sh` and `initrc.groovy`.
+.. note:: The `build/libs` folder contains all the necessary libraries. The `etc` folder contains startup files. The `samples` folder contains the example programs used in this documentation. `initrc.groovy` is the initialization script where you create your agents and configure them. `fjage.sh` is your startup script that simply sets up the classpath and boots up fjåge with the `initrc.groovy` script. The organization of the directory structure and names of the files are all customizable by editing `fjage.sh` and `initrc.groovy`.
 
 To check that your fjåge installation is correctly working, type `./fjage.sh` (or fjage.bat in command prompt). That should simply give you an interactive fjåge Groovy shell with a `>` prompt. Type `ps` to see a list of running agents. There should be only one `shell` agent created by the default `initrc.groovy` script. Type `shutdown` or press control-D to terminate fjåge.
 

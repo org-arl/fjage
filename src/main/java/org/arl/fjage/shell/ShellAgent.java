@@ -15,6 +15,9 @@ import org.arl.fjage.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
 
 /**
  * Shell agent runs in a container and allows execution of shell commands and scripts.
@@ -148,6 +151,7 @@ public class ShellAgent extends Agent {
         @Override
         public void run() {
           String s = null;
+          long backoff = 0;
           while (!quit) {
             if (!enabled) {
               try {
@@ -162,6 +166,17 @@ public class ShellAgent extends Agent {
             if (engine != null) {
               prompt1 = engine.getPrompt(false);
               prompt2 = engine.getPrompt(true);
+            }
+            if (s != null) {
+              // this usually means that the engine is still processing
+              // earlier command so give it time to finish
+              try {
+                if (backoff > 0) Thread.sleep(backoff);
+              } catch (InterruptedException ex) {
+                interrupt();
+              }
+              if (backoff == 0) backoff = 1;
+              else if (backoff < 256) backoff *= 2;
             }
             s = shell.readLine(prompt1, prompt2, s);
             if (s == null) {
@@ -186,9 +201,10 @@ public class ShellAgent extends Agent {
             } else {
               if (engine == null) s = null;
               else if (exec == null && !engine.isBusy() && enabled) {
+                backoff = 0;
                 final String cmd = s.trim();
-                final String p1 = prompt1;
-                final String p2 = "\n"+prompt2;
+                final String p1 = prompt1==null ? "" : prompt1;
+                final String p2 = prompt2==null ? "\n" : "\n"+prompt2;
                 s = null;
                 if (cmd.length() > 0) {
                   synchronized(executor) {
@@ -408,6 +424,12 @@ public class ShellAgent extends Agent {
     return enabled;
   }
 
+  @Override
+  public String toString() {
+    if (shell == null || engine == null) return super.toString();
+    return super.toString()+": "+shell.toString()+" ["+engine.getClass().getSimpleName()+"]";
+  }
+
   ////// private methods
 
   private void shutdownPlatform() {
@@ -447,7 +469,14 @@ public class ShellAgent extends Agent {
         } else {
           boolean ok = false;
           if (cmd != null) ok = engine.exec(cmd);
-          if (ok) rsp = new Message(req, Performative.AGREE);
+          if (ok) {
+            Object ans = req.getAns() ? engine.getVariable("ans") : null;
+            if (ans == null) rsp = new Message(req, Performative.AGREE);
+            else {
+              rsp = new GenericMessage(req, Performative.AGREE);
+              ((GenericMessage)rsp).put("ans", ans);
+            }
+          }
           else rsp = new Message(req, Performative.REFUSE);
         }
       }
@@ -461,6 +490,8 @@ public class ShellAgent extends Agent {
       send(new Message(req, Performative.REFUSE));
       return;
     }
+    if (filename.endsWith("/") || filename.endsWith(File.separator))
+      filename = filename.substring(0, filename.length()-1);
     File f = new File(filename);
     GetFileRsp rsp = null;
     InputStream is = null;
@@ -471,6 +502,7 @@ public class ShellAgent extends Agent {
         if (files != null){
           for (File file : files) {
             sb.append(file.getName());
+            if (file.isDirectory()) sb.append('/');
             sb.append('\t');
             sb.append(file.length());
             sb.append('\t');
@@ -551,7 +583,22 @@ public class ShellAgent extends Agent {
     FileOutputStream os = null;
     try {
       if (contents == null) {
-        if (f.delete()) rsp = new Message(req, Performative.AGREE);
+        if (filename.endsWith("/") || filename.endsWith(File.separator)){
+          Path pathToBeDeleted = Paths.get(filename);
+
+          Files.walk(pathToBeDeleted)
+            .sorted(Comparator.reverseOrder())
+            .map(Path::toFile)
+            .forEach(File::delete);
+
+          rsp = new Message(req, Performative.AGREE);
+        }
+        else if (f.delete()) rsp = new Message(req, Performative.AGREE);
+      } else if (filename.endsWith("/") || filename.endsWith(File.separator)){
+        if(!f.exists()){
+          f.mkdir();
+          rsp = new Message(req, Performative.AGREE);
+        }
       } else {
         os = new FileOutputStream(f);
         os.write(contents);

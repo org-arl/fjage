@@ -1,6 +1,6 @@
 ////// settings
 
-const TIMEOUT = 5000;              // ms, timeout to get response from to master container
+const TIMEOUT = 1000;              // ms, timeout to get response from to master container
 const RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
 
 ////// global
@@ -110,12 +110,12 @@ export class AgentID {
     * Create an AgentID
     * @param {string} name - name of the agent.
     * @param {boolean} topic - name of topic.
-    * @param {Gateway} gw - Gateway owner for this AgentID.
+    * @param {Gateway} owner - Gateway owner for this AgentID.
     */
-  constructor(name, topic, gw) {
+  constructor(name, topic, owner) {
     this.name = name;
     this.topic = topic;
-    this.gw = gw;
+    this.owner = owner;
   }
 
   /**
@@ -144,8 +144,8 @@ export class AgentID {
    * @returns {void}
    */
   send(msg) {
-    msg.recipient = this;
-    this.gw.send(msg);
+    msg.recipient = this.toJSON();
+    this.owner.send(msg);
   }
 
   /**
@@ -157,8 +157,8 @@ export class AgentID {
    * @return {Message} response.
    */
   request(msg, timeout=1000) {
-    msg.recipient = this;
-    return this.gw.request(msg, timeout);
+    msg.recipient = this.toJSON();
+    return this.owner.request(msg, timeout);
   }
 
   /**
@@ -167,8 +167,7 @@ export class AgentID {
    * @return {string} string representation of the agent id.
    */
   toString() {
-    if (this.topic) return '#'+this.name;
-    return this.name;
+    return this.toJSON() + ((this.owner && this.owner.sock) ? ` on ${this.owner.sock.url}` : '');
   }
 
   /**
@@ -177,7 +176,7 @@ export class AgentID {
    * @return {string} JSON string representation of the agent id.
    */
   toJSON() {
-    return this.toString();
+    return (this.topic ? '#' : '') + this.name;
   }
 }
 
@@ -191,13 +190,16 @@ export class Message {
 
   /**
    * Creates an empty message.
+   * @param {Message} inReplyTo - message to which this response corresponds to.
+   * @param {Performative} perf  - performative
    */
-  constructor() {
+  constructor(inReplyTo={msgID:null, sender:null}, perf='') {
     this.__clazz__ = 'org.arl.fjage.Message';
     this.msgID = _guid(8);
-    this.sender = '';
-    this.recipient = '';
-    this.perf = '';
+    this.sender = null;
+    this.recipient = inReplyTo.sender;
+    this.perf = perf;
+    this.inReplyTo = inReplyTo.msgID || null;
   }
 
   /**
@@ -248,7 +250,14 @@ export class Message {
 
   // convert a dictionary (usually from decoding JSON) into a message
   static _deserialize(obj) {
-    if (typeof obj == 'string' || obj instanceof String) obj = JSON.parse(obj);
+    if (typeof obj == 'string' || obj instanceof String) {
+      try {
+        obj = JSON.parse(obj);
+      }catch(e){
+        console.warn('JSON Parsing error: ' + e + '\nJSON : ' + obj);
+        return null;
+      }
+    }
     let qclazz = obj.clazz;
     let clazz = qclazz.replace(/^.*\./, '');
     let rv = eval('try { new '+clazz+'() } catch(ex) { new Message() }');
@@ -282,39 +291,57 @@ export class Gateway {
   /**
    * Creates a gateway connecting to a specified master container over Websockets.
    *
-   * @param {string} url - of the platform to connect to
+   * @param {string} hostname - hostname of the master container to connect to
+   * @param {int} port        - port of the master container to connect to
+   * @param {string} pathname - path of the master container to connect to
    */
-  constructor(url) {
-    url = url || 'ws://'+window.location.hostname+':'+(window.location.port||80)+'/ws/';
+  constructor(hostname=window.location.hostname, port=window.location.port, pathname='/ws/') {
+    var url = new URL('ws://locahost');
+    url.hostname = hostname;
+    url.port = port || 80;
+    url.pathname = pathname;
     let existing = window.fjage.getGateway(url);
     if (existing) return existing;
+    this._firstConn = true;               // if the Gateway has managed to connect to a server before
+    this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
-    this.aid = 'WebGW-'+_guid(4);         // gateway agent name
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
-    this.observers = [];                  // external observers wanting to listen incoming messages
+    this.msgObservers = [];               // external observers wanting to listen incoming messages
+    this.connObservers = [];              // external observers for socket connection opening and closing
     this.queue = [];                      // incoming message queue
     this.keepAlive = true;                // reconnect if websocket connection gets closed/errored
     this.debug = false;                   // debug info to be logged to console?
+    this.aid = new AgentID('WebGW-'+_guid(4));         // gateway agent name
     this._websockSetup(url);
     window.fjage.gateways.push(this);
   }
 
   _onWebsockOpen() {
     if(this.debug) console.log('Connected to ', this.sock.url);
+    this.connObservers.forEach(co => {if(co) co(true);});
     this.sock.onclose = this._websockReconnect.bind(this);
     this.sock.onmessage = event => {
       this._onWebsockRx.call(this,event.data);
     };
     this.sock.send('{"alive": true}\n');
+    this._update_watch();
+    this._firstConn = false;
+    this._firstReConn = true;
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
   }
 
   _onWebsockRx(data) {
-    let obj = JSON.parse(data, _decodeBase64);
+    var obj;
     if (this.debug) console.log('< '+data);
+    try {
+      obj = JSON.parse(data, _decodeBase64);
+    }catch(e){
+      console.warn('JSON Parsing error: ' + e + '\nJSON : ' + data);
+      return;
+    }
     if ('id' in obj && obj.id in this.pending) {
       // response to a pending request to master
       this.pending[obj.id](obj);
@@ -322,9 +349,10 @@ export class Gateway {
     } else if (obj.action == 'send') {
       // incoming message from master
       let msg = Message._deserialize(obj.message);
-      if (msg.recipient == this.aid || this.subscriptions[msg.recipient]) {
-        for (var i = 0; i < this.observers.length; i++)
-          if (this.observers[i](msg)) return;
+      if (!msg) return;
+      if ((msg.recipient == this.aid.toJSON() )|| this.subscriptions[msg.recipient]) {
+        for (var i = 0; i < this.msgObservers.length; i++)
+          if (this.msgObservers[i](msg)) return;
         this.queue.push(msg);
         for (var key in this.listener)        // iterate over internal callbacks, until one consumes the message
           if (this.listener[key]()) break;    // callback returns true if it has consumed the message
@@ -334,10 +362,10 @@ export class Gateway {
       let rsp = { id: obj.id, inResponseTo: obj.action };
       switch (obj.action) {
       case 'agents':
-        rsp.agentIDs = [this.aid];
+        rsp.agentIDs = [this.aid.getName()];
         break;
       case 'containsAgent':
-        rsp.answer = (obj.agentID == this.aid);
+        rsp.answer = (obj.agentID == this.aid.getName());
         break;
       case 'services':
         rsp.services = [];
@@ -367,7 +395,9 @@ export class Gateway {
   }
 
   _websockReconnect(){
-    if (!this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
+    if (this._firstConn || !this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
+    if (this._firstReConn) this.connObservers.forEach(co => {if(co) co(false);});
+    this._firstReConn = false;
     if(this.debug) console.log('Reconnecting to ', this.sock.url);
     setTimeout(() => {
       this.pending = {};
@@ -400,7 +430,7 @@ export class Gateway {
     return new Promise((resolve, reject) => {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
-        reject(new Error('Receive Timeout'));
+        reject(new Error('Receive Timeout : ' + rq));
       }, TIMEOUT);
       this.pending[rq.id] = rsp => {
         clearTimeout(timer);
@@ -409,7 +439,7 @@ export class Gateway {
       if (!this._websockTx.call(this,rq)) {
         clearTimeout(timer);
         delete this.pending[rq.id];
-        reject(new Error('Transmit Error'));
+        reject(new Error('Transmit Error : ' + rq));
       }
     });
   }
@@ -421,6 +451,8 @@ export class Gateway {
     var filtMsgs = this.queue.filter( msg => {
       if (typeof filter == 'string' || filter instanceof String) {
         return 'inReplyTo' in msg && msg.inReplyTo == filter;
+      }else if (typeof filter ==  'function' ){
+        return filter(msg);
       }else{
         return msg instanceof filter;
       }
@@ -432,6 +464,15 @@ export class Gateway {
     }
   }
 
+  _update_watch() {
+    // FIXME : Turning off wantsMessagesFor in fjagejs for now as it breaks multiple browser
+    // windows connecting to the same master container.
+    //
+    // let watch = Object.keys(this.subscriptions);
+    // watch.push(this.aid.getName());
+    // let rq = { action: 'wantsMessagesFor', agentIDs: watch };
+    // this._websockTx(rq);
+  }
 
   /**
    * Add a new listener to listen to all {Message}s sent to this Gateway
@@ -440,7 +481,7 @@ export class Gateway {
    * @returns {void}
    */
   addMessageListener(listener) {
-    this.observers.push(listener);
+    this.msgObservers.push(listener);
   }
 
   /**
@@ -450,8 +491,29 @@ export class Gateway {
    * @returns {void}
    */
   removeMessageListener(listener) {
-    let ndx = this.observers.indexOf(listener);
-    if (ndx >= 0) this.observers.splice(ndx, 1);
+    let ndx = this.msgObservers.indexOf(listener);
+    if (ndx >= 0) this.msgObservers.splice(ndx, 1);
+  }
+
+  /**
+   * Add a new listener to get notified when the connection to master is created and terminated.
+   *
+   * @param {function} listener - new callback/function to be called connection to master is created and terminated.
+   * @returns {void}
+   */
+  addConnListener(listener) {
+    this.connObservers.push(listener);
+  }
+
+  /**
+   * Remove a connection listener.
+   *
+   * @param {function} listener - removes a previously registered listener/callback.
+   * @returns {void}
+   */
+  removeConnListener(listener) {
+    let ndx = this.connObservers.indexOf(listener);
+    if (ndx >= 0) this.connObservers.splice(ndx, 1);
   }
 
   /**
@@ -477,37 +539,39 @@ export class Gateway {
    * Returns an object representing the named topic.
    *
    * @param {string|AgentID} topic - name of the topic or AgentID.
-   * @param {string|AgentID} topic2 - name of the topic.
+   * @param {string} topic2 - name of the topic if the topic param is an AgentID.
    * @returns {AgentID} object representing the topic.
    */
   topic(topic, topic2) {
     if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic, true, this);
     if (topic instanceof AgentID) {
       if (topic.isTopic()) return topic;
-      return new AgentID(topic.getName()+(topic2 ? topic2 + '__' : '')+'__ntf', true, this);
+      return new AgentID(topic.getName()+(topic2 ? '__' + topic2 : '')+'__ntf', true, this);
     }
   }
 
   /**
    * Subscribes the gateway to receive all messages sent to the given topic.
    *
-   * @param {string} topic - the topic to subscribe to.
+   * @param {AgentID} topic - the topic to subscribe to.
    * @return {boolean} true if the subscription is successful, false otherwise.
    */
   subscribe(topic) {
-    if (!topic.isTopic()) topic = new AgentID(topic, true, this);
-    this.subscriptions[topic.toString()] = true;
+    if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
+    this.subscriptions[topic.toJSON()] = true;
+    this._update_watch();
   }
 
   /**
    * Unsubscribes the gateway from a given topic.
    *
-   * @param {string} topic - the topic to unsubscribe.
+   * @param {AgentID} topic - the topic to unsubscribe.
    * @returns {void}
    */
   unsubscribe(topic) {
-    if (!topic.isTopic()) topic = new AgentID(topic, true, this);
-    delete this.subscriptions[topic.toString()];
+    if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
+    delete this.subscriptions[topic.toJSON()];
+    this._update_watch();
   }
 
   /**
@@ -543,18 +607,17 @@ export class Gateway {
    * may be an agent or a topic.
    *
    * @param {Message} msg - message to be sent.
-   * @param {boolean} [relay=true] - enable relaying to associated remote containers.
-   * @returns {void}
+   * @returns {Boolean} status - if sending was successful.
    */
-  send(msg, relay=true) {
-    msg.sender = this.aid;
+  send(msg) {
+    msg.sender = this.aid.toJSON();
     if (msg.perf == '') {
       if (msg.__clazz__.endsWith('Req')) msg.perf = Performative.REQUEST;
       else msg.perf = Performative.INFORM;
     }
-    let rq = JSON.stringify({ action: 'send', relay: relay, message: '###MSG###' });
+    let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
     rq = rq.replace('"###MSG###"', msg._serialize());
-    this._websockTx(rq);
+    return !!this._websockTx(rq);
   }
 
   /**
@@ -573,7 +636,7 @@ export class Gateway {
    * @param {number} [timeout=10000] - timeout in milliseconds.
    * @return {Promise} a promise which resolves with the received response message, null on timeout.
    */
-  async request(msg, timeout=10000) {
+  async request(msg, timeout=1000) {
     this.send(msg);
     let rsp = await this.receive(msg.msgID, timeout);
     return rsp;
@@ -582,26 +645,33 @@ export class Gateway {
   /**
    * Returns a response message received by the gateway. This method returns a {Promise} which resolves when a response is received or if no response is received after the timeout.
    *
-   * @param {function} [filter=undefined] - original message to which a response is expected.
-   * @param {number} [timeout=1000] - timeout in milliseconds.
+   * @param {function} [filter=undefined] - original message to which a response is expected, or a MessageClass of the type of message to match, or a closure to use to match against the message.
+   * @param {number} [timeout=0] - timeout in milliseconds.
    * @return {Message} received response message, null on timeout.
    */
-  receive(filter=undefined, timeout=1000) {
+  receive(filter=undefined, timeout=0) {
     return new Promise((resolve, reject) => {
       let msg = this._getMessageFromQueue.call(this,filter);
       if (msg) {
         resolve(msg);
         return;
       }
+      if (timeout == 0) {
+        reject(new Error('Receive Timeout : ' + filter));
+        return;
+      }
       let lid = _guid(8);
-      let timer = setTimeout(() => {
-        delete this.listener[lid];
-        reject(new Error('Receive Timeout'));
-      }, timeout);
+      let timer;
+      if (timeout > 0){
+        timer = setTimeout(() => {
+          delete this.listener[lid];
+          reject(new Error('Receive Timeout : ' + filter));
+        }, timeout);
+      }
       this.listener[lid] = () => {
         msg = this._getMessageFromQueue.call(this,filter);
         if (!msg) return false;
-        clearTimeout(timer);
+        if(timer) clearTimeout(timer);
         delete this.listener[lid];
         resolve(msg);
         return true;
@@ -623,25 +693,15 @@ export class Gateway {
         var index = window.fjage.gateways.indexOf(this);
         window.fjage.gateways.splice(index,1);
       });
-      return true;
     } else if (this.sock.readyState == this.sock.OPEN) {
       this.sock.send('{"alive": false}\n');
       this.sock.onclose = null;
       this.sock.close();
       var index = window.fjage.gateways.indexOf(this);
       window.fjage.gateways.splice(index,1);
-      return true;
     }
-    return false;
   }
 
-  /**
-   * Shuts down the gateway.
-   * @returns {void}
-   */
-  shutdown() {
-    this.close();
-  }
 }
 
 /**
@@ -652,9 +712,15 @@ export class Gateway {
 export function MessageClass(name) {
   let sname = name.replace(/^.*\./, '');
   window[sname] = class extends Message {
-    constructor() {
+    constructor(params) {
       super();
       this.__clazz__ = name;
+      if (params){
+        const keys = Object.keys(params);
+        for (let k of keys) {
+          this[k] = params[k];
+        }
+      }
     }
   };
   return window[sname];

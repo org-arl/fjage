@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2015-2018, Mandar Chitre
+Copyright (c) 2015-2019, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -10,16 +10,10 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import org.arl.fjage.AgentID;
-import org.arl.fjage.Message;
-import org.arl.fjage.Platform;
-import org.arl.fjage.connectors.ConnectionListener;
-import org.arl.fjage.connectors.Connector;
-import org.arl.fjage.connectors.SerialPortConnector;
-import org.arl.fjage.connectors.TcpServer;
-
-import java.io.IOException;
 import java.util.*;
+import java.io.IOException;
+import org.arl.fjage.*;
+import org.arl.fjage.connectors.*;
 
 /**
  * Master container supporting multiple remote slave containers. Agents in linked
@@ -171,6 +165,19 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     t.start();
   }
 
+  /**
+   * Gets a list of connector URLs that slaves can use to access the master container.
+   */
+  public String[] getConnectors() {
+    synchronized(slaves) {
+      String[] url = new String[1+slaves.size()];
+      url[0] = listener.toString();
+      for (int i = 0; i < slaves.size(); i++)
+        url[i+1] = slaves.get(i).toString();
+      return url;
+    }
+  }
+
   /////////////// Container interface methods to override
 
   @Override
@@ -211,7 +218,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves)
-        slave.println(json);
+        if (slave.wantsMessagesFor(aid)) slave.printlnQueued(json);
     }
     return true;
   }
@@ -269,7 +276,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
         JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
-        if (rsp != null && rsp.agentID != null) return rsp.agentID;
+        if (rsp != null && rsp.agentID != null && rsp.agentID.getName().length() > 0) return rsp.agentID;
       }
     }
     return null;

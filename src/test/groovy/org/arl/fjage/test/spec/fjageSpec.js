@@ -27,7 +27,7 @@ function fjageMessageChecker() {
 
       if (!msg.message) return ret;
 
-      ret = ret && (!msg.message.clazz || msg.message.clazz instanceof String);
+      ret = ret && (!msg.message.clazz || typeof msg.message.clazz === "string");
 
       if (!msg.message.data) return ret;
 
@@ -182,6 +182,20 @@ describe('A Gateway', function () {
       },100);
     },100);
   });
+  it('should send correct ShellExecReq of valid fjage message structure created using param constructor', function(done){
+    const shell = new AgentID('shell');
+    const gw = new Gateway();
+    spyOn(gw.sock, 'send').and.callThrough();
+    setTimeout(() => {
+      gw.sock.send.calls.reset();
+      const req = new ShellExecReq({recipient: shell, cmd: 'boo'});
+      gw.request(req);
+      setTimeout(() => {
+        expect(gw.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
+        done();
+      },100);
+    },100);
+  });
 });
 
 
@@ -212,7 +226,7 @@ describe('An AgentID', function () {
     const aid = new AgentID('agent-name', true, gw);
     expect(aid.getName()).toBe('agent-name');
     expect(aid.isTopic()).toBe(true);
-    expect(aid.toString()).toBe('#agent-name');
+    expect(aid.toJSON()).toBe('#agent-name');
   });
 });
 
@@ -423,7 +437,7 @@ function sendTestStatus(status) {
   var gw = new Gateway();
   let msg = new Message();
   msg.recipient = gw.agent('test');
-  msg.performative = status ? Performative.AGREE : Performative.FAILURE;
+  msg.perf = status ? Performative.AGREE : Performative.FAILURE;
   gw.send(msg);
   gw.close();
 }

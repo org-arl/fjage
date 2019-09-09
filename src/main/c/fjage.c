@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2018, Mandar Chitre
+Copyright (c) 2018-2019, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -112,6 +112,31 @@ static fjage_msg_t mqueue_get(fjage_gw_t gw, const char* clazz, const char* id) 
   return msg;
 }
 
+static bool mqueue_compare_any(const char* clazzt,  const char** clazzes, int clazzlen){
+  for (int i=0;i<clazzlen;i++){
+    if (strcmp(clazzes[i], clazzt) == 0) return true;
+  }
+  return false;
+}
+
+static fjage_msg_t mqueue_get_any(fjage_gw_t gw, const char** clazzes, int clazzlen) {
+  if (gw == NULL) return NULL;
+  _fjage_gw_t* fgw = gw;
+  fjage_msg_t msg = NULL;
+  if (clazzes == NULL || clazzlen < 1) return msg;
+  for (int i = fgw->mqueue_tail; i != fgw->mqueue_head && msg == NULL; i++) {
+    if (fgw->mqueue[i] != NULL) {
+      const char* clazz1 = fjage_msg_get_clazz(fgw->mqueue[i]);
+      if (clazz1 == NULL || ! mqueue_compare_any(clazz1, clazzes, clazzlen)) continue;
+      msg = fgw->mqueue[i];
+      fgw->mqueue[i] = NULL;
+      if (i == fgw->mqueue_tail) fgw->mqueue_tail = (fgw->mqueue_tail+1) % QUEUE_LEN;
+      // break out
+    }
+  }
+  return msg;
+}
+
 static jsmntok_t* json_parse(const char* json) {
   jsmn_parser parser;
   jsmn_init(&parser);
@@ -205,12 +230,12 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
   return rv;
 }
 
+/// @return               -1 if interrupted; 0 otherwise
 static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
   long t0 = get_time_ms();
   uint8_t dummy;
-  while (read(fgw->intfd[0], &dummy, 1) > 0);
   struct pollfd fds[2];
   memset(fds, 0, sizeof(fds));
   fds[0].fd = fgw->sockfd;
@@ -256,6 +281,31 @@ static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
   while (read(fgw->intfd[0], &dummy, 1) > 0)
     rv = -1;
   return rv;
+}
+
+static void update_watch(_fjage_gw_t* fgw) {
+  int i = 0;
+  int n = 0;
+  while (fgw->sublist[i]) {
+    i += strlen(fgw->sublist+i)+1;
+    n++;
+  }
+  char* s = (char*)malloc(i+1+2*n+strlen(fgw->aid)+3+47);
+  if (s == NULL) {
+    writes(fgw->sockfd, "{\"action\": \"wantsMessagesFor\", \"agentIDs\": []}\n");
+    return;
+  }
+  sprintf(s, "{\"action\": \"wantsMessagesFor\", \"agentIDs\": [\"%s\"", fgw->aid);
+  i = 0;
+  while (fgw->sublist[i]) {
+    strcat(s, ",\"");
+    strcat(s, fgw->sublist+i);
+    strcat(s, "\"");
+    i += strlen(fgw->sublist+i)+1;
+  }
+  strcat(s, "]}\n");
+  writes(fgw->sockfd, s);
+  free(s);
 }
 
 bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic) {
@@ -314,6 +364,7 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
   sprintf(s, "CGatewayAgent@%08x", rand());
   fgw->aid = fjage_aid_create(s);
   fgw->head = 0;
+  update_watch(fgw);
   return fgw;
 }
 
@@ -377,6 +428,16 @@ fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings)
   return fgw;
 }
 
+int fjage_rs232_wakeup(const char* devname, int baud, const char* settings) {
+  _fjage_gw_t* fgw = fjage_rs232_open(devname, baud, settings);
+  if (fgw == NULL) {
+    return -1;
+  }
+  char write_buffer = 'A';
+  write(fgw->sockfd, &write_buffer, sizeof(char));
+  return 0;
+}
+
 int fjage_close(fjage_gw_t gw) {
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
@@ -403,6 +464,7 @@ int fjage_subscribe(fjage_gw_t gw, const fjage_aid_t topic) {
     i += strlen(fgw->sublist+i)+1;
   if (i+strlen(topic)+1 > SUBLIST_LEN) return -1;
   strcpy(fgw->sublist+i, topic);
+  update_watch(fgw);
   return 0;
 }
 
@@ -414,6 +476,7 @@ int fjage_subscribe_agent(fjage_gw_t gw, const fjage_aid_t aid) {
   sprintf(topic, "#%s__ntf", aid);
   int rv = fjage_subscribe(gw, topic);
   free(topic);
+  update_watch((_fjage_gw_t*)gw);
   return rv;
 }
 
@@ -426,6 +489,7 @@ int fjage_unsubscribe(fjage_gw_t gw, const fjage_aid_t topic) {
       int n = strlen(fgw->sublist+i);
       memmove(fgw->sublist+i, fgw->sublist+i+n+1, SUBLIST_LEN-(i+n+1));
       memset(fgw->sublist+SUBLIST_LEN-(n+1), 0, n+1);
+      update_watch(gw);
       return 0;
     }
     i += strlen(fgw->sublist+i)+1;
@@ -445,6 +509,8 @@ fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
   writes(fgw->sockfd, "\"}\n");
   fgw->aid_count = 0;
   fgw->aids = NULL;
+  uint8_t dummy;
+  while (read(fgw->intfd[0], &dummy, 1) > 0);
   json_reader(gw, uuid, 1000);
   if (fgw->aid_count == 0) return NULL;
   return (fjage_aid_t)(fgw->aids);
@@ -462,6 +528,8 @@ int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* ag
   writes(fgw->sockfd, "\"}\n");
   fgw->aid_count = 0;
   fgw->aids = NULL;
+  uint8_t dummy;
+  while (read(fgw->intfd[0], &dummy, 1) > 0);
   json_reader(gw, uuid, 1000);
   if (fgw->aid_count == 0) return 0;
   for (int i = 0; i < fgw->aid_count; i++) {
@@ -486,12 +554,30 @@ int fjage_send(fjage_gw_t gw, const fjage_msg_t msg) {
 }
 
 fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long timeout) {
+  _fjage_gw_t* fgw = gw;
+  uint8_t dummy;
   long t0 = get_time_ms();
   long timeout1 = timeout;
-  fjage_msg_t msg = NULL;
+  fjage_msg_t msg = mqueue_get(gw, clazz, id);
+  while (read(fgw->intfd[0], &dummy, 1) > 0);
   while (msg == NULL && timeout1 > 0) {
     if (json_reader(gw, NULL, timeout1) < 0) break;
     msg = mqueue_get(gw, clazz, id);
+    if (msg == NULL) timeout1 = t0+timeout - get_time_ms();
+  }
+  return msg;
+}
+
+fjage_msg_t fjage_receive_any(fjage_gw_t gw, const char** clazzes, int clazzlen, long timeout) {
+    _fjage_gw_t* fgw = gw;
+  uint8_t dummy;
+  long t0 = get_time_ms();
+  long timeout1 = timeout;
+  fjage_msg_t msg = mqueue_get_any(gw, clazzes, clazzlen);
+  while (read(fgw->intfd[0], &dummy, 1) > 0);
+  while (msg == NULL && timeout1 > 0) {
+    if (json_reader(gw, NULL, timeout1) < 0) break;
+    msg = mqueue_get_any(gw, clazzes, clazzlen);
     if (msg == NULL) timeout1 = t0+timeout - get_time_ms();
   }
   return msg;

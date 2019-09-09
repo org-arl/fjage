@@ -33,13 +33,15 @@ public class JsonMessage {
 
   private static GsonBuilder gsonBuilder = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
-    .serializeSpecialFloatingPointValues()
+    .registerTypeAdapter(Float.class, (JsonSerializer<Float>) (value, type, jsonSerializationContext) -> value.isNaN()?null:new JsonPrimitive(value))
+    .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (value, type, jsonSerializationContext) -> value.isNaN()?null:new JsonPrimitive(value))
     .registerTypeAdapter(Date.class, (JsonDeserializer<Date>) (json, typeOfT, context) -> new Date(json.getAsJsonPrimitive().getAsLong()))
     .registerTypeAdapter(Date.class, (JsonSerializer<Date>) (date, type, jsonSerializationContext) -> new JsonPrimitive(date.getTime()))
     .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
     .registerTypeAdapterFactory(new MessageAdapterFactory())
     .registerTypeAdapterFactory(new ArrayAdapterFactory())
     .registerTypeAdapterFactory(new GenericValueAdapterFactory())
+    .serializeSpecialFloatingPointValues()
     .enableComplexMapKeySerialization();
 
   private static Gson gson = gsonBuilder.create();

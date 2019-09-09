@@ -10,7 +10,7 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import java.io.IOException;
+import java.io.*;
 import org.arl.fjage.*;
 
 /**
@@ -19,7 +19,7 @@ import org.arl.fjage.*;
  *
  * @author  Mandar Chitre
  */
-public class Gateway {
+public class Gateway implements Messenger, Closeable {
 
   /////////////////////// Constants
 
@@ -39,7 +39,7 @@ public class Gateway {
 
   protected Container container = null;
   protected Agent agent = null;
-  protected boolean shutdownContainer = false;
+  protected boolean shutdownContainer = true;
 
   protected Gateway() {
     // empty constructor to allow extending gateway
@@ -56,7 +56,7 @@ public class Gateway {
    * @param hostname hostname to connect to.
    * @param port TCP port to connect to.
    */
-  public Gateway(Platform platform, String hostname, int port) {
+  public Gateway(Platform platform, String hostname, int port) throws IOException {
     container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
     init();
     platform.start();
@@ -68,7 +68,7 @@ public class Gateway {
    * @param hostname hostname to connect to.
    * @param port TCP port to connect to.
    */
-  public Gateway(String hostname, int port) {
+  public Gateway(String hostname, int port) throws IOException {
     Platform platform = new RealTimePlatform();
     container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
     init();
@@ -85,7 +85,7 @@ public class Gateway {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public Gateway(Platform platform, String devname, int baud, String settings) {
+  public Gateway(Platform platform, String devname, int baud, String settings) throws IOException {
     container = new SlaveContainer(platform, "Gateway@"+hashCode(), devname, baud, settings);
     init();
     platform.start();
@@ -98,7 +98,7 @@ public class Gateway {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public Gateway(String devname, int baud, String settings) {
+  public Gateway(String devname, int baud, String settings) throws IOException {
     Platform platform = new RealTimePlatform();
     container = new SlaveContainer(platform, "Gateway@"+hashCode(), devname, baud, settings);
     init();
@@ -119,7 +119,7 @@ public class Gateway {
       private Message rsp;
       private Object sync = new Object();
       @Override
-      public Message receive(final MessageFilter filter, final long timeout) {
+      public Message receive(final MessageFilter filter, long timeout) {
         if (Thread.currentThread().getId() == tid) return super.receive(filter, timeout);
         synchronized (sync) {
           rsp = null;
@@ -146,6 +146,20 @@ public class Gateway {
   }
 
   /**
+   * Gets the container for the gateway.
+   */
+  public Container getContainer() {
+    return container;
+  }
+
+  /**
+   * Gets the platform for the gateway.
+   */
+  public Platform getPlatform() {
+    return container.getPlatform();
+  }
+
+  /**
    * Gets the agent ID associated with the gateway.
    *
    * @return agent ID
@@ -155,10 +169,18 @@ public class Gateway {
   }
 
   /**
+   * Flushes the incoming message queue.
+   */
+  public void flush() {
+    while (receive() != null);
+  }
+
+  /**
    * Closes the gateway. The gateway functionality may not longer be accessed after
    * this method is called.
    */
-  public void shutdown() {
+  @Override
+  public void close() {
     if (container != null) {
       if (shutdownContainer) container.shutdown();
       else container.kill(getAgentID());
@@ -167,95 +189,49 @@ public class Gateway {
     container = null;
   }
 
-  /**
-   * Sends a message to the recipient indicated in the message. The recipient
-   * may be an agent or a topic.
-   *
-   * @param m message to be sent.
-   */
-  public void send(final Message m) {
-    if (agent == null) return;
+  @Override
+  public boolean send(final Message m) {
+    if (agent == null) return false;
     agent.add(new OneShotBehavior() {
       @Override
       public void action() {
         agent.send(m);
       }
     });
+    return true;
   }
 
-  /**
-   * Returns a message received by the gateway and matching the given filter.
-   * This method blocks until timeout if no message available.
-   *
-   * @param filter message filter.
-   * @param timeout timeout in milliseconds.
-   * @return received message matching the filter, null on timeout.
-   */
-  public synchronized Message receive(final MessageFilter filter, final long timeout) {
+  @Override
+  public synchronized Message receive(final MessageFilter filter, long timeout) {
     if (agent == null) return null;
     return agent.receive(filter, timeout);
   }
 
-  /**
-   * Returns a message received by the gateway. This method is non-blocking.
-   *
-   * @return received message, null if none available.
-   */
-  public final Message receive() {
-    return receive((MessageFilter)null, 0);
+  public Message receive(final MessageFilter filter) {
+    return receive(filter, NON_BLOCKING);
   }
 
-  /**
-   * Returns a message received by the agent. This method blocks until timeout if no
-   * message available.
-   *
-   * @param timeout timeout in milliseconds.
-   * @return received message, null on timeout.
-   */
+  @Override
   public Message receive(long timeout) {
     return receive((MessageFilter)null, timeout);
   }
 
-  /**
-   * Returns a message of a given class received by the gateway. This method is non-blocking.
-   *
-   * @param cls the class of the message of interest.
-   * @return received message of the given class, null if none available.
-   */
-  public Message receive(final Class<?> cls) {
-    return receive(cls, 0);
+  @Override
+  public final Message receive() {
+    return receive((MessageFilter)null, NON_BLOCKING);
   }
 
-  /**
-   * Returns a message of a given class received by the gateway. This method blocks until
-   * timeout if no message available.
-   *
-   * @param cls the class of the message of interest.
-   * @param timeout timeout in milliseconds.
-   * @return received message of the given class, null on timeout.
-   */
+  @Override
   public Message receive(final Class<?> cls, long timeout) {
     return receive(m -> cls.isInstance(m), timeout);
   }
 
-  /**
-   * Returns a response message received by the gateway. This method is non-blocking.
-   *
-   * @param m original message to which a response is expected.
-   * @return received response message, null if none available.
-   */
-  public Message receive(final Message m) {
-    return receive(m, 0);
+  @Override
+  public Message receive(final Class<?> cls) {
+    return receive(cls, NON_BLOCKING);
   }
 
-  /**
-   * Returns a response message received by the gateway. This method blocks until
-   * timeout if no message available.
-   *
-   * @param m original message to which a response is expected.
-   * @param timeout timeout in milliseconds.
-   * @return received response message, null on timeout.
-   */
+  @Override
   public Message receive(final Message m, long timeout) {
     return receive(new MessageFilter() {
       private String mid = m.getMessageID();
@@ -268,17 +244,20 @@ public class Gateway {
     }, timeout);
   }
 
-  /**
-   * Sends a request and waits for a response. This method blocks until timeout
-   * if no response is received.
-   *
-   * @param msg message to send.
-   * @param timeout timeout in milliseconds.
-   * @return received response message, null on timeout.
-   */
+  @Override
+  public Message receive(final Message m) {
+    return receive(m, NON_BLOCKING);
+  }
+
+  @Override
   public Message request(Message msg, long timeout) {
     send(msg);
     return receive(msg, timeout);
+  }
+
+  @Override
+  public Message request(Message msg) {
+    return request(msg, 1000);
   }
 
   /**
@@ -289,7 +268,9 @@ public class Gateway {
    */
   public AgentID topic(String topic) {
     if (agent == null) return null;
-    return agent.topic(topic);
+    AgentID t = agent.topic(topic);
+    if (t == null) return null;
+    return new AgentID(t, this);
   }
 
   /**
@@ -300,7 +281,9 @@ public class Gateway {
    */
   public AgentID topic(Enum<?> topic) {
     if (agent == null) return null;
-    return agent.topic(topic);
+    AgentID t = agent.topic(topic);
+    if (t == null) return null;
+    return new AgentID(t, this);
   }
 
   /**
@@ -311,7 +294,9 @@ public class Gateway {
    */
   public AgentID topic(AgentID topic) {
     if (agent == null) return null;
-    return agent.topic(topic);
+    AgentID t = agent.topic(topic);
+    if (t == null) return null;
+    return new AgentID(t, this);
   }
 
   /**
@@ -323,7 +308,9 @@ public class Gateway {
    */
   public AgentID topic(AgentID aid, String topic) {
     if (agent == null) return null;
-    return agent.topic(aid, topic);
+    AgentID t = agent.topic(aid, topic);
+    if (t == null) return null;
+    return new AgentID(t, this);
   }
 
   /**
@@ -335,7 +322,19 @@ public class Gateway {
    */
   public AgentID topic(AgentID aid, Enum<?> topic) {
     if (agent == null) return null;
-    return agent.topic(aid, topic);
+    AgentID t = agent.topic(aid, topic);
+    if (t == null) return null;
+    return new AgentID(t, this);
+  }
+
+  /**
+   * Returns an object representing a named agent.
+   *
+   * @param name name of the agent.
+   * @return object representing the agent.
+   */
+  public AgentID agent(String name) {
+    return new AgentID(name, this);
   }
 
   /**
@@ -369,7 +368,9 @@ public class Gateway {
    */
   public AgentID agentForService(String service) {
     if (container == null) return null;
-    return container.agentForService(service);
+    AgentID t = container.agentForService(service);
+    if (t == null) return null;
+    return new AgentID(t, this);
   }
 
   /**
@@ -381,7 +382,9 @@ public class Gateway {
    */
   public AgentID agentForService(Enum<?> service) {
     if (container == null) return null;
-    return container.agentForService(service.getClass().getName()+"."+service.toString());
+    AgentID t = container.agentForService(service.getClass().getName()+"."+service.toString());
+    if (t == null) return null;
+    return new AgentID(t, this);
   }
 
   /**
@@ -392,7 +395,11 @@ public class Gateway {
    */
   public AgentID[] agentsForService(String service) {
     if (container == null) return null;
-    return container.agentsForService(service);
+    AgentID[] t = container.agentsForService(service);
+    if (t == null) return null;
+    for (int i = 0; i < t.length; i++)
+      t[i] = new AgentID(t[i], this);
+    return t;
   }
 
   /**
@@ -403,14 +410,18 @@ public class Gateway {
    */
   public AgentID[] agentsForService(Enum<?> service) {
     if (container == null) return null;
-    return container.agentsForService(service.getClass().getName()+"."+service.toString());
+    AgentID[] t = container.agentsForService(service.getClass().getName()+"."+service.toString());
+    if (t == null) return null;
+    for (int i = 0; i < t.length; i++)
+      t[i] = new AgentID(t[i], this);
+    return t;
   }
 
   ////////////// Private methods
 
   @Override
   public void finalize() {
-    shutdown();
+    close();
   }
 
 }

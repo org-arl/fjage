@@ -17,6 +17,7 @@ import java.util.Queue;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.arl.fjage.persistence.Store;
 
 /**
  * Base class to be extended by all agents. An agent must be added to a container
@@ -47,7 +48,7 @@ import java.util.logging.Logger;
  *
  * @author  Mandar Chitre
  */
-public class Agent implements Runnable, TimestampProvider {
+public class Agent implements Runnable, TimestampProvider, Messenger {
 
   /////////////////////// Constants
 
@@ -387,14 +388,8 @@ public class Agent implements Runnable, TimestampProvider {
     return new AgentID(aid.getName()+"__ntf", true, this);
   }
 
-  /**
-   * Sends a message to the recipient indicated in the message. The recipient
-   * may be either another agent or a topic.
-   *
-   * @param m message to be sent.
-   * @return true if message accepted for delivery, false on failure.
-   */
-  public boolean send(Message m) {
+  @Override
+  public boolean send(final Message m) {
     if (container == null) return false;
     m.setSender(aid);
     return container.send(m);
@@ -414,17 +409,10 @@ public class Agent implements Runnable, TimestampProvider {
       c.send(m);
   }
 
-  /**
-   * Returns a message received by the agent and matching the given filter.
-   * This method blocks until timeout if no message available.
-   *
-   * @param filter message filter.
-   * @param timeout timeout in milliseconds.
-   * @return received message matching the filter, null on timeout.
-   */
+  @Override
   public synchronized Message receive(MessageFilter filter, long timeout) {
     if (Thread.currentThread().getId() != tid)
-      throw new FjageError("receive() should only be called from agent thread");
+      throw new FjageException("receive() should only be called from agent thread");
     long deadline = 0;
     Message m = queue.get(filter);
     if (m == null && timeout != NON_BLOCKING) {
@@ -443,66 +431,37 @@ public class Agent implements Runnable, TimestampProvider {
     return m;
   }
 
-  /**
-   * Returns a message received by the agent. This method is non-blocking.
-   *
-   * @return received message, null if none available.
-   */
-  public Message receive() {
-    return receive((MessageFilter)null, 0);
+  @Override
+  public Message receive(MessageFilter filter) {
+    return receive(filter, NON_BLOCKING);
   }
 
-  /**
-   * Returns a message received by the agent. This method blocks until timeout if no
-   * message available.
-   *
-   * @param timeout timeout in milliseconds.
-   * @return received message, null on timeout.
-   */
+  @Override
+  public Message receive() {
+    return receive((MessageFilter)null, NON_BLOCKING);
+  }
+
+  @Override
   public Message receive(long timeout) {
     return receive((MessageFilter)null, timeout);
   }
 
-  /**
-   * Returns a message of a given class received by the agent. This method is non-blocking.
-   *
-   * @param cls the class of the message of interest.
-   * @return received message of the given class, null if none available.
-   */
+  @Override
   public Message receive(final Class<?> cls) {
-    return receive(cls, 0);
+    return receive(cls, NON_BLOCKING);
   }
 
-  /**
-   * Returns a message of a given class received by the agent. This method blocks until
-   * timeout if no message available.
-   *
-   * @param cls the class of the message of interest.
-   * @param timeout timeout in milliseconds.
-   * @return received message of the given class, null on timeout.
-   */
+  @Override
   public Message receive(final Class<?> cls, long timeout) {
     return receive(m -> cls.isInstance(m), timeout);
   }
 
-  /**
-   * Returns a response message received by the agent. This method is non-blocking.
-   *
-   * @param m original message to which a response is expected.
-   * @return received response message, null if none available.
-   */
+  @Override
   public Message receive(final Message m) {
-    return receive(m, 0);
+    return receive(m, NON_BLOCKING);
   }
 
-  /**
-   * Returns a response message received by the agent. This method blocks until
-   * timeout if no message available.
-   *
-   * @param m original message to which a response is expected.
-   * @param timeout timeout in milliseconds.
-   * @return received response message, null on timeout.
-   */
+  @Override
   public Message receive(final Message m, long timeout) {
     return receive(new MessageFilter() {
       private String mid = m.getMessageID();
@@ -515,17 +474,10 @@ public class Agent implements Runnable, TimestampProvider {
     }, timeout);
   }
 
-  /**
-   * Sends a request and waits for a response. This method blocks until timeout
-   * if no response is received.
-   *
-   * @param msg message to send.
-   * @param timeout timeout in milliseconds.
-   * @return received response message, null on timeout.
-   */
-  public Message request(Message msg, long timeout) {
+  @Override
+  public Message request(final Message msg, long timeout) {
     if (Thread.currentThread().getId() != tid)
-      throw new FjageError("request() should only be called from agent thread "+tid+", but called from "+Thread.currentThread().getId());
+      throw new FjageException("request() should only be called from agent thread "+tid+", but called from "+Thread.currentThread().getId());
     if (!send(msg)) return null;
     return receive(msg, timeout);
   }
@@ -537,7 +489,8 @@ public class Agent implements Runnable, TimestampProvider {
    * @param msg message to send.
    * @return received response message, null on timeout.
    */
-  public Message request(Message msg) {
+  @Override
+  public Message request(final Message msg) {
     return request(msg, 1000);
   }
 
@@ -672,12 +625,19 @@ public class Agent implements Runnable, TimestampProvider {
   }
 
   /**
-   * Log a message at an INFO level.
+   * Logs a message at an INFO level.
    *
    * @param msg message to log.
    */
   public void println(Object msg) {
     log.info(msg.toString());
+  }
+
+  /**
+   * Gets a persistent store for the agent.
+   */
+  public Store getStore() {
+    return Store.getInstance(this);
   }
 
   /**
@@ -715,6 +675,11 @@ public class Agent implements Runnable, TimestampProvider {
     this.aid = aid;
     this.container = container;
     platform = (container == null) ? null : container.getPlatform();
+    if (container != null) {
+      String cname = container.getName();
+      if (cname != null && !cname.startsWith("@"))
+        log = Logger.getLogger(getClass().getName()+"/"+container.getName());
+    }
     LogHandlerProxy.install(platform, log);
   }
 

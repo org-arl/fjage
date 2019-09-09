@@ -11,7 +11,7 @@ class FjageTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.g = Gateway('localhost', 5081, "PythonGW")
+        cls.g = Gateway('localhost', port=5082)
         if cls.g is None:
             print('Could not connect to fjage master container on localhost:5081')
 
@@ -21,31 +21,31 @@ class FjageTest(unittest.TestCase):
 
     def test_gateway_agentid(self):
         """Test: should be able to retrieve the AgentID of the gateway"""
-        self.assertEqual(self.g.getAgentID(), "PythonGW")
+        self.assertIn("PythonGW", self.g.getAgentID().name)
 
     def test_subscribe_unsubscribe_topic(self):
         """Test: Should be able to add the subscriptions in the list"""
         self.g.subscribe(self.g.topic("abc"))
-        self.assertIn("abc", self.g.subscribers)
+        self.assertIn("abc", self.g.subscriptions)
         self.g.subscribe(self.g.topic("def"))
-        self.assertIn("def", self.g.subscribers)
+        self.assertIn("def", self.g.subscriptions)
         self.g.unsubscribe(self.g.topic("abc"))
-        self.assertNotIn("abc", self.g.subscribers)
+        self.assertNotIn("abc", self.g.subscriptions)
         self.g.subscribe(self.g.topic("ghi"))
-        self.assertIn("ghi", self.g.subscribers)
+        self.assertIn("ghi", self.g.subscriptions)
         self.g.unsubscribe(self.g.topic("def"))
-        self.assertNotIn("def", self.g.subscribers)
+        self.assertNotIn("def", self.g.subscriptions)
 
     def test_subscribe_unsubscribe_agent(self):
         """Test: Should be able to remove the subscriptions from the list"""
-        self.g.subscribe(AgentID(self.g, "abc"))
-        self.assertIn("abc__ntf", self.g.subscribers)
-        self.g.subscribe(AgentID(self.g, "def", True))
-        self.assertIn("def", self.g.subscribers)
-        self.g.unsubscribe(AgentID(self.g, "abc"))
-        self.assertNotIn("abc__ntf", self.g.subscribers)
-        self.g.unsubscribe(AgentID(self.g, "def", True))
-        self.assertNotIn("def", self.g.subscribers)
+        self.g.subscribe(AgentID("abc", owner=self.g))
+        self.assertIn("abc__ntf", self.g.subscriptions)
+        self.g.subscribe(AgentID("def", True, owner=self.g))
+        self.assertIn("def", self.g.subscriptions)
+        self.g.unsubscribe(AgentID("abc", owner=self.g))
+        self.assertNotIn("abc__ntf", self.g.subscriptions)
+        self.g.unsubscribe(AgentID("def", True, owner=self.g))
+        self.assertNotIn("def", self.g.subscriptions)
 
     def test_send_Message(self):
         """Test: Should be able to send a message to a agent running in master container"""
@@ -68,13 +68,13 @@ if __name__ == "__main__":
     test_result = unittest.TextTestRunner(verbosity=1).run(suite)
     failures = len(test_result.errors) + len(test_result.failures)
 
-    g = Gateway('localhost', 5081, "PythonGW")
+    g = Gateway('localhost', port=5082)
     m = Message(recipient='test')
     if (failures > 0):
-        m.performative = Performative.FAILURE
+        m.perf = Performative.FAILURE
         print("Test failed")
     else:
-        m.performative = Performative.AGREE
+        m.perf = Performative.AGREE
         print("Test passed")
     g.send(m)
-    g.shutdown()
+    g.close()

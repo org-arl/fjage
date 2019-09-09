@@ -75,14 +75,18 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   }
 
   protected void init(int port, String context, int maxMsgSize) {
-    name = "ws:["+port+":"+context+"]";
+    try {
+      name = "ws://"+InetAddress.getLocalHost().getHostAddress()+":"+port+context;
+    } catch (UnknownHostException ex) {
+      name = "ws://0.0.0.0:"+port+context;
+    }
     server = WebServer.getInstance(port);
     handler = new ContextHandler(context);
     handler.setHandler(new WebSocketHandler() {
       @Override
       public void configure(WebSocketServletFactory factory) {
         factory.setCreator(WebSocketConnector.this);
-        if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize​(maxMsgSize);
+        if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize(maxMsgSize);
       }
     });
     server.add(handler);
@@ -92,7 +96,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   }
 
   @Override
-  public Object createWebSocket​(ServletUpgradeRequest req, ServletUpgradeResponse resp) {
+  public Object createWebSocket(ServletUpgradeRequest req, ServletUpgradeResponse resp) {
     return new WSHandler(this);
   }
 
@@ -205,7 +209,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
-      log.info("New connection from "+session.getRemoteAddress());
+      log.fine("New connection from "+session.getRemoteAddress());
       this.session = session;
       wsHandlers.add(this);
       if (listener != null) listener.connected(conn);
@@ -213,7 +217,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
 
     @OnWebSocketClose
     public void onClose(int statusCode, String reason) {
-      log.info("Connection from "+session.getRemoteAddress()+" closed");
+      log.fine("Connection from "+session.getRemoteAddress()+" closed");
       session = null;
       wsHandlers.remove(this);
     }
@@ -245,7 +249,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
         if (session != null) {
           session.getRemote().sendString(s);
         }
-      } catch (IOException e) {
+      } catch (Exception e) {
         log.warning(e.getMessage());
       }
     }

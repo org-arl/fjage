@@ -19,7 +19,7 @@ class MyAgent extends Agent {
 			agent.n++
 			
 			// stop after 20 ticks
-			if (n >= 20) stop();
+			if (n >= 20) stop()
 		})
 	}
 

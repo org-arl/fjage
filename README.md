@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/org-arl/fjage.svg?branch=1.5)](https://travis-ci.org/org-arl/fjage)
+[![Build Status](https://travis-ci.org/org-arl/fjage.svg?branch=master)](https://travis-ci.org/org-arl/fjage)
 
 fjåge
 =====
@@ -17,7 +17,7 @@ Key Features
 * Agent development in Java or Groovy
 * Interactive Groovy shell and scripting
 * Easy switching between realtime operation and discrete event simulation
-* APIs for access from Java, Groovy, Python, C, and Javascript
+* APIs for access from Java, Groovy, Python, C, Julia, and Javascript
 * JSON-based protocol to interface with external applications
 
 Documentation
@@ -40,7 +40,7 @@ Maven Central dependency
     <dependency>
       <groupId>com.github.org-arl</groupId>
       <artifactId>fjage</artifactId>
-      <version>1.5.1</version>
+      <version>1.6.1</version>
     </dependency>
 
 Contributing

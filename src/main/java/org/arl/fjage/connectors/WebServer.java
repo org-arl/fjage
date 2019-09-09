@@ -12,6 +12,7 @@ package org.arl.fjage.connectors;
 
 import java.util.*;
 import java.io.*;
+import java.net.InetSocketAddress;
 import javax.servlet.http.*;
 import javax.servlet.ServletException;
 import org.eclipse.jetty.util.log.*;
@@ -24,6 +25,11 @@ import org.eclipse.jetty.server.handler.gzip.GzipHandler;
  * Web server instance manager.
  */
 public class WebServer {
+
+  //////// constants
+
+  public static final String NOCACHE = "no-cache, no-store, must-revalidate";
+  public static final String CACHE = "public, max-age=31536000";
 
   //////// static attributes and methods
 
@@ -61,8 +67,36 @@ public class WebServer {
   public static WebServer getInstance(int port) {
     synchronized (servers) {
       WebServer svr = servers.get(port);
-      if (svr == null) svr = new WebServer(port);
+      if (svr == null || svr.server == null) svr = new WebServer(port);
       return svr;
+    }
+  }
+
+  /**
+   * Gets an instance of a web server running on the specified port. If an instance is not
+   * already available, a new one is created.
+   *
+   * @param port HTTP port number.
+   * @param ip IP address to bind HTTP server to.
+   */
+  public static WebServer getInstance(int port, String ip) {
+    synchronized (servers) {
+      WebServer svr = servers.get(port);
+      if (svr == null || svr.server == null) svr = new WebServer(port, ip);
+      return svr;
+    }
+  }
+
+  /**
+   * Checks if an instance of a web server is running on the specified port.
+   *
+   * @param port HTTP port number.
+   * @return true if running, false otherwise.
+   */
+  public static boolean hasInstance(int port) {
+    synchronized (servers) {
+      WebServer svr = servers.get(port);
+      return svr != null;
     }
   }
 
@@ -85,15 +119,18 @@ public class WebServer {
   protected int port;
 
   protected WebServer(int port) {
+    this(port, "127.0.0.1");
+  }
+
+  protected WebServer(int port, String ip) {
     this.port = port;
-    server = new Server(port);
+    server = new Server(InetSocketAddress.createUnresolved(ip, port));
     server.setStopAtShutdown(true);
     if (port > 0) servers.put(port, this);
     contexts = new ContextHandlerCollection();
     HandlerCollection handlerCollection = new HandlerCollection();
     GzipHandler gzipHandler = new GzipHandler();
     gzipHandler.setIncludedMimeTypes("text/html", "text/plain", "text/xml", "text/css", "application/javascript", "text/javascript");
-
     handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });
     gzipHandler.setHandler(handlerCollection);
     server.setHandler(gzipHandler);
@@ -137,6 +174,7 @@ public class WebServer {
     }
     server = null;
     contexts = null;
+    if (port > 0) servers.remove(port);
   }
 
 
@@ -177,15 +215,45 @@ public class WebServer {
    *
    * @param context context path.
    * @param resource resource path.
+   * @param cacheControl cache control header.
    */
-  public void add(String context, String resource) {
+  public void add(String context, String resource, String cacheControl) {
     String staticWebResDir = getClass().getResource(resource).toExternalForm();
     ContextHandler handler = new ContextHandler(context);
     ResourceHandler resHandler = new ResourceHandler();
     resHandler.setResourceBase(staticWebResDir);
     resHandler.setWelcomeFiles(new String[]{ "index.html" });
     resHandler.setDirectoriesListed(false);
-    resHandler.setCacheControl("public, max-age=31536000");
+    resHandler.setCacheControl(cacheControl);
+    handler.setHandler(resHandler);
+    staticContexts.put(context, handler);
+    add(handler);
+  }
+
+  /**
+   * Adds a context to serve static documents.
+   *
+   * @param context context path.
+   * @param resource resource path.
+   */
+  public void add(String context, String resource) {
+    add(context, resource, "public, max-age=31536000");
+  }
+
+  /**
+   * Adds a context to serve static documents.
+   *
+   * @param context context path.
+   * @param dir filesystem path of directory to serve files from.
+   * @param cacheControl cache control header.
+   */
+  public void add(String context, File dir, String cacheControl) {
+    ContextHandler handler = new ContextHandler(context);
+    ResourceHandler resHandler = new ResourceHandler();
+    resHandler.setResourceBase(dir.getAbsolutePath());
+    resHandler.setWelcomeFiles(new String[]{ "index.html" });
+    resHandler.setDirectoriesListed(false);
+    resHandler.setCacheControl(cacheControl);
     handler.setHandler(resHandler);
     staticContexts.put(context, handler);
     add(handler);
@@ -198,15 +266,7 @@ public class WebServer {
    * @param dir filesystem path of directory to serve files from.
    */
   public void add(String context, File dir) {
-    ContextHandler handler = new ContextHandler(context);
-    ResourceHandler resHandler = new ResourceHandler();
-    resHandler.setResourceBase(dir.getAbsolutePath());
-    resHandler.setWelcomeFiles(new String[]{ "index.html" });
-    resHandler.setDirectoriesListed(false);
-    resHandler.setCacheControl("public, max-age=31536000");
-    handler.setHandler(resHandler);
-    staticContexts.put(context, handler);
-    add(handler);
+    add(context, dir, "public, max-age=31536000");
   }
 
   /**
@@ -219,6 +279,16 @@ public class WebServer {
     if (handler == null) return;
     staticContexts.remove(context);
     remove(handler);
+  }
+
+  /**
+   * Checks if a context is already configured to serve documents.
+   *
+   * @param context context path.
+   * @return true if configured, false otherwise
+   */
+  public boolean hasContext(String context) {
+    return staticContexts.get(context) != null;
   }
 
 }

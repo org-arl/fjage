@@ -18,6 +18,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 
 import java.io.File;
 import java.io.InputStream;
@@ -89,10 +90,22 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   public GroovyScriptEngine() {
     binding = new ConcurrentBinding();
-    init();
+    GroovyClassLoader gcl = new GroovyClassLoader(getClass().getClassLoader());
+    init(gcl);
   }
 
-  private void init() {
+  public GroovyScriptEngine(GroovyClassLoader gcl) {
+    binding = new ConcurrentBinding();
+    init(gcl);
+  }
+
+  public GroovyScriptEngine(ClassLoader cl) {
+    binding = new ConcurrentBinding();
+    GroovyClassLoader gcl = new GroovyClassLoader(cl);
+    init(gcl);
+  }
+
+  private void init(GroovyClassLoader gcl) {
     CompilerConfiguration compiler = new CompilerConfiguration();
     compiler.setScriptBaseClass(BaseGroovyScript.class.getName());
     imports = new ImportCustomizer();
@@ -101,7 +114,6 @@ public class GroovyScriptEngine implements ScriptEngine {
     binding.setVariable("ntf", null);
     compiler.addCompilationCustomizers(imports);
     compiler.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
-    GroovyClassLoader gcl = new GroovyClassLoader(getClass().getClassLoader());
     groovy = new GroovyShell(gcl, binding, compiler);
     binding.setVariable("__groovy__", groovy);
     binding.setVariable("__doc__", doc);
@@ -127,8 +139,14 @@ public class GroovyScriptEngine implements ScriptEngine {
     try {
       groovy.parse(cmd);
       return true;
-    } catch (Exception ex) {
-      return false;
+    } catch (MultipleCompilationErrorsException ex) {
+      String s = ex.getMessage();
+      if (s == null) return true;
+      if (s.contains("unexpected token")) return false;
+      if (s.contains("expecting")) return false;
+      return true;
+    } catch (Throwable ex) {
+      return true;
     }
   }
 

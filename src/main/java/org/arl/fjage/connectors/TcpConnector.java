@@ -19,25 +19,29 @@ import java.net.*;
 public class TcpConnector implements Connector {
 
   protected Socket sock;
+  protected OutputStream out;
 
   /**
    * Open a TCP client connection to a TCP server.
    */
   public TcpConnector(String hostname, int port) throws IOException {
     sock = new Socket(hostname, port);
+    sock.setTcpNoDelay(true);
+    out = new BufferedOutputStream(sock.getOutputStream());
   }
 
   /**
    * Create a TCP connector object with an already open socket.
    */
-  public TcpConnector(Socket sock) {
+  public TcpConnector(Socket sock) throws IOException {
     this.sock = sock;
+    out = new BufferedOutputStream(sock.getOutputStream());
   }
 
   @Override
   public String getName() {
-    if (sock == null) return "tcp:[closed]";
-    return "tcp:[from "+sock.getLocalAddress()+":"+sock.getLocalPort()+" to "+sock.getInetAddress()+":"+sock.getPort()+"]";
+    if (sock == null) return "tcp://[closed]";
+    return "tcp://"+sock.getLocalAddress()+":"+sock.getLocalPort()+"/"+sock.getInetAddress()+"."+sock.getPort();
   }
 
   @Override
@@ -53,11 +57,7 @@ public class TcpConnector implements Connector {
   @Override
   public OutputStream getOutputStream() {
     if (sock == null) return null;
-    try {
-      return sock.getOutputStream();
-    } catch (IOException ex) {
-      return null;
-    }
+    return out;
   }
 
   @Override
@@ -84,7 +84,7 @@ public class TcpConnector implements Connector {
   @Override
   public boolean waitOutputCompletion(long timeout) {
     try {
-      sock.getOutputStream().flush();
+      out.flush();
       return true;
     } catch (IOException ex) {
       return false;

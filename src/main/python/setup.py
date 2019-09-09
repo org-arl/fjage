@@ -15,7 +15,7 @@ with open('README.rst') as f:
 
 setup(
     name='fjagepy',
-    version='1.5.2',
+    version='1.6',
     description='Python Gateway',
     long_description=readme,
     author='Prasad Anjangi, Mandar Chitre, Chinmay Pendharkar, Manu Ignatius',

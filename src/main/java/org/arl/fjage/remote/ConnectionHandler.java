@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2015-2018, Mandar Chitre
+Copyright (c) 2015-2019, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -10,19 +10,12 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import org.arl.fjage.AgentID;
-import org.arl.fjage.connectors.Connector;
-
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
+import org.arl.fjage.AgentID;
+import org.arl.fjage.connectors.*;
 
 /**
  * Handles a JSON/TCP connection with remote container.
@@ -31,13 +24,16 @@ class ConnectionHandler extends Thread {
 
   private final String ALIVE = "{\"alive\": true}";
   private final String SIGN_OFF = "{\"alive\": false}";
+  private final int TIMEOUT = 5000;
 
   private Connector conn;
   private DataOutputStream out;
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
   private Logger log = Logger.getLogger(getClass().getName());
   private RemoteContainer container;
-  private boolean alive, keepAlive;
+  private boolean alive, keepAlive, closeOnDead;
+  private ExecutorService pool = Executors.newSingleThreadExecutor();
+  private Set<AgentID> watchList = new HashSet<>();
 
   public ConnectionHandler(Connector conn, RemoteContainer container) {
     this.conn = conn;
@@ -45,14 +41,34 @@ class ConnectionHandler extends Thread {
     setName(conn.toString());
     alive = false;
     keepAlive = true;
+    closeOnDead = (conn instanceof TcpConnector) && (container instanceof MasterContainer);
   }
 
   @Override
   public void run() {
-    ExecutorService pool = Executors.newSingleThreadExecutor();
     BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
     out = new DataOutputStream(conn.getOutputStream());
-    if (keepAlive) println(ALIVE);
+    if (keepAlive) {
+      if (closeOnDead) {
+        (new Thread(getName()+":init") {
+          @Override
+          public void run() {
+            println(ALIVE);
+            try {
+              Thread.sleep(TIMEOUT);
+            } catch (InterruptedException ex) {
+              // do nothing
+            }
+            if (!alive) {
+              log.fine("Connection dead");
+              close();
+            }
+          }
+        }).start();
+      } else {
+        println(ALIVE);
+      }
+    }
     while (conn != null) {
       String s = null;
       try {
@@ -103,6 +119,12 @@ class ConnectionHandler extends Thread {
     pool.shutdown();
   }
 
+  @Override
+  public String toString() {
+    if (conn == null) return super.toString();
+    return conn.toString();
+  }
+
   private void respond(JsonMessage rq, boolean answer) {
     JsonMessage rsp = new JsonMessage();
     rsp.inResponseTo = rq.action;
@@ -149,6 +171,10 @@ class ConnectionHandler extends Thread {
     }
   }
 
+  void printlnQueued(String s) {
+    if (pool != null) pool.execute(() -> println(s));
+  }
+
   JsonMessage printlnAndGetResponse(String s, String id, long timeout) {
     if (conn == null) return null;
     if (keepAlive && !alive && container instanceof MasterContainer) return null;
@@ -167,6 +193,7 @@ class ConnectionHandler extends Thread {
     if (keepAlive && alive) {
       alive = false;
       log.fine("Connection dead");
+      if (closeOnDead) close();
     }
     return null;
   }
@@ -182,6 +209,13 @@ class ConnectionHandler extends Thread {
 
   boolean isClosed() {
     return conn == null;
+  }
+
+  boolean wantsMessagesFor(AgentID aid) {
+    synchronized(watchList) {
+      if (watchList.isEmpty()) return true;
+      return watchList.contains(aid);
+    }
   }
 
   //////// Private inner class representing task to run
@@ -218,6 +252,13 @@ class ConnectionHandler extends Thread {
           break;
         case SHUTDOWN:
           container.shutdown();
+          break;
+        case WANTS_MESSAGES_FOR:
+          synchronized(watchList) {
+            watchList.clear();
+            for (AgentID aid: rq.agentIDs)
+              watchList.add(aid);
+          }
           break;
       }
     }

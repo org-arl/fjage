@@ -48,37 +48,13 @@ def _b64toArray(base64, dtype, littleEndian=True):
 def _decodeBase64(m):
     """base64 JSON decoder.
     """
-    for d in m.values():
-        if type(d) == dict and 'clazz' in d.keys():
-            clazz = d['clazz']
-            if clazz.startswith('[') and len(clazz) == 2 and 'data' in d.keys():
-                x = _b64toArray(d['data'], d['clazz'])
-                if x and 'signal' in m.keys():
-                    m['signal'] = x
-                elif x:
-                    m['data'] = x
+    if type(m) == dict and 'clazz' in list(m.keys()):
+        clazz = m['clazz']
+        if clazz.startswith('[') and len(clazz) == 2 and 'data' in list(m.keys()):
+            x = _b64toArray(m['data'], m['clazz'])
+            if x:
+                m = x
     return m
-
-
-def MessageClass(name):
-    """Creates a unqualified message class based on a fully qualified name.
-    """
-
-    def setclazz(self, **kwargs):
-        super(class_, self).__init__()
-        self.__clazz__ = name
-        for k, v in kwargs.items():
-            if not k.startswith('_') and k.endswith('_'):
-                k = k[:-1]
-            self.__dict__[k] = v
-            if isinstance(v, AgentID):
-                self.__dict__[k] = v.name
-    sname = name.split('.')[-1]
-    class_ = type(sname, (Message,), {"__init__": setclazz})
-    globals()[sname] = class_
-    mod = __import__('fjagepy')
-    return getattr(mod, str(class_.__name__))
-
 
 class Action:
     """JSON message actions.
@@ -89,6 +65,7 @@ class Action:
     AGENT_FOR_SERVICE = "agentForService"
     AGENTS_FOR_SERVICE = "agentsForService"
     SEND = "send"
+    WANTS_MESSAGES_FOR = "wantsMessagesFor"
     SHUTDOWN = "shutdown"
 
 
@@ -114,11 +91,13 @@ class AgentID:
     """An identifier for an agent or a topic.
     """
 
-    def __init__(self, gw, name, is_topic=False):
+    def __init__(self, name, is_topic=False, owner=None):
+        if len(name) == 0 or name[0] == '#':
+            raise ValueError('Bad agent name')
         self.is_topic = is_topic
         self.name = name
         self.index = -1
-        self.gw = gw
+        self.owner = owner
 
     def send(self, msg):
         """Sends a message to the agent represented by this id.
@@ -126,7 +105,7 @@ class AgentID:
         :param msg: message to send.
         """
         msg.recipient = self.name
-        self.gw.send(msg)
+        self.owner.send(msg)
 
     def request(self, msg, timeout=1000):
         """Sends a request to the agent represented by this id and waits for
@@ -137,7 +116,20 @@ class AgentID:
         :returns: response.
         """
         msg.recipient = self.name
-        return self.gw.request(msg, timeout)
+        return self.owner.request(msg, timeout)
+
+    def __lshift__(self, msg):
+        return self.request(msg)
+
+    def _to_json(self):
+        return '#'+self.name if self.is_topic else self.name
+
+
+class _CustomEncoder(_json.JSONEncoder):
+    def default(self, obj):
+        if '_to_json' in obj.__dir__():
+            return obj._to_json()
+        return _json.JSONEncoder.default(self, obj)
 
 
 class Message(object):
@@ -147,13 +139,13 @@ class Message(object):
     on remote containers, all attributes of a message must be serializable.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, inReplyTo=None, perf=Performative.INFORM, **kwargs):
         self.__clazz__ = 'org.arl.fjage.Message'
         self.msgID = str(_uuid.uuid4())
-        self.perf = None
+        self.perf = perf
         self.recipient = None
         self.sender = None
-        self.inReplyTo = None
+        self.inReplyTo = inReplyTo
         for k, v in kwargs.items():
             if not k.startswith('_') and k.endswith('_'):
                 k = k[:-1]
@@ -181,12 +173,18 @@ class Message(object):
                 if value.dtype == 'complex':
                     value = numpy.vstack((value.real, value.imag)).reshape((-1,), order='F')
                 m[key] = value.tolist()
-        data = _json.dumps(m, separators=(',', ':'))
+        data = _json.dumps(m, separators=(',', ':'), cls=_CustomEncoder)
         return '{ "clazz": "' + clazz + '", "data": ' + data + ' }'
 
     def _inflate(self, data):
+        cplx = [x for x in data.keys() if x.endswith('__isComplex') and data[x]]
         for key, value in data.items():
-            self.__dict__[key] = data[key]
+            if key.endswith('__isComplex'):
+                continue
+            if (key+'__isComplex') in cplx:
+                self.__dict__[key] = numpy.asarray(data[key][0::2]) + 1j * numpy.asarray(data[key][1::2])
+            else:
+                self.__dict__[key] = data[key]
 
     def _deserialize(self, obj):
         if (type(obj) == str or isinstance(obj, str)):
@@ -194,6 +192,8 @@ class Message(object):
         qclazz = obj['clazz']
         clazz = qclazz.split('.')[-1]
         try:
+            mod = __import__('fjagepy')
+            clazz = getattr(mod, clazz)
             rv = clazz()
         except:
             rv = Message()
@@ -204,9 +204,12 @@ class Message(object):
     def __str__(self):
         s = ''
         suffix = ''
+        sigrepr = ''
+        datarepr = ''
         clazz = self.__clazz__
         clazz = clazz.split(".")[-1]
         perf = self.perf
+        flag = False
         for k, v in self.__dict__.items():
             if k.startswith('__'):
                 continue
@@ -220,12 +223,55 @@ class Message(object):
                 continue
             if k == 'inReplyTo':
                 continue
-            if type(self.__dict__[k]) not in (int, float, bool, str):
+            if type(self.__dict__[k]) not in (int, float, bool, str, list, numpy.ndarray):
                 suffix = ' ...'
                 continue
-            s += ' ' + k + ':' + str(self.__dict__[k])
-        s += suffix
-        return clazz + ':' + perf + '[' + s.replace(',', ' ') + ']'
+            if type(self.__dict__[k]) in (numpy.ndarray, list) and k == 'signal':
+                sigrepr = '(' + str(len(self.__dict__[k])) + ' samples' + ')'
+                continue
+            if type(self.__dict__[k]) in (numpy.ndarray, list) and k == 'data':
+                datarepr = '(' + str(len(self.__dict__[k])) + ' bytes' + ')'
+                continue
+            s += ' ' + k + ':' + str(self.__dict__[k]) if flag else '' + k + ':' + str(self.__dict__[k])
+            flag = True
+        if suffix != '':
+            s += ' ' + suffix
+        if sigrepr != '':
+            s += ' ' + sigrepr
+        if datarepr != '':
+            s += ' ' + datarepr
+        if self.__clazz__ == 'org.arl.fjage.Message' and s == '':
+            return perf
+        return clazz + ':' + perf + '[' + s + ']'
+
+    def _repr_pretty_(self, p, cycle):
+        if cycle:
+            p.text('...')
+            return
+        return p.text(self.__str__())
+
+def MessageClass(name, parent=Message, perf=None):
+    """Creates a unqualified message class based on a fully qualified name.
+    """
+
+    def setclazz(self, **kwargs):
+        super(class_, self).__init__()
+        self.__clazz__ = name
+        if perf is not None:
+            self.perf = perf
+        elif name.endswith('Req'):
+            self.perf = Performative.REQUEST
+        for k, v in kwargs.items():
+            if not k.startswith('_') and k.endswith('_'):
+                k = k[:-1]
+            self.__dict__[k] = v
+            if isinstance(v, AgentID):
+                self.__dict__[k] = v.name
+    sname = name.split('.')[-1]
+    class_ = type(sname, (parent,), {"__init__": setclazz})
+    globals()[sname] = class_
+    mod = __import__('fjagepy')
+    return getattr(mod, str(class_.__name__))
 
 
 class GenericMessage(Message):
@@ -258,28 +304,28 @@ class Gateway:
     NON_BLOCKING = 0
     BLOCKING = -1
 
-    def __init__(self, hostname, port, name=None):
+    def __init__(self, hostname, port=1100):
         self.hostname = hostname
         self.port = port
+        self.connection = None
         self.keepalive = True
         self.logger = _log.getLogger('org.arl.fjage')
         try:
-            if name == None:
-                self.name = "PythonGW-" + str(_uuid.uuid4())
-            else:
-                try:
-                    self.name = name
-                except Exception as e:
-                    self.self.logger.critical("Exception: Cannot assign name to gateway: " + str(e))
-                    raise
+            self.aid = AgentID("PythonGW-" + str(_uuid.uuid4()), owner=self)
             self.q = list()
-            self.subscribers = list()
+            self.subscriptions = list()
             self.pending = dict()
             self.cv = _td.Condition()
-            self.recv_thread = _td.Thread(target=self.__recv_proc, args=(self.q, self.subscribers, ))
+            self.recv_thread = _td.Thread(target=self.__recv_proc, args=(self.q, self.subscriptions, ))
             self.recv_thread.daemon = True
             self.logger.info("Connecting to " + str(hostname) + ":" + str(port))
-            self._socket_connect(hostname, port)
+            try:
+                self._socket_connect(hostname, port)
+            except Exception as e:
+                self.logger.critical("Exception: " + str(e))
+                self.keepalive = False
+                self._socket_reconnect(self.keepalive)
+                raise
             self.recv_thread.start()
             if self._is_duplicate():
                 self.logger.critical("Duplicate Gateway found. Shutting down.")
@@ -293,6 +339,15 @@ class Gateway:
         self.socket = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
         self.socket.connect((hostname, port))
         self.socket_file = self.socket.makefile('r', 65536)
+        self.connection = True
+        self.socket.sendall('{"alive": true}\n'.encode())
+        self._update_watch()
+
+    def isConnected(self):
+        if self.connection == False:
+            return False
+        else:
+            return True
 
     def _parse_dispatch(self, rmsg, q):
         """Parse incoming messages and respond to them or dispatch them.
@@ -305,43 +360,53 @@ class Gateway:
             if req["action"] == Action.AGENTS:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
-                rsp["agentIDs"] = [self.name]
-                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+                rsp["agentIDs"] = [self.aid.name]
+                self.socket.sendall((_json.dumps(rsp, cls=_CustomEncoder) + '\n').encode())
             elif req["action"] == Action.CONTAINS_AGENT:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
                 answer = False
                 if req["agentID"]:
-                    if req["agentID"] == self.name:
+                    if req["agentID"] == self.aid.name:
                         answer = True
                 rsp["answer"] = answer
-                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+                self.socket.sendall((_json.dumps(rsp, cls=_CustomEncoder) + '\n').encode())
             elif req["action"] == Action.SERVICES:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
                 rsp["services"] = []
-                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+                self.socket.sendall((_json.dumps(rsp, cls=_CustomEncoder) + '\n').encode())
             elif req["action"] == Action.AGENT_FOR_SERVICE:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
                 rsp["agentID"] = ""
-                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+                self.socket.sendall((_json.dumps(rsp, cls=_CustomEncoder) + '\n').encode())
             elif req["action"] == Action.AGENTS_FOR_SERVICE:
                 rsp["inResponseTo"] = req["action"]
                 rsp["id"] = str(req["id"])
                 rsp["agentIDs"] = []
-                self.socket.sendall((_json.dumps(rsp) + '\n').encode())
+                self.socket.sendall((_json.dumps(rsp, cls=_CustomEncoder) + '\n').encode())
             elif req["action"] == Action.SEND:
                 try:
                     msg = req["message"]
-                    if msg["data"]["recipient"] == self.name:
-                        q.append(msg)
+                    if msg["data"]["recipient"] == self.aid.name:
+                        try:
+                            m = Message()
+                            demsg = m._deserialize(msg)
+                        except Exception as e:
+                            self.logger.critical("Exception: Class loading failed - " + str(e))
+                        q.append(demsg)
                         self.cv.acquire()
                         self.cv.notify()
                         self.cv.release()
                     if self._is_topic(msg["data"]["recipient"]):
-                        if self.subscribers.count(msg["data"]["recipient"].replace("#", "")):
-                            q.append(msg)
+                        if self.subscriptions.count(msg["data"]["recipient"].replace("#", "")):
+                            try:
+                                m = Message()
+                                demsg = m._deserialize(msg)
+                            except Exception as e:
+                                self.logger.critical("Exception: Class loading failed - " + str(e))
+                            q.append(demsg)
                             self.cv.acquire()
                             self.cv.notify()
                             self.cv.release()
@@ -349,6 +414,8 @@ class Gateway:
                     self.logger.critical("Exception: Error adding to queue - " + str(e))
             elif req["action"] == Action.SHUTDOWN:
                 self.logger.debug("ACTION: " + Action.SHUTDOWN)
+                if not self.keepalive:
+                    self.close()
                 return None
             else:
                 self.logger.warning("Invalid message, discarding")
@@ -373,20 +440,31 @@ class Gateway:
         else:
             self.logger.info('The remote connection is closed..\n')
 
-    def __recv_proc(self, q, subscribers):
+    def _update_watch(self):
+        rq = {'action': Action.WANTS_MESSAGES_FOR, 'agentIDs': [self.aid.name]+['#'+topic for topic in self.subscriptions]}
+        self.socket.sendall((_json.dumps(rq, cls=_CustomEncoder) + '\n').encode())
+
+    def __recv_proc(self, q, subscriptions):
         """Receive process.
         """
         parenthesis_count = 0
         rmsg = ""
-        name = self.socket.getpeername()
+        try:
+            name = self.socket.getpeername()
+        except Exception as e:
+            self.logger.critical("Exception: " + str(e))
+            self.keepalive = True
+            self._socket_reconnect(self.keepalive)
         while True:
             try:
                 rmsg = self.socket_file.readline()
                 if not rmsg:
+                    self.connection = False
                     self._socket_reconnect(self.keepalive)
                     if self.keepalive:
                         continue
                     else:
+                        self.connection = True
                         break
                 self.logger.debug(str(name[0]) + ":" + str(name[1]) + " <<< " + rmsg)
                 # Parse and dispatch incoming messages
@@ -401,37 +479,37 @@ class Gateway:
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
 
-    def shutdown(self):
-        """Shutdown the platform.
-        """
-        j_dict = dict()
-        j_dict["action"] = Action.SHUTDOWN
-        self.socket.sendall((_json.dumps(j_dict) + '\n').encode())
-
     def close(self):
         """Closes the gateway. The gateway functionality may not longer be accessed after this method is called.
         """
         try:
             self.keepalive = False
+            self.connection = False
+            self.socket.sendall('{"alive": false}\n'.encode())
             self.socket.shutdown(_socket.SHUT_RDWR)
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
 
-    def send(self, msg, relay=True):
+    def send(self, msg):
         """Sends a message to the recipient indicated in the message. The recipient may be an agent or a topic.
         """
-        tmsg = _copy.deepcopy(msg)
+        tmsg = msg
         if not tmsg.recipient:
             return False
-        tmsg.sender = self.name
+        tmsg.sender = self.aid.name
         if tmsg.perf == None:
             if tmsg.__clazz__.endswith('Req'):
                 tmsg.perf = Performative.REQUEST
             else:
                 tmsg.perf = Performative.INFORM
-        rq = _json.dumps({'action': 'send', 'relay': relay, 'message': '###MSG###'})
+        rq = _json.dumps({'action': Action.SEND, 'relay': True, 'message': '###MSG###'}, cls=_CustomEncoder)
         rq = rq.replace('"###MSG###"', tmsg._serialize())
-        name = self.socket.getpeername()
+        try:
+            name = self.socket.getpeername()
+        except Exception as e:
+            self.logger.critical("Exception: " + str(e))
+            self.keepalive = True
+            self._socket_reconnect(self.keepalive)
         self.logger.debug(str(name[0]) + ":" + str(name[1]) + " >>> " + rq)
         self.socket.sendall((rq + '\n').encode())
         return True
@@ -442,19 +520,19 @@ class Gateway:
             if filter == None and len(self.q):
                 rmsg = self.q.pop()
             # If filter is a Message, look for a Message in the
-            # receive Queue which was inReplyto that message.
+            # receive Queue which was inReplyTo that message.
             elif isinstance(filter, Message):
                 if filter.msgID:
                     for i in self.q:
-                        if "inReplyTo" in i["data"] and filter.msgID == i["data"]["inReplyTo"]:
+                        if filter.msgID == i.inReplyTo:
                             try:
                                 rmsg = self.q.pop(self.q.index(i))
                             except Exception as e:
                                 self.logger.critical("Error: Getting item from list - " + str(e))
             # If filter is a class, look for a Message of that class.
-            elif type(filter) == type(Message):
+            elif isinstance(filter, type):
                 for i in self.q:
-                    if i["clazz"].split(".")[-1] == filter.__name__:
+                    if (isinstance(i, Message) and isinstance(i, filter)):
                         try:
                             rmsg = self.q.pop(self.q.index(i))
                         except Exception as e:
@@ -495,13 +573,7 @@ class Gateway:
                 rmsg = self._retrieveFromQueue(filter)
         if not rmsg:
             return None
-        try:
-            m = Message()
-            rsp = m._deserialize(rmsg)
-        except Exception as e:
-            self.logger.critical("Exception: Class loading failed - " + str(e))
-            return None
-        return rsp
+        return rmsg
 
     def request(self, msg, timeout=1000):
         """Sends a request and waits for a response. This method blocks until timeout if no response is received.
@@ -522,17 +594,26 @@ class Gateway:
         """
         if topic2 is None:
             if isinstance(topic, str):
-                return AgentID(self, topic, True)
+                return AgentID(topic, True, owner=self)
             elif isinstance(topic, AgentID):
                 if topic.is_topic:
                     return topic
-                return AgentID(self, topic.name + "__ntf", True)
+                return AgentID(topic.name + "__ntf", True, owner=self)
             else:
-                return AgentID(self, topic.__class__.__name__ + "." + str(topic), True)
+                return AgentID(topic.__class__.__name__ + "." + str(topic), True, owner=self)
         else:
             if not isinstance(topic2, str):
                 topic2 = topic2.__class__.__name__ + "." + str(topic2)
-            return AgentID(self, topic.name + "__" + topic2 + "__ntf", True)
+            return AgentID(topic.name + "__" + topic2 + "__ntf", True, owner=self)
+
+    def agent(name):
+        """Returns an object representing a named agent.
+
+        :param name: name of the agent.
+        :returns: object representing the agent.
+        """
+        return AgentID(name, owner=self)
+
 
     def subscribe(self, topic):
         """Subscribes the gateway to receive all messages sent to the given topic.
@@ -541,19 +622,18 @@ class Gateway:
         """
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
-                new_topic = AgentID(self, topic.name + "__ntf", True)
+                new_topic = AgentID(topic.name + "__ntf", True, owner=self)
             else:
                 new_topic = topic
-
-            if len(self.subscribers) == 0:
-                self.subscribers.append(new_topic.name)
-            else:
-                if new_topic.name in self.subscribers:
-                    self.logger.critical("Warning: Already subscribed to topic")
-                    return
-                self.subscribers.append(new_topic.name)
+            if new_topic.name in self.subscriptions:
+                self.logger.critical("Warning: Already subscribed to topic")
+                return False
+            self.subscriptions.append(new_topic.name)
+            self._update_watch()
+            return True
         else:
             self.logger.critical("Invalid AgentID")
+            return False
 
     def unsubscribe(self, topic):
         """Unsubscribes the gateway from a given topic.
@@ -562,21 +642,23 @@ class Gateway:
         """
         if isinstance(topic, AgentID):
             if topic.is_topic == False:
-                new_topic = AgentID(self, topic.name + "__ntf", True)
+                new_topic = AgentID(topic.name + "__ntf", True, owner=self)
             else:
                 new_topic = topic
-
-            if len(self.subscribers) == 0:
+            if len(self.subscriptions) == 0:
                 return False
             try:
-                self.subscribers.remove(new_topic.name)
+                self.subscriptions.remove(new_topic.name)
             except:
                 self.logger.critical("Exception: No such topic subscribed: " + new_topic.name)
+                return False
+            self._update_watch()
             return True
         else:
             self.logger.critical("Invalid AgentID")
+            return False
 
-    def agentForService(self, service, timeout=1000):
+    def agentForService(self, service):
         """Finds an agent that provides a named service. If multiple agents are registered
         to provide a given service, any of the agents' id may be returned.
 
@@ -584,11 +666,11 @@ class Gateway:
         :returns: an agent id for an agent that provides the service.
         """
         req_id = _uuid.uuid4()
-        rq = {'action': 'agentForService', 'service': service, 'id': str(req_id)}
-        self.socket.sendall((_json.dumps(rq) + '\n').encode())
+        rq = {'action': Action.AGENT_FOR_SERVICE, 'service': service, 'id': str(req_id)}
+        self.socket.sendall((_json.dumps(rq, cls=_CustomEncoder) + '\n').encode())
         res_event = _td.Event()
         self.pending[req_id] = (res_event, None)
-        ret = res_event.wait(timeout)
+        ret = res_event.wait(self.DEFAULT_TIMEOUT)
         if not ret:
             return None
         else:
@@ -599,12 +681,12 @@ class Gateway:
                 a = None
             if a is not None:
                 if isinstance(a, str):
-                    a = AgentID(self, a)
+                    a = AgentID(a, owner=self)
                 else:
-                    a = AgentID(self, a.name, a.is_topic)
+                    a = AgentID(a.name, a.is_topic, owner=self)
             return a
 
-    def agentsForService(self, service, timeout=1000):
+    def agentsForService(self, service):
         """Finds all agents that provides a named service.
 
         :param service: the named service of interest.
@@ -618,10 +700,10 @@ class Gateway:
             j_dict["service"] = service
         else:
             j_dict["service"] = service.__class__.__name__ + "." + str(service)
-        self.socket.sendall((_json.dumps(j_dict) + '\n').encode())
+        self.socket.sendall((_json.dumps(j_dict, cls=_CustomEncoder) + '\n').encode())
         res_event = _td.Event()
         self.pending[req_id] = (res_event, None)
-        ret = res_event.wait(timeout)
+        ret = res_event.wait(self.DEFAULT_TIMEOUT)
         if not ret:
             return None
         else:
@@ -633,23 +715,23 @@ class Gateway:
             if a is not None:
                 for j in range(len(a)):
                     if isinstance(a[j], str):
-                        a[j] = AgentID(self, a[j])
+                        a[j] = AgentID(a[j], owner=self)
                     else:
-                        a[j] = AgentID(self, a[j].name)
+                        a[j] = AgentID(a[j].name, owner=self)
             return a
 
     def getAgentID(self):
         """Returns the gateway Agent ID.
         """
-        return self.name
+        return self.aid
 
     def _is_duplicate(self):
         req_id = _uuid.uuid4()
         req = dict()
         req["action"] = Action.CONTAINS_AGENT
         req["id"] = str(req_id)
-        req["agentID"] = self.name
-        self.socket.sendall((_json.dumps(req) + '\n').encode())
+        req["agentID"] = self.aid.name
+        self.socket.sendall((_json.dumps(req, cls=_CustomEncoder) + '\n').encode())
         res_event = _td.Event()
         self.pending[req_id] = (res_event, None)
         ret = res_event.wait(self.DEFAULT_TIMEOUT)

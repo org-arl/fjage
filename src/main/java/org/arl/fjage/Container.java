@@ -60,12 +60,12 @@ public class Container {
    * @param platform platform on which the container runs.
    */
   public Container(Platform platform) {
-    name = Integer.toHexString(hashCode());
+    name = "@"+Integer.toHexString(hashCode());
     this.platform = platform;
     LogHandlerProxy.install(platform, log);
     try {
       setCloner(SERIAL_CLONER);
-    } catch (FjageError ex) {
+    } catch (FjageException ex) {
       log.warning("Cloning disabled");
     }
     platform.addContainer(this);
@@ -83,7 +83,7 @@ public class Container {
     LogHandlerProxy.install(platform, log);
     try {
       setCloner(SERIAL_CLONER);
-    } catch (FjageError ex) {
+    } catch (FjageException ex) {
       log.warning("Cloning disabled");
     }
     platform.addContainer(this);
@@ -139,13 +139,13 @@ public class Container {
       } else {
         cloner = null;
         doClone = null;
-        throw new FjageError("Unknown cloner name");
+        throw new FjageException("Unknown cloner name");
       }
     } catch (Exception ex) {
       log.warning("Cloner creation failed: "+ex.toString());
       cloner = null;
       doClone = null;
-      throw new FjageError("Cloner creation failed");
+      throw new FjageException("Cloner creation failed");
     }
   }
 
@@ -158,12 +158,12 @@ public class Container {
    */
   @SuppressWarnings("unchecked")
   public <T extends Serializable> T clone(T obj) {
-    if (doClone == null) throw new FjageError("Cloner unavailable");
+    if (doClone == null) throw new FjageException("Cloner unavailable");
     try {
       return (T)doClone.invoke(cloner, obj);
     } catch (Exception ex) {
       log.warning("Cloning failed: "+ex.toString());
-      throw new FjageError("Cloning failed");
+      throw new FjageException("Cloning failed");
     }
   }
 
@@ -531,7 +531,7 @@ public class Container {
       running = true;
       for (Agent a: agents.values()) {
         if (a.getState() == AgentState.INIT)
-          throw new FjageError("Container start() called without init()");
+          throw new FjageException("Container start() called without init()");
         a.wake();
       }
     }

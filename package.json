@@ -7,11 +7,11 @@
     "doc": "docs"
   },
   "dependencies": {
-    "jsdoc": "^3.5.5",
-    "puppeteer": "^1.11.0"
+    "jsdoc": "^3.6.3",
+    "puppeteer": "^1.19.0"
   },
   "devDependencies": {
-    "documentation": "^9.1.1"
+    "documentation": "^12.0.1"
   },
   "scripts": {
     "test": "echo \"Use 'gradle test' instead\" && exit 1",

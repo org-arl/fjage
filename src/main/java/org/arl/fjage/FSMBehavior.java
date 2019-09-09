@@ -109,7 +109,7 @@ public class FSMBehavior extends Behavior {
    * @param state state behavior.
    */
   public void add(State state) {
-    if (states.containsKey(state.name)) throw new FjageError("Duplicate state name: "+state.name);
+    if (states.containsKey(state.name)) throw new FjageException("Duplicate state name: "+state.name);
     states.put(state.getName(), state);
     state.fsm = this;
     state.log = log;
@@ -124,7 +124,7 @@ public class FSMBehavior extends Behavior {
    */
   public void setInitialState(Object name) {
     State state = (name instanceof State) ? (State)name : states.get(name);
-    if (state == null) throw new FjageError("Unknown state: "+name);
+    if (state == null) throw new FjageException("Unknown state: "+name);
     initial = state;
   }
 
@@ -135,7 +135,7 @@ public class FSMBehavior extends Behavior {
    */
   public void setNextState(Object name) {
     State state = (name instanceof State) ? (State)name : states.get(name);
-    if (state == null) throw new FjageError("Unknown state: "+name);
+    if (state == null) throw new FjageException("Unknown state: "+name);
     next = state;
     restart();
   }
@@ -264,10 +264,10 @@ public class FSMBehavior extends Behavior {
     public Object getName() {
       return name;
     }
-    
+
     /**
      * Returns a string representation of the state.
-     * 
+     *
      * @see java.lang.Object#toString()
      */
     public String toString() {

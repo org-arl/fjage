@@ -97,7 +97,7 @@ The shell can be accessed by accessing http://localhost:8080 once fjåge is runn
 Shell extensions
 ----------------
 
-Shell extensions are classes that extend the `org.arl.fjage.shell.ShellExtension` interface, and can be executed in a shell using the agent's `addInitrc()` method or using `run()`. This interface is simply a tag, and does not contain any methods. All public static methods and attributes (except those that contain "`__`" in the name) of the extension class are imported into the shell as comamnds and constants.
+Shell extensions are classes that extend the `org.arl.fjage.shell.ShellExtension` interface, and can be executed in a shell using the agent's `addInitrc()` method or using `run()`. This interface is simply a tag, and does not contain any methods. All public static methods and attributes (except those that contain "`__`" in the name) of the extension class are imported into the shell as commands and constants.
 
 If the extension has a `public static void __init__(ScriptEngine engine)` method, it is executed at startup. If the extension has a public static string attribute called `__doc__` , it is loaded into the documentation system. The documentation system interprets it's inputs as Markdown help snippets. A first level heading provides a top level description for the extension. Individual commands and attributes should be described in sections with second level headings.
 

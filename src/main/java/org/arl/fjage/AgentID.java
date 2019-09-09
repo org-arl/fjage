@@ -25,7 +25,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
 
   private String name;
   private boolean isTopic;
-  private transient Agent owner;
+  private transient Messenger owner;
 
   /////////////// Interface methods
 
@@ -59,7 +59,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    * @param name name of the agent.
    * @param owner owner agent.
    */
-  public AgentID(String name, Agent owner) {
+  public AgentID(String name, Messenger owner) {
     this.name = name;
     isTopic = false;
     this.owner = owner;
@@ -73,7 +73,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    *                false if it is to represent an agent.
    * @param owner owner agent.
    */
-  public AgentID(String name, boolean isTopic, Agent owner) {
+  public AgentID(String name, boolean isTopic, Messenger owner) {
     this.name = name;
     this.isTopic = isTopic;
     this.owner = owner;
@@ -85,7 +85,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    * @param aid agent id to inherit.
    * @param owner owner agent.
    */
-  public AgentID(AgentID aid, Agent owner) {
+  public AgentID(AgentID aid, Messenger owner) {
     this.name = aid.name;
     this.isTopic = aid.isTopic;
     this.owner = owner;
@@ -114,18 +114,18 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    * Gets the owner of the agent id. This is usually the agent that
    * created the agent id, and will be used to send messages to this
    * agent id.
-   * 
+   *
    * @return owner agent.
    */
-  public Agent getOwner() {
+  public Messenger getOwner() {
     return owner;
   }
-  
+
   /////////////// Proxy interface methods
 
   /**
    * Sends a message to the agent represented by this id.
-   * 
+   *
    * @param msg message to send.
    */
   public void send(Message msg) {
@@ -136,7 +136,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
   /**
    * Sends a request to the agent represented by this id and waits for
    * a return message for 1 second.
-   * 
+   *
    * @param msg request to send.
    * @return response.
    */
@@ -144,11 +144,11 @@ public class AgentID implements Serializable, Comparable<AgentID> {
     msg.setRecipient(this);
     return owner.request(msg, 1000);
   }
-  
+
   /**
    * Sends a request to the agent represented by this id and waits for
    * a return message for a specified timeout.
-   * 
+   *
    * @param msg request to send.
    * @param timeout timeout in milliseconds.
    * @return response.

@@ -64,9 +64,15 @@
       connectIO(io, term);
     };
     term.decorate(document.querySelector('#terminal'));
-    term.installKeyboard();
-    term.setCursorBlink(true);
-    window.term = term;
+    // TODO Remove setTimeout when hterm fixes their bug 980671
+    setTimeout(() => {
+      term.installKeyboard();
+      term.setCursorBlink(true);
+      const urlParams = new URLSearchParams(window.location.search);
+      const scbVis = urlParams.get('scrollbar');
+      term.prefs_.set('scrollbar-visible', scbVis != "false");
+      window.term = term;
+    },50);
   }
   function connectIO(io, term){
     const path = window.location.pathname.replace(/\/[^/]*$/, '/ws/');

@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 public class TcpHubConnector extends Thread implements Connector {
 
   protected int port;
-  protected boolean charmode;
+  protected boolean telnet;
   protected ServerSocket sock = null;
   protected OutputThread outThread = null;
   protected List<ClientThread> clientThreads = Collections.synchronizedList(new ArrayList<ClientThread>());
@@ -41,10 +41,23 @@ public class TcpHubConnector extends Thread implements Connector {
    */
   public TcpHubConnector(int port, boolean telnet) {
     this.port = port;
-    charmode = telnet;
-    setName("tcphub:[listening on port "+port+"]");
+    this.telnet = telnet;
+    try {
+      setName("tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port);
+    } catch (UnknownHostException ex) {
+      setName("tcp://0.0.0.0:"+port);
+    }
     setDaemon(true);
     start();
+  }
+
+  /**
+   * Creates a TCP server running on a specified port.
+   *
+   * @param port TCP port number.
+   */
+  public TcpHubConnector(int port) {
+    this(port, false);
   }
 
   /**
@@ -115,7 +128,11 @@ public class TcpHubConnector extends Thread implements Connector {
         port = sock.getLocalPort();
         notify();
       }
-      setName("tcphub:[listening on port "+port+"]");
+      try {
+        setName("tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port);
+      } catch (UnknownHostException ex) {
+        setName("tcp://0.0.0.0:"+port);
+      }
       log.info("Listening on port "+port);
       while (sock != null) {
         try {
@@ -163,12 +180,13 @@ public class TcpHubConnector extends Thread implements Connector {
 
     @Override
     public void run() {
-      while (true) {
+      while (pout.available() >= 0) {
         int c = pout.read();
-        if (c < 0) break;
-        synchronized(clientThreads) {
-          for (ClientThread t: clientThreads)
-            t.write(c);
+        if (c >= 0) {
+          synchronized(clientThreads) {
+            for (ClientThread t: clientThreads)
+              t.write(c);
+          }
         }
       }
     }
@@ -186,6 +204,7 @@ public class TcpHubConnector extends Thread implements Connector {
     Socket client;
     OutputStream out = null;
     TcpHubConnector conn;
+    boolean negotiated = false;
 
     ClientThread(TcpHubConnector conn, Socket client) {
       setName(getClass().getSimpleName());
@@ -205,25 +224,27 @@ public class TcpHubConnector extends Thread implements Connector {
         if (listener != null) listener.connected(conn);
         in = client.getInputStream();
         out = client.getOutputStream();
-        if (charmode) {
+        // initial negotiation
+        if (telnet) {
           int[] charmodeBytes = new int[] { 255, 251, 1, 255, 251, 3, 255, 252, 34 };
           for (int b: charmodeBytes)
             out.write(b);
           out.flush();
         }
-        // ignore initial handshake data
-        try {
-          sleep(100);
-        } catch (InterruptedException ex) {
-          Thread.currentThread().interrupt();
-        }
-        while (!Thread.interrupted() && in.available() > 0)
-          in.read();
+        negotiated = true;
         // process incoming data
+        boolean iac = false;
+        int skip = 0;
         while (!Thread.interrupted()) {
           int c = in.read();
-          if (c < 0 || c == 4) break;
-          if (c > 0) pin.write(c);
+          if (skip > 0) skip--;
+          else if (iac) {
+            if (c >= 251) skip = 1;
+            if (c != 255) iac = false;
+          }
+          else if (telnet && c == 255) iac = true;
+          else if (c < 0 || (telnet && c == 4)) break;
+          else if (c > 0) pin.write(c);
         }
       } catch (Exception ex) {
         // do nothing
@@ -238,6 +259,7 @@ public class TcpHubConnector extends Thread implements Connector {
     }
 
     void write(int c) {
+      if (!negotiated) return;
       try {
         if (out != null) {
           out.write(c);
