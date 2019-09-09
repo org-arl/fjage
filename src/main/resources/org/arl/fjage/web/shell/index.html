@@ -64,6 +64,7 @@
       connectIO(io, term);
     };
     term.decorate(document.querySelector('#terminal'));
+    // TODO Remove setTimeout when hterm fixes their bug 980671
     setTimeout(() => {
       term.installKeyboard();
       term.setCursorBlink(true);
