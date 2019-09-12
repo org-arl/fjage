@@ -606,7 +606,7 @@ class Gateway:
                 topic2 = topic2.__class__.__name__ + "." + str(topic2)
             return AgentID(topic.name + "__" + topic2 + "__ntf", True, owner=self)
 
-    def agent(name):
+    def agent(self, name):
         """Returns an object representing a named agent.
 
         :param name: name of the agent.
