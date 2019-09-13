@@ -9,6 +9,14 @@ archivesBaseName = 'fjage'
 group = 'com.github.org-arl'
 version = new File('VERSION').text.trim()
 
+// get git commit
+def stdout = new ByteArrayOutputStream()
+exec{
+    commandLine 'git', 'describe', '--always', '--abbrev=8', '--match', 'NOT A TAG', '--dirty=*'
+    standardOutput = stdout;
+}
+def commit = "$stdout".replace('\n','')
+
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
@@ -56,7 +64,7 @@ tasks.withType(Javadoc) {
 
 jar {
   manifest {
-    attributes 'Build-Owner': System.getenv().USER, 'Build-Timestamp': new Date().format('d-MM-yyyy_HH:mm:ss'), 'Build-Version': version
+    attributes 'Build-Owner': System.getenv().USER, 'Build-Timestamp': new Date().format('d-MM-yyyy_HH:mm:ss'), 'Build-Version': "${version}/${commit}"
   }
 }
 
