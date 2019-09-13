@@ -154,6 +154,10 @@ class Message(object):
                 self.__dict__[k] = v.name
 
     def __getattribute__(self, name):
+        if name == 'performative':
+            return self.perf
+        if name == 'messageID':
+            return self.msgID
         if not name.startswith('_') and name.endswith('_'):
             return object.__getattribute__(self, name[:-1])
         return object.__getattribute__(self, name)
