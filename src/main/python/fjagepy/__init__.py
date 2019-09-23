@@ -332,7 +332,7 @@ class Gateway:
                 raise
             self.recv_thread.start()
             if self._is_duplicate():
-                self.logger.critical("Duplicate Gateway found. Shutting down.")
+                self.logger.critical("Exception: Duplicate Gateway found. Shutting down.")
                 self.socket.close()
                 raise Exception('DuplicateGatewayException')
         except Exception as e:
@@ -422,7 +422,7 @@ class Gateway:
                     self.close()
                 return None
             else:
-                self.logger.warning("Invalid message, discarding")
+                self.logger.warning("Warning: Invalid message, discarding")
         else:
             if "id" in req:
                 if req['id'] in self.pending:
@@ -532,7 +532,7 @@ class Gateway:
                             try:
                                 rmsg = self.q.pop(self.q.index(i))
                             except Exception as e:
-                                self.logger.critical("Error: Getting item from list - " + str(e))
+                                self.logger.critical("Exception: Getting item from list - " + str(e))
             # If filter is a class, look for a Message of that class.
             elif isinstance(filter, type):
                 for i in self.q:
@@ -540,7 +540,7 @@ class Gateway:
                         try:
                             rmsg = self.q.pop(self.q.index(i))
                         except Exception as e:
-                            self.logger.critical("Error: Getting item from list - " + str(e))
+                            self.logger.critical("Exception: Getting item from list - " + str(e))
             # If filter is a lambda, look for a Message that on which the
             # lambda returns True.
             elif isinstance(filter, type(lambda: 0)):
@@ -549,9 +549,9 @@ class Gateway:
                         try:
                             rmsg = self.q.pop(self.q.index(i))
                         except Exception as e:
-                            self.logger.critical("Error: Getting item from list - " + str(e))
+                            self.logger.critical("Exception: Getting item from list - " + str(e))
         except Exception as e:
-            self.logger.critical("Error: Queue empty/timeout - " + str(e))
+            self.logger.critical("Exception: Queue empty/timeout - " + str(e))
         return rmsg
 
     def receive(self, filter=None, timeout=0):
@@ -630,13 +630,13 @@ class Gateway:
             else:
                 new_topic = topic
             if new_topic.name in self.subscriptions:
-                self.logger.critical("Warning: Already subscribed to topic")
+                self.logger.debug("Already subscribed to topic")
                 return False
             self.subscriptions.append(new_topic.name)
             self._update_watch()
             return True
         else:
-            self.logger.critical("Invalid AgentID")
+            self.logger.critical("Exception: Invalid AgentID")
             return False
 
     def unsubscribe(self, topic):
@@ -659,7 +659,7 @@ class Gateway:
             self._update_watch()
             return True
         else:
-            self.logger.critical("Invalid AgentID")
+            self.logger.critical("Exception: Invalid AgentID")
             return False
 
     def agentForService(self, service):
