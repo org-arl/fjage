@@ -631,7 +631,7 @@ class Gateway:
                 new_topic = topic
             if new_topic.name in self.subscriptions:
                 self.logger.debug("Already subscribed to topic")
-                return False
+                return True
             self.subscriptions.append(new_topic.name)
             self._update_watch()
             return True
@@ -654,7 +654,7 @@ class Gateway:
             try:
                 self.subscriptions.remove(new_topic.name)
             except:
-                self.logger.critical("Exception: No such topic subscribed: " + new_topic.name)
+                self.logger.debug("No such topic subscribed: " + new_topic.name)
                 return False
             self._update_watch()
             return True
