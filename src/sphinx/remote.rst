@@ -86,6 +86,6 @@ Only agents may access messaging and related functionality provided by fjåge. F
 .. Javadoc links
 .. -------------
 ..
-.. _MasterContainer: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/json/MasterContainer.html
-.. _SlaveContainer: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/json/SlaveContainer.html
-.. _Gateway: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/json/Gateway.html
+.. _MasterContainer: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/remote/MasterContainer.html
+.. _SlaveContainer: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/remote/SlaveContainer.html
+.. _Gateway: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/remote/Gateway.html
