@@ -10,10 +10,7 @@ for full license details.
 
 package org.arl.fjage.shell;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,13 +51,37 @@ public class Documentation {
   }
 
   /**
+   * Search documentation topics by keyword.
+   *
+   * @param keyword keyword.
+   */
+  public String search(String keyword) {
+    keyword = keyword.toLowerCase();
+    Set<String> topics = new HashSet<String>();
+    String topic = null;
+    for (String s: doc) {
+      Matcher m = section.matcher(s);
+      if (m.matches()) topic = s.replaceAll("^#+ +", "- ");
+      if (s.toLowerCase().contains(keyword)) topics.add(topic);
+    }
+    if (topics.size() == 0) return null;
+    StringBuilder sb = new StringBuilder();
+    sb.append("Possible topics:\n");
+    for (String s: topics) {
+      sb.append(s);
+      sb.append('\n');
+    }
+    return sb.toString();
+  }
+
+  /**
    * Get documentation by keyword.
    *
    * @param keyword keyword.
    */
   public String get(String keyword) {
     Integer pos = ndx.get(keyword);
-    if (pos == null) return null;
+    if (pos == null) return search(keyword);
     String s = doc.get(pos);
     int level = s.indexOf(' ');
     if (level <= 0) return null;

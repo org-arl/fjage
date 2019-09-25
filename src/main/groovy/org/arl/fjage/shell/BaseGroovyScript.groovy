@@ -35,7 +35,7 @@ abstract class BaseGroovyScript extends Script {
 
   /**
    * Initializes the script.  Creates a 'log' variable to allow logging from the
-   * script. Also creates a 'doc' hash map in suppport of 'help' commands.
+   * script.
    */
   void __init__() {
     Logger log = Logger.getLogger(getClass().getName())
