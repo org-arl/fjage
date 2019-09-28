@@ -45,8 +45,8 @@ class GroovyExtensions {
     PoissonBehavior.metaClass.constructor << bcon1.curry(PoissonBehavior)
     BackoffBehavior.metaClass.constructor << bcon1.curry(BackoffBehavior)
 
-    MessageBehavior.metaClass.constructor << { Class<?> msg, Closure c ->
-      def b = new MessageBehavior(msg)
+    MessageBehavior.metaClass.constructor << { Class<? extends Message> msg, Closure c ->
+      def b = (msg == null || msg == Message) ? new MessageBehavior((MessageFilter)null) : new MessageBehavior(msg)
       b.action = c as Callback
       c.delegate = b
       c.resolveStrategy = Closure.DELEGATE_FIRST
