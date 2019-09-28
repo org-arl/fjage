@@ -14,10 +14,10 @@ A behavior that is not ready to run may be in a blocked state (e.g. a behavior t
 
 When an agent is killed or the platform is shutdown, the agent is placed in a FINISHING state. Agents in this state are given a chance to cleanup via a call to their `shutdown()` method. An agent may override this method if a cleanup is required. After the cleanup, the agent is terminated and placed in a FINISHED state, and removed from the container.
 
-An example skeleton agent is shown below:: 
+An example skeleton agent is shown below::
 
     class MyAgent extends Agent {
-      
+
       void init() {
         // agent is in INIT state
         log.info 'Agent init'
@@ -130,7 +130,7 @@ A `MessageBehavior`_ is invoked when a message is received by the agent. A messa
 
 A message behavior that accepts any message can be added as follows::
 
-    add new MessageBehavior({ msg ->
+    add new MessageBehavior(Message, { msg ->
       println "Incoming message from ${msg.sender}"
     })
 
