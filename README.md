@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/org-arl/fjage.svg?branch=master)](https://travis-ci.org/org-arl/fjage)
+![](https://github.com/org-arl/fjage/workflows/CI/badge.svg)
 
 fjåge
 =====
@@ -55,7 +55,7 @@ Try to stick to the coding style already in use in the repository. Additionally,
 Building:
 
 * `gradle` to build the jars
-* `gradle check` to run all regression tests (automated through Travis CI)
+* `gradle test` to run all regression tests (automated through Github actions CI)
 * `gradle upload` to upload jars to Maven staging (requires credentials)
 * `make html` to build developer's documentation (automated through ReadTheDocs)
 * `gradle javadoc` to build the Java API documentation
