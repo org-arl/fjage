@@ -34,7 +34,7 @@ where `hostname` and `port` is the IP address and the port number of the device 
 Send and receive messages
 -------------------------
 
-We have seen earlier that the agents interact with each other using messages. The python gateway can similarly send and receive messages to the agents running on containers running on diffeent machines. An example of request and response message are as shown below:
+We have seen earlier that the agents interact with each other using messages. The C gateway can similarly send and receive messages to the agents running on containers running on diffeent machines. An example of request and response message are as shown below:
 
 Request message::
 
@@ -43,7 +43,7 @@ Request message::
    fjage_msg_set_recipient(msg, myaid);
    fjage_send(gw, msg);
 
-where `abc` is the name of the agent you are trying to send the message to. Once the message is sent, the message and the agentID needs to be freed:
+where `abc` is the name of the agent you are trying to send the message to. Once the message is sent, the message and the agentID needs to be freed::
 
    fjage_aid_destroy(aid);
 
