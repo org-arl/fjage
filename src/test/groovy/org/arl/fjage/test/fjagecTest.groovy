@@ -25,7 +25,7 @@ class fjagecTest {
     Thread.sleep(5)
     def ret = 0
     println "Running automated tests."
-    def proc = "make -C src/main/c clean test".execute()
+    def proc = "make -C gateways/c clean test".execute()
     def sout = new StringBuilder(), serr = new StringBuilder()
     proc.consumeProcessOutput(sout, serr)
     proc.waitFor()
