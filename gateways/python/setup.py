@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-with open('../../sphinx/pythongw.rst') as f:
+with open('../../src/sphinx/pythongw.rst') as f:
     with open('README.rst', 'w') as f1:
         for line in f:
             if ".. highlight" not in line:
