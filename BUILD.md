@@ -79,14 +79,14 @@ Follow the steps below to publish the fjagepy python package to [PyPI](https://p
 
 3. Create a source distribution:
 
-    `python src/main/python/setup.py sdist`
+    `python gateways/python/setup.py sdist`
 
 4. Create a wheel for the project:
 
-    `python src/main/python/setup.py bdist_wheel`
+    `python gateways/python/setup.py bdist_wheel`
 
 5. Create an account on [PyPI](https://pypi.python.org/pypi)
 
 6. Once you have an account, you can upload your distribution to PyPI using twine:
 
-    `twine upload src/main/python/dist/*`
+    `twine upload gateways/python/dist/*`
