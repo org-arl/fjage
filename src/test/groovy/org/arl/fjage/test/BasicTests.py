@@ -2,7 +2,7 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath("src/main/python"))
+sys.path.insert(0, os.path.abspath("gateways/python"))
 import unittest
 from fjagepy import *
 
