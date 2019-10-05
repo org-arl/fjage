@@ -101,6 +101,17 @@ public class WebServer {
   }
 
   /**
+   * Gets all web server instances running.
+   *
+   * @return array of web server instances.
+   */
+  public static WebServer[] getInstances() {
+    synchronized (servers) {
+      return servers.values().toArray(new WebServer[0]);
+    }
+  }
+
+  /**
    * Shutdown all web servers.
    */
   public static void shutdown() {
