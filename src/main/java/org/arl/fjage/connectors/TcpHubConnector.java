@@ -221,18 +221,17 @@ public class TcpHubConnector extends Thread implements Connector {
       try {
         cname = client.getInetAddress().toString();
         log.info("New connection from "+cname);
-        if (listener != null) listener.connected(conn);
         in = client.getInputStream();
         out = client.getOutputStream();
         // initial negotiation
         if (telnet) {
-          int[] charmodeBytes = new int[] { 255, 251, 1, 255, 251, 3, 255, 252, 34 };
-          for (int b: charmodeBytes)
+          int[] negotiationBytes = new int[] { 255, 251, 1, 255, 251, 3, 255, 252, 34, 27, 91, 63, 49, 104, 27, 61 };
+          for (int b: negotiationBytes)
             out.write(b);
           out.flush();
         }
+        if (listener != null) listener.connected(conn);
         negotiated = true;
-        // process incoming data
         boolean iac = false;
         int skip = 0;
         while (!Thread.interrupted()) {

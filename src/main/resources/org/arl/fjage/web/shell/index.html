@@ -61,6 +61,7 @@
       ignoreKeys.forEach(keyname => {
         this.keyboard.bindings.addBinding(keyname, () => hterm.Keyboard.KeyActions.PASS);
       });
+      io.print('\x1b[?1h\x1b=');  // set arrow keys and keypad to application mode (needed by readline)
       connectIO(io, term);
     };
     term.decorate(document.querySelector('#terminal'));
