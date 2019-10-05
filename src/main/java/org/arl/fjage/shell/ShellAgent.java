@@ -86,7 +86,10 @@ public class ShellAgent extends Agent {
   public ShellAgent(ScriptEngine engine) {
     shell = null;
     this.engine = engine;
-    if (engine != null) engine.setVariable("__agent__", this);
+    if (engine != null) {
+      engine.setVariable("__agent__", this);
+      engine.setVariable("__script_engine__", engine);
+    }
   }
 
   /**
@@ -101,7 +104,10 @@ public class ShellAgent extends Agent {
     shell = null;
     this.ephemeral = ephemeral;
     this.engine = engine;
-    if (engine != null) engine.setVariable("__agent__", this);
+    if (engine != null) {
+      engine.setVariable("__agent__", this);
+      engine.setVariable("__script_engine__", engine);
+    }
   }
 
   /**
