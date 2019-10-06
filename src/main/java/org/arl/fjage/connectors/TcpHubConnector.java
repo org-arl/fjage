@@ -225,7 +225,14 @@ public class TcpHubConnector extends Thread implements Connector {
         out = client.getOutputStream();
         // initial negotiation
         if (telnet) {
-          int[] negotiationBytes = new int[] { 255, 251, 1, 255, 251, 3, 255, 252, 34, 27, 91, 63, 49, 104, 27, 61 };
+          int[] negotiationBytes = new int[] {
+            255, 251, 1,
+            255, 251, 3,
+            255, 252, 34,
+            27, 91, 63, 49, 104,
+            27, 61,
+            27, 91, 63, 50, 48, 48, 52, 104
+          };
           for (int b: negotiationBytes)
             out.write(b);
           out.flush();
