@@ -90,6 +90,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   private MessageQueue queue = new MessageQueue(256);
   protected long tid = -1;
   protected Thread thread = null;
+  protected boolean ignoreExceptions = false;
 
   /////////////////////// Attributes available to agents
 
@@ -734,25 +735,30 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
           }
         }
         // assimilate any new behaviors
-        Behavior b = newBehaviors.poll();
-        if (b != null) {
-          activeBehaviors.add(b);
-          b.onStart();
-          continue;
-        }
-        // execute an active behavior
-        b = activeBehaviors.poll();
-        if (b != null) {
-          b.unblock();
-          b.action();
-          if (b.done()) {
-            b.onEnd();
-            b.setOwner(null);
-          } else {
-            if (b.isBlocked()) blockedBehaviors.add(b);
-            else activeBehaviors.add(b);
+        try {
+          Behavior b = newBehaviors.poll();
+          if (b != null) {
+            activeBehaviors.add(b);
+            b.onStart();
+            continue;
           }
-          continue;
+          // execute an active behavior
+          b = activeBehaviors.poll();
+          if (b != null) {
+            b.unblock();
+            b.action();
+            if (b.done()) {
+              b.onEnd();
+              b.setOwner(null);
+            } else {
+              if (b.isBlocked()) blockedBehaviors.add(b);
+              else activeBehaviors.add(b);
+            }
+            continue;
+          }
+        } catch (Throwable ex) {
+          if (ignoreExceptions) log.log(Level.WARNING, "Exception in agent: "+aid, ex);
+          else throw(ex);
         }
         block();
         Thread.interrupted(); // interrupts used for disrupting timeouts only

@@ -119,6 +119,7 @@ public class ShellAgent extends Agent {
   public ShellAgent(Shell shell, ScriptEngine engine) {
     this.shell = shell;
     this.engine = engine;
+    this.ignoreExceptions = true;
     if (shell != null) shell.init(engine);
     if (engine != null) {
       engine.bind(shell);
