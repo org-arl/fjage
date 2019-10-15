@@ -61,9 +61,8 @@
       ignoreKeys.forEach(keyname => {
         this.keyboard.bindings.addBinding(keyname, () => hterm.Keyboard.KeyActions.PASS);
       });
-      // set arrow keys and keypad to application mode (needed by readline),
-      // and enable paste bracketing (seems to be needed for speed when pasting)
-      io.print('\x1b[?1h\x1b=\x1b[?2004h')
+      // enable paste bracketing (seems to be needed for speed when pasting)
+      io.print('\x1b[?2004h')
       connectIO(io, term);
     };
     term.decorate(document.querySelector('#terminal'));
