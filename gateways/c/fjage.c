@@ -594,7 +594,7 @@ fjage_msg_t fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout
 }
 
 int fjage_interrupt(fjage_gw_t gw) {
-  if (gw == NULL) return;
+  if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
   uint8_t dummy = 1;
   if (write(fgw->intfd[1], &dummy, 1) < 0) return -1;
