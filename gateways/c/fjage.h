@@ -198,8 +198,9 @@ fjage_msg_t fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout
 /// called from another thread to abort an ongoing blocking reception.
 ///
 /// @param gw             Gateway
+/// @return               0 on success, error code otherwise
 
-void fjage_interrupt(fjage_gw_t gw);
+int fjage_interrupt(fjage_gw_t gw);
 
 /// Create an AgentID. The AgentID created using this function should be freed using
 /// fjage_aid_destroy().

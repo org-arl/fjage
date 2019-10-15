@@ -430,11 +430,9 @@ fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings)
 
 int fjage_rs232_wakeup(const char* devname, int baud, const char* settings) {
   _fjage_gw_t* fgw = fjage_rs232_open(devname, baud, settings);
-  if (fgw == NULL) {
-    return -1;
-  }
+  if (fgw == NULL) return -1;
   char write_buffer = 'A';
-  write(fgw->sockfd, &write_buffer, sizeof(char));
+  if (write(fgw->sockfd, &write_buffer, sizeof(char)) < 0) return -1;
   return 0;
 }
 
@@ -595,11 +593,12 @@ fjage_msg_t fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout
   return fjage_receive(gw, NULL, id, timeout);
 }
 
-void fjage_interrupt(fjage_gw_t gw) {
+int fjage_interrupt(fjage_gw_t gw) {
   if (gw == NULL) return;
   _fjage_gw_t* fgw = gw;
   uint8_t dummy = 1;
-  write(fgw->intfd[1], &dummy, 1);
+  if (write(fgw->intfd[1], &dummy, 1) < 0) return -1;
+  return 0;
 }
 
 //// agent ID API
