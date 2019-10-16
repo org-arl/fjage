@@ -431,7 +431,7 @@ export class Gateway {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
         reject(new Error('Receive Timeout : ' + rq));
-      }, TIMEOUT);
+      }, this.sock.readyState == this.sock.CONNECTING ? TIMEOUT : 2*TIMEOUT);
       this.pending[rq.id] = rsp => {
         clearTimeout(timer);
         resolve(rsp);
