@@ -106,7 +106,7 @@ public class TcpHubConnector extends Thread implements Connector {
   @Override
   public boolean waitOutputCompletion(long timeout) {
     long t = System.currentTimeMillis() + timeout;
-    while (pout.available() > 0) {
+    while (pout && pout.available() > 0) {
       if (System.currentTimeMillis() > t) return false;
       try {
         sleep(10);
@@ -180,7 +180,7 @@ public class TcpHubConnector extends Thread implements Connector {
 
     @Override
     public void run() {
-      while (pout.available() >= 0) {
+      while (pout && pout.available() >= 0) {
         int c = pout.read();
         if (c >= 0) {
           synchronized(clientThreads) {
