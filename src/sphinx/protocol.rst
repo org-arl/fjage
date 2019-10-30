@@ -87,7 +87,7 @@ Next, we describe some of the basic examples in order to let the developer under
 Examples
 --------
 
-fjåge has very few built-in messages, since messages are usually introduced by the application built on top of fjåge. We therefore use examples from `UnetStack <http://www.unetstack.net/>`_, a specific application using fjåge, to show how the protocol works. To understand the fields in the messages, the reader is referred to `UnetStack API documentation <http://www.unetstack.net/javadoc/index.html>`_.
+fjåge has very few built-in messages, since messages are usually introduced by the application built on top of fjåge. We therefore use examples from `UnetStack <http://www.unetstack.net/>`_, a specific application using fjåge, to show how the protocol works. To understand the fields in the messages, the reader is referred to `UnetStack API documentation <https://unetstack.net/javadoc/3.0/>`_.
 
 Simple JSON message to transmit a CONTROL frame:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
