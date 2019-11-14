@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
@@ -160,7 +161,7 @@ class ConnectionHandler extends Thread {
   synchronized void println(String s) {
     if (out == null) return;
     try {
-      out.writeBytes(s+"\n");
+      out.write((s+"\n").getBytes(StandardCharsets.UTF_8));
       log.fine(this.getName() +" >>> "+s);
       conn.waitOutputCompletion(1000);
     } catch(IOException ex) {
