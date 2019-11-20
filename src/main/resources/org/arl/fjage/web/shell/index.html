@@ -77,8 +77,13 @@
     },50);
   }
   function connectIO(io, term){
+    const urlParams = new URLSearchParams(window.location.search);
+    var url = urlParams.get('url');
     const path = window.location.pathname.replace(/\/[^/]*$/, '/ws/');
-    const ws = new WebSocket('ws://'+window.location.hostname+':'+window.location.port+path);
+    if (!url){
+      url = window.location.hostname + ':' + window.location.port;
+    }
+    const ws = new WebSocket('ws://' + url + path);
     window.ws = ws;
     ws.onerror = () => {
       reconnectIO(io,term,ws);
