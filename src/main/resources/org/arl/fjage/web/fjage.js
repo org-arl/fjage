@@ -430,7 +430,8 @@ export class Gateway {
     return new Promise((resolve, reject) => {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
-        reject(new Error('Receive Timeout : ' + rq));
+        if (this.debug) console.log('Receive Timeout : ' + rq);
+        resolve();
       }, this.sock.readyState == this.sock.CONNECTING ? 8*TIMEOUT : TIMEOUT);
       this.pending[rq.id] = rsp => {
         clearTimeout(timer);
@@ -439,7 +440,8 @@ export class Gateway {
       if (!this._websockTx.call(this,rq)) {
         clearTimeout(timer);
         delete this.pending[rq.id];
-        reject(new Error('Transmit Error : ' + rq));
+        if (this.debug) console.log('Transmit Timeout : ' + rq);
+        resolve();
       }
     });
   }
@@ -586,6 +588,7 @@ export class Gateway {
   async agentForService(service) {
     let rq = { action: 'agentForService', service: service };
     let rsp = await this._websockTxRx(rq);
+    if (!rsp || !rsp.agentID) return;
     return new AgentID(rsp.agentID, false, this);
   }
 
@@ -599,6 +602,7 @@ export class Gateway {
     let rq = { action: 'agentsForService', service: service };
     let rsp = await this._websockTxRx(rq);
     let aids = [];
+    if (!rsp || !Array.isArray(rsp.agentIDs)) return aids;
     for (var i = 0; i < rsp.agentIDs.length; i++)
       aids.push(new AgentID(rsp.agentIDs[i], false, this));
     return aids;
@@ -640,8 +644,7 @@ export class Gateway {
    */
   async request(msg, timeout=1000) {
     this.send(msg);
-    let rsp = await this.receive(msg, timeout);
-    return rsp;
+    return this.receive(msg, timeout);
   }
 
   /**
@@ -659,7 +662,8 @@ export class Gateway {
         return;
       }
       if (timeout == 0) {
-        reject(new Error('Receive Timeout : ' + filter));
+        if (this.debug) console.log('Receive Timeout : ' + filter);
+        resolve();
         return;
       }
       let lid = _guid(8);
@@ -667,7 +671,8 @@ export class Gateway {
       if (timeout > 0){
         timer = setTimeout(() => {
           delete this.listener[lid];
-          reject(new Error('Receive Timeout : ' + filter));
+          if (this.debug) console.log('Receive Timeout : ' + filter);
+          resolve();
         }, timeout);
       }
       this.listener[lid] = () => {
