@@ -125,5 +125,20 @@ public class TickerBehavior extends Behavior {
     return Integer.MIN_VALUE;
   }
 
-}
+  /**
+   * Creates a new TickerBehavior which runs the specified Runnable every specified period.
+   *
+   * @param millis Period in milliseconds.
+   * @param runnable Runnable to run.
+   * @return TickerBehavior
+   */
+  public static TickerBehavior create(long millis, final Runnable runnable) {
+    return new TickerBehavior(millis) {
 
+      @Override
+      public void onTick() {
+        runnable.run();
+      }
+    };
+  }
+}

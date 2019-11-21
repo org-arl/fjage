@@ -31,4 +31,19 @@ public class OneShotBehavior extends Behavior {
     return true;
   }
 
+  /**
+   * Creates a new OneShotBehavior which runs the specified Runnable once.
+   *
+   * @param runnable Runnable to run.
+   * @return OneShotBehavior
+   */
+  public static OneShotBehavior create(final Runnable runnable) {
+    return new OneShotBehavior() {
+
+      @Override
+      public void action() {
+        runnable.run();
+      }
+    };
+  }
 }

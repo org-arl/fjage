@@ -104,5 +104,20 @@ public class BackoffBehavior extends Behavior {
     quit = false;
   }
 
-}
+  /**
+   * Creates a new BackoffBehavior which runs the specified Runnable every specified period.
+   *
+   * @param millis Backoff in milliseconds.
+   * @param runnable Runnable to run.
+   * @return BackoffBehavior
+   */
+  public static BackoffBehavior create(long millis, final Runnable runnable) {
+    return new BackoffBehavior(millis) {
 
+      @Override
+      public void onExpiry() {
+        runnable.run();
+      }
+    };
+  }
+}

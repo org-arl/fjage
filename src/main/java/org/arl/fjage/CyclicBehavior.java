@@ -49,4 +49,19 @@ public class CyclicBehavior extends Behavior {
     quit = true;
   }
 
+  /**
+   * Creates a new CyclicBehavior which runs the specified Runnable cyclically.
+   *
+   * @param runnable Runnable to run.
+   * @return CyclicBehavior
+   */
+  public static CyclicBehavior create(final Runnable runnable) {
+    return new CyclicBehavior() {
+
+      @Override
+      public void action() {
+        runnable.run();
+      }
+    };
+  }
 }

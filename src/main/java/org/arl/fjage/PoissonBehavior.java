@@ -128,4 +128,20 @@ public class PoissonBehavior extends Behavior {
     return Integer.MIN_VALUE;
   }
 
+  /**
+   * Creates a new PoissonBehavior which runs the specified Runnable on each arrival.
+   *
+   * @param millis Average inter-arrival time in milliseconds.
+   * @param runnable Runnable to run.
+   * @return PoissonBehavior
+   */
+  public static PoissonBehavior create(long millis, final Runnable runnable) {
+    return new PoissonBehavior(millis) {
+
+      @Override
+      public void onTick() {
+        runnable.run();
+      }
+    };
+  }
 }

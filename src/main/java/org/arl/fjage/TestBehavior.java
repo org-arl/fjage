@@ -112,4 +112,19 @@ public class TestBehavior extends OneShotBehavior {
     super.action();
   }
 
+  /**
+   * Creates a new TestBehavior which runs the specified Runnable once.
+   *
+   * @param runnable Runnable to run.
+   * @return TestBehavior
+   */
+  public static TestBehavior create(final Runnable runnable) {
+    return new TestBehavior() {
+
+      @Override
+      public void test() {
+        runnable.run();
+      }
+    };
+  }
 }
