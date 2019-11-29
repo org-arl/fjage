@@ -51,6 +51,7 @@ public class Container {
   protected Method doClone;
   protected boolean autoclone = false;
   protected Set<AgentID> idle = new HashSet<AgentID>();
+  protected Set<MessageListener> listeners = new HashSet<MessageListener>();
 
   //////////// Interface methods
 
@@ -300,6 +301,32 @@ public class Container {
   }
 
   /**
+   * Adds a listener to the container. A listener is able to snoop on all
+   * messages passing through the container, and optionally able to ask the
+   * container to drop a message.
+   *
+   * @param listener listener.
+   * @return true if successfully added, false otherwise.
+   */
+  public boolean addListener(MessageListener listener) {
+    synchronized (listeners) {
+      return listeners.add(listener);
+    }
+  }
+
+  /**
+   * Removes a listener from the container.
+   *
+   * @param listener listener.
+   * @return true if successfully removed, false otherwise.
+   */
+  public boolean removeListener(MessageListener listener) {
+    synchronized (listeners) {
+      return listeners.remove(listener);
+    }
+  }
+
+  /**
    * Sends a message. The message is sent to the recipient specified in the
    * message. In case of associated remote containers, the message is only
    * delivered to agents in this container.
@@ -322,6 +349,10 @@ public class Container {
   public boolean send(Message m, boolean relay) {
     if (!running) return false;
     if (relay) log.warning("Container does not support relaying");
+    synchronized (listeners) {
+      for (MessageListener listener: listeners)
+        if (listener.onReceive(m)) return true;
+    }
     AgentID aid = m.getRecipient();
     if (aid == null) return false;
     if (aid.isTopic()) {

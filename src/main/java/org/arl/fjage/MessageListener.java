@@ -8,12 +8,12 @@ for full license details.
 
 ******************************************************************************/
 
-package org.arl.fjage.shell;
+package org.arl.fjage;
 
 import org.arl.fjage.Message;
 
 /**
- * An interface for a client interested in monitoring messages in the shell.
+ * An interface for a client interested in monitoring messages.
  *
  * @author  Mandar Chitre
  */
@@ -23,7 +23,7 @@ public interface MessageListener {
    * This method is called for each message to be conveyed to the listener.
    * <p>
    * If this method returns true, the message is assumed to be consumed
-   * and is not passed to further message listeners.
+   * and is immediately discarded.
    *
    * @param msg received message.
    * @return true if the message is consumed, false otherwise.

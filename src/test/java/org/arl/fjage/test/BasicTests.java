@@ -347,6 +347,61 @@ public class BasicTests {
     assertTrue(agent.del);
   }
 
+  @Test
+  public void testListener() {
+    log.info("testListener");
+    Platform platform = new RealTimePlatform();
+    Container container = new Container(platform);
+    ServerAgent server = new ServerAgent();
+    ClientAgent2 client = new ClientAgent2();
+    container.add("S", server);
+    container.add("C", client);
+    MyMessageListener listener = new MyMessageListener();
+    assertTrue(container.addListener(listener));
+    platform.start();
+    platform.delay(1000);
+    assertTrue(container.removeListener(listener));
+    assertFalse(container.removeListener(listener));
+    int n1 = listener.n;
+    assertTrue(n1 > 0);
+    assertTrue(n1 == server.nuisance);
+    assertTrue(n1 == client.nuisance);
+    server.nuisance = 0;
+    client.nuisance = 0;
+    platform.delay(1000);
+    platform.shutdown();
+    assertTrue(n1 == listener.n);
+    assertTrue(server.nuisance == client.nuisance);
+  }
+
+  @Test
+  public void testListener2() {
+    log.info("testListener2");
+    Platform platform = new RealTimePlatform();
+    Container container = new Container(platform);
+    ServerAgent server = new ServerAgent();
+    ClientAgent2 client = new ClientAgent2();
+    container.add("S", server);
+    container.add("C", client);
+    MyMessageListener listener = new MyMessageListener();
+    listener.eat = true;
+    assertTrue(container.addListener(listener));
+    platform.start();
+    platform.delay(1000);
+    assertTrue(container.removeListener(listener));
+    assertFalse(container.removeListener(listener));
+    int n1 = listener.n;
+    assertTrue(n1 > 0);
+    assertTrue(n1 == client.nuisance);
+    assertTrue(server.nuisance == 0);
+    server.nuisance = 0;
+    client.nuisance = 0;
+    platform.delay(1000);
+    platform.shutdown();
+    assertTrue(n1 == listener.n);
+    assertTrue(server.nuisance > 0);
+  }
+
   private static class RequestMessage extends Message {
     private static final long serialVersionUID = 1L;
     public int x;
@@ -433,6 +488,33 @@ public class BasicTests {
           } else bad++;
         }
       });
+    }
+  }
+
+  private class ClientAgent2 extends Agent {
+    public int nuisance = 0;
+    @Override
+    public void init() {
+      add(new TickerBehavior(100) {
+        @Override
+        public void onTick() {
+          if (nuisance >= 5) return;
+          nuisance++;
+          AgentID server = topic("noise");
+          NuisanceMessage n = new NuisanceMessage(server);
+          agent.send(n);
+        }
+      });
+    }
+  }
+
+  private class MyMessageListener implements MessageListener {
+    public int n = 0;
+    public boolean eat = false;
+    @Override
+    public boolean onReceive(Message msg) {
+      n++;
+      return eat;
     }
   }
 
