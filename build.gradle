@@ -25,17 +25,17 @@ repositories {
 }
 
 dependencies {
-  compile 'org.codehaus.groovy:groovy-all:2.4.17'
-  compile 'org.jline:jline:3.12.1'
-  compile 'org.apache.commons:commons-lang3:3.9'
-  compile 'commons-io:commons-io:2.6'
-  compile 'uk.com.robust-it:cloning:1.9.12'
-  compile 'org.eclipse.jetty:jetty-server:9.4.20.v20190813'
-  compile 'org.eclipse.jetty:jetty-servlet:9.4.20.v20190813'
-  compile 'org.eclipse.jetty.websocket:websocket-server:9.4.20.v20190813'
-  compile 'com.google.code.gson:gson:2.8.5'
-  compile 'com.fazecast:jSerialComm:2.5.1'
-  testCompile 'junit:junit:4.12'
+  implementation 'org.codehaus.groovy:groovy-all:2.4.17'
+  implementation 'org.jline:jline:3.12.1'
+  implementation 'org.apache.commons:commons-lang3:3.9'
+  implementation 'commons-io:commons-io:2.6'
+  implementation 'uk.com.robust-it:cloning:1.9.12'
+  implementation 'org.eclipse.jetty:jetty-server:9.4.20.v20190813'
+  implementation 'org.eclipse.jetty:jetty-servlet:9.4.20.v20190813'
+  implementation 'org.eclipse.jetty.websocket:websocket-server:9.4.20.v20190813'
+  implementation 'com.google.code.gson:gson:2.8.5'
+  implementation 'com.fazecast:jSerialComm:2.5.1'
+  testImplementation 'junit:junit:4.12'
 }
 
 compileJava {
@@ -64,7 +64,7 @@ tasks.withType(Javadoc) {
 
 jar {
   manifest {
-    attributes 'Build-Owner': System.getenv().USER, 'Build-Timestamp': new Date().format('d-MM-yyyy_HH:mm:ss'), 'Build-Version': "${version}/${commit}"
+    attributes 'Build-Owner': System.getenv().USER, 'Build-Timestamp': new Date().format('d-MM-yyyy_HH:mm:ss'), 'Build-Version': "${project.version}/${commit}"
   }
 }
 
