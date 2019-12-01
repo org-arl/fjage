@@ -77,7 +77,7 @@ test {
 
 task jars(dependsOn: jar, type: Copy) {
   into "$buildDir/libs"
-  from configurations.runtime
+  from configurations.runtimeClasspath
 }
 
 jars.outputs.upToDateWhen { false }
