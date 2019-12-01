@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2013, Mandar Chitre
+Copyright (c) 2019, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -8,26 +8,22 @@ for full license details.
 
 ******************************************************************************/
 
-package org.arl.fjage;
+package org.arl.fjage.shell;
+
+import org.arl.fjage.FjageException;
 
 /**
- * Java agent framework unchecked exception.
+ * Unchecked exception to be thrown by shell commands to indicate
+ * graceful command failure.
  *
  * @author  Mandar Chitre
  */
-public class FjageException extends RuntimeException {
+public class ShellCommandFailed extends FjageException {
 
   private static final long serialVersionUID = 1L;
 
-  public FjageException(String message) {
+  public ShellCommandFailed(String message) {
     super(message);
-  }
-
-  @Override
-  public String toString() {
-    String s = getMessage();
-    if (s != null) return s;
-    return getClass().getName();
   }
 
 }
