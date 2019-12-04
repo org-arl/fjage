@@ -23,6 +23,7 @@ public class PutFileReq extends Message {
 
   private String filename = null;
   private byte[] contents = null;
+  private long ofs = 0;
 
   /**
    * Create an empty request for file write.
@@ -47,9 +48,21 @@ public class PutFileReq extends Message {
    * @param contents contents to write to the file (null to delete file).
    */
   public PutFileReq(String filename, byte[] contents) {
+   this(filename, contents, 0);
+  }
+
+  /**
+   * Create request for file write.
+   *
+   * @param filename name of the file to write.
+   * @param contents contents to write to the file (null to delete file).
+   * @param ofs offset within the file to write the contents to
+   */
+  public PutFileReq(String filename, byte[] contents, long ofs) {
     super(Performative.REQUEST);
     this.filename = filename;
     this.contents = contents;
+    this.ofs = ofs;
   }
 
   /**
@@ -60,9 +73,22 @@ public class PutFileReq extends Message {
    * @param contents contents to write to the file (null to delete file).
    */
   public PutFileReq(AgentID to, String filename, byte[] contents) {
+    this(to, filename, contents, 0);
+  }
+
+  /**
+   * Create request for file write.
+   *
+   * @param to shell agent id.
+   * @param filename name of the file to write.
+   * @param contents contents to write to the file (null to delete file).
+   * @param ofs offset within the file to write the contents to.
+   */
+  public PutFileReq(AgentID to, String filename, byte[] contents, long ofs) {
     super(to, Performative.REQUEST);
     this.filename = filename;
     this.contents = contents;
+    this.ofs = ofs;
   }
 
   /**
@@ -99,6 +125,24 @@ public class PutFileReq extends Message {
    */
   public void setContents(byte[] contents) {
     this.contents = contents;
+  }
+
+  /**
+   * Get the start location in file to write to.
+   *
+   * @return start locaion in file (negative for offset relative to end of file).
+   */
+  public long getOffset() {
+    return ofs;
+  }
+
+  /**
+   * Set the start location in file to write from.
+   *
+   * @param ofs start location in file (negative for offset relative to end of file).
+   */
+  public void setOffset(long ofs) {
+    this.ofs = ofs;
   }
 
 }

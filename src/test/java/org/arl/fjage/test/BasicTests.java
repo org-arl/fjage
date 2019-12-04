@@ -93,10 +93,10 @@ public class BasicTests {
     AgentID c = new AgentID("C");
     AgentID s = new AgentID("S");
     assertTrue(master.containsAgent(s));
-    assertTrue(!master.containsAgent(c));
+    assertFalse(master.containsAgent(c));
     assertTrue(master.canLocateAgent(c));
     assertTrue(slave.containsAgent(c));
-    assertTrue(!slave.containsAgent(s));
+    assertFalse(slave.containsAgent(s));
     assertTrue(slave.canLocateAgent(s));
     while (!client.done)
       platform.delay(DELAY);
@@ -298,27 +298,27 @@ public class BasicTests {
     store.put(new Bean2(10));
     store.put(new Bean2(7));
     List<Bean1> recs1 = store.getByType(Bean1.class);
-    assertTrue(recs1.size() == 3);
+    assertEquals(3, recs1.size());
     List<Bean2> recs2 = store.getByType(Bean2.class);
-    assertTrue(recs2.size() == 4);
+    assertEquals(4, recs2.size());
     Bean2 b2 = store.getById(Bean2.class, "7");
-    assertTrue(b2.x == 7);
+    assertEquals(7, b2.x);
     store.remove(b2);
     b2 = store.getById(Bean2.class, "7");
-    assertTrue(b2 == null);
-    assertTrue(store.getById(Bean2.class, "8") != null);
+    assertNull(b2);
+    assertNotNull(store.getById(Bean2.class, "8"));
     store.removeById(Bean2.class, "8");
-    assertTrue(store.getById(Bean2.class, "8") == null);
-    assertTrue(store.getById(Bean2.class, "9") != null);
+    assertNull(store.getById(Bean2.class, "8"));
+    assertNotNull(store.getById(Bean2.class, "9"));
     store.removeByType(Bean1.class);
     recs1 = store.getByType(Bean1.class);
-    assertTrue(recs1.size() == 0);
-    assertTrue(store.getById(Bean2.class, "9") != null);
+    assertEquals(0, recs1.size());
+    assertNotNull(store.getById(Bean2.class, "9"));
     assertTrue(store.size() > 0);
     store.delete();
     store = Store.getInstance(agent);
-    assertTrue(store.getById(Bean2.class, "9") == null);
-    assertTrue(store.size() == 0);
+    assertNull(store.getById(Bean2.class, "9"));
+    assertEquals(0, store.size());
     store.close();
   }
 
@@ -335,7 +335,10 @@ public class BasicTests {
       platform.delay(1000);
     platform.shutdown();
     assertTrue(agent.exec);
-    assertTrue(agent.put);
+    assertTrue(agent.put1);
+    assertTrue(agent.put2);
+    assertTrue(agent.put3);
+    assertTrue(agent.put4);
     assertTrue(agent.get);
     assertTrue(agent.get2);
     assertTrue(agent.get3);
@@ -436,10 +439,22 @@ public class BasicTests {
   private class ShellTestAgent extends Agent {
     private final String DIRNAME = "/tmp";
     private final String FILENAME = "fjage-test.txt";
-    public boolean exec = false, put = false, get = false, get2 = false, get3 = false, get4 = false, del = false, dir = false, done = false;
+    public boolean exec = false, put1 = false, put2 = false, put3 = false, put4 = false, get = false, get2 = false, get3 = false, get4 = false, del = false, dir = false, done = false;
     @Override
     public void init() {
       add(new OneShotBehavior() {
+        /*
+          Test 1: Create a file with dummy data.
+          Test 2: Retrieve the entire file created in Test 1.
+          Test 3: Retrieve the part of a file created in Test 1.
+          Test 4: Retrieve the part of a file created in Test 1 with ofs = 0.
+          Test 5: Retrieve the part of a file created in Test 1 but with an ofs outside the size of the file.
+          Test 6: Append more data to the file created in Test 1.
+          Test 7: Overwrite data to the file created in Test 1.
+          Test 8: Truncate the file created in Test 1.
+          Test 9: Get a listing of all files in the directory, ensure the file created in Test 1 exists.
+          Test 10: Delete file created in Test 1.
+         */
         @Override
         public void action() {
           AgentID shell = new AgentID("shell");
@@ -449,10 +464,10 @@ public class BasicTests {
           byte[] bytes = "this is a test".getBytes();
           req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, bytes);
           rsp = request(req);
-          log.info("put rsp: "+rsp);
+          log.info("put1 rsp: "+rsp);
           if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
             File f = new File(DIRNAME+File.separator+FILENAME);
-            if (f.exists()) put = true;
+            if (f.exists()) put1 = true;
           }
           req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME);
           rsp = request(req);
@@ -464,7 +479,10 @@ public class BasicTests {
               log.info("get data: "+new String(contents));
               get = true;
               for (int i = 0; i < contents.length; i++)
-                if (contents[i] != bytes[i]) get = false;
+                if (contents[i] != bytes[i]) {
+                  get = false;
+                  break;
+                }
             }
           }
           req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 5, 4);
@@ -477,7 +495,10 @@ public class BasicTests {
               log.info("get data: "+new String(contents));
               get2 = true;
               for (int i = 0; i < contents.length; i++)
-                if (contents[i] != bytes[5+i]) get2 = false;
+                if (contents[i] != bytes[5 + i]) {
+                  get2 = false;
+                  break;
+                }
             }
           }
           req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 9, 0);
@@ -490,13 +511,42 @@ public class BasicTests {
               log.info("get data: "+new String(contents));
               get3 = true;
               for (int i = 0; i < contents.length; i++)
-                if (contents[i] != bytes[9+i]) get3 = false;
+                if (contents[i] != bytes[9 + i]) {
+                  get3 = false;
+                  break;
+                }
             }
           }
           req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 27, 1);
           rsp = request(req);
           log.info("get4 rsp: "+rsp);
           if (rsp != null && rsp.getPerformative() == Performative.REFUSE) get4 = true;
+
+          req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, bytes, bytes.length);
+          rsp = request(req);
+          log.info("put2 rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
+            File f = new File(DIRNAME+File.separator+FILENAME);
+            if (f.exists() && f.length() == bytes.length*2) put2 = true;
+          }
+
+          req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, bytes, (bytes.length*2)-2);
+          rsp = request(req);
+          log.info("put3 rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
+            File f = new File(DIRNAME+File.separator+FILENAME);
+            log.info("put3 length " + f.length() + " : " + ((bytes.length*3)-2));
+            if (f.exists() && f.length() == (bytes.length*3)-2) put3 = true;
+          }
+
+          req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, null, bytes.length);
+          rsp = request(req);
+          log.info("put4 rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
+            File f = new File(DIRNAME+File.separator+FILENAME);
+            if (f.exists() && f.length() == bytes.length) put4 = true;
+          }
+
           req = new GetFileReq(shell, DIRNAME);
           rsp = request(req);
           log.info("get dir rsp: "+rsp);
