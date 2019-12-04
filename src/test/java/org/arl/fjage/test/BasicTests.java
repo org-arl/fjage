@@ -93,10 +93,10 @@ public class BasicTests {
     AgentID c = new AgentID("C");
     AgentID s = new AgentID("S");
     assertTrue(master.containsAgent(s));
-    assertTrue(!master.containsAgent(c));
+    assertFalse(master.containsAgent(c));
     assertTrue(master.canLocateAgent(c));
     assertTrue(slave.containsAgent(c));
-    assertTrue(!slave.containsAgent(s));
+    assertFalse(slave.containsAgent(s));
     assertTrue(slave.canLocateAgent(s));
     while (!client.done)
       platform.delay(DELAY);
@@ -298,27 +298,27 @@ public class BasicTests {
     store.put(new Bean2(10));
     store.put(new Bean2(7));
     List<Bean1> recs1 = store.getByType(Bean1.class);
-    assertTrue(recs1.size() == 3);
+    assertEquals(3, recs1.size());
     List<Bean2> recs2 = store.getByType(Bean2.class);
-    assertTrue(recs2.size() == 4);
+    assertEquals(4, recs2.size());
     Bean2 b2 = store.getById(Bean2.class, "7");
-    assertTrue(b2.x == 7);
+    assertEquals(7, b2.x);
     store.remove(b2);
     b2 = store.getById(Bean2.class, "7");
-    assertTrue(b2 == null);
-    assertTrue(store.getById(Bean2.class, "8") != null);
+    assertNull(b2);
+    assertNotNull(store.getById(Bean2.class, "8"));
     store.removeById(Bean2.class, "8");
-    assertTrue(store.getById(Bean2.class, "8") == null);
-    assertTrue(store.getById(Bean2.class, "9") != null);
+    assertNull(store.getById(Bean2.class, "8"));
+    assertNotNull(store.getById(Bean2.class, "9"));
     store.removeByType(Bean1.class);
     recs1 = store.getByType(Bean1.class);
-    assertTrue(recs1.size() == 0);
-    assertTrue(store.getById(Bean2.class, "9") != null);
+    assertEquals(0, recs1.size());
+    assertNotNull(store.getById(Bean2.class, "9"));
     assertTrue(store.size() > 0);
     store.delete();
     store = Store.getInstance(agent);
-    assertTrue(store.getById(Bean2.class, "9") == null);
-    assertTrue(store.size() == 0);
+    assertNull(store.getById(Bean2.class, "9"));
+    assertEquals(0, store.size());
     store.close();
   }
 
@@ -464,7 +464,10 @@ public class BasicTests {
               log.info("get data: "+new String(contents));
               get = true;
               for (int i = 0; i < contents.length; i++)
-                if (contents[i] != bytes[i]) get = false;
+                if (contents[i] != bytes[i]) {
+                  get = false;
+                  break;
+                }
             }
           }
           req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 5, 4);
@@ -477,7 +480,10 @@ public class BasicTests {
               log.info("get data: "+new String(contents));
               get2 = true;
               for (int i = 0; i < contents.length; i++)
-                if (contents[i] != bytes[5+i]) get2 = false;
+                if (contents[i] != bytes[5 + i]) {
+                  get2 = false;
+                  break;
+                }
             }
           }
           req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 9, 0);
@@ -490,7 +496,10 @@ public class BasicTests {
               log.info("get data: "+new String(contents));
               get3 = true;
               for (int i = 0; i < contents.length; i++)
-                if (contents[i] != bytes[9+i]) get3 = false;
+                if (contents[i] != bytes[9 + i]) {
+                  get3 = false;
+                  break;
+                }
             }
           }
           req = new GetFileReq(shell, DIRNAME+File.separator+FILENAME, 27, 1);
