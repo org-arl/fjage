@@ -296,7 +296,7 @@ export class Gateway {
    * @param {string} pathname - path of the master container to connect to
    */
   constructor(hostname=window.location.hostname, port=window.location.port, pathname='/ws/') {
-    var url = new URL('ws://locahost');
+    var url = new URL('ws://localhost');
     url.hostname = hostname;
     url.port = port || 80;
     url.pathname = pathname;
@@ -451,6 +451,8 @@ export class Gateway {
     var filtMsgs = this.queue.filter( msg => {
       if (typeof filter == 'string' || filter instanceof String) {
         return 'inReplyTo' in msg && msg.inReplyTo == filter;
+      } else if (Object.prototype.hasOwnProperty.call(filter, 'msgID')) {
+        return 'inReplyTo' in msg && msg.inReplyTo == filter.msgID;
       }else if (typeof filter ==  'function' ){
         return filter(msg);
       }else{
@@ -638,7 +640,7 @@ export class Gateway {
    */
   async request(msg, timeout=1000) {
     this.send(msg);
-    let rsp = await this.receive(msg.msgID, timeout);
+    let rsp = await this.receive(msg, timeout);
     return rsp;
   }
 
