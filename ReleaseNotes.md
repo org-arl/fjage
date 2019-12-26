@@ -1,5 +1,19 @@
 # Release Notes
 
+## v1.6.3
+
+* Added null checks in connector streams
+* Fixed encoding for unicode strings
+* Aligned Javascript API to other language APIs
+* Added support to FilePutReq to write file in chunks (append file)
+
+## v1.6.2
+
+* Bug fixes in C, Javascript and Python gatways
+* Bug fixes in shell agent, and handling of ANSI sequences
+* Minor performance fixes
+* Added method to access currently running web servers
+
 ## v1.6.1
 
 * Minor fixes in fjagepy
