@@ -427,7 +427,7 @@ export class Gateway {
   // returns a Promise
   _websockTxRx(rq) {
     rq.id = _guid(8);
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
         if (this.debug) console.log('Receive Timeout : ' + rq);
@@ -655,7 +655,7 @@ export class Gateway {
    * @return {Message} received response message, null on timeout.
    */
   receive(filter=undefined, timeout=0) {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       let msg = this._getMessageFromQueue.call(this,filter);
       if (msg) {
         resolve(msg);
