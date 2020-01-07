@@ -455,6 +455,8 @@ export class Gateway {
         return 'inReplyTo' in msg && msg.inReplyTo == filter;
       } else if (Object.prototype.hasOwnProperty.call(filter, 'msgID')) {
         return 'inReplyTo' in msg && msg.inReplyTo == filter.msgID;
+      }else if (filter.__proto__.name == 'Message'){
+        return filter.__clazz__ == msg.__clazz__;
       }else if (typeof filter ==  'function' ){
         return filter(msg);
       }else{
@@ -730,5 +732,6 @@ export function MessageClass(name) {
       }
     }
   };
+  window[sname].__clazz__ = name;
   return window[sname];
 }
