@@ -283,14 +283,12 @@ describe('Shell GetFile/PutFile', function () {
     pfr.recipient = shell;
     pfr.filename = DIRNAME + '/' + FILENAME;
     pfr.contents = Array.from((new TextEncoder('utf-8').encode(TEST_STRING)));
-    const rsp = gw.request(pfr);
+    const rsp = gw.request(pfr, 2000);
     expect(rsp).not.toBeNull();
-    rsp.then((msg) => {
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
       expect(msg.perf).toEqual(Performative.AGREE);
       done();
-    }).catch((ex) => {
-      console.error(ex);
-      fail();
     });
   });
 
@@ -300,12 +298,10 @@ describe('Shell GetFile/PutFile', function () {
     req.cmd = 'boo';
     const rsp = gw.request(req);
     expect(rsp).not.toBeNull();
-    rsp.then((msg) => {
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
       expect(msg.perf).toEqual(Performative.AGREE);
       done();
-    }).catch((ex) => {
-      console.error(ex);
-      fail();
     });
   });
 
@@ -315,14 +311,12 @@ describe('Shell GetFile/PutFile', function () {
     gfr.filename = DIRNAME + '/' + FILENAME;
     const rsp = gw.request(gfr);
     expect(rsp).not.toBeNull();
-    rsp.then((msg) => {
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
       expect(msg instanceof GetFileRsp).toBeTruthy();
       expect(msg.contents).not.toBeUndefined();
       expect(new TextDecoder('utf-8').decode(new Uint8Array(msg.contents))).toEqual(TEST_STRING);
       done();
-    }).catch((ex) => {
-      console.error(ex);
-      fail();
     });
   });
 
@@ -334,16 +328,14 @@ describe('Shell GetFile/PutFile', function () {
     gfr.len = 4;
     const rsp = gw.request(gfr);
     expect(rsp).not.toBeNull();
-    rsp.then((msg) => {
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
       expect(msg instanceof GetFileRsp).toBeTruthy();
       expect(msg.contents).not.toBeUndefined();
       expect(msg.contents.length).toBe(4);
       expect(msg.ofs).toBe(5);
       expect(new TextDecoder('utf-8').decode(new Uint8Array(msg.contents))).toEqual(TEST_STRING.substr(5, msg.contents.length));
       done();
-    }).catch((ex) => {
-      console.error(ex);
-      fail();
     });
   });
 
@@ -355,16 +347,14 @@ describe('Shell GetFile/PutFile', function () {
     gfr.len = 0;
     const rsp = gw.request(gfr);
     expect(rsp).not.toBeNull();
-    rsp.then((msg) => {
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
       expect(msg instanceof GetFileRsp).toBeTruthy();
       expect(msg.contents).not.toBeUndefined();
       expect(msg.contents.length).toBe(TEST_STRING.length-9);
       expect(msg.ofs).toBe(9);
       expect(new TextDecoder('utf-8').decode(new Uint8Array(msg.contents))).toEqual(TEST_STRING.substr(9));
       done();
-    }).catch((ex) => {
-      console.error(ex);
-      fail();
     });
   });
 
@@ -376,12 +366,10 @@ describe('Shell GetFile/PutFile', function () {
     gfr.len = 1;
     const rsp = gw.request(gfr);
     expect(rsp).not.toBeNull();
-    rsp.then((msg) => {
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
       expect(msg.perf).toEqual(Performative.REFUSE);
       done();
-    }).catch((ex) => {
-      console.error(ex);
-      fail();
     });
   });
 
@@ -391,7 +379,8 @@ describe('Shell GetFile/PutFile', function () {
     gfr.filename = DIRNAME ;
     const rsp = gw.request(gfr);
     expect(rsp).not.toBeNull();
-    rsp.then((msg) => {
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
       expect(msg instanceof GetFileRsp).toBeTruthy();
       const content = new TextDecoder('utf-8').decode(new Uint8Array(msg.contents));
       const lines = content.split('\n');
@@ -399,9 +388,6 @@ describe('Shell GetFile/PutFile', function () {
         return line.substr(0,line.indexOf('\t'));
       })).toContain(FILENAME);
       done();
-    }).catch((ex) => {
-      console.error(ex);
-      fail();
     });
   });
 
@@ -411,7 +397,8 @@ describe('Shell GetFile/PutFile', function () {
     pfr.filename = DIRNAME + '/' + FILENAME;
     const rsp = gw.request(pfr);
     expect(rsp).not.toBeNull();
-    rsp.then((msg) => {
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
       expect(msg.perf).toEqual(Performative.AGREE);
       var gfr = new GetFileReq();
       gfr.recipient = shell;
@@ -425,9 +412,6 @@ describe('Shell GetFile/PutFile', function () {
         console.error(ex);
         fail();
       });
-    }).catch((ex) => {
-      console.error(ex);
-      fail();
     });
   });
 });
