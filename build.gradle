@@ -11,9 +11,9 @@ version = new File('VERSION').text.trim()
 
 // get git commit
 def stdout = new ByteArrayOutputStream()
-exec{
-    commandLine 'git', 'describe', '--always', '--abbrev=8', '--match', 'NOT A TAG', '--dirty=*'
-    standardOutput = stdout;
+exec {
+  commandLine 'git', 'describe', '--always', '--abbrev=8', '--match', 'NOT A TAG', '--dirty=*'
+  standardOutput = stdout;
 }
 def commit = "$stdout".replace('\n','')
 
