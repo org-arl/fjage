@@ -7,14 +7,14 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 
 public class ParameterMessageBehavior extends MessageBehavior {
 
-  private List<Parameter> params;
+  private List<? extends Parameter> params;
 
   public ParameterMessageBehavior() {
     super(ParameterReq.class);
     this.params = null;
   }
 
-  public ParameterMessageBehavior(List<Parameter> params) {
+  public ParameterMessageBehavior(List<? extends Parameter> params) {
     super(ParameterReq.class);
     this.params = params;
   }
@@ -40,8 +40,20 @@ public class ParameterMessageBehavior extends MessageBehavior {
    *
    * @return list of supported parameters, null if none supported.
    */
-  protected List<Parameter> getParameterList() {
+  protected List<? extends Parameter> getParameterList() {
     return params;
+  }
+
+  /**
+   * An agent supporting dynamic parameters may override this to return a list
+   * of parameters available.
+   *
+   * @param ndx index for indexed parameters, -1 if non-indexed.
+   * @return list of supported parameters, null if none supported.
+   */
+  protected List<? extends Parameter> getParameterList(int ndx) {
+    if (ndx < 0) return getParameterList();
+    return null;
   }
 
   /**
@@ -49,9 +61,10 @@ public class ParameterMessageBehavior extends MessageBehavior {
    * a value for a given parameter.
    *
    * @param p parameter to get value.
+   * @param ndx index for indexed parameters, -1 if non-indexed.
    * @return value of the parameter.
    */
-  protected Object getParam(Parameter p) {
+  protected Object getParam(Parameter p, int ndx) {
     return null;
   }
 
@@ -60,10 +73,11 @@ public class ParameterMessageBehavior extends MessageBehavior {
    * a value for a given parameter.
    *
    * @param p parameter to set value.
+   * @param ndx index for indexed parameters, -1 if non-indexed.
    * @param v value of the parameter.
    * @return new value of the parameter.
    */
-  protected Object setParam(Parameter p, Object v) {
+  protected Object setParam(Parameter p, int ndx, Object v) {
     return null;
   }
 
@@ -74,8 +88,8 @@ public class ParameterMessageBehavior extends MessageBehavior {
    * @return list of parameters.
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  protected static List<Parameter> allOf(Class ... paramEnumClasses) {
-    List<Parameter> p = new ArrayList<Parameter>();
+  protected static List<? extends Parameter> allOf(Class ... paramEnumClasses) {
+    List<? extends Parameter> p = new ArrayList<Parameter>();
     for (int i = 0; i < paramEnumClasses.length; i++)
       p.addAll(EnumSet.allOf(paramEnumClasses[i]));
     return p;
@@ -89,9 +103,10 @@ public class ParameterMessageBehavior extends MessageBehavior {
    * @return response message to send back.
    */
   protected ParameterRsp processParameterReq(ParameterReq msg) {
-    List<Parameter> plist = null;
+    int ndx = msg.getIndex();
+    List<? extends Parameter> plist = null;
     if (msg.requests().isEmpty()) {
-      plist = getParameterList();
+      plist = ndx < 0 ? getParameterList() : getParameterList(ndx);
       if (plist != null) msg.get(plist);
       msg.get(new NamedParameter("title"));           // special optional parameter
       msg.get(new NamedParameter("description"));     // special optional parameter
@@ -101,7 +116,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
     for (ParameterReq.Entry e : msg.requests()) {
       if (e.param instanceof NamedParameter) {
         if (plist == null) {
-          plist = getParameterList();
+          plist = ndx < 0 ? getParameterList() : getParameterList(ndx);
           if (plist == null) plist = new ArrayList<Parameter>(1);
         }
         for (Parameter p: plist) {
@@ -119,11 +134,13 @@ public class ParameterMessageBehavior extends MessageBehavior {
           // get request
           try {
             if (fldName.equals("type")) rsp.set(e.param, agent.getClass().getName());     // special automatic parameter
-            else rsp.set(e.param, MethodUtils.invokeMethod(agent, "get" + methodNameFragment));
+            else if (ndx < 0) rsp.set(e.param, MethodUtils.invokeMethod(agent, "get" + methodNameFragment));
+            else rsp.set(e.param, MethodUtils.invokeMethod(agent, "get" + methodNameFragment, ndx));
           } catch (NoSuchMethodException ex) {
-            Object rv = getParam(e.param);
+            Object rv = getParam(e.param, ndx);
             if (rv != null) rsp.set(e.param, rv);
             else {
+              if (ndx >= 0) throw ex;
               Field f = cls.getField(fldName);
               rsp.set(e.param, f.get(agent));
             }
@@ -132,21 +149,25 @@ public class ParameterMessageBehavior extends MessageBehavior {
           // set request
           try {
             Method m = null;
-            Object sv = invokeCompatibleSetter("set" + methodNameFragment, evalue);
+            Object sv = null;
+            if (ndx < 0) sv = invokeCompatibleSetter("set" + methodNameFragment, evalue);
+            else sv = invokeCompatibleSetter("set" + methodNameFragment, ndx, evalue);
             if (sv == null) {
               try {
-                sv = MethodUtils.invokeMethod(agent, "get" + methodNameFragment);
+                if (ndx < 0) sv = MethodUtils.invokeMethod(agent, "get" + methodNameFragment);
+                else sv = MethodUtils.invokeMethod(agent, "get" + methodNameFragment, ndx);
               } catch (NoSuchMethodException ex) {
-                sv = getParam(e.param);
+                sv = getParam(e.param, ndx);
                 if (sv == null) sv = evalue;
               }
             }
             if (sv != null) rsp.set(e.param, sv);
           } catch (NoSuchMethodException ex) {
-            Object rv = setParam(e.param, evalue);
+            Object rv = setParam(e.param, ndx, evalue);
             if (rv != null) {
               rsp.set(e.param, rv);
             } else {
+              if (ndx >= 0) throw ex;
               Field f = cls.getField(fldName);
               try {
                 f.set(agent, evalue);
@@ -197,5 +218,37 @@ public class ParameterMessageBehavior extends MessageBehavior {
     throw nsme;
   }
 
+  private Object invokeCompatibleSetter(String name, int ndx, Object value) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    NoSuchMethodException nsme = null;
+    try {
+      return MethodUtils.invokeMethod(agent, name, ndx, value);
+    } catch (NoSuchMethodException ex) {
+      nsme = ex;
+    }
+    if (value instanceof Number) {
+      Number nvalue = (Number) value;
+      try {
+        return MethodUtils.invokeMethod(agent, name, ndx, nvalue.doubleValue());
+      } catch (NoSuchMethodException ex) {
+        // do nothing
+      }
+      try {
+        return MethodUtils.invokeMethod(agent, name, ndx, nvalue.floatValue());
+      } catch (NoSuchMethodException ex) {
+        // do nothing
+      }
+      try {
+        return MethodUtils.invokeMethod(agent, name, ndx, nvalue.longValue());
+      } catch (NoSuchMethodException ex) {
+        // do nothing
+      }
+      try {
+        return MethodUtils.invokeMethod(agent, name, ndx, nvalue.intValue());
+      } catch (NoSuchMethodException ex) {
+        // do nothing
+      }
+    }
+    throw nsme;
+  }
 
 }

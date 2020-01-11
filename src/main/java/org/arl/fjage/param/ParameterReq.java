@@ -11,6 +11,7 @@ public class ParameterReq extends Message {
 
   private static final long serialVersionUID = 1L;
 
+  protected int index = -1;
   protected List<Entry> requests = null;
   protected Parameter param;
   protected GenericValue value;
@@ -30,6 +31,24 @@ public class ParameterReq extends Message {
     requests = null;
     param = null;
     value = null;
+  }
+
+  /**
+   * Gets the index for index based parameters.
+   *
+   * @return the index, -1 if the request has not indexed
+   */
+  public int getIndex() {
+    return index;
+  }
+
+  /**
+   * Sets the index for index based parameter.
+   *
+   * @param index index or channel, -1 if the request has not indexed
+   */
+  public void setIndex(int index) {
+    this.index = index;
   }
 
   /**
@@ -55,7 +74,7 @@ public class ParameterReq extends Message {
    *          parameter list to be requested
    * @return this object, to allow multiple gets to be concatenated
    */
-  public ParameterReq get(List<Parameter> param) {
+  public ParameterReq get(List<? extends Parameter> param) {
     for (Parameter p: param)
       get(p);
     return this;
@@ -99,6 +118,11 @@ public class ParameterReq extends Message {
     StringBuffer sb = new StringBuffer();
     sb.append(getClass().getSimpleName());
     sb.append('[');
+    if (index >= 0) {
+      sb.append("index:");
+      sb.append(index);
+      if (param != null) sb.append(' ');
+    }
     if (param != null) {
       sb.append(param);
       sb.append(':');

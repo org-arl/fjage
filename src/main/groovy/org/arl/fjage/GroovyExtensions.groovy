@@ -111,10 +111,11 @@ class GroovyExtensions {
       }
     }
 
-    AgentID.metaClass.getAllParameters = {
+    AgentID.metaClass.getAllParameters = { ndx = -1 ->
       if (delegate.owner == null) throw new FjageException('Parameters not suported on unowned AgentID')
       if (name == delegate.owner.name) return null
       ParameterReq req = new ParameterReq()
+      if (ndx > 0) req.index = ndx
       ParameterRsp rsp = null
       try {
         rsp = request(req, 10000)
@@ -149,6 +150,12 @@ class GroovyExtensions {
       return sb.toString()
     }
 
+    AgentID.metaClass.getAt = { int n ->
+      if (delegate.owner == null) throw new FjageException('Parameters not suported on unowned AgentID')
+      if (n < 0) throw new FjageException("Index must be non-negative");
+      return new IndexedParameterHelper(parent: delegate, index: n)
+    }
+
     AgentID.metaClass.toString = { ->
       String s = null
       if (delegate.owner instanceof Agent) s = delegate.getAllParameters()
@@ -156,4 +163,52 @@ class GroovyExtensions {
     }
 
   }
+}
+
+@groovy.transform.PackageScope
+class IndexedParameterHelper {
+
+  def parent
+  int index
+
+  def propertyMissing(String name, value) {
+    Parameter p = new NamedParameter(name)
+    ParameterReq req = new ParameterReq().set(p, value)
+    req.index = index
+    Message rsp = parent.request(req, 5000)
+    if (rsp == null) throw new FjageException("Parameter ${name} could not be set [no response]")
+    if (rsp instanceof ParameterRsp) {
+      def p1 = rsp.parameters()
+      if (p1.size() == 0) throw new FjageException("Parameter ${name} could not be set [empty response]")
+      def v = rsp.get(p1.first())
+      if (v == null) throw new FjageException("Parameter ${name} could not be set [no such parameter]")
+      if (v instanceof Number && value instanceof Number) {
+        def dv = Math.abs(value-v)
+        if (dv >= 1e-6) throw new FjageException("WARNING: Parameter ${name} set to ${v}")
+      } else if (v != value) throw new FjageException("WARNING: Parameter ${name} set to ${v}")
+    } else {
+      throw new FjageException('Parameters not supported by agent')
+    }
+  }
+
+  def propertyMissing(String name) {
+    Parameter p = new NamedParameter(name)
+    ParameterReq req = new ParameterReq().get(p)
+    req.index = index
+    Message rsp = parent.request(req, 2000)
+    if (rsp == null) return null
+    if (rsp instanceof ParameterRsp) {
+      def p1 = rsp.parameters()
+      if (p1.size() == 0) return null
+      return rsp.get(p1.first())
+    } else {
+      throw new FjageException('Parameters not supported by agent')
+    }
+  }
+
+  String toString() {
+    String s = parent.getAllParameters(index)
+    return s ?: "${parent as String}[${index}]"
+  }
+
 }

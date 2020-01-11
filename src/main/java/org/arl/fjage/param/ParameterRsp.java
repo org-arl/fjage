@@ -13,6 +13,7 @@ public class ParameterRsp extends Message {
 
   private static final long serialVersionUID = 1L;
 
+  protected int index = -1;
   protected Map<Parameter, GenericValue> values = null;
   protected Parameter param;
   protected GenericValue value;
@@ -33,6 +34,24 @@ public class ParameterRsp extends Message {
     param = null;
     value = null;
     values = null;
+  }
+
+  /**
+   * Gets the index.
+   *
+   * @return index or -1 if not indexed
+   */
+  public int getIndex() {
+    return index;
+  }
+
+  /**
+   * Sets the index for parameter.
+   *
+   * @param index index or -1 if not indexed
+   */
+  public void setIndex(int index) {
+    this.index = index;
   }
 
   /**
@@ -102,6 +121,11 @@ public class ParameterRsp extends Message {
     StringBuffer sb = new StringBuffer();
     sb.append(getClass().getSimpleName());
     sb.append('[');
+    if (index >= 0) {
+      sb.append("index:");
+      sb.append(index);
+      if (param != null) sb.append(' ');
+    }
     String s = null;
     Object v = null;
     if (param != null) {
@@ -111,7 +135,7 @@ public class ParameterRsp extends Message {
         v = value.getValue();
         if (v instanceof Double && ((Double)v).intValue() == ((Double)v).doubleValue()) v = new Integer(((Double)v).intValue());
         sb.append(v);
-      }else{
+      } else {
         sb.append("null");
       }
       if (values != null) {
