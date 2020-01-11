@@ -30,7 +30,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
   @Override
   public void onReceive(Message msg) {
     ParameterReq req = (ParameterReq)msg;
-    Message rsp = processParameterReq(req);
+    ParameterRsp rsp = processParameterReq(req, null);
     if (rsp != null) agent.send(rsp);
   }
 
@@ -100,9 +100,11 @@ public class ParameterMessageBehavior extends MessageBehavior {
    * Agents wishing to have special handling may override this method.
    *
    * @param msg incoming parameter request.
-   * @return response message to send back.
+   * @param rsp response message to fill in to send back, or null to create new one.
+   * @return response message
    */
-  protected ParameterRsp processParameterReq(ParameterReq msg) {
+  protected ParameterRsp processParameterReq(ParameterReq msg, ParameterRsp rsp) {
+    if (rsp == null) rsp = new ParameterRsp(msg);
     int ndx = msg.getIndex();
     List<? extends Parameter> plist = null;
     if (msg.requests().isEmpty()) {
@@ -111,7 +113,6 @@ public class ParameterMessageBehavior extends MessageBehavior {
       msg.get(new NamedParameter("title"));           // special optional parameter
       msg.get(new NamedParameter("description"));     // special optional parameter
     }
-    ParameterRsp rsp = new ParameterRsp(msg);
     Class<?> cls = agent.getClass();
     for (ParameterReq.Entry e : msg.requests()) {
       if (e.param instanceof NamedParameter) {
