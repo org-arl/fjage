@@ -700,6 +700,20 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   }
 
   /**
+   * Checks if active behaviors contains a message behavior with filter.
+   * Used by MessageBehavior to avoid using up a message that a filter desires.
+   */
+  final boolean hasActiveFilteredMessageBehaviors() {
+    for (Behavior b: activeBehaviors) {
+      if (b instanceof MessageBehavior) {
+        MessageBehavior mb = (MessageBehavior)b;
+        if (mb.hasFilter()) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Lifecycle of the agent. Called by the container as needed.
    *
    * @see java.lang.Runnable#run()

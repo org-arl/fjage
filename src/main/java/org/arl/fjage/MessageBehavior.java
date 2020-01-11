@@ -52,6 +52,13 @@ public class MessageBehavior extends Behavior {
     this.filter = filter;
   }
 
+  /**
+   * Checks if this MessageBehavior has a filter associated with it.
+   */
+  boolean hasFilter() {
+    return filter != null;
+  }
+
   //////////// Method to be overridden by subclass
 
   /**
@@ -76,7 +83,10 @@ public class MessageBehavior extends Behavior {
   @Override
   public final void action() {
     Message msg;
-    if (filter == null) msg = agent.receive();
+    if (filter == null) {
+      if (agent.hasActiveFilteredMessageBehaviors()) return;
+      msg = agent.receive();
+    }
     else msg = agent.receive(filter, 0);
     if (msg == null) block();
     else onReceive(msg);
