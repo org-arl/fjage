@@ -255,7 +255,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @param b behavior to be added.
    * @return the behavior (same as input b)
    */
-  public Behavior add(Behavior b) {
+  public synchronized Behavior add(Behavior b) {
     b.setOwner(this);
     newBehaviors.add(b);
     wake();
@@ -760,7 +760,9 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
           if (ignoreExceptions) log.log(Level.WARNING, "Exception in agent: "+aid, ex);
           else throw(ex);
         }
-        block();
+        synchronized (this) {
+          if (newBehaviors.size() == 0) block();
+        }
         Thread.interrupted(); // interrupts used for disrupting timeouts only
       }
     } catch (Throwable ex) {
