@@ -14,6 +14,7 @@ import java.util.Date;
 import com.google.gson.*;
 import org.arl.fjage.AgentID;
 import org.arl.fjage.Message;
+import org.arl.fjage.param.Parameter;
 
 /**
  * Class representing a JSON request/response message.
@@ -38,6 +39,7 @@ public class JsonMessage {
     .registerTypeAdapter(Date.class, (JsonDeserializer<Date>) (json, typeOfT, context) -> new Date(json.getAsJsonPrimitive().getAsLong()))
     .registerTypeAdapter(Date.class, (JsonSerializer<Date>) (date, type, jsonSerializationContext) -> new JsonPrimitive(date.getTime()))
     .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
+    .registerTypeHierarchyAdapter(Parameter.class, new EnumTypeAdapter())
     .registerTypeAdapterFactory(new MessageAdapterFactory())
     .registerTypeAdapterFactory(new ArrayAdapterFactory())
     .registerTypeAdapterFactory(new GenericValueAdapterFactory())
