@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright (c) 2018-2019, Mandar Chitre
+Copyright (c) 2018-2020, Mandar Chitre
 
 This file is part of fjage which is released under Simplified BSD License.
 See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
@@ -19,11 +19,39 @@ for full license details.
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/poll.h>
 #include <netinet/in.h>
 #include "fjage.h"
 #include "jsmn.h"
 #include "b64.h"
+
+// Interruptable poll_data() is implemented using 3 APIs for platform compatibility.
+// The 3 options are listed below, in order of computational efficiency:
+//
+// 1. Define USE_POLL on UNIX-style OS with support for IPC pipes and poll()
+// 2. Define USE_SELECT on use select() instead of poll() to wait for data
+// 3. Define USE_IOCTL to use ioctl() to check for data availability
+
+#define USE_POLL
+//#define USE_SELECT
+//#define USE_IOCTL
+
+#if !defined(USE_POLL) && !defined(USE_SELECT) && !defined(USE_IOCTL)
+  #error Define one of USE_POLL, USE_SELECT or USE_IOCTL
+#endif
+
+#ifdef USE_POLL
+#include <sys/poll.h>
+  #if defined(USE_SELECT) || defined(USE_IOCTL)
+  #error Do not define USE_SELECT or USE_IOCTL when using USE_POLL
+  #endif
+#endif
+
+#ifdef USE_IOCTL
+#include <sys/ioctl.h>
+  #ifdef USE_SELECT
+  #error Do not define USE_SELECT when using USE_IOCTL
+  #endif
+#endif
 
 //// prototypes
 
@@ -63,9 +91,20 @@ static long get_time_ms(void) {
 #define QUEUE_LEN         1024
 #define BUFLEN            65536
 
+// poll_data() API return values
+#define DATA_AVAILABLE      0
+#define TIMED_OUT          -1
+#define INTERRUPTED        -2
+
+#define POLL_DELAY         10000  // us
+
 typedef struct {
   int sockfd;
+#ifdef USE_POLL
   int intfd[2];       // self-pipe used to break the poll on sockfd
+#else
+  int intr;
+#endif
   fjage_aid_t aid;
   char sublist[SUBLIST_LEN];
   int buflen;
@@ -77,6 +116,72 @@ typedef struct {
   int mqueue_head;
   int mqueue_tail;
 } _fjage_gw_t;
+
+static int flush_interrupts(_fjage_gw_t* fgw) {
+  int rv = 0;
+#ifdef USE_POLL
+  uint8_t dummy;
+  while (read(fgw->intfd[0], &dummy, 1) > 0) rv++;
+#else
+  rv = fgw->intr;
+  fgw->intr = 0;
+#endif
+  return rv;
+}
+
+static int interrupt(_fjage_gw_t* fgw) {
+#ifdef USE_POLL
+  uint8_t dummy = 1;
+  if (write(fgw->intfd[1], &dummy, 1) < 0) return -1;
+#else
+  fgw->intr = 1;
+#endif
+  return 0;
+}
+
+static int poll_data(_fjage_gw_t* fgw, long timeout) {
+#ifdef USE_POLL
+  struct pollfd fds[2];
+  memset(fds, 0, sizeof(fds));
+  fds[0].fd = fgw->sockfd;
+  fds[0].events = POLLIN;
+  fds[1].fd = fgw->intfd[0];
+  fds[1].events = POLLIN;
+  int rv = poll(fds, 2, timeout);
+  if (rv <= 0) return TIMED_OUT;
+  if ((fds[1].revents & POLLIN) == 0) return DATA_AVAILABLE;
+  flush_interrupts(fgw);
+  return INTERRUPTED;
+#else
+  long t = get_time_ms();
+  long t1 = t + timeout;
+  while (t <= t1) {
+  #ifdef USE_IOCTL
+    int rv;
+    ioctl(fgw->sockfd, FIONREAD, &rv);
+    if (rv < 0) rv = 0;
+  #else
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(fgw->sockfd, &fds);
+    struct timeval tval;
+    tval.tv_sec = 0;
+    tval.tv_usec = POLL_DELAY;
+    int rv = select(fgw->sockfd+1, &fds, NULL, NULL, &tval);
+  #endif
+    if (rv) return DATA_AVAILABLE;
+    if (fgw->intr) {
+      fgw->intr = 0;
+      return INTERRUPTED;
+    }
+  #ifdef USE_IOCTL
+    usleep(POLL_DELAY);
+  #endif
+    t = get_time_ms();
+  }
+  return TIMED_OUT;
+#endif
+}
 
 static void mqueue_put(fjage_gw_t gw, fjage_msg_t msg) {
   if (gw == NULL) return;
@@ -230,21 +335,13 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
   return rv;
 }
 
-/// @return               -1 if interrupted; 0 otherwise
+/// @return -1 if interrupted, 0 otherwise
 static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
   long t0 = get_time_ms();
-  uint8_t dummy;
-  struct pollfd fds[2];
-  memset(fds, 0, sizeof(fds));
-  fds[0].fd = fgw->sockfd;
-  fds[0].events = POLLIN;
-  fds[1].fd = fgw->intfd[0];
-  fds[1].events = POLLIN;
-  int rv = poll(fds, 2, timeout);
-  if (rv <= 0) return 0;
-  if ((fds[1].revents & POLLIN) == 0) {
+  int rv = poll_data(fgw, timeout);
+  if (rv == DATA_AVAILABLE) {
     int n;
     bool done = false;
     while ((n = read(fgw->sockfd, fgw->buf + fgw->head, fgw->buflen - fgw->head)) > 0) {
@@ -272,15 +369,11 @@ static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
       if (done) break;
       long timeout1 = t0+timeout - get_time_ms();
       if (timeout1 <= 0) break;
-      rv = poll(fds, 2, timeout1);
-      if (rv <= 0) break;
-      if ((fds[1].revents & POLLIN) != 0) break;
+      rv = poll_data(fgw, timeout1);
+      if (rv != DATA_AVAILABLE) break;
     }
   }
-  rv = 0;
-  while (read(fgw->intfd[0], &dummy, 1) > 0)
-    rv = -1;
-  return rv;
+  return (rv == INTERRUPTED) ? -1 : 0;
 }
 
 static void update_watch(_fjage_gw_t* fgw) {
@@ -352,14 +445,18 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
     free(fgw);
     return NULL;
   }
+  fcntl(fgw->sockfd, F_SETFL, O_NONBLOCK);
+#ifdef USE_POLL
   if (pipe(fgw->intfd) < 0) {
     close(fgw->sockfd);
     free(fgw->buf);
     free(fgw);
     return NULL;
   }
-  fcntl(fgw->sockfd, F_SETFL, O_NONBLOCK);
   fcntl(fgw->intfd[0], F_SETFL, O_NONBLOCK);
+#else
+  fgw->intr = 0;
+#endif
   char s[64];
   sprintf(s, "CGatewayAgent@%08x", rand());
   fgw->aid = fjage_aid_create(s);
@@ -414,6 +511,7 @@ fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings)
   cfsetspeed(&options, baud);
   tcsetattr(fgw->sockfd, TCSANOW, &options);
   tcflush(fgw->sockfd, TCIOFLUSH);
+#ifdef USE_POLL
   if (pipe(fgw->intfd) < 0) {
     close(fgw->sockfd);
     free(fgw->buf);
@@ -421,6 +519,9 @@ fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings)
     return NULL;
   }
   fcntl(fgw->intfd[0], F_SETFL, O_NONBLOCK);
+#else
+  fgw->intr = 0;
+#endif
   char s[64];
   sprintf(s, "CGatewayAgent@%08x", rand());
   fgw->aid = fjage_aid_create(s);
@@ -440,8 +541,10 @@ int fjage_close(fjage_gw_t gw) {
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
   close(fgw->sockfd);
+#ifdef USE_POLL
   close(fgw->intfd[0]);
   close(fgw->intfd[1]);
+#endif
   fjage_aid_destroy(fgw->aid);
   free(fgw->buf);
   free(fgw);
@@ -507,8 +610,7 @@ fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
   writes(fgw->sockfd, "\"}\n");
   fgw->aid_count = 0;
   fgw->aids = NULL;
-  uint8_t dummy;
-  while (read(fgw->intfd[0], &dummy, 1) > 0);
+  flush_interrupts(fgw);
   json_reader(gw, uuid, 1000);
   if (fgw->aid_count == 0) return NULL;
   return (fjage_aid_t)(fgw->aids);
@@ -526,8 +628,7 @@ int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* ag
   writes(fgw->sockfd, "\"}\n");
   fgw->aid_count = 0;
   fgw->aids = NULL;
-  uint8_t dummy;
-  while (read(fgw->intfd[0], &dummy, 1) > 0);
+  flush_interrupts(fgw);
   json_reader(gw, uuid, 1000);
   if (fgw->aid_count == 0) return 0;
   for (int i = 0; i < fgw->aid_count; i++) {
@@ -553,11 +654,10 @@ int fjage_send(fjage_gw_t gw, const fjage_msg_t msg) {
 
 fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long timeout) {
   _fjage_gw_t* fgw = gw;
-  uint8_t dummy;
   long t0 = get_time_ms();
   long timeout1 = timeout;
   fjage_msg_t msg = mqueue_get(gw, clazz, id);
-  while (read(fgw->intfd[0], &dummy, 1) > 0);
+  flush_interrupts(fgw);
   while (msg == NULL && timeout1 > 0) {
     if (json_reader(gw, NULL, timeout1) < 0) break;
     msg = mqueue_get(gw, clazz, id);
@@ -568,11 +668,10 @@ fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long
 
 fjage_msg_t fjage_receive_any(fjage_gw_t gw, const char** clazzes, int clazzlen, long timeout) {
     _fjage_gw_t* fgw = gw;
-  uint8_t dummy;
   long t0 = get_time_ms();
   long timeout1 = timeout;
   fjage_msg_t msg = mqueue_get_any(gw, clazzes, clazzlen);
-  while (read(fgw->intfd[0], &dummy, 1) > 0);
+  flush_interrupts(fgw);
   while (msg == NULL && timeout1 > 0) {
     if (json_reader(gw, NULL, timeout1) < 0) break;
     msg = mqueue_get_any(gw, clazzes, clazzlen);
@@ -596,8 +695,7 @@ fjage_msg_t fjage_request(fjage_gw_t gw, const fjage_msg_t request, long timeout
 int fjage_interrupt(fjage_gw_t gw) {
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
-  uint8_t dummy = 1;
-  if (write(fgw->intfd[1], &dummy, 1) < 0) return -1;
+  if (interrupt(fgw) < 0) return -1;
   return 0;
 }
 
