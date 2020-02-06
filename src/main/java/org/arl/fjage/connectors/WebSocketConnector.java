@@ -29,7 +29,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   protected boolean linemode = false;
   protected WebServer server;
   protected ContextHandler handler;
-  protected List<WSHandler> wsHandlers = Collections.synchronizedList(new ArrayList<WSHandler>());
+  protected List<WSHandler> wsHandlers = new ArrayList<WSHandler>();
   protected OutputThread outThread = null;
   protected PseudoInputStream pin = new PseudoInputStream();
   protected PseudoOutputStream pout = new PseudoOutputStream();
@@ -211,7 +211,9 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     public void onConnect(Session session) {
       log.fine("New connection from "+session.getRemoteAddress());
       this.session = session;
-      wsHandlers.add(this);
+      synchronized (wsHandlers) {
+        wsHandlers.add(this);
+      }
       if (listener != null) listener.connected(conn);
     }
 
@@ -219,7 +221,9 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     public void onClose(int statusCode, String reason) {
       log.fine("Connection from "+session.getRemoteAddress()+" closed");
       session = null;
-      wsHandlers.remove(this);
+      synchronized (wsHandlers) {
+        wsHandlers.remove(this);
+      }
     }
 
     @OnWebSocketError
