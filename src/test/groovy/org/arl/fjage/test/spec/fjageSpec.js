@@ -416,7 +416,7 @@ describe('Shell GetFile/PutFile', function () {
     });
   });
 
-  it('should be able to append a file using PutFileReq', function (done) {
+  it('should be able to edit the file correctly using PutFileReq when offset is 0', function (done) {
     const pfr = new PutFileReq();
     pfr.recipient = shell;
     pfr.filename = DIRNAME + '/' + FILENAME;
@@ -443,7 +443,7 @@ describe('Shell GetFile/PutFile', function () {
     });
   });
 
-  it('should be able to save the file using PutFileReq when some content is removed', function (done) {
+  it('should be able to update the file correctly using PutFileReq when some content is removed', function (done) {
     const pfr = new PutFileReq();
     pfr.recipient = shell;
     pfr.filename = DIRNAME + '/' + FILENAME;
@@ -470,7 +470,7 @@ describe('Shell GetFile/PutFile', function () {
     });
   });
 
-  it('should be able to append the file using PutFileReq using offset', function (done) {
+  it('should be able to edit the file correctly using PutFileReq when offset greater than 0', function (done) {
     const pfr = new PutFileReq();
     pfr.recipient = shell;
     pfr.filename = DIRNAME + '/' + FILENAME;
@@ -498,7 +498,7 @@ describe('Shell GetFile/PutFile', function () {
     });
   });
 
-  it('should be able to append the file using PutFileReq using offset less than 0', function (done) {
+  it('should be able to edit the file correctly using PutFileReq when offset less than 0', function (done) {
     const pfr = new PutFileReq();
     pfr.recipient = shell;
     pfr.filename = DIRNAME + '/' + FILENAME;
