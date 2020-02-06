@@ -425,9 +425,117 @@ describe('Shell GetFile/PutFile', function () {
         console.error(ex);
         fail();
       });
-    }).catch((ex) => {
-      console.error(ex);
-      fail();
+    });
+  });
+
+  it('should be able to edit the file correctly using PutFileReq when offset is 0', function (done) {
+    const pfr = new PutFileReq();
+    pfr.recipient = shell;
+    pfr.filename = DIRNAME + '/' + FILENAME;
+    pfr.contents = Array.from((new TextEncoder('utf-8').encode(TEST_STRING + ' ' + TEST_STRING)));
+    const rsp = gw.request(pfr);
+    expect(rsp).not.toBeNull();
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
+      expect(msg.perf).toEqual(Performative.AGREE);
+      var gfr = new GetFileReq();
+      gfr.recipient = shell;
+      gfr.filename = DIRNAME + '/' + FILENAME;
+      const rsp2 = gw.request(gfr);
+      expect(rsp2).not.toBeNull();
+      rsp2.then((msg) => {
+        expect(msg instanceof GetFileRsp).toBeTruthy();
+        expect(msg.contents).not.toBeUndefined();
+        expect(new TextDecoder('utf-8').decode(new Uint8Array(msg.contents))).toEqual(TEST_STRING + ' ' + TEST_STRING);
+        done();
+      }).catch((ex) => {
+        console.error(ex);
+        fail();
+      });
+    });
+  });
+
+  it('should be able to update the file correctly using PutFileReq when some content is removed', function (done) {
+    const pfr = new PutFileReq();
+    pfr.recipient = shell;
+    pfr.filename = DIRNAME + '/' + FILENAME;
+    pfr.contents = Array.from((new TextEncoder('utf-8').encode(TEST_STRING.slice(-4))));
+    const rsp = gw.request(pfr);
+    expect(rsp).not.toBeNull();
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
+      expect(msg.perf).toEqual(Performative.AGREE);
+      var gfr = new GetFileReq();
+      gfr.recipient = shell;
+      gfr.filename = DIRNAME + '/' + FILENAME;
+      const rsp2 = gw.request(gfr);
+      expect(rsp2).not.toBeNull();
+      rsp2.then((msg) => {
+        expect(msg instanceof GetFileRsp).toBeTruthy();
+        expect(msg.contents).not.toBeUndefined();
+        expect(new TextDecoder('utf-8').decode(new Uint8Array(msg.contents))).toEqual(TEST_STRING.slice(-4));
+        done();
+      }).catch((ex) => {
+        console.error(ex);
+        fail();
+      });
+    });
+  });
+
+  it('should be able to edit the file correctly using PutFileReq when offset greater than 0', function (done) {
+    const pfr = new PutFileReq();
+    pfr.recipient = shell;
+    pfr.filename = DIRNAME + '/' + FILENAME;
+    pfr.ofs = 10;
+    pfr.contents = Array.from((new TextEncoder('utf-8').encode(TEST_STRING)));
+    const rsp = gw.request(pfr);
+    expect(rsp).not.toBeNull();
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
+      expect(msg.perf).toEqual(Performative.AGREE);
+      var gfr = new GetFileReq();
+      gfr.recipient = shell;
+      gfr.filename = DIRNAME + '/' + FILENAME;
+      const rsp2 = gw.request(gfr);
+      expect(rsp2).not.toBeNull();
+      rsp2.then((msg) => {
+        expect(msg instanceof GetFileRsp).toBeTruthy();
+        expect(msg.contents).not.toBeUndefined();
+        expect(new TextDecoder('utf-8').decode(new Uint8Array(msg.contents))).toEqual(TEST_STRING.substring(0,10)+TEST_STRING);
+        done();
+      }).catch((ex) => {
+        console.error(ex);
+        fail();
+      });
+    });
+  });
+
+  it('should be able to edit the file correctly using PutFileReq when offset less than 0', function (done) {
+    const pfr = new PutFileReq();
+    pfr.recipient = shell;
+    pfr.filename = DIRNAME + '/' + FILENAME;
+    pfr.ofs = -4;
+    pfr.contents = Array.from((new TextEncoder('utf-8').encode(NEW_STRING)));
+    const rsp = gw.request(pfr);
+    expect(rsp).not.toBeNull();
+    rsp.then(msg => {
+      expect(msg).toBeTruthy();
+      expect(msg.perf).toEqual(Performative.AGREE);
+      var gfr = new GetFileReq();
+      gfr.recipient = shell;
+      gfr.filename = DIRNAME + '/' + FILENAME;
+      const rsp2 = gw.request(gfr);
+      expect(rsp2).not.toBeNull();
+      rsp2.then((msg) => {
+        expect(msg instanceof GetFileRsp).toBeTruthy();
+        expect(msg.contents).not.toBeUndefined();
+        expect(msg.contents.length).toBe(TEST_STRING.length-4+NEW_STRING.length);
+        expect(new TextDecoder('utf-8').decode(new Uint8Array(msg.contents))).toEqual(TEST_STRING.substring(0,10) + NEW_STRING);
+        done();
+      }).catch((ex) => {
+        console.error(ex);
+        fail();
+      });
     });
   });
 });
