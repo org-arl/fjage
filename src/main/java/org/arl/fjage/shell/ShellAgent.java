@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.shell;
 
 import org.arl.fjage.*;
+import org.arl.fjage.param.ParameterMessageBehavior;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -134,6 +135,9 @@ public class ShellAgent extends Agent {
   public void init() {
     log.info("Agent "+getName()+" init");
     if (!ephemeral) register(Services.SHELL);
+
+    // support parameters
+    add(new ParameterMessageBehavior(ShellParam.class));
 
     // behavior to exec in agent's thread
     executor = new CyclicBehavior() {
@@ -429,6 +433,18 @@ public class ShellAgent extends Agent {
    */
   public boolean isEnabled() {
     return enabled;
+  }
+
+  /**
+   * Get supported script language.
+   *
+   * @return supported language, or null if unknown.
+   */
+  public String getLanguage() {
+    if (engine == null) return null;
+    String lang = engine.getClass().getSimpleName();
+    if (lang.endsWith("ScriptEngine")) lang = lang.substring(0, lang.length()-"ScriptEngine".length());
+    return lang;
   }
 
   @Override
