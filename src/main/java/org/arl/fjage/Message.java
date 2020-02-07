@@ -32,6 +32,7 @@ public class Message implements Serializable {
   protected AgentID recipient;
   protected AgentID sender = null;
   protected String inReplyTo = null;
+  protected Long sentAt = null;
 
   //////////// Interface methods
 
@@ -185,6 +186,24 @@ public class Message implements Serializable {
    */
   public String getInReplyTo() {
     return inReplyTo;
+  }
+
+  /**
+   * Sets the timestamp (milliseconds since epoch) that this message was sent at.
+   *
+   * @param ms timestamp in milliseconds
+   */
+  public void setSentAt(long ms) {
+    sentAt = ms;
+  }
+
+  /**
+   * Gets the timestamp (milliseconds since epoch) that this message was sent at.
+   *
+   * @return timestamp in milliseconds, or null if unknown
+   */
+  public Long getSentAt() {
+    return sentAt;
   }
 
   /////////////// Standard Java methods to customize

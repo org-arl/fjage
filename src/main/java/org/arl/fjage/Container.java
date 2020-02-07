@@ -349,6 +349,7 @@ public class Container {
   public boolean send(Message m, boolean relay) {
     if (!running) return false;
     if (relay) log.warning("Container does not support relaying");
+    if (m.getSentAt() == null) m.setSentAt(platform.currentTimeMillis());
     synchronized (listeners) {
       for (MessageListener listener: listeners)
         if (listener.onReceive(m)) return true;
