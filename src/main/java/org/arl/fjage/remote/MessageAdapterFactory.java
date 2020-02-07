@@ -112,6 +112,10 @@ class MessageAdapterFactory implements TypeAdapterFactory {
               in.beginObject();
               while (in.hasNext()) {
                 String fname = in.nextName();
+                if (in.peek() == JsonToken.NULL) {
+                  in.nextNull();
+                  continue;
+                }
                 switch (fname) {
                   case "msgID":
                     msg.setMessageID(in.nextString());
