@@ -13,6 +13,7 @@ package org.arl.fjage.connectors;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 import org.eclipse.jetty.websocket.api.*;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
@@ -29,7 +30,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   protected boolean linemode = false;
   protected WebServer server;
   protected ContextHandler handler;
-  protected List<WSHandler> wsHandlers = new ArrayList<WSHandler>();
+  protected List<WSHandler> wsHandlers = new CopyOnWriteArrayList<WSHandler>();
   protected OutputThread outThread = null;
   protected PseudoInputStream pin = new PseudoInputStream();
   protected PseudoOutputStream pout = new PseudoOutputStream();
@@ -170,10 +171,8 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
           if (buf == null) break;
           s = new String(buf);
         }
-        synchronized(wsHandlers) {
-          for (WSHandler t: wsHandlers)
-            t.write(s);
-        }
+        for (WSHandler t: wsHandlers)
+          t.write(s);
         try {
           Thread.sleep(10);
         } catch (InterruptedException ex) {
@@ -211,9 +210,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     public void onConnect(Session session) {
       log.fine("New connection from "+session.getRemoteAddress());
       this.session = session;
-      synchronized (wsHandlers) {
-        wsHandlers.add(this);
-      }
+      wsHandlers.add(this);
       if (listener != null) listener.connected(conn);
     }
 
@@ -221,9 +218,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     public void onClose(int statusCode, String reason) {
       log.fine("Connection from "+session.getRemoteAddress()+" closed");
       session = null;
-      synchronized (wsHandlers) {
-        wsHandlers.remove(this);
-      }
+      wsHandlers.remove(this);
     }
 
     @OnWebSocketError
