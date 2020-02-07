@@ -66,4 +66,4 @@ It is easiest to illustrate the use of the Javascript API though a simple code e
 
 This code first opens a gateway through the web socket interface back to the web server that served this Javascript. It then imports the `org.arl.fjage.shell.ShellExecReq` message class, and looks for an agent providing the `org.arl.fjage.shell.Services.SHELL` service. If found, it subscribes to messages from that service and calls `makeRq()` to make a command execution request to the agent providing that service. The request is to execute a command `"ps"` and simply log the response to the browser's console.
 
-The user should refer to the `detailed API description <http://org-arl.github.com/fjage/jsdoc/>`_ for the Javascript API for more information.
+.. The user should refer to the `detailed API description <http://org-arl.github.com/fjage/jsdoc/>`_ for the Javascript API for more information.
