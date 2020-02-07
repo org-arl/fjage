@@ -87,6 +87,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   private Container container = null;
   private MessageQueue queue = new MessageQueue(256);
   private Stack<MessageFilter> waitingFor = new Stack<>();
+  private boolean processMessagesDuringReceive = true;
   protected long tid = -1;
   protected Thread thread = null;
   protected boolean ignoreExceptions = false;
@@ -409,10 +410,51 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       c.send(m);
   }
 
+  /**
+   * Enables/disables processing of messages during a blocking receive(). Until fjage 1.6,
+   * incoming message processing was suspended during receive(). From fjage 1.7, incoming
+   * messages are processed while waiting to receive intended message. This can be disabled,
+   * if desired for backward compatibility.
+   *
+   * @param b true to process messages while waiting, false to disable processing.
+   */
+  protected void setProcessMessagesDuringReceive(boolean b) {
+    processMessagesDuringReceive = b;
+  }
+
+  /**
+   * Checks if messages will be processed during a blocking receive().
+   * @see setProcessMessagesDuringReceive()
+   */
+  protected boolean getProcessMessagesDuringReceive() {
+    return processMessagesDuringReceive;
+  }
+
+  // non-yielding version of receive for backward compatibility
+  private Message _receive(MessageFilter filter, long timeout) {
+    long deadline = 0;
+    Message m = queue.get(filter);
+    if (m == null && timeout != NON_BLOCKING) {
+      if (timeout != BLOCKING) deadline = currentTimeMillis() + timeout;
+      do {
+        if (timeout == BLOCKING) block();
+        else {
+          long t = deadline - currentTimeMillis();
+          block(t);
+        }
+        if (Thread.interrupted()) return null;
+        if (state == AgentState.FINISHING) return null;
+        m = queue.get(filter);
+      } while (m == null && (timeout == BLOCKING || currentTimeMillis() < deadline));
+    }
+    return m;
+  }
+
   @Override
   public synchronized Message receive(MessageFilter filter, long timeout) {
     if (Thread.currentThread().getId() != tid)
       throw new FjageException("receive() should only be called from agent thread");
+    if (!processMessagesDuringReceive) return _receive(filter, timeout);
     Queue<Message> queue1 = new ArrayDeque<Message>();
     try {
       if (filter != null) waitingFor.push(filter);
