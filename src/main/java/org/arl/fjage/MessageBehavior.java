@@ -59,6 +59,17 @@ public class MessageBehavior extends Behavior {
     return filter != null;
   }
 
+  /**
+   * Check if this MessageBehavior accepts a specific message.
+   *
+   * @param msg message to check.
+   * @return true if it accepts, false otherwise.
+   */
+  public boolean accepts(Message msg) {
+    if (filter == null) return true;
+    return filter.matches(msg);
+  }
+
   //////////// Method to be overridden by subclass
 
   /**

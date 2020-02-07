@@ -113,7 +113,6 @@ class GroovyExtensions {
 
     AgentID.metaClass.getAllParameters = { ndx = -1 ->
       if (delegate.owner == null) throw new FjageException('Parameters not suported on unowned AgentID')
-      if (name == delegate.owner.name) return null
       ParameterReq req = new ParameterReq()
       if (ndx > 0) req.index = ndx
       ParameterRsp rsp = null

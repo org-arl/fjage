@@ -11,9 +11,7 @@ for full license details.
 package org.arl.fjage;
 
 import java.io.Serializable;
-import java.util.ArrayDeque;
-import java.util.Iterator;
-import java.util.Queue;
+import java.util.*;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -88,6 +86,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   private Platform platform = null;
   private Container container = null;
   private MessageQueue queue = new MessageQueue(256);
+  private Stack<MessageFilter> waitingFor = new Stack<>();
   protected long tid = -1;
   protected Thread thread = null;
   protected boolean ignoreExceptions = false;
@@ -414,22 +413,41 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   public synchronized Message receive(MessageFilter filter, long timeout) {
     if (Thread.currentThread().getId() != tid)
       throw new FjageException("receive() should only be called from agent thread");
-    long deadline = 0;
-    Message m = queue.get(filter);
-    if (m == null && timeout != NON_BLOCKING) {
-      if (timeout != BLOCKING) deadline = currentTimeMillis() + timeout;
-      do {
-        if (timeout == BLOCKING) block();
-        else {
-          long t = deadline - currentTimeMillis();
-          block(t);
-        }
-        if (Thread.interrupted()) return null;
-        if (state == AgentState.FINISHING) return null;
-        m = queue.get(filter);
-      } while (m == null && (timeout == BLOCKING || currentTimeMillis() < deadline));
+    Queue<Message> queue1 = new ArrayDeque<Message>();
+    try {
+      if (filter != null) waitingFor.push(filter);
+      long deadline = 0;
+      Message m = null;
+      Message m1 = queue.get();
+      if (m1 != null) {
+        if (filter == null || filter.matches(m1)) m = m1;
+        else if (!process(m1)) queue1.add(m1);
+      }
+      if (m == null && timeout != NON_BLOCKING) {
+        if (timeout != BLOCKING) deadline = currentTimeMillis() + timeout;
+        do {
+          if (m1 == null) {
+            if (timeout == BLOCKING) block();
+            else {
+              long t = deadline - currentTimeMillis();
+              block(t);
+            }
+          }
+          if (Thread.interrupted()) return null;
+          if (state == AgentState.FINISHING) return null;
+          m1 = queue.get();
+          if (m1 != null) {
+            if (filter == null || filter.matches(m1)) m = m1;
+            else if (!process(m1)) queue1.add(m1);
+          }
+        } while (m == null && (timeout == BLOCKING || currentTimeMillis() < deadline));
+      }
+      return m;
+    } finally {
+      if (filter != null) waitingFor.pop();
+      for (Message m: queue1)
+        queue.add(m);
     }
-    return m;
   }
 
   @Override
@@ -709,6 +727,39 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
         MessageBehavior mb = (MessageBehavior)b;
         if (mb.hasFilter()) return true;
       }
+    }
+    return false;
+  }
+
+  private boolean process(Message msg) {
+    for (MessageFilter mf: waitingFor)
+      if (mf.matches(msg)) return false;
+    MessageBehavior dmb = null;
+    for (Behavior b: activeBehaviors) {
+      if (b instanceof MessageBehavior) {
+        MessageBehavior mb = (MessageBehavior)b;
+        if (dmb == null && !mb.hasFilter()) dmb = mb;
+        if (mb.hasFilter() && mb.accepts(msg)) {
+          mb.onReceive(msg);
+          return true;
+        }
+      }
+    }
+    if (restartBehaviors) {
+      for (Behavior b: blockedBehaviors) {
+        if (b instanceof MessageBehavior) {
+          MessageBehavior mb = (MessageBehavior)b;
+          if (dmb == null && !mb.hasFilter()) dmb = mb;
+          if (mb.hasFilter() && mb.accepts(msg)) {
+            mb.onReceive(msg);
+            return true;
+          }
+        }
+      }
+    }
+    if (dmb != null) {
+      dmb.onReceive(msg);
+      return true;
     }
     return false;
   }
