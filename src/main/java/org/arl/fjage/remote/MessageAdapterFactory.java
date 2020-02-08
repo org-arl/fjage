@@ -58,32 +58,37 @@ class MessageAdapterFactory implements TypeAdapterFactory {
 
       @Override
       public void write(JsonWriter out, T value) throws IOException {
-        if (value == null) out.nullValue();
-        else {
-          out.beginObject();
-          out.name("clazz").value(value.getClass().getName());
-          out.name("data");
-          if (value instanceof GenericMessage) {
-            GenericMessage msg = (GenericMessage)value;
+        try {
+          out.setSerializeNulls(true);
+          if (value == null) out.nullValue();
+          else {
             out.beginObject();
-            out.name("msgID").value(msg.getMessageID());
-            out.name("inReplyTo").value(msg.getInReplyTo());
-            out.name("perf");
-            perfDelegate.write(out, msg.getPerformative());
-            out.name("recipient");
-            aidDelegate.write(out, msg.getRecipient());
-            out.name("sender");
-            aidDelegate.write(out, msg.getSender());
-            for (Object k: msg.keySet()) {
-              out.name(k.toString());
-              Object v = msg.get(k);
-              TypeAdapter delegate = gson.getAdapter(TypeToken.get(v.getClass()));
-              delegate.write(out, v);
+            out.name("clazz").value(value.getClass().getName());
+            out.name("data");
+            if (value instanceof GenericMessage) {
+              GenericMessage msg = (GenericMessage)value;
+              out.beginObject();
+              out.name("msgID").value(msg.getMessageID());
+              out.name("inReplyTo").value(msg.getInReplyTo());
+              out.name("perf");
+              perfDelegate.write(out, msg.getPerformative());
+              out.name("recipient");
+              aidDelegate.write(out, msg.getRecipient());
+              out.name("sender");
+              aidDelegate.write(out, msg.getSender());
+              for (Object k: msg.keySet()) {
+                out.name(k.toString());
+                Object v = msg.get(k);
+                TypeAdapter delegate = gson.getAdapter(TypeToken.get(v.getClass()));
+                delegate.write(out, v);
+              }
+              out.endObject();
             }
+            else delegate.write(out, value);
             out.endObject();
           }
-          else delegate.write(out, value);
-          out.endObject();
+        } finally {
+          out.setSerializeNulls(false);
         }
       }
 
