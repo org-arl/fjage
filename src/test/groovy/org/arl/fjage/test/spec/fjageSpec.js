@@ -265,6 +265,8 @@ describe('Shell GetFile/PutFile', function () {
     shell = new AgentID('shell');
   });
 
+  // Delete the test file after running
+  // the GetFile/PutFile tests
   afterAll((done) => {
     const pfr = new PutFileReq();
     pfr.recipient = shell;
@@ -279,6 +281,7 @@ describe('Shell GetFile/PutFile', function () {
     });
   });
 
+  // Create a new file with the contents of TEST_STRING
   beforeEach((done) => {
     const pfr = new PutFileReq();
     pfr.recipient = shell;
@@ -665,6 +668,8 @@ function sendTestStatus(status) {
 var autoReporter = {
   jasmineDone: function (result) {
     console.log('Finished suite: ' + result.overallStatus);
+    const params = new URLSearchParams(window.location.search);
+    if (params && params.get('send') == 'false') return;
     sendTestStatus(result.overallStatus == 'passed');
   }
 };

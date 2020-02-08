@@ -623,9 +623,9 @@ public class ShellAgent extends Agent {
           } else {
             // Overwrite if ofs == 0
             os = new RandomAccessFile(f, "rw");
-            ((RandomAccessFile) os).setLength(ofs);
+            if(ofs >= 0)((RandomAccessFile) os).setLength(ofs + contents.length);
             if (ofs > 0) ((RandomAccessFile) os).skipBytes((int) ofs);
-            else if (ofs < 0) ((RandomAccessFile) os).skipBytes((int) (f.length() - ofs));
+            else if (ofs < 0) ((RandomAccessFile) os).skipBytes((int) (f.length() + ofs));
             ((RandomAccessFile) os).write(contents);
             ((RandomAccessFile) os).getFD().sync();
           }
