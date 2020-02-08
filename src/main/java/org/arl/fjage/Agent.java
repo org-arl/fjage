@@ -424,7 +424,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
 
   /**
    * Checks if messages will be processed during a blocking receive().
-   * @see setProcessMessagesDuringReceive()
+   * @see #setProcessMessagesDuringReceive(boolean)
    */
   protected boolean getProcessMessagesDuringReceive() {
     return processMessagesDuringReceive;
