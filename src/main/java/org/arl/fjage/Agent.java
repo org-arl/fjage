@@ -451,7 +451,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   }
 
   @Override
-  public synchronized Message receive(MessageFilter filter, long timeout) {
+  public Message receive(MessageFilter filter, long timeout) {
     if (Thread.currentThread().getId() != tid)
       throw new FjageException("receive() should only be called from agent thread");
     if (!processMessagesDuringReceive) return _receive(filter, timeout);
