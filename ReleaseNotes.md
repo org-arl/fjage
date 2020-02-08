@@ -1,5 +1,18 @@
 # Release Notes
 
+## v1.6.5
+
+* Javascript gateway bug fixes
+* Fixed bug in PutFileReq, causing file overwrites to possibly end up with junk at end
+* Fixed bug causing null fields in message to complain about bad JSON
+* Fixed bug causing concurrent modification exception during intermittent Javscript gateway connection
+* Fixed bug causing an harmless null pointer expection during termination
+
+## v1.6.4
+
+* Bug fix related to behaviors added from a different thread
+* Jetty version update
+
 ## v1.6.3
 
 * Added null checks in connector streams
