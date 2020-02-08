@@ -44,7 +44,8 @@ public class JsonMessage {
     .registerTypeAdapterFactory(new ArrayAdapterFactory())
     .registerTypeAdapterFactory(new GenericValueAdapterFactory())
     .serializeSpecialFloatingPointValues()
-    .enableComplexMapKeySerialization();
+    .enableComplexMapKeySerialization()
+    .serializeNulls();
 
   private static Gson gson = gsonBuilder.create();
 
