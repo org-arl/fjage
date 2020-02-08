@@ -21,16 +21,16 @@ import org.arl.fjage.param.Parameter;
  */
 public class JsonMessage {
 
-  String id;
-  Action action;
-  Action inResponseTo;
-  AgentID agentID;
-  AgentID[] agentIDs;
-  String service;
-  String[] services;
-  Boolean answer;
-  Message message;
-  Boolean relay;
+  public String id;
+  public Action action;
+  public Action inResponseTo;
+  public AgentID agentID;
+  public AgentID[] agentIDs;
+  public String service;
+  public String[] services;
+  public Boolean answer;
+  public Message message;
+  public Boolean relay;
 
   private static GsonBuilder gsonBuilder = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
@@ -53,11 +53,11 @@ public class JsonMessage {
     gson = gsonBuilder.create();
   }
 
-  static JsonMessage fromJson(String s) {
+  public static JsonMessage fromJson(String s) {
     return gson.fromJson(s, JsonMessage.class);
   }
 
-  String toJson() {
+  public String toJson() {
     return gson.toJson(this);
   }
 
