@@ -124,7 +124,11 @@ class GroovyExtensions {
       }
       List<String> out = new ArrayList<String>()
       rsp.parameters().each {
-        if (!(it instanceof NamedParameter)) out.add "${it.class.name}#${it} = ${rsp.get(it)}\n"
+        if (!(it instanceof NamedParameter)) {
+          String s = "${rsp.get(it)}"
+          if (s.length() > 64) s = "${s[0..31]} ... ${s[-31..-1]}"
+          out.add "${it.class.name}#${it} = ${s}\n"
+        }
       }
       String title = rsp.get(new NamedParameter('title'))
       String description = rsp.get(new NamedParameter('description'))
