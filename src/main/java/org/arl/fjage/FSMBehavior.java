@@ -150,12 +150,12 @@ public class FSMBehavior extends Behavior {
   }
 
   /**
-   * Gets the current state.
+   * Gets the current state name.
    *
-   * @return current state.
+   * @return current state name.
    */
-  public State getCurrentState() {
-    return state;
+  public Object getCurrentState() {
+    return state.getName();
   }
 
   /**
