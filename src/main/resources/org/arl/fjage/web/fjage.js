@@ -70,6 +70,9 @@ function _b64toArray(base64, dtype, littleEndian=true) {
 
 // base 64 JSON decoder
 function _decodeBase64(k, d) {
+  if (d === null) {
+    return null;
+  }
   if (typeof d == 'object' && 'clazz' in d) {
     let clazz = d.clazz;
     if (clazz.startsWith('[') && clazz.length == 2 && 'data' in d) {
