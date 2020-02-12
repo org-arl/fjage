@@ -18,6 +18,26 @@ package org.arl.fjage;
  */
 public class OneShotBehavior extends Behavior {
 
+  ////////// Interface methods
+
+  /**
+   * Creates a behavior that is executed only once.
+   */
+  public OneShotBehavior() {
+  }
+
+  /**
+   * Creates a behavior that is executed only once.
+   *
+   * @param runnable Runnable to run.
+   */
+  public OneShotBehavior(Runnable runnable) {
+    this();
+    if (runnable != null) {
+      this.action = param -> runnable.run();
+    }
+  }
+
   //////////// Overridden methods
 
   /**
@@ -29,21 +49,5 @@ public class OneShotBehavior extends Behavior {
   @Override
   public final boolean done() {
     return true;
-  }
-
-  /**
-   * Creates a new OneShotBehavior which runs the specified Runnable once.
-   *
-   * @param runnable Runnable to run.
-   * @return OneShotBehavior
-   */
-  public static OneShotBehavior create(final Runnable runnable) {
-    return new OneShotBehavior() {
-
-      @Override
-      public void action() {
-        runnable.run();
-      }
-    };
   }
 }

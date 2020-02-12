@@ -55,6 +55,46 @@ public class MessageBehavior extends Behavior {
   }
 
   /**
+   * Creates a MessageBehavior that accepts all incoming messages.
+   *
+   * @param consumer Message consumer.
+   */
+  public MessageBehavior(Consumer<Message> consumer) {
+    this();
+    if (consumer != null) {
+      this.action = param -> consumer.accept((Message) param);
+    }
+  }
+
+  /**
+   * Creates a MessageBehavior that accepts all incoming messages of a given
+   * class.
+   *
+   * @param cls message class of interest.
+   * @param consumer Message consumer.
+   */
+  public MessageBehavior(final Class<?> cls, Consumer<Message> consumer) {
+    this(cls);
+    if (consumer != null) {
+      this.action = param -> consumer.accept((Message) param);
+    }
+  }
+
+  /**
+   * Creates a MessageBehavior that accepts all incoming messages that meet
+   * a given MessageFilter criteria.
+   *
+   * @param filter message filter.
+   * @param consumer Message consumer.
+   */
+  public MessageBehavior(final MessageFilter filter, Consumer<Message> consumer) {
+    this(filter);
+    if (consumer != null) {
+      this.action = param -> consumer.accept((Message) param);
+    }
+  }
+
+  /**
    * Checks if this MessageBehavior has a filter associated with it.
    */
   boolean hasFilter() {

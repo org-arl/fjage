@@ -21,6 +21,19 @@ public class BackoffBehavior extends Behavior {
   }
 
   /**
+   * Creates a behavior that is executed after a specified backoff.
+   *
+   * @param millis backoff in milliseconds.
+   * @param runnable Runnable to run.
+   */
+  public BackoffBehavior(long millis, Runnable runnable) {
+    this(millis);
+    if (runnable != null) {
+      this.action = param -> runnable.run();
+    }
+  }
+
+  /**
    * Terminates the behavior.
    */
   public final void stop() {
@@ -102,22 +115,5 @@ public class BackoffBehavior extends Behavior {
   public void reset() {
     super.reset();
     quit = false;
-  }
-
-  /**
-   * Creates a new BackoffBehavior which runs the specified Runnable every specified period.
-   *
-   * @param millis Backoff in milliseconds.
-   * @param runnable Runnable to run.
-   * @return BackoffBehavior
-   */
-  public static BackoffBehavior create(long millis, final Runnable runnable) {
-    return new BackoffBehavior(millis) {
-
-      @Override
-      public void onExpiry() {
-        runnable.run();
-      }
-    };
   }
 }

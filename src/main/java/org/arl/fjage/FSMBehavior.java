@@ -230,6 +230,8 @@ public class FSMBehavior extends Behavior {
      */
     protected Logger log = null;
 
+    private Runnable runnable;
+
     /////////// Constructor
 
     /**
@@ -242,14 +244,30 @@ public class FSMBehavior extends Behavior {
       this.name = name;
     }
 
+    /**
+     * Creates a named state. The name may later be reassigned when the state is
+     * added to the FSM.
+     *
+     * @param name name of the state.
+     * @param runnable Runnable to run.
+     */
+    public State(Object name, Runnable runnable) {
+      this(name);
+      this.runnable = runnable;
+    }
+
     /////////// Methods for subclass to override
 
     /**
      * This method is repeatedly called when the state is active. The default
-     * implementation simply blocks the behavior.
+     * implementation simply blocks the behavior unless a runnable was provided during instantiation.
      */
     public void action() {
-      block();
+      if (runnable != null) {
+        runnable.run();
+      } else {
+        block();
+      }
     }
 
     /**
@@ -345,23 +363,6 @@ public class FSMBehavior extends Behavior {
     protected boolean isBlocked() {
       if (fsm == null) return false;
       return fsm.isBlocked();
-    }
-
-    /**
-     * Creates a new State which runs the specified Runnable.
-     *
-     * @param name Name of the state.
-     * @param runnable Runnable to run.
-     * @return State
-     */
-    public static State create(String name, final Runnable runnable) {
-      return new State(name) {
-
-        @Override
-        public void action() {
-          runnable.run();
-        }
-      };
     }
   }
 }

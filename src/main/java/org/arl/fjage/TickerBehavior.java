@@ -39,6 +39,19 @@ public class TickerBehavior extends Behavior {
   }
 
   /**
+   * Creates a behavior that is executed every specified period.
+   *
+   * @param millis period in milliseconds.
+   * @param runnable Runnable to run.
+   */
+  public TickerBehavior(long millis, Runnable runnable) {
+    this(millis);
+    if (runnable != null) {
+      this.action = param -> runnable.run();
+    }
+  }
+
+  /**
    * Terminates the behavior.
    */
   public final void stop() {

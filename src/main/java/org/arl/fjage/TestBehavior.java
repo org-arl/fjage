@@ -47,6 +47,26 @@ public class TestBehavior extends OneShotBehavior {
   private AssertionError error = null;
   private boolean completed = false;
 
+  ////////// Interface methods
+
+  /**
+   * Creates a test behavior.
+   */
+  public TestBehavior() {
+  }
+
+  /**
+   * Creates a test behavior.
+   *
+   * @param runnable Runnable to run.
+   */
+  public TestBehavior(Runnable runnable) {
+    this();
+    if (runnable != null) {
+      this.action = param -> runnable.run();
+    }
+  }
+
   ////////// Overridden methods
 
   @Override
@@ -110,21 +130,5 @@ public class TestBehavior extends OneShotBehavior {
    */
   public void test() {
     super.action();
-  }
-
-  /**
-   * Creates a new TestBehavior which runs the specified Runnable once.
-   *
-   * @param runnable Runnable to run.
-   * @return TestBehavior
-   */
-  public static TestBehavior create(final Runnable runnable) {
-    return new TestBehavior() {
-
-      @Override
-      public void test() {
-        runnable.run();
-      }
-    };
   }
 }
