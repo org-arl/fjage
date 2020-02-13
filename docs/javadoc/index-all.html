@@ -555,6 +555,10 @@
 <dd>
 <div class="block">Compares two agent ids to determine an ordering.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/arl/fjage/Behavior.html#compareTo-org.arl.fjage.Behavior-">compareTo(Behavior)</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/Behavior.html" title="class in org.arl.fjage">Behavior</a></dt>
+<dd>
+<div class="block">Implements natural ordering based on behavior priority.</div>
+</dd>
 <dt><a href="org/arl/fjage/shell/ConcurrentBinding.html" title="class in org.arl.fjage.shell"><span class="typeNameLink">ConcurrentBinding</span></a> - Class in <a href="org/arl/fjage/shell/package-summary.html">org.arl.fjage.shell</a></dt>
 <dd>
 <div class="block">A binding class that is thread-safe.</div>
@@ -1345,10 +1349,23 @@
 <dd>
 <div class="block">Gets the TCP port on which the master container listens for connections.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/arl/fjage/Agent.html#getProcessMessagesDuringReceive--">getProcessMessagesDuringReceive()</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/Agent.html" title="class in org.arl.fjage">Agent</a></dt>
+<dt><span class="memberNameLink"><a href="org/arl/fjage/Behavior.html#getPriority--">getPriority()</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/Behavior.html" title="class in org.arl.fjage">Behavior</a></dt>
 <dd>
-<div class="block">Checks if messages will be processed during a blocking receive().</div>
+<div class="block">This method should return a number that denotes the priority of a behavior.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/arl/fjage/CyclicBehavior.html#getPriority--">getPriority()</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/CyclicBehavior.html" title="class in org.arl.fjage">CyclicBehavior</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/arl/fjage/MessageBehavior.html#getPriority--">getPriority()</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/MessageBehavior.html" title="class in org.arl.fjage">MessageBehavior</a></dt>
+<dd>
+<div class="block">Message behaviors with filters return a priority value of -100 to allow them to be
+ executed before general message behaviors (no filters, priority value of 0).</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/arl/fjage/PoissonBehavior.html#getPriority--">getPriority()</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/PoissonBehavior.html" title="class in org.arl.fjage">PoissonBehavior</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/arl/fjage/TickerBehavior.html#getPriority--">getPriority()</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/TickerBehavior.html" title="class in org.arl.fjage">TickerBehavior</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/arl/fjage/WakerBehavior.html#getPriority--">getPriority()</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/WakerBehavior.html" title="class in org.arl.fjage">WakerBehavior</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/arl/fjage/shell/EchoScriptEngine.html#getPrompt-boolean-">getPrompt(boolean)</a></span> - Method in class org.arl.fjage.shell.<a href="org/arl/fjage/shell/EchoScriptEngine.html" title="class in org.arl.fjage.shell">EchoScriptEngine</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/arl/fjage/shell/GroovyScriptEngine.html#getPrompt-boolean-">getPrompt(boolean)</a></span> - Method in class org.arl.fjage.shell.<a href="org/arl/fjage/shell/GroovyScriptEngine.html" title="class in org.arl.fjage.shell">GroovyScriptEngine</a></dt>
@@ -1432,6 +1449,10 @@
 <dt><span class="memberNameLink"><a href="org/arl/fjage/WakerBehavior.html#getWakeupTime--">getWakeupTime()</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/WakerBehavior.html" title="class in org.arl.fjage">WakerBehavior</a></dt>
 <dd>
 <div class="block">Returns the wakeup time for this behavior.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/arl/fjage/Agent.html#getYieldDuringReceive--">getYieldDuringReceive()</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/Agent.html" title="class in org.arl.fjage">Agent</a></dt>
+<dd>
+<div class="block">Checks if messages will be processed during a blocking receive().</div>
 </dd>
 <dt><a href="org/arl/fjage/shell/GroovyBoot.html" title="class in org.arl.fjage.shell"><span class="typeNameLink">GroovyBoot</span></a> - Class in <a href="org/arl/fjage/shell/package-summary.html">org.arl.fjage.shell</a></dt>
 <dd>
@@ -2782,10 +2803,6 @@
 <div class="block"><span class="deprecationComment">As of release 1.4, RMI support has been deprecated.</span></div>
 </div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/arl/fjage/Agent.html#setProcessMessagesDuringReceive-boolean-">setProcessMessagesDuringReceive(boolean)</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/Agent.html" title="class in org.arl.fjage">Agent</a></dt>
-<dd>
-<div class="block">Enables/disables processing of messages during a blocking receive().</div>
-</dd>
 <dt><span class="memberNameLink"><a href="org/arl/fjage/Agent.html#setQueueSize-int-">setQueueSize(int)</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/Agent.html" title="class in org.arl.fjage">Agent</a></dt>
 <dd>
 <div class="block">Sets the maximum length of the incoming message queue for the agent.</div>
@@ -2833,6 +2850,10 @@
 <dt><span class="memberNameLink"><a href="org/arl/fjage/shell/ScriptEngine.html#setVariable-java.lang.String-java.lang.Object-">setVariable(String, Object)</a></span> - Method in interface org.arl.fjage.shell.<a href="org/arl/fjage/shell/ScriptEngine.html" title="interface in org.arl.fjage.shell">ScriptEngine</a></dt>
 <dd>
 <div class="block">Bind script variable.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/arl/fjage/Agent.html#setYieldDuringReceive-boolean-">setYieldDuringReceive(boolean)</a></span> - Method in class org.arl.fjage.<a href="org/arl/fjage/Agent.html" title="class in org.arl.fjage">Agent</a></dt>
+<dd>
+<div class="block">Enables/disables processing of messages during a blocking receive().</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/arl/fjage/Agent.html#SEVERE">SEVERE</a></span> - Static variable in class org.arl.fjage.<a href="org/arl/fjage/Agent.html" title="class in org.arl.fjage">Agent</a></dt>
 <dd>&nbsp;</dd>

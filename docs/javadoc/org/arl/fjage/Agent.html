@@ -368,21 +368,21 @@ implements java.lang.Runnable, <a href="../../../org/arl/fjage/TimestampProvider
 </td>
 </tr>
 <tr id="i18" class="altColor">
-<td class="colFirst"><code>protected boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Agent.html#getProcessMessagesDuringReceive--">getProcessMessagesDuringReceive</a></span>()</code>
-<div class="block">Checks if messages will be processed during a blocking receive().</div>
-</td>
-</tr>
-<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="../../../org/arl/fjage/AgentState.html" title="enum in org.arl.fjage">AgentState</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Agent.html#getState--">getState</a></span>()</code>
 <div class="block">Gets the state of the agent.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="../../../org/arl/fjage/persistence/Store.html" title="class in org.arl.fjage.persistence">Store</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Agent.html#getStore--">getStore</a></span>()</code>
 <div class="block">Gets a persistent store for the agent.</div>
+</td>
+</tr>
+<tr id="i20" class="altColor">
+<td class="colFirst"><code>protected boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Agent.html#getYieldDuringReceive--">getYieldDuringReceive</a></span>()</code>
+<div class="block">Checks if messages will be processed during a blocking receive().</div>
 </td>
 </tr>
 <tr id="i21" class="rowColor">
@@ -507,15 +507,15 @@ implements java.lang.Runnable, <a href="../../../org/arl/fjage/TimestampProvider
 </td>
 </tr>
 <tr id="i40" class="altColor">
-<td class="colFirst"><code>protected void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Agent.html#setProcessMessagesDuringReceive-boolean-">setProcessMessagesDuringReceive</a></span>(boolean&nbsp;b)</code>
-<div class="block">Enables/disables processing of messages during a blocking receive().</div>
-</td>
-</tr>
-<tr id="i41" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Agent.html#setQueueSize-int-">setQueueSize</a></span>(int&nbsp;size)</code>
 <div class="block">Sets the maximum length of the incoming message queue for the agent.</div>
+</td>
+</tr>
+<tr id="i41" class="rowColor">
+<td class="colFirst"><code>protected void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Agent.html#setYieldDuringReceive-boolean-">setYieldDuringReceive</a></span>(boolean&nbsp;b)</code>
+<div class="block">Enables/disables processing of messages during a blocking receive().</div>
 </td>
 </tr>
 <tr id="i42" class="altColor">
@@ -1174,13 +1174,13 @@ implements java.lang.Runnable, <a href="../../../org/arl/fjage/TimestampProvider
 </dl>
 </li>
 </ul>
-<a name="setProcessMessagesDuringReceive-boolean-">
+<a name="setYieldDuringReceive-boolean-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>setProcessMessagesDuringReceive</h4>
-<pre>protected&nbsp;void&nbsp;setProcessMessagesDuringReceive(boolean&nbsp;b)</pre>
+<h4>setYieldDuringReceive</h4>
+<pre>protected&nbsp;void&nbsp;setYieldDuringReceive(boolean&nbsp;b)</pre>
 <div class="block">Enables/disables processing of messages during a blocking receive(). Until fjage 1.6,
  incoming message processing was suspended during receive(). From fjage 1.7, incoming
  messages are processed while waiting to receive intended message. This can be disabled,
@@ -1191,17 +1191,17 @@ implements java.lang.Runnable, <a href="../../../org/arl/fjage/TimestampProvider
 </dl>
 </li>
 </ul>
-<a name="getProcessMessagesDuringReceive--">
+<a name="getYieldDuringReceive--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getProcessMessagesDuringReceive</h4>
-<pre>protected&nbsp;boolean&nbsp;getProcessMessagesDuringReceive()</pre>
+<h4>getYieldDuringReceive</h4>
+<pre>protected&nbsp;boolean&nbsp;getYieldDuringReceive()</pre>
 <div class="block">Checks if messages will be processed during a blocking receive().</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="../../../org/arl/fjage/Agent.html#setProcessMessagesDuringReceive-boolean-"><code>setProcessMessagesDuringReceive(boolean)</code></a></dd>
+<dd><a href="../../../org/arl/fjage/Agent.html#setYieldDuringReceive-boolean-"><code>setYieldDuringReceive(boolean)</code></a></dd>
 </dl>
 </li>
 </ul>

@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -110,6 +110,10 @@ var activeTableTab = "activeTableTab";
 <div class="description">
 <ul class="blockList">
 <li class="blockList">
+<dl>
+<dt>All Implemented Interfaces:</dt>
+<dd>java.lang.Comparable&lt;<a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.fjage">Behavior</a>&gt;</dd>
+</dl>
 <hr>
 <br>
 <pre>public class <span class="typeNameLabel">PoissonBehavior</span>
@@ -184,30 +188,36 @@ extends <a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.f
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/PoissonBehavior.html#getPriority--">getPriority</a></span>()</code>
+<div class="block">This method should return a number that denotes the priority of a behavior.</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/PoissonBehavior.html#getTickCount--">getTickCount</a></span>()</code>
 <div class="block">Returns the number of times the <a href="../../../org/arl/fjage/PoissonBehavior.html#onTick--"><code>onTick()</code></a> method of this behavior
  has been called (including any ongoing call).</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/PoissonBehavior.html#onStart--">onStart</a></span>()</code>
 <div class="block">Computes the wakeup time for the first execution of this behavior.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/PoissonBehavior.html#onTick--">onTick</a></span>()</code>
 <div class="block">This method is called for each arrival.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/PoissonBehavior.html#reset--">reset</a></span>()</code>
 <div class="block">Resets the behavior to its initial state, allowing it to be used again.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/PoissonBehavior.html#stop--">stop</a></span>()</code>
 <div class="block">Terminates the behavior.</div>
@@ -219,7 +229,7 @@ extends <a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.f
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.arl.fjage.<a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.fjage">Behavior</a></h3>
-<code><a href="../../../org/arl/fjage/Behavior.html#agent-java.lang.String-">agent</a>, <a href="../../../org/arl/fjage/Behavior.html#agentForService-java.lang.Enum-">agentForService</a>, <a href="../../../org/arl/fjage/Behavior.html#agentForService-java.lang.String-">agentForService</a>, <a href="../../../org/arl/fjage/Behavior.html#agentsForService-java.lang.Enum-">agentsForService</a>, <a href="../../../org/arl/fjage/Behavior.html#agentsForService-java.lang.String-">agentsForService</a>, <a href="../../../org/arl/fjage/Behavior.html#block--">block</a>, <a href="../../../org/arl/fjage/Behavior.html#block-long-">block</a>, <a href="../../../org/arl/fjage/Behavior.html#isBlocked--">isBlocked</a>, <a href="../../../org/arl/fjage/Behavior.html#onEnd--">onEnd</a>, <a href="../../../org/arl/fjage/Behavior.html#println-java.lang.String-">println</a>, <a href="../../../org/arl/fjage/Behavior.html#restart--">restart</a></code></li>
+<code><a href="../../../org/arl/fjage/Behavior.html#agent-java.lang.String-">agent</a>, <a href="../../../org/arl/fjage/Behavior.html#agentForService-java.lang.Enum-">agentForService</a>, <a href="../../../org/arl/fjage/Behavior.html#agentForService-java.lang.String-">agentForService</a>, <a href="../../../org/arl/fjage/Behavior.html#agentsForService-java.lang.Enum-">agentsForService</a>, <a href="../../../org/arl/fjage/Behavior.html#agentsForService-java.lang.String-">agentsForService</a>, <a href="../../../org/arl/fjage/Behavior.html#block--">block</a>, <a href="../../../org/arl/fjage/Behavior.html#block-long-">block</a>, <a href="../../../org/arl/fjage/Behavior.html#compareTo-org.arl.fjage.Behavior-">compareTo</a>, <a href="../../../org/arl/fjage/Behavior.html#isBlocked--">isBlocked</a>, <a href="../../../org/arl/fjage/Behavior.html#onEnd--">onEnd</a>, <a href="../../../org/arl/fjage/Behavior.html#println-java.lang.String-">println</a>, <a href="../../../org/arl/fjage/Behavior.html#restart--">restart</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -355,7 +365,7 @@ extends <a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.f
 <a name="reset--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>reset</h4>
 <pre>public&nbsp;void&nbsp;reset()</pre>
@@ -365,6 +375,25 @@ extends <a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.f
 <dd><code><a href="../../../org/arl/fjage/Behavior.html#reset--">reset</a></code>&nbsp;in class&nbsp;<code><a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.fjage">Behavior</a></code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../org/arl/fjage/Behavior.html#reset--"><code>Behavior.reset()</code></a></dd>
+</dl>
+</li>
+</ul>
+<a name="getPriority--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getPriority</h4>
+<pre>public&nbsp;int&nbsp;getPriority()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../org/arl/fjage/Behavior.html#getPriority--">Behavior</a></code></span></div>
+<div class="block">This method should return a number that denotes the priority of a behavior. By
+ default, the priority is 0. Behaviors with lower priority values are executed
+ before behaviors with higher priority values.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../org/arl/fjage/Behavior.html#getPriority--">getPriority</a></code>&nbsp;in class&nbsp;<code><a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.fjage">Behavior</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>priority value</dd>
 </dl>
 </li>
 </ul>

@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -106,13 +106,18 @@ var activeTableTab = "activeTableTab";
 <ul class="blockList">
 <li class="blockList">
 <dl>
+<dt>All Implemented Interfaces:</dt>
+<dd>java.lang.Comparable&lt;<a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.fjage">Behavior</a>&gt;</dd>
+</dl>
+<dl>
 <dt>Direct Known Subclasses:</dt>
 <dd><a href="../../../org/arl/fjage/BackoffBehavior.html" title="class in org.arl.fjage">BackoffBehavior</a>, <a href="../../../org/arl/fjage/CyclicBehavior.html" title="class in org.arl.fjage">CyclicBehavior</a>, <a href="../../../org/arl/fjage/FSMBehavior.html" title="class in org.arl.fjage">FSMBehavior</a>, <a href="../../../org/arl/fjage/MessageBehavior.html" title="class in org.arl.fjage">MessageBehavior</a>, <a href="../../../org/arl/fjage/OneShotBehavior.html" title="class in org.arl.fjage">OneShotBehavior</a>, <a href="../../../org/arl/fjage/PoissonBehavior.html" title="class in org.arl.fjage">PoissonBehavior</a>, <a href="../../../org/arl/fjage/TickerBehavior.html" title="class in org.arl.fjage">TickerBehavior</a>, <a href="../../../org/arl/fjage/WakerBehavior.html" title="class in org.arl.fjage">WakerBehavior</a></dd>
 </dl>
 <hr>
 <br>
 <pre>public class <span class="typeNameLabel">Behavior</span>
-extends java.lang.Object</pre>
+extends java.lang.Object
+implements java.lang.Comparable&lt;<a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.fjage">Behavior</a>&gt;</pre>
 <div class="block">Base class for agent behaviors. Commonly used behaviors are provided by subclasses:
  <ul>
  <li><a href="../../../org/arl/fjage/CyclicBehavior.html" title="class in org.arl.fjage"><code>CyclicBehavior</code></a> for continuous behaviors
@@ -244,42 +249,54 @@ extends java.lang.Object</pre>
 </td>
 </tr>
 <tr id="i8" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Behavior.html#compareTo-org.arl.fjage.Behavior-">compareTo</a></span>(<a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.fjage">Behavior</a>&nbsp;obj)</code>
+<div class="block">Implements natural ordering based on behavior priority.</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Behavior.html#done--">done</a></span>()</code>
 <div class="block">This method should return true if the behavior is completed, false otherwise.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Behavior.html#getPriority--">getPriority</a></span>()</code>
+<div class="block">This method should return a number that denotes the priority of a behavior.</div>
+</td>
+</tr>
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Behavior.html#isBlocked--">isBlocked</a></span>()</code>
 <div class="block">Returns true if the behavior is blocked, false otherwise.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Behavior.html#onEnd--">onEnd</a></span>()</code>
 <div class="block">This method is called when a behavior is completed.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Behavior.html#onStart--">onStart</a></span>()</code>
 <div class="block">This method is called when a behavior is added to an agent.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Behavior.html#println-java.lang.String-">println</a></span>(java.lang.String&nbsp;msg)</code>
 <div class="block">Log a message at an INFO level.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Behavior.html#reset--">reset</a></span>()</code>
 <div class="block">Resets a behavior to its initial state.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/Behavior.html#restart--">restart</a></span>()</code>
 <div class="block">Unblocks the behavior if it was blocked.</div>
@@ -409,6 +426,38 @@ extends java.lang.Object</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if behavior is completed, false otherwise.</dd>
+</dl>
+</li>
+</ul>
+<a name="getPriority--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getPriority</h4>
+<pre>public&nbsp;int&nbsp;getPriority()</pre>
+<div class="block">This method should return a number that denotes the priority of a behavior. By
+ default, the priority is 0. Behaviors with lower priority values are executed
+ before behaviors with higher priority values.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>priority value</dd>
+</dl>
+</li>
+</ul>
+<a name="compareTo-org.arl.fjage.Behavior-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>compareTo</h4>
+<pre>public&nbsp;int&nbsp;compareTo(<a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.fjage">Behavior</a>&nbsp;obj)</pre>
+<div class="block">Implements natural ordering based on behavior priority.
+
+ Note: this class has a natural ordering that is inconsistent with equals.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>compareTo</code>&nbsp;in interface&nbsp;<code>java.lang.Comparable&lt;<a href="../../../org/arl/fjage/Behavior.html" title="class in org.arl.fjage">Behavior</a>&gt;</code></dd>
 </dl>
 </li>
 </ul>
