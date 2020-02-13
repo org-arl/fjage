@@ -18,11 +18,11 @@ package org.arl.fjage;
  */
 public class CyclicBehavior extends Behavior {
 
-  //////////// Private attributes
+  ////////// Private attributes
 
   private boolean quit = false;
 
-  //////////// Overridden methods
+  ////////// Overridden methods
 
   /**
    * This method returns false until stop() is called.
@@ -34,6 +34,13 @@ public class CyclicBehavior extends Behavior {
   public final boolean done() {
     return quit;
   }
+
+  @Override
+  public final int getPriority() {
+    return Integer.MAX_VALUE;
+  }
+
+  ////////// Interface methods
 
   /**
    * Terminates the behavior.

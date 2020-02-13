@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  *
  * @author  Mandar Chitre
  */
-public class Behavior {
+public class Behavior implements Comparable<Behavior> {
 
   ////////////// Attributes accessible to all behaviors
 
@@ -90,6 +90,27 @@ public class Behavior {
    */
   public boolean done() {
     return true;
+  }
+
+  /**
+   * This method should return a number that denotes the priority of a behavior. By
+   * default, the priority is 0. Behaviors with lower priority values are executed
+   * before behaviors with higher priority values.
+   *
+   * @return priority value
+   */
+  public int getPriority() {
+    return 0;
+  }
+
+  /**
+   * Implements natural ordering based on behavior priority.
+   *
+   * Note: this class has a natural ordering that is inconsistent with equals.
+   */
+  @Override
+  public int compareTo(Behavior obj) {
+    return Integer.compare(getPriority(), obj.getPriority());
   }
 
   ////////////// Interface methods
@@ -159,13 +180,13 @@ public class Behavior {
 
   /**
    * Convenience method to create an owned agent id for the named agent.
-   * 
+   *
    * @return agent id for the named agent.
    */
   public AgentID agent(String name) {
     return new AgentID(name, agent);
   }
-  
+
   /**
    * Convenience method to find an agent that provides a named service. If multiple agents are registered
    * to provide a given service, any of the agents' id may be returned.
@@ -176,7 +197,7 @@ public class Behavior {
   public AgentID agentForService(String service) {
     return agent.agentForService(service);
   }
-  
+
   /**
    * Convenience method to find an agent that provides a named service. If multiple agents are registered
    * to provide a given service, any of the agents' id may be returned.
@@ -187,7 +208,7 @@ public class Behavior {
   public AgentID agentForService(Enum<?> service) {
     return agent.agentForService(service);
   }
-  
+
   /**
    * Convenience method to find all agents that provides a named service.
    *
@@ -210,7 +231,7 @@ public class Behavior {
 
   /**
    * Log a message at an INFO level.
-   * 
+   *
    * @param msg message to log.
    */
   public void println(String msg) {

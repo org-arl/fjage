@@ -48,6 +48,13 @@ public class WakerBehavior extends Behavior {
     return wakeupTime;
   }
 
+  /**
+   * Terminates the behavior.
+   */
+  public final void stop() {
+    quit = true;
+  }
+
   //////////// Method to be overridden by subclass
 
   /**
@@ -99,23 +106,21 @@ public class WakerBehavior extends Behavior {
   public final boolean done() {
     return quit;
   }
-  
-  /**
-   * Terminates the behavior.
-   */
-  public final void stop() {
-    quit = true;
-  }
 
   /**
    * Resets the behavior, allowing it to be used again.
-   * 
+   *
    * @see org.arl.fjage.Behavior#reset()
    */
   @Override
   public void reset() {
     super.reset();
     quit = false;
+  }
+
+  @Override
+  public int getPriority() {
+    return Integer.MIN_VALUE;
   }
 
 }

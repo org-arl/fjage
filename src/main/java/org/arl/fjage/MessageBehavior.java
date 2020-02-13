@@ -94,10 +94,7 @@ public class MessageBehavior extends Behavior {
   @Override
   public final void action() {
     Message msg;
-    if (filter == null) {
-      if (agent.hasActiveFilteredMessageBehaviors()) return;
-      msg = agent.receive();
-    }
+    if (filter == null) msg = agent.receive();
     else msg = agent.receive(filter, 0);
     if (msg == null) block();
     else onReceive(msg);
@@ -112,6 +109,16 @@ public class MessageBehavior extends Behavior {
   @Override
   public final boolean done() {
     return false;
+  }
+
+  /**
+   * Message behaviors with filters return a priority value of -100 to allow them to be
+   * executed before general message behaviors (no filters, priority value of 0).
+   */
+  @Override
+  public int getPriority() {
+    if (filter != null) return -100;
+    return 0;
   }
 
 }
