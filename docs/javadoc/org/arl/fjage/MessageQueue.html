@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -157,18 +157,22 @@ extends java.lang.Object</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/MessageQueue.html#clear--">clear</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code><a href="../../../org/arl/fjage/Message.html" title="class in org.arl.fjage">Message</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/MessageQueue.html#get--">get</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/MessageQueue.html#commit-java.lang.Iterable-">commit</a></span>(java.lang.Iterable&lt;<a href="../../../org/arl/fjage/MessageFilter.html" title="interface in org.arl.fjage">MessageFilter</a>&gt;&nbsp;exclusions)</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../../../org/arl/fjage/Message.html" title="class in org.arl.fjage">Message</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/MessageQueue.html#get-org.arl.fjage.MessageFilter-">get</a></span>(<a href="../../../org/arl/fjage/MessageFilter.html" title="interface in org.arl.fjage">MessageFilter</a>&nbsp;filter)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/MessageQueue.html#get--">get</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code><a href="../../../org/arl/fjage/Message.html" title="class in org.arl.fjage">Message</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/MessageQueue.html#get-org.arl.fjage.MessageFilter-">get</a></span>(<a href="../../../org/arl/fjage/MessageFilter.html" title="interface in org.arl.fjage">MessageFilter</a>&nbsp;filter)</code>&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/MessageQueue.html#length--">length</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/arl/fjage/MessageQueue.html#setSize-int-">setSize</a></span>(int&nbsp;size)</code>&nbsp;</td>
 </tr>
@@ -236,6 +240,15 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>add</h4>
 <pre>public&nbsp;void&nbsp;add(<a href="../../../org/arl/fjage/Message.html" title="class in org.arl.fjage">Message</a>&nbsp;m)</pre>
+</li>
+</ul>
+<a name="commit-java.lang.Iterable-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>commit</h4>
+<pre>public&nbsp;void&nbsp;commit(java.lang.Iterable&lt;<a href="../../../org/arl/fjage/MessageFilter.html" title="interface in org.arl.fjage">MessageFilter</a>&gt;&nbsp;exclusions)</pre>
 </li>
 </ul>
 <a name="get--">
