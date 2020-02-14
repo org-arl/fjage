@@ -29,9 +29,14 @@ public class ParameterMessageBehavior extends MessageBehavior {
 
   @Override
   public void onReceive(Message msg) {
-    ParameterReq req = (ParameterReq)msg;
-    ParameterRsp rsp = processParameterReq(req, null);
-    if (rsp != null) agent.send(rsp);
+    final ParameterReq req = (ParameterReq)msg;
+    agent.add(new OneShotBehavior() {
+      @Override
+      public void action() {
+        ParameterRsp rsp = processParameterReq(req, null);
+        if (rsp != null) agent.send(rsp);
+      }
+    });
   }
 
   /**

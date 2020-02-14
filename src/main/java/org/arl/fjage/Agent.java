@@ -78,9 +78,10 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   private AgentID aid = null;
   private volatile AgentState state = AgentState.INIT;
   private volatile AgentState oldState = AgentState.NONE;
-  private Queue<Behavior> newBehaviors = new ArrayDeque<Behavior>();
-  private Queue<Behavior> activeBehaviors = new PriorityQueue<Behavior>();
-  private Queue<Behavior> blockedBehaviors = new ArrayDeque<Behavior>();
+  private Queue<Behavior> newBehaviors = new ArrayDeque<>();
+  private Queue<Behavior> activeBehaviors = new PriorityQueue<>();
+  private Queue<Behavior> blockedBehaviors = new ArrayDeque<>();
+  private Stack<MessageFilter> exclusions = new Stack<>();
   private volatile boolean restartBehaviors = false;
   private boolean unblocked = false;
   private Platform platform = null;
@@ -434,18 +435,22 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
     if (Thread.currentThread().getId() != tid)
       throw new FjageException("receive() should only be called from agent thread");
     long deadline = 0;
+    queue.commit(exclusions);
     Message m = queue.get(filter);
     if (m == null && timeout != NON_BLOCKING) {
       if (timeout != BLOCKING) deadline = currentTimeMillis() + timeout;
       do {
+        exclusions.push(filter);
         if (timeout == BLOCKING) {
           if (!yieldDuringReceive || !executeBehavior()) block();
         } else if (!yieldDuringReceive || !executeBehavior()) {
           long t = deadline - currentTimeMillis();
           block(t);
         }
+        exclusions.pop();
         if (Thread.interrupted()) return null;
         if (state == AgentState.FINISHING) return null;
+        queue.commit(exclusions);
         m = queue.get(filter);
       } while (m == null && (timeout == BLOCKING || currentTimeMillis() < deadline));
     }
@@ -727,6 +732,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
         restartBehaviors = false;
         activeBehaviors.addAll(blockedBehaviors);
         blockedBehaviors.clear();
+        queue.commit(exclusions);
       }
     } else {
       Iterator<Behavior> iterator = blockedBehaviors.iterator();

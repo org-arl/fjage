@@ -23,6 +23,7 @@ public class MessageQueue {
   /////////// Private attributes
 
   private LinkedList<Message> queue = new LinkedList<Message>();
+  private LinkedList<Message> quarantine = new LinkedList<Message>();
   private int maxQueueLen;
 
   /////////// Interface methods
@@ -42,7 +43,27 @@ public class MessageQueue {
   }
 
   public synchronized void add(Message m) {
-    queue.offer(m);
+    quarantine.offer(m);
+    while (maxQueueLen > 0 && quarantine.size() >= maxQueueLen)
+      quarantine.remove();
+  }
+
+  public synchronized void commit(Iterable<MessageFilter> exclusions) {
+    Iterator<Message> it = quarantine.iterator();
+    while (it.hasNext()) {
+      Message m = it.next();
+      boolean exclude = false;
+      for (MessageFilter mf: exclusions) {
+        if (mf == null || mf.matches(m)) {
+          exclude = true;
+          break;
+        }
+      }
+      if (!exclude) {
+        it.remove();
+        queue.offer(m);
+      }
+    }
     while (maxQueueLen > 0 && queue.size() >= maxQueueLen)
       queue.remove();
   }
