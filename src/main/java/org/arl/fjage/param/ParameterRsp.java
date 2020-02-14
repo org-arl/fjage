@@ -27,6 +27,7 @@ public class ParameterRsp extends Message {
   protected Map<Parameter, GenericValue> values = null;
   protected Parameter param;
   protected GenericValue value;
+  protected Set<Parameter> readonly = new HashSet<>();
 
   /**
    * Constructs a response message.
@@ -69,8 +70,9 @@ public class ParameterRsp extends Message {
    *
    * @param param parameter
    * @param value value
+   * @param readonly true if read-only, false if read-write
    */
-  public void set(Parameter param, Object value) {
+  public void set(Parameter param, Object value, boolean readonly) {
     if (this.param == null) {
       this.param = param;
       this.value =  new GenericValue(value);
@@ -78,6 +80,7 @@ public class ParameterRsp extends Message {
       if (values == null) values = new HashMap<Parameter, GenericValue>();
       values.put(param, new GenericValue(value));
     }
+    if (readonly) this.readonly.add(param);
   }
 
   /**
@@ -100,6 +103,16 @@ public class ParameterRsp extends Message {
     }
     if (rv instanceof Double && ((Double)rv).intValue() == ((Double)rv).doubleValue()) rv = new Integer(((Double)rv).intValue());
     return rv;
+  }
+
+  /**
+   * Checks if a parameter is read-only.
+   *
+   * @param param {@link Parameter}
+   * @return true if parameter is read-only, false if read-write
+   */
+  public boolean isReadonly(Parameter param) {
+    return readonly.contains(param);
   }
 
   /**
@@ -140,6 +153,7 @@ public class ParameterRsp extends Message {
     Object v = null;
     if (param != null) {
       sb.append(param);
+      if (isReadonly(param)) sb.append('*');
       sb.append(':');
       if (value != null) {
         v = value.getValue();

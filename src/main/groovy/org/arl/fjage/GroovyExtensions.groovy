@@ -126,8 +126,9 @@ class GroovyExtensions {
       rsp.parameters().each {
         if (!(it instanceof NamedParameter)) {
           String s = "${rsp.get(it)}"
+          boolean ro = rsp.isReadonly(it)
           if (s.length() > 64) s = "${s[0..31]} ... ${s[-31..-1]}"
-          out.add "${it.class.name}#${it} = ${s}\n"
+          out.add "${it.class.name}#${it} ${ro?'⤇':'='} ${s}\n"
         }
       }
       String title = rsp.get(new NamedParameter('title'))
@@ -135,7 +136,7 @@ class GroovyExtensions {
       if (title == null) title = req.recipient.name.toUpperCase()
       if (!out.isEmpty()) Collections.sort(out)
       StringBuffer sb = new StringBuffer();
-      sb.append "<<< ${title} >>>\n"
+      sb.append "« ${title} »\n"
       if (description) sb.append "\n${description}\n"
       String pcls = null
       out.each {
@@ -143,7 +144,7 @@ class GroovyExtensions {
         if (pos >= 1) {
           def pc = it.substring(0, pos).replace('$', '.')
           if (!pc.equals(pcls)) {
-            sb.append "\n[$pc]\n"
+            sb.append "\n[${pc}]\n"
             pcls = pc
           }
           it = it.substring(pos+1)

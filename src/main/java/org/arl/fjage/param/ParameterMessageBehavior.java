@@ -118,6 +118,33 @@ public class ParameterMessageBehavior extends MessageBehavior {
   }
 
   /**
+   * Agents providing dynamic parameters may override this method to specify
+   * whether a parameter is read-only or read-write. The default behavior of this
+   * method is to guess whether the parameter is read-only based on whether the
+   * associated atrribute is marked as {@code  final} or from a missing setter in
+   * the Java bean convention.
+   *
+   * @param p parameter to check.
+   * @param ndx index for indexed parameters, -1 if non-indexed.
+   * @return true if read-only, false if read-write.
+   */
+  protected boolean isReadOnly(Parameter p, int ndx) {
+    String fldName = p.toString();
+    String methodNameFragment = fldName.substring(0, 1).toUpperCase() + fldName.substring(1);
+    if (isCallable("set"+methodNameFragment, ndx<0?1:2)) return false;
+    if (ndx < 0) {
+      try {
+        Field f = agent.getClass().getField(fldName);
+        int mod = f.getModifiers();
+        if (Modifier.isPublic(mod) && !Modifier.isFinal(mod)) return false;
+      } catch (NoSuchFieldException ex) {
+        // do nothing
+      }
+    }
+    return true;
+  }
+
+  /**
    * Generate a list of parameters from a parameter enumeration.
    *
    * @param paramEnumClasses enums representing the parameters.
@@ -170,16 +197,16 @@ public class ParameterMessageBehavior extends MessageBehavior {
         if (evalue == null) {
           // get request
           try {
-            if (fldName.equals("type")) rsp.set(e.param, agent.getClass().getName());     // special automatic parameter
-            else if (ndx < 0) rsp.set(e.param, MethodUtils.invokeMethod(agent, "get" + methodNameFragment));
-            else rsp.set(e.param, MethodUtils.invokeMethod(agent, "get" + methodNameFragment, ndx));
+            if (fldName.equals("type")) rsp.set(e.param, agent.getClass().getName(), true);     // special automatic parameter
+            else if (ndx < 0) rsp.set(e.param, MethodUtils.invokeMethod(agent, "get" + methodNameFragment), isReadOnly(e.param, ndx));
+            else rsp.set(e.param, MethodUtils.invokeMethod(agent, "get" + methodNameFragment, ndx), isReadOnly(e.param, ndx));
           } catch (NoSuchMethodException ex) {
             Object rv = getParam(e.param, ndx);
-            if (rv != null) rsp.set(e.param, rv);
+            if (rv != null) rsp.set(e.param, rv, isReadOnly(e.param, ndx));
             else {
               if (ndx >= 0) throw ex;
               Field f = cls.getField(fldName);
-              rsp.set(e.param, f.get(agent));
+              rsp.set(e.param, f.get(agent), isReadOnly(e.param, ndx));
             }
           }
         } else {
@@ -198,20 +225,21 @@ public class ParameterMessageBehavior extends MessageBehavior {
                 if (sv == null) sv = evalue;
               }
             }
-            if (sv != null) rsp.set(e.param, sv);
+            if (sv != null) rsp.set(e.param, sv, false);
           } catch (NoSuchMethodException ex) {
             Object rv = setParam(e.param, ndx, evalue);
             if (rv != null) {
-              rsp.set(e.param, rv);
+              rsp.set(e.param, rv, isReadOnly(e.param, ndx));
             } else {
               if (ndx >= 0) throw ex;
               Field f = cls.getField(fldName);
+              boolean ro = false;
               try {
                 f.set(agent, evalue);
               } catch (IllegalAccessException ex1) {
-                // do nothing
+                ro = true;
               }
-              rsp.set(e.param, f.get(agent));
+              rsp.set(e.param, f.get(agent), ro);
             }
           }
         }
@@ -286,6 +314,21 @@ public class ParameterMessageBehavior extends MessageBehavior {
       }
     }
     throw nsme;
+  }
+
+  private boolean isCallable(String methodName, int params) {
+    Class<?> cls = agent.getClass();
+    for (Method m: cls.getMethods()) {
+      if (m.getName().equals(methodName) && m.getParameterCount() == params) {
+        int mod = m.getModifiers();
+        if (Modifier.isPublic(mod) && !Modifier.isAbstract(mod)) {
+          if (params == 1) return true;
+          Class<?>[] p = m.getParameterTypes();
+          if (p[0].equals(Integer.class) || p[0].equals(Integer.TYPE)) return true;
+        }
+      }
+    }
+    return false;
   }
 
 }
