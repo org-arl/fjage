@@ -1,3 +1,13 @@
+/******************************************************************************
+
+Copyright (c) 2019, Mandar Chitre
+
+This file is part of fjage which is released under Simplified BSD License.
+See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
+for full license details.
+
+******************************************************************************/
+
 package org.arl.fjage.param;
 
 import java.util.*;
@@ -5,20 +15,41 @@ import java.lang.reflect.*;
 import org.arl.fjage.*;
 import org.apache.commons.lang3.reflect.MethodUtils;
 
+/**
+ * Behavior to handle parameter messages. To enable parameters on an agent,
+ * simply add this behavior during {@code init()} of the agent:
+ * <pre>
+ * add(new ParameterMessageBehavior(MyParams.class));
+ * </pre>
+ * where {@code enum MyParams} lists the parameters supported by the agent.
+ * The parameters may be exposed as {@code public} attributes (read-only if
+ * marked {@code final}), getters/setters using JavaBean convention, or
+ * by overridding {@link #getParam(Parameter, int)} and
+ * {@link #setParam(Parameter, int, Object)} methods of this behavior.
+ */
 public class ParameterMessageBehavior extends MessageBehavior {
 
   private List<? extends Parameter> params;
 
+  /**
+   * Creates a parameter message behavior with no parameters.
+   */
   public ParameterMessageBehavior() {
     super(ParameterReq.class);
     this.params = null;
   }
 
+  /**
+   * Creates a parameter message behavior with parameters specified in a list.
+   */
   public ParameterMessageBehavior(List<? extends Parameter> params) {
     super(ParameterReq.class);
     this.params = params;
   }
 
+  /**
+   * Creates a parameter message behavior with parameters specified by enums.
+   */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public ParameterMessageBehavior(Class ... paramEnumClasses) {
     super(ParameterReq.class);

@@ -123,6 +123,16 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public class <span class="typeNameLabel">ParameterMessageBehavior</span>
 extends <a href="../../../../org/arl/fjage/MessageBehavior.html" title="class in org.arl.fjage">MessageBehavior</a></pre>
+<div class="block">Behavior to handle parameter messages. To enable parameters on an agent,
+ simply add this behavior during <code>init()</code> of the agent:
+ <pre>
+ add(new ParameterMessageBehavior(MyParams.class));
+ </pre>
+ where <code>enum MyParams</code> lists the parameters supported by the agent.
+ The parameters may be exposed as <code>public</code> attributes (read-only if
+ marked <code>final</code>), getters/setters using JavaBean convention, or
+ by overridding <a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#getParam-org.arl.fjage.param.Parameter-int-"><code>getParam(Parameter, int)</code></a> and
+ <a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#setParam-org.arl.fjage.param.Parameter-int-java.lang.Object-"><code>setParam(Parameter, int, Object)</code></a> methods of this behavior.</div>
 </li>
 </ul>
 </div>
@@ -156,13 +166,19 @@ extends <a href="../../../../org/arl/fjage/MessageBehavior.html" title="class in
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#ParameterMessageBehavior--">ParameterMessageBehavior</a></span>()</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#ParameterMessageBehavior--">ParameterMessageBehavior</a></span>()</code>
+<div class="block">Creates a parameter message behavior with no parameters.</div>
+</td>
 </tr>
 <tr class="rowColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#ParameterMessageBehavior-java.lang.Class...-">ParameterMessageBehavior</a></span>(java.lang.Class...&nbsp;paramEnumClasses)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#ParameterMessageBehavior-java.lang.Class...-">ParameterMessageBehavior</a></span>(java.lang.Class...&nbsp;paramEnumClasses)</code>
+<div class="block">Creates a parameter message behavior with parameters specified by enums.</div>
+</td>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#ParameterMessageBehavior-java.util.List-">ParameterMessageBehavior</a></span>(java.util.List&lt;? extends <a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&gt;&nbsp;params)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#ParameterMessageBehavior-java.util.List-">ParameterMessageBehavior</a></span>(java.util.List&lt;? extends <a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&gt;&nbsp;params)</code>
+<div class="block">Creates a parameter message behavior with parameters specified in a list.</div>
+</td>
 </tr>
 </table>
 </li>
@@ -273,6 +289,7 @@ extends <a href="../../../../org/arl/fjage/MessageBehavior.html" title="class in
 <li class="blockList">
 <h4>ParameterMessageBehavior</h4>
 <pre>public&nbsp;ParameterMessageBehavior()</pre>
+<div class="block">Creates a parameter message behavior with no parameters.</div>
 </li>
 </ul>
 <a name="ParameterMessageBehavior-java.util.List-">
@@ -282,6 +299,7 @@ extends <a href="../../../../org/arl/fjage/MessageBehavior.html" title="class in
 <li class="blockList">
 <h4>ParameterMessageBehavior</h4>
 <pre>public&nbsp;ParameterMessageBehavior(java.util.List&lt;? extends <a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&gt;&nbsp;params)</pre>
+<div class="block">Creates a parameter message behavior with parameters specified in a list.</div>
 </li>
 </ul>
 <a name="ParameterMessageBehavior-java.lang.Class...-">
@@ -291,6 +309,7 @@ extends <a href="../../../../org/arl/fjage/MessageBehavior.html" title="class in
 <li class="blockList">
 <h4>ParameterMessageBehavior</h4>
 <pre>public&nbsp;ParameterMessageBehavior(java.lang.Class...&nbsp;paramEnumClasses)</pre>
+<div class="block">Creates a parameter message behavior with parameters specified by enums.</div>
 </li>
 </ul>
 </li>
