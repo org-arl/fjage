@@ -302,7 +302,7 @@ public class SlaveContainer extends RemoteContainer {
               master.start();
               master.join();
               log.info("Connection to "+hostname+(port>=0?":"+port:"@"+baud)+" lost");
-              synchronized (this) {
+              synchronized (SlaveContainer.this) {
                 master = null;
               }
             } catch (IOException ex) {
