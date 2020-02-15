@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -151,10 +151,14 @@ extends <a href="../../../../org/arl/fjage/Message.html" title="class in org.arl
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterRsp.html#param">param</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>protected java.util.Set&lt;<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterRsp.html#readonly">readonly</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../../org/arl/fjage/GenericValue.html" title="class in org.arl.fjage">GenericValue</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterRsp.html#value">value</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>protected java.util.Map&lt;<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>,<a href="../../../../org/arl/fjage/GenericValue.html" title="class in org.arl.fjage">GenericValue</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterRsp.html#values">values</a></span></code>&nbsp;</td>
 </tr>
@@ -224,25 +228,32 @@ extends <a href="../../../../org/arl/fjage/Message.html" title="class in org.arl
 </td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterRsp.html#isReadonly-org.arl.fjage.param.Parameter-">isReadonly</a></span>(<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&nbsp;param)</code>
+<div class="block">Checks if a parameter is read-only.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>java.util.Set&lt;<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterRsp.html#parameters--">parameters</a></span>()</code>
 <div class="block">Gets all requested parameters as set.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterRsp.html#set-org.arl.fjage.param.Parameter-java.lang.Object-">set</a></span>(<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&nbsp;param,
-   java.lang.Object&nbsp;value)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterRsp.html#set-org.arl.fjage.param.Parameter-java.lang.Object-boolean-">set</a></span>(<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&nbsp;param,
+   java.lang.Object&nbsp;value,
+   boolean&nbsp;readonly)</code>
 <div class="block">Sets the parameter.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterRsp.html#setIndex-int-">setIndex</a></span>(int&nbsp;index)</code>
 <div class="block">Sets the index for parameter.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterRsp.html#toString--">toString</a></span>()</code>
 <div class="block">Gets a string representation of the message.</div>
@@ -307,10 +318,19 @@ extends <a href="../../../../org/arl/fjage/Message.html" title="class in org.arl
 <a name="value">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>value</h4>
 <pre>protected&nbsp;<a href="../../../../org/arl/fjage/GenericValue.html" title="class in org.arl.fjage">GenericValue</a> value</pre>
+</li>
+</ul>
+<a name="readonly">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>readonly</h4>
+<pre>protected&nbsp;java.util.Set&lt;<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&gt; readonly</pre>
 </li>
 </ul>
 </li>
@@ -381,19 +401,21 @@ extends <a href="../../../../org/arl/fjage/Message.html" title="class in org.arl
 </dl>
 </li>
 </ul>
-<a name="set-org.arl.fjage.param.Parameter-java.lang.Object-">
+<a name="set-org.arl.fjage.param.Parameter-java.lang.Object-boolean-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>set</h4>
 <pre>public&nbsp;void&nbsp;set(<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&nbsp;param,
-                java.lang.Object&nbsp;value)</pre>
+                java.lang.Object&nbsp;value,
+                boolean&nbsp;readonly)</pre>
 <div class="block">Sets the parameter.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>param</code> - parameter</dd>
 <dd><code>value</code> - value</dd>
+<dd><code>readonly</code> - true if read-only, false if read-write</dd>
 </dl>
 </li>
 </ul>
@@ -410,6 +432,22 @@ extends <a href="../../../../org/arl/fjage/Message.html" title="class in org.arl
 <dd><code>param</code> - <a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param"><code>Parameter</code></a></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>value of requested parameter</dd>
+</dl>
+</li>
+</ul>
+<a name="isReadonly-org.arl.fjage.param.Parameter-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isReadonly</h4>
+<pre>public&nbsp;boolean&nbsp;isReadonly(<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&nbsp;param)</pre>
+<div class="block">Checks if a parameter is read-only.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>param</code> - <a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param"><code>Parameter</code></a></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if parameter is read-only, false if read-write</dd>
 </dl>
 </li>
 </ul>

@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
+var methods = {"i0":9,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -224,20 +224,28 @@ extends <a href="../../../../org/arl/fjage/MessageBehavior.html" title="class in
 </td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code>protected boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#isReadOnly-org.arl.fjage.param.Parameter-int-">isReadOnly</a></span>(<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&nbsp;p,
+          int&nbsp;ndx)</code>
+<div class="block">Agents providing dynamic parameters may override this method to specify
+ whether a parameter is read-only or read-write.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#onReceive-org.arl.fjage.Message-">onReceive</a></span>(<a href="../../../../org/arl/fjage/Message.html" title="class in org.arl.fjage">Message</a>&nbsp;msg)</code>
 <div class="block">This method is called for each message meeting the acceptance criteria of
  this behavior.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>protected <a href="../../../../org/arl/fjage/param/ParameterRsp.html" title="class in org.arl.fjage.param">ParameterRsp</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#processParameterReq-org.arl.fjage.param.ParameterReq-org.arl.fjage.param.ParameterRsp-">processParameterReq</a></span>(<a href="../../../../org/arl/fjage/param/ParameterReq.html" title="class in org.arl.fjage.param">ParameterReq</a>&nbsp;msg,
                    <a href="../../../../org/arl/fjage/param/ParameterRsp.html" title="class in org.arl.fjage.param">ParameterRsp</a>&nbsp;rsp)</code>
 <div class="block">Default handling of parameter requests is provided by this method.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>protected java.lang.Object</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/param/ParameterMessageBehavior.html#setParam-org.arl.fjage.param.Parameter-int-java.lang.Object-">setParam</a></span>(<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&nbsp;p,
         int&nbsp;ndx,
@@ -407,6 +415,28 @@ extends <a href="../../../../org/arl/fjage/MessageBehavior.html" title="class in
 <dd><code>v</code> - value of the parameter.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>new value of the parameter.</dd>
+</dl>
+</li>
+</ul>
+<a name="isReadOnly-org.arl.fjage.param.Parameter-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isReadOnly</h4>
+<pre>protected&nbsp;boolean&nbsp;isReadOnly(<a href="../../../../org/arl/fjage/param/Parameter.html" title="interface in org.arl.fjage.param">Parameter</a>&nbsp;p,
+                             int&nbsp;ndx)</pre>
+<div class="block">Agents providing dynamic parameters may override this method to specify
+ whether a parameter is read-only or read-write. The default behavior of this
+ method is to guess whether the parameter is read-only based on whether the
+ associated atrribute is marked as <code>final</code> or from a missing setter in
+ the Java bean convention.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>p</code> - parameter to check.</dd>
+<dd><code>ndx</code> - index for indexed parameters, -1 if non-indexed.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if read-only, false if read-write.</dd>
 </dl>
 </li>
 </ul>
