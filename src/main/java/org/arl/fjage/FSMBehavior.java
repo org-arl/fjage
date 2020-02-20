@@ -49,13 +49,12 @@ public class FSMBehavior extends Behavior {
   private State initial = FINAL;
   private State state = INIT;
   private State next = INIT;
+  private State old = INIT;
 
   //////////// Overridden methods from superclass
 
   @Override
   public void action() {
-    State old = state;
-    state = next;
     if (state == INIT) state = initial;
     if (old == state) state.action();
     else {
@@ -63,6 +62,8 @@ public class FSMBehavior extends Behavior {
       old.onExit();
       state.onEnter();
     }
+    old = state;
+    state = next;
   }
 
   @Override
