@@ -55,7 +55,7 @@ public class FSMBehavior extends Behavior {
 
   @Override
   public void action() {
-    if (state == INIT) state = initial;
+    if (state == INIT) state = next = initial;
     if (old == state) state.action();
     else {
       if (state == REENTER) state = next = old;
@@ -64,6 +64,7 @@ public class FSMBehavior extends Behavior {
     }
     old = state;
     state = next;
+    if (old != state) restart();
   }
 
   @Override
