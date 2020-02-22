@@ -3,86 +3,6 @@
 const TIMEOUT = 1000;              // ms, timeout to get response from to master container
 const RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
 
-////// global
-
-if (typeof window.fjage === 'undefined') {
-  window.fjage = {};
-  window.fjage.gateways = [];
-  window.fjage.MessageClass = MessageClass;
-  window.fjage.getGateway = function (url){
-    var f = window.fjage.gateways.filter(g => g.sock.url == url);
-    if (f.length ) return f[0];
-  };
-}
-
-////// private utilities
-
-// generate random ID with length 4*len characters
-function _guid(len) {
-  function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-  }
-  let s = s4();
-  for (var i = 0; i < len-1; i++)
-    s += s4();
-  return s;
-}
-
-// convert from base 64 to array
-function _b64toArray(base64, dtype, littleEndian=true) {
-  let s =  window.atob(base64);
-  let len = s.length;
-  let bytes = new Uint8Array(len);
-  for (var i = 0; i < len; i++)
-    bytes[i] = s.charCodeAt(i);
-  let rv = [];
-  let view = new DataView(bytes.buffer);
-  switch (dtype) {
-  case '[B': // byte array
-    for (i = 0; i < len; i++)
-      rv.push(view.getUint8(i));
-    break;
-  case '[S': // short array
-    for (i = 0; i < len; i+=2)
-      rv.push(view.getInt16(i, littleEndian));
-    break;
-  case '[I': // integer array
-    for (i = 0; i < len; i+=4)
-      rv.push(view.getInt32(i, littleEndian));
-    break;
-  case '[J': // long array
-    for (i = 0; i < len; i+=8)
-      rv.push(view.getInt64(i, littleEndian));
-    break;
-  case '[F': // float array
-    for (i = 0; i < len; i+=4)
-      rv.push(view.getFloat32(i, littleEndian));
-    break;
-  case '[D': // double array
-    for (i = 0; i < len; i+=8)
-      rv.push(view.getFloat64(i, littleEndian));
-    break;
-  default:
-    return;
-  }
-  return rv;
-}
-
-// base 64 JSON decoder
-function _decodeBase64(k, d) {
-  if (d === null) {
-    return null;
-  }
-  if (typeof d == 'object' && 'clazz' in d) {
-    let clazz = d.clazz;
-    if (clazz.startsWith('[') && clazz.length == 2 && 'data' in d) {
-      let x = _b64toArray(d.data, d.clazz);
-      if (x) d = x;
-    }
-  }
-  return d;
-}
-
 ////// interface classes
 
 /**
@@ -269,9 +189,6 @@ export class Message {
     return rv;
   }
 }
-
-Message.__clazz__ = 'org.arl.fjage.Message';
-if (!window['Message']) window['Message'] = Message;
 
 /**
  * A message class that can convey generic messages represented by key-value pairs.
@@ -743,4 +660,86 @@ export function MessageClass(name, parent=Message) {
   };
   window[sname].__clazz__ = name;
   return window[sname];
+}
+
+////// global
+
+if (typeof window.fjage === 'undefined') {
+  window.fjage = {};
+  window.fjage.gateways = [];
+  window.fjage.MessageClass = MessageClass;
+  window.fjage.getGateway = function (url){
+    var f = window.fjage.gateways.filter(g => g.sock.url == url);
+    if (f.length ) return f[0];
+  };
+  Message.__clazz__ = 'org.arl.fjage.Message';
+  window['Message'] = Message;
+}
+
+////// private utilities
+
+// generate random ID with length 4*len characters
+function _guid(len) {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  }
+  let s = s4();
+  for (var i = 0; i < len-1; i++)
+    s += s4();
+  return s;
+}
+
+// convert from base 64 to array
+function _b64toArray(base64, dtype, littleEndian=true) {
+  let s =  window.atob(base64);
+  let len = s.length;
+  let bytes = new Uint8Array(len);
+  for (var i = 0; i < len; i++)
+    bytes[i] = s.charCodeAt(i);
+  let rv = [];
+  let view = new DataView(bytes.buffer);
+  switch (dtype) {
+  case '[B': // byte array
+    for (i = 0; i < len; i++)
+      rv.push(view.getUint8(i));
+    break;
+  case '[S': // short array
+    for (i = 0; i < len; i+=2)
+      rv.push(view.getInt16(i, littleEndian));
+    break;
+  case '[I': // integer array
+    for (i = 0; i < len; i+=4)
+      rv.push(view.getInt32(i, littleEndian));
+    break;
+  case '[J': // long array
+    for (i = 0; i < len; i+=8)
+      rv.push(view.getInt64(i, littleEndian));
+    break;
+  case '[F': // float array
+    for (i = 0; i < len; i+=4)
+      rv.push(view.getFloat32(i, littleEndian));
+    break;
+  case '[D': // double array
+    for (i = 0; i < len; i+=8)
+      rv.push(view.getFloat64(i, littleEndian));
+    break;
+  default:
+    return;
+  }
+  return rv;
+}
+
+// base 64 JSON decoder
+function _decodeBase64(k, d) {
+  if (d === null) {
+    return null;
+  }
+  if (typeof d == 'object' && 'clazz' in d) {
+    let clazz = d.clazz;
+    if (clazz.startsWith('[') && clazz.length == 2 && 'data' in d) {
+      let x = _b64toArray(d.data, d.clazz);
+      if (x) d = x;
+    }
+  }
+  return d;
 }
