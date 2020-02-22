@@ -8,9 +8,6 @@
             "ecmaVersion": 2017,
             "sourceType": "module"
     },
-    "plugins": [
-            "html"
-    ],
     "extends": "eslint:recommended",
     "rules": {
         "no-console": 0,

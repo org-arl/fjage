@@ -270,6 +270,9 @@ export class Message {
   }
 }
 
+Message.__clazz__ = 'org.arl.fjage.Message';
+if (!window['Message']) window['Message'] = Message;
+
 /**
  * A message class that can convey generic messages represented by key-value pairs.
  * @extends Message
@@ -719,11 +722,14 @@ export class Gateway {
 /**
  * Creates a unqualified message class based on a fully qualified name.
  * @param {string} name - fully qualified name of the message class to be created.
+ * @param {string} [parent] - Class of the parent MessageClass to inherit from.
  * @returns {function} constructor for the unqualified message class.
  */
-export function MessageClass(name) {
+export function MessageClass(name, parent=Message) {
   let sname = name.replace(/^.*\./, '');
-  window[sname] = class extends Message {
+  if (window[sname]) return window[sname];
+  let pname = parent.__clazz__.replace(/^.*\./, '');
+  window[sname] = class extends window[pname] {
     constructor(params) {
       super();
       this.__clazz__ = name;
