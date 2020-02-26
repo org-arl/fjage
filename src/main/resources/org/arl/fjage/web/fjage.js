@@ -644,7 +644,6 @@ export class Gateway {
  */
 export function MessageClass(name, parent=Message) {
   let sname = name.replace(/^.*\./, '');
-  if (window[sname]) return window[sname];
   let pname = parent.__clazz__.replace(/^.*\./, '');
   window[sname] = class extends window[pname] {
     constructor(params) {
