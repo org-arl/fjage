@@ -637,6 +637,13 @@ export class Gateway {
 }
 
 /**
+ * Services supported by fjage agents.
+ */
+export const Services = {
+  SHELL : 'org.arl.fjage.shell.Services.SHELL'
+};
+
+/**
  * Creates a unqualified message class based on a fully qualified name.
  * @param {string} name - fully qualified name of the message class to be created.
  * @param {string} [parent] - Class of the parent MessageClass to inherit from.
