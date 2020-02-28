@@ -118,6 +118,18 @@ public class ParameterMessageBehavior extends MessageBehavior {
   }
 
   /**
+   * Agents may provide a behavior to be executed every time a parameter has
+   * been updated by overriding this method.
+   *
+   * @param p parameter to set value.
+   * @param ndx index for indexed parameters, -1 if non-indexed.
+   * @param v value of the parameter.
+   */
+  protected void onParamChange(Parameter p, int ndx, Object v) {
+
+  }
+
+  /**
    * Agents providing dynamic parameters may override this method to specify
    * whether a parameter is read-only or read-write. The default behavior of this
    * method is to guess whether the parameter is read-only based on whether the
@@ -225,11 +237,15 @@ public class ParameterMessageBehavior extends MessageBehavior {
                 if (sv == null) sv = evalue;
               }
             }
-            if (sv != null) rsp.set(e.param, sv, false);
+            if (sv != null) {
+              rsp.set(e.param, sv, false);
+              onParamChange(e.param, ndx, sv);
+            }
           } catch (NoSuchMethodException ex) {
             Object rv = setParam(e.param, ndx, evalue);
             if (rv != null) {
               rsp.set(e.param, rv, isReadOnly(e.param, ndx));
+              onParamChange(e.param, ndx, rv);
             } else {
               if (ndx >= 0) throw ex;
               Field f = cls.getField(fldName);
@@ -239,7 +255,9 @@ public class ParameterMessageBehavior extends MessageBehavior {
               } catch (IllegalAccessException ex1) {
                 ro = true;
               }
-              rsp.set(e.param, f.get(agent), ro);
+              rv = f.get(agent);
+              rsp.set(e.param, rv, ro);
+              onParamChange(e.param, ndx, rv);
             }
           }
         }
