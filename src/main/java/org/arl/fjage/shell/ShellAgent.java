@@ -134,7 +134,10 @@ public class ShellAgent extends Agent {
   @Override
   public void init() {
     log.info("Agent "+getName()+" init");
-    if (!ephemeral) register(Services.SHELL);
+    if (!ephemeral) {
+      register(Services.SHELL);
+      setYieldDuringReceive(true);
+    }
 
     // support parameters
     add(new ParameterMessageBehavior(ShellParam.class));

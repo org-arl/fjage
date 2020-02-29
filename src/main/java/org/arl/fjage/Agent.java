@@ -87,7 +87,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   private Platform platform = null;
   private Container container = null;
   private MessageQueue queue = new MessageQueue(256);
-  private boolean yieldDuringReceive = true;
+  private boolean yieldDuringReceive = false;
   protected long tid = -1;
   protected Thread thread = null;
   protected boolean ignoreExceptions = false;
