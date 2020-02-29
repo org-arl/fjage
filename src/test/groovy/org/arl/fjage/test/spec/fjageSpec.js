@@ -28,7 +28,7 @@ function fjageMessageChecker() {
 
       if (!msg.message) return ret;
 
-      ret = ret && (!msg.message.clazz || typeof msg.message.clazz === "string");
+      ret = ret && (!msg.message.clazz || typeof msg.message.clazz === 'string');
 
       if (!msg.message.data) return ret;
 
@@ -254,6 +254,32 @@ describe('A Message', function () {
     const txMsg = new TxFrameReq();
     expect(msg1).toEqual(msg2);
     expect(Message._deserialize(txMsg._serialize())).toEqual(txMsg);
+  });
+});
+
+describe('A MessageClass', function () {
+  it('should be able to create a custom Message', function () {
+    expect(() => {
+      let msgName = 'NewMessage';
+      const NewMessage = MessageClass(msgName);
+      expect(typeof NewMessage).toEqual('function');
+      expect(NewMessage.__clazz__).toEqual(msgName);
+      let nm = new NewMessage();
+    }).not.toThrow();
+  });
+
+  it('should be able to create a custom Message with parent Message', function () {
+    expect(() => {
+      let msgName = 'New2Message';
+      let parentName = 'ParentMessage';
+      const ParentMessage = MessageClass(parentName);
+      const NewMessage = MessageClass(msgName, ParentMessage);
+      expect(typeof NewMessage).toEqual('function');
+      expect(NewMessage.__clazz__).toEqual(msgName);
+      let nm = new NewMessage();
+      expect(nm instanceof NewMessage).toBeTruthy();
+      expect(nm instanceof ParentMessage).toBeTruthy();
+    }).not.toThrow();
   });
 });
 
