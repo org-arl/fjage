@@ -11,15 +11,28 @@ for full license details.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+
+#if defined(_LINUX) || defined (_DARWIN)
+#include <unistd.h>
 #include <netdb.h>
 #include <termios.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
+
+#ifdef _WIN32
+#pragma comment(lib, "ws2_32.lib")
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <io.h>
+#include <winsock2.h>
+#include <Ws2tcpip.h>
+#endif
+
 #include "fjage.h"
 #include "jsmn.h"
 #include "b64.h"
@@ -77,6 +90,42 @@ static int writes(int fd, const char* s) {
   int n = strlen(s);
   return write(fd, s, n);
 }
+
+#ifdef _WIN32
+int gettimeofday(struct timeval * tp, struct timezone * tzp)
+{
+    // Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+    // This magic number is the number of 100 nanosecond intervals since January 1, 1601 (UTC)
+    // until 00:00:00 January 1, 1970
+    static const uint64_t EPOCH = ((uint64_t) 116444736000000000ULL);
+
+    SYSTEMTIME  system_time;
+    FILETIME    file_time;
+    uint64_t    time;
+
+    GetSystemTime( &system_time );
+    SystemTimeToFileTime( &system_time, &file_time );
+    time =  ((uint64_t)file_time.dwLowDateTime )      ;
+    time += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+    tp->tv_sec  = (long) ((time - EPOCH) / 10000000L);
+    tp->tv_usec = (long) (system_time.wMilliseconds * 1000);
+    return 0;
+}
+
+void usleep(__int64 usec)
+{
+    HANDLE timer;
+    LARGE_INTEGER ft;
+
+    ft.QuadPart = -(10*usec); // Convert to 100 nanosecond interval, negative value indicates relative time
+
+    timer = CreateWaitableTimer(NULL, TRUE, NULL);
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
+}
+#endif
 
 static long get_time_ms(void) {
   struct timeval tv;
@@ -465,6 +514,8 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
   return fgw;
 }
 
+#if defined(_LINUX) || defined (_DARWIN)
+
 fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings) {
   if (settings != NULL && strcmp(settings, "N81")) return NULL;
   switch (baud) {
@@ -536,6 +587,8 @@ int fjage_rs232_wakeup(const char* devname, int baud, const char* settings) {
   if (write(fgw->sockfd, &write_buffer, sizeof(char)) < 0) return -1;
   return 0;
 }
+
+#endif
 
 int fjage_close(fjage_gw_t gw) {
   if (gw == NULL) return -1;
