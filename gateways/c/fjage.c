@@ -44,8 +44,8 @@ for full license details.
 // 2. Define USE_SELECT on use select() instead of poll() to wait for data
 // 3. Define USE_IOCTL to use ioctl() to check for data availability
 
-#define USE_POLL
-//#define USE_SELECT
+//#define USE_POLL
+#define USE_SELECT
 //#define USE_IOCTL
 
 #if !defined(USE_POLL) && !defined(USE_SELECT) && !defined(USE_IOCTL)
@@ -494,7 +494,13 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
     free(fgw);
     return NULL;
   }
+  #ifdef _WIN32
+  long NONBLOCK_MODE = 1;
+  ioctlsocket(fgw->sockfd, FIONBIO, &NONBLOCK_MODE);
+#else
   fcntl(fgw->sockfd, F_SETFL, O_NONBLOCK);
+#endif
+
 #ifdef USE_POLL
   if (pipe(fgw->intfd) < 0) {
     close(fgw->sockfd);
@@ -502,7 +508,12 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
     free(fgw);
     return NULL;
   }
+#ifdef _WIN32
+  long NONBLOCK_MODE = 1;
+  ioctlsocket(fgw->intfd[0], FIONBIO, &NONBLOCK_MODE);
+#else
   fcntl(fgw->intfd[0], F_SETFL, O_NONBLOCK);
+#endif
 #else
   fgw->intr = 0;
 #endif
