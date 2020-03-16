@@ -217,8 +217,9 @@ export class Gateway {
    * @param {string} hostname - hostname of the master container to connect to
    * @param {int} port        - port of the master container to connect to
    * @param {string} pathname - path of the master container to connect to
+   * @param {int} timeout     - timeout for connecting to the master container
    */
-  constructor(hostname=window.location.hostname, port=window.location.port, pathname='/ws/') {
+  constructor(hostname=window.location.hostname, port=window.location.port, pathname='/ws/', timeout=TIMEOUT) {
     var url = new URL('ws://localhost');
     url.hostname = hostname;
     url.port = port || 80;
@@ -227,6 +228,7 @@ export class Gateway {
     if (existing) return existing;
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
+    this._timeout = timeout;
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.subscriptions = {};              // hashset for all topics that are subscribed
@@ -355,7 +357,7 @@ export class Gateway {
         delete this.pending[rq.id];
         if (this.debug) console.log('Receive Timeout : ' + rq);
         resolve();
-      }, this.sock.readyState == this.sock.CONNECTING ? 8*TIMEOUT : TIMEOUT);
+      }, this.sock.readyState == this.sock.CONNECTING ? 8*this._timeout : this._timeout);
       this.pending[rq.id] = rsp => {
         clearTimeout(timer);
         resolve(rsp);
