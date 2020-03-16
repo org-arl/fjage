@@ -564,7 +564,7 @@ export class Gateway {
    * Sends a request and waits for a response. This method returns a {Promise} which resolves when a response is received or if no response is received after the timeout.
    *
    * @param {string} msg - message to send.
-   * @param {number} [timeout=10000] - timeout in milliseconds.
+   * @param {number} [timeout=1000] - timeout in milliseconds.
    * @return {Promise} a promise which resolves with the received response message, null on timeout.
    */
   async request(msg, timeout=1000) {
