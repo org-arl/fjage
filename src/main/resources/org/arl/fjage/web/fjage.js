@@ -1,6 +1,5 @@
 ////// settings
 
-const TIMEOUT = 1000;              // ms, timeout to get response from to master container
 const RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
 
 ////// interface classes
@@ -217,9 +216,9 @@ export class Gateway {
    * @param {string} hostname - hostname of the master container to connect to
    * @param {int} port        - port of the master container to connect to
    * @param {string} pathname - path of the master container to connect to
-   * @param {int} timeout     - timeout for connecting to the master container
+   * @param {int} timeout     - timeout for fjage level messages
    */
-  constructor(hostname=window.location.hostname, port=window.location.port, pathname='/ws/', timeout=TIMEOUT) {
+  constructor(hostname=window.location.hostname, port=window.location.port, pathname='/ws/', timeout=1000) {
     var url = new URL('ws://localhost');
     url.hostname = hostname;
     url.port = port || 80;
@@ -228,7 +227,7 @@ export class Gateway {
     if (existing) return existing;
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
-    this._timeout = timeout;
+    this._timeout = timeout;              // timeout for fjage level messages (agentForService etc)
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.subscriptions = {};              // hashset for all topics that are subscribed
