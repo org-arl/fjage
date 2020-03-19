@@ -44,8 +44,11 @@ for full license details.
 // 2. Define USE_SELECT on use select() instead of poll() to wait for data
 // 3. Define USE_IOCTL to use ioctl() to check for data availability
 
-//#define USE_POLL
+#ifdef _WIN32
 #define USE_SELECT
+#else
+#define USE_POLL
+#endif
 //#define USE_IOCTL
 
 #if !defined(USE_POLL) && !defined(USE_SELECT) && !defined(USE_IOCTL)
@@ -88,7 +91,11 @@ static void generate_uuid(char* uuid) {
 
 static int writes(int fd, const char* s) {
   int n = strlen(s);
+#ifdef _WIN32
+  return send(fd, s, n, 0);
+#else
   return write(fd, s, n);
+#endif
 }
 
 #ifdef _WIN32
@@ -393,7 +400,11 @@ static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
   if (rv == DATA_AVAILABLE) {
     int n;
     bool done = false;
+#ifdef _WIN32
+    while ((n = recv(fgw->sockfd, fgw->buf + fgw->head, fgw->buflen - fgw->head, 0)) > 0) {
+#else
     while ((n = read(fgw->sockfd, fgw->buf + fgw->head, fgw->buflen - fgw->head)) > 0) {
+#endif
       int bol = 0;
       for (int i = fgw->head; i < fgw->head + n; i++) {
         if (fgw->buf[i] == '\n') {
@@ -462,6 +473,10 @@ bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic) {
 }
 
 fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
+#ifdef _WIN32
+  WSADATA wsaData;
+  if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) return NULL;
+#endif
   _fjage_gw_t* fgw = calloc(1, sizeof(_fjage_gw_t));
   if (fgw == NULL) return NULL;
   fgw->buf = malloc(BUFLEN);
@@ -494,7 +509,7 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
     free(fgw);
     return NULL;
   }
-  #ifdef _WIN32
+#ifdef _WIN32
   long NONBLOCK_MODE = 1;
   ioctlsocket(fgw->sockfd, FIONBIO, &NONBLOCK_MODE);
 #else
@@ -508,12 +523,7 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
     free(fgw);
     return NULL;
   }
-#ifdef _WIN32
-  long NONBLOCK_MODE = 1;
-  ioctlsocket(fgw->intfd[0], FIONBIO, &NONBLOCK_MODE);
-#else
   fcntl(fgw->intfd[0], F_SETFL, O_NONBLOCK);
-#endif
 #else
   fgw->intr = 0;
 #endif
@@ -602,16 +612,24 @@ int fjage_rs232_wakeup(const char* devname, int baud, const char* settings) {
 #endif
 
 int fjage_close(fjage_gw_t gw) {
-  if (gw == NULL) return -1;
-  _fjage_gw_t* fgw = gw;
-  close(fgw->sockfd);
-#ifdef USE_POLL
-  close(fgw->intfd[0]);
-  close(fgw->intfd[1]);
+  if (gw != NULL) {
+    _fjage_gw_t* fgw = gw;
+#ifdef _WIN32
+    closesocket(fgw->sockfd);
+#else
+    close(fgw->sockfd);
 #endif
-  fjage_aid_destroy(fgw->aid);
-  free(fgw->buf);
-  free(fgw);
+#ifdef USE_POLL
+    close(fgw->intfd[0]);
+    close(fgw->intfd[1]);
+#endif
+    fjage_aid_destroy(fgw->aid);
+    free(fgw->buf);
+    free(fgw);
+  }
+#ifdef _WIN32
+  WSACleanup();
+#endif
   return 0;
 }
 
@@ -937,7 +955,11 @@ static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg) {
     char* p = m->data;
     int n = strlen(m->data)-2;
     while (n > 0) {
+#ifdef _WIN32
+      int rv = send(fd, p, n, 0);
+#else
       int rv = write(fd, p, n);
+#endif
       if (rv < 0) {
         if (errno == EAGAIN) usleep(10000);
         else break;
