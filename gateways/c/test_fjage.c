@@ -25,11 +25,17 @@ for full license details.
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <string.h>
 #include <math.h>
+
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
 #include <pthread.h>
 #include <sys/time.h>
+#endif
+
 #include "fjage.h"
 
 static int passed = 0;
@@ -55,9 +61,13 @@ static int error(const char* msg) {
 }
 
 static double current_time(void) {
+#ifdef _WIN32
+  return GetTickCount()/1000.0;
+#else
   struct timeval tv;
   gettimeofday(&tv, NULL);
   return tv.tv_sec + tv.tv_usec/1e6;
+#endif
 }
 
 static void* intr_thread(void* p) {
@@ -71,8 +81,12 @@ int main(int argc, char* argv[]) {
   printf("\n");
   fjage_gw_t gw;
   if (argc > 1) {
+#ifdef _WIN32
+    return error("Connection over serial port not supported on Windows");
+#else
     gw = fjage_rs232_open(argv[1], 9600, "N81");
     if (gw == NULL) return error("Could not connect to fjage master container on serial port");
+#endif
   } else {
     gw = fjage_tcp_open("localhost", 5081);
     if (gw == NULL) return error("Could not connect to fjage master container on localhost:5081");
@@ -139,11 +153,15 @@ int main(int argc, char* argv[]) {
   double t0 = current_time();
   msg = fjage_receive(gw, NULL, NULL, 1000);
   test_assert("receive (timeout 1)", msg == NULL && current_time()-t0 > 0.9);
+#ifdef _WIN32
+  printf("receive (interrupt 2): SKIPPED\n");
+#else
   pthread_t tid;
   pthread_create(&tid, NULL, intr_thread, gw);
   t0 = current_time();
   msg = fjage_receive(gw, NULL, NULL, 1000);
   test_assert("receive (interrupt 2)", msg == NULL && current_time()-t0 < 0.9);
+#endif
   t0 = current_time();
   msg = fjage_receive(gw, NULL, NULL, 1000);
   test_assert("receive (timeout 2)", msg == NULL && current_time()-t0 > 0.9);

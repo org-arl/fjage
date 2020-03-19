@@ -11,15 +11,26 @@ for full license details.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+
+#ifdef _WIN32
+#pragma comment(lib, "ws2_32.lib")
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <io.h>
+#include <winsock2.h>
+#include <Ws2tcpip.h>
+#else
+#include <unistd.h>
 #include <netdb.h>
 #include <termios.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
+
 #include "fjage.h"
 #include "jsmn.h"
 #include "b64.h"
@@ -31,8 +42,11 @@ for full license details.
 // 2. Define USE_SELECT on use select() instead of poll() to wait for data
 // 3. Define USE_IOCTL to use ioctl() to check for data availability
 
+#ifdef _WIN32
+#define USE_SELECT
+#else
 #define USE_POLL
-//#define USE_SELECT
+#endif
 //#define USE_IOCTL
 
 #if !defined(USE_POLL) && !defined(USE_SELECT) && !defined(USE_IOCTL)
@@ -75,8 +89,48 @@ static void generate_uuid(char* uuid) {
 
 static int writes(int fd, const char* s) {
   int n = strlen(s);
+#ifdef _WIN32
+  return send(fd, s, n, 0);
+#else
   return write(fd, s, n);
+#endif
 }
+
+#ifdef _WIN32
+int gettimeofday(struct timeval * tp, struct timezone * tzp)
+{
+    // Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+    // This magic number is the number of 100 nanosecond intervals since January 1, 1601 (UTC)
+    // until 00:00:00 January 1, 1970
+    static const uint64_t EPOCH = ((uint64_t) 116444736000000000ULL);
+
+    SYSTEMTIME  system_time;
+    FILETIME    file_time;
+    uint64_t    time;
+
+    GetSystemTime( &system_time );
+    SystemTimeToFileTime( &system_time, &file_time );
+    time =  ((uint64_t)file_time.dwLowDateTime )      ;
+    time += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+    tp->tv_sec  = (long) ((time - EPOCH) / 10000000L);
+    tp->tv_usec = (long) (system_time.wMilliseconds * 1000);
+    return 0;
+}
+
+void usleep(__int64 usec)
+{
+    HANDLE timer;
+    LARGE_INTEGER ft;
+
+    ft.QuadPart = -(10*usec); // Convert to 100 nanosecond interval, negative value indicates relative time
+
+    timer = CreateWaitableTimer(NULL, TRUE, NULL);
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
+}
+#endif
 
 static long get_time_ms(void) {
   struct timeval tv;
@@ -344,7 +398,11 @@ static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
   if (rv == DATA_AVAILABLE) {
     int n;
     bool done = false;
+#ifdef _WIN32
+    while ((n = recv(fgw->sockfd, fgw->buf + fgw->head, fgw->buflen - fgw->head, 0)) > 0) {
+#else
     while ((n = read(fgw->sockfd, fgw->buf + fgw->head, fgw->buflen - fgw->head)) > 0) {
+#endif
       int bol = 0;
       for (int i = fgw->head; i < fgw->head + n; i++) {
         if (fgw->buf[i] == '\n') {
@@ -413,6 +471,10 @@ bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic) {
 }
 
 fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
+#ifdef _WIN32
+  WSADATA wsaData;
+  if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) return NULL;
+#endif
   _fjage_gw_t* fgw = calloc(1, sizeof(_fjage_gw_t));
   if (fgw == NULL) return NULL;
   fgw->buf = malloc(BUFLEN);
@@ -445,7 +507,13 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
     free(fgw);
     return NULL;
   }
+#ifdef _WIN32
+  long NONBLOCK_MODE = 1;
+  ioctlsocket(fgw->sockfd, FIONBIO, &NONBLOCK_MODE);
+#else
   fcntl(fgw->sockfd, F_SETFL, O_NONBLOCK);
+#endif
+
 #ifdef USE_POLL
   if (pipe(fgw->intfd) < 0) {
     close(fgw->sockfd);
@@ -464,6 +532,8 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
   update_watch(fgw);
   return fgw;
 }
+
+#ifndef _WIN32
 
 fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings) {
   if (settings != NULL && strcmp(settings, "N81")) return NULL;
@@ -537,17 +607,27 @@ int fjage_rs232_wakeup(const char* devname, int baud, const char* settings) {
   return 0;
 }
 
-int fjage_close(fjage_gw_t gw) {
-  if (gw == NULL) return -1;
-  _fjage_gw_t* fgw = gw;
-  close(fgw->sockfd);
-#ifdef USE_POLL
-  close(fgw->intfd[0]);
-  close(fgw->intfd[1]);
 #endif
-  fjage_aid_destroy(fgw->aid);
-  free(fgw->buf);
-  free(fgw);
+
+int fjage_close(fjage_gw_t gw) {
+  if (gw != NULL) {
+    _fjage_gw_t* fgw = gw;
+#ifdef _WIN32
+    closesocket(fgw->sockfd);
+#else
+    close(fgw->sockfd);
+#endif
+#ifdef USE_POLL
+    close(fgw->intfd[0]);
+    close(fgw->intfd[1]);
+#endif
+    fjage_aid_destroy(fgw->aid);
+    free(fgw->buf);
+    free(fgw);
+  }
+#ifdef _WIN32
+  WSACleanup();
+#endif
   return 0;
 }
 
@@ -873,7 +953,11 @@ static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg) {
     char* p = m->data;
     int n = strlen(m->data)-2;
     while (n > 0) {
+#ifdef _WIN32
+      int rv = send(fd, p, n, 0);
+#else
       int rv = write(fd, p, n);
+#endif
       if (rv < 0) {
         if (errno == EAGAIN) usleep(10000);
         else break;
