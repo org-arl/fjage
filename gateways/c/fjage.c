@@ -14,16 +14,6 @@ for full license details.
 #include <fcntl.h>
 #include <errno.h>
 
-#if defined(_LINUX) || defined (_DARWIN)
-#include <unistd.h>
-#include <netdb.h>
-#include <termios.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#endif
-
 #ifdef _WIN32
 #pragma comment(lib, "ws2_32.lib")
 #define WIN32_LEAN_AND_MEAN
@@ -31,6 +21,14 @@ for full license details.
 #include <io.h>
 #include <winsock2.h>
 #include <Ws2tcpip.h>
+#else
+#include <unistd.h>
+#include <netdb.h>
+#include <termios.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #endif
 
 #include "fjage.h"
@@ -535,7 +533,7 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
   return fgw;
 }
 
-#if defined(_LINUX) || defined (_DARWIN)
+#ifndef _WIN32
 
 fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings) {
   if (settings != NULL && strcmp(settings, "N81")) return NULL;
