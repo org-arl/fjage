@@ -4,13 +4,13 @@
 
 This folder contains the files `fjage.h` and `fjage.c`. The header file includes the definition and documentation of the fjåge C APIs and the source code is provided in the `fjage.c` file.  `Makefile` is used to collate the necessary files and compile the source code and run tests.
 
-To build fjåge C libraryon Linux / Max OS X, run:
+To build fjåge C library on Linux / macOS , run:
 
 ```bash
 make
 ```
 
-This will generate a library (`libfjage.a`) which can be used to link.
+This will generate a library (`libfjage.a`) which can be used to link against.
 
 To build fjåge C library on Windows, run:
 
@@ -19,7 +19,7 @@ cl *.c /link /out:test_fjage.exe
 lib *.obj /out:fjage.lib
 ```
 
-This will generate a library (`fjage.lib`) which can be used to link.
+This will generate a library (`fjage.lib`) which can be used to link against.
 
 ## Test fjåge C library
 
