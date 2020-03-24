@@ -10,5 +10,4 @@ logs
 build
 test_fjage
 node_modules
-package-lock.json
 docs/doc
