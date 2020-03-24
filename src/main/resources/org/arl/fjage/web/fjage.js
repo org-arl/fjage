@@ -539,7 +539,7 @@ export class Gateway {
    * may be an agent or a topic.
    *
    * @param {Message} msg - message to be sent.
-   * @returns {Boolean} status - if sending was successful.
+   * @returns {boolean} status - if sending was successful.
    */
   send(msg) {
     msg.sender = this.aid.toJSON();
