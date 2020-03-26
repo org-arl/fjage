@@ -93,7 +93,7 @@ This is compiled using `gcc -o demo.out demo.c libfjage.a` assuming that this fi
 API documentation
 -----------------
 
-This only scratches the surface of what can be done the fjåge C gateway. For more, refer to the documentation in the C header file (`fjage.h` shown below) and examples in the test script (`test_fjage.c <https://github.com/org-arl/fjage/blob/master/src/main/c/test_fjage.c>`_).
+This only scratches the surface of what can be done with the fjåge C gateway. For more, refer to the documentation in the C header file (`fjage.h` shown below) and examples in the test script (`test_fjage.c <https://github.com/org-arl/fjage/blob/master/gateways/c/test_fjage.c>`_).
 
 .. literalinclude:: ../main/c/fjage.h
    :start-after: #define _FJAGE_H_
