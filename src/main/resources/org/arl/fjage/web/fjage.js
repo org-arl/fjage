@@ -2,6 +2,10 @@
 
 const RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
 
+////// local variables
+
+const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
+
 ////// interface classes
 
 /**
@@ -99,6 +103,111 @@ export class AgentID {
    */
   toJSON() {
     return (this.topic ? '#' : '') + this.name;
+  }
+
+  /**
+   * Sets parameter(s) on the Agent referred to by this AgentID.
+   *
+   * @param {(string|string[])} params - parameters name(s) to be set.
+   * @param {(Object|Object[])} values - parameters value(s) to be set.
+   * @param {number} [index=-1] - index of parameter(s) to be set.
+   * @return {Promise} - A promise which returns the new value(s) of the parameters
+   */
+  set (params, values, index=-1) {
+    if (!params) return null;
+    let msg = new ParameterReq();
+    msg.recipient = this.name;
+    if (Array.isArray(params)){
+      msg.requests = params.map((p, i) => {
+        return {
+          'param': p,
+          'value': values[i]
+        };
+      });
+    } else {
+      msg.param = params;
+      msg.value = values;
+    }
+    msg.index = Number.isInteger(index) ? index : -1;
+    return this.owner.request(msg, 5000).then(rsp => {
+      return new Promise(resolve => {
+        var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
+        if (!rsp || rsp.perf != Performative.INFORM || !rsp.param){
+          console.warn(`Parameter(s) ${params} could not be set`);
+          resolve(ret);
+          return;
+        }
+
+        if (Array.isArray(params)){
+          if (!rsp.values) rsp.values = {};
+          if (rsp.param) rsp.values[rsp.param] = rsp.value;
+          const rvals = Object.keys(rsp.values);
+          ret = params.map((p, i) => {
+            let f = rvals.find(rv => rv.endsWith(p));
+            if (f){
+              if (rsp.values[f] != values[i]){
+                console.warn(`WARNING: Parameter ${p} set to ${rsp.values[f]}`);
+              }
+              return rsp.values[f];
+            }else null;
+          });
+        }else{
+          if (rsp.value != values){
+            console.warn(`WARNING: Parameter ${params} set to ${rsp.value}`);
+          }
+          ret = rsp.value;
+        }
+        resolve(ret);
+      });
+    });
+  }
+
+
+  /**
+   * Gets parameter(s) on the Agent referred to by this AgentID.
+   *
+   * @param {(string|string[])} params - parameters name(s) to be get.
+   * @param {number} [index=-1] - index of parameter(s) to be get.
+   * @return {Promise} - A promise which returns the value(s) of the parameters
+   */
+  get(params, index=-1) {
+    let msg = new ParameterReq();
+    msg.recipient = this.name;
+    if (params){
+      if (Array.isArray(params)){
+        msg.requests = params.map(p => {return {'param': p};});
+      }else{
+        msg.param = params;
+      }
+    }
+    msg.index = Number.isInteger(index) ? index : -1;
+    return this.owner.request(msg, 5000).then(rsp => {
+      return new Promise(resolve => {
+        var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
+        if (!rsp || rsp.perf != Performative.INFORM || (params && (!rsp.param))){
+          resolve(ret);
+          return;
+        }
+        // Request for listing of all parameters.
+        if (!params){
+          if (!rsp.values) rsp.values = {};
+          if (rsp.param) rsp.values[rsp.param] = rsp.value;
+          ret = rsp.values;
+        } else if (Array.isArray(params)) {
+          if (!rsp.values) rsp.values = {};
+          if (rsp.param) rsp.values[rsp.param] = rsp.value;
+          const rvals = Object.keys(rsp.values);
+          ret = params.map(p => {
+            let f = rvals.find(rv => rv.endsWith(p));
+            return f ? rsp.values[f] : null ;
+          });
+        } else{
+          ret = rsp.value;
+        }
+
+        resolve(ret);
+      });
+    });
   }
 }
 
