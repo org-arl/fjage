@@ -9,6 +9,7 @@ import base64 as _base64
 import struct as _struct
 import copy as _copy
 import time as _time
+from warnings import warn as _warn
 
 
 def _current_time_millis():
@@ -55,6 +56,39 @@ def _decodeBase64(m):
             if x:
                 m = x
     return m
+
+def _value(v):
+    if isinstance(v, dict):
+        if 'clazz' in v:
+            if v['clazz'] == 'java.util.Date':
+                return v['data']
+            if v['clazz'] == 'java.util.ArrayList':
+                return v['data']
+            p = _GenericObject()
+            p.__dict__.update(v)
+            return p
+        if 'data' in v:
+            return v['data']
+    return v
+
+
+def _short(p):
+    return p.split('.')[-1]
+
+
+class _GenericObject:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    def __repr__(self):
+        return self.__dict__['clazz'] + '(...)'
+
+class Services:
+    """Services provided by agents.
+
+    Agents can be looked up based on the services they provide.
+    """
+    SHELL = 'org.arl.fjage.shell.Services.SHELL'
 
 class Action:
     """JSON message actions.
@@ -123,6 +157,74 @@ class AgentID:
 
     def _to_json(self):
         return '#'+self.name if self.is_topic else self.name
+
+
+    def __getitem__(self, index):
+        # c = AgentID(self.name, owner=self.owner)
+        self.index = index
+        return self
+
+    def __str__(self):
+        peer = self.owner.socket.getpeername()
+        return self.name + ' on ' + peer[0] + ':' + str(peer[1])
+
+    def _repr_pretty_(self, p, cycle):
+        if cycle:
+            p.text('...')
+            return
+        rsp = self.request(ParameterReq(index=self.index))
+        if rsp is None:
+            p.text(self.__str__())
+            return
+        ursp = ParameterRsp()
+        ursp.__dict__.update(rsp.__dict__)
+        params = ursp.parameters()
+        if 'title' in params:
+            p.text('<<< ' + str(params['title']) + ' >>>\n')
+        else:
+            p.text('<<< ' + str(self.name).upper() + ' >>>\n')
+        if 'description' in params:
+            p.text('\n' + str(params['description']) + '\n')
+        oprefix = ''
+        for param in sorted(params):
+            pp = param.split('.')
+            prefix = '.'.join(pp[:-1]) if len(pp) > 1 else ''
+            if prefix == '':
+                continue
+            if prefix != oprefix:
+                oprefix = prefix
+                p.text('\n[' + prefix + ']\n')
+            p.text('  ' + pp[-1] + ' = ' + str(params[param]) + '\n')
+
+def getter(self, param):
+    rsp = self.request(ParameterReq(index=self.index).get(param))
+    if rsp is None:
+        return None
+    ursp = ParameterRsp()
+    ursp.__dict__.update(rsp.__dict__)
+    if 'value' in list(ursp.__dict__.keys()):
+        return ursp.get(param)
+    else:
+        return None
+
+setattr(AgentID, '__getattr__', getter)
+
+def setter(self, param, value):
+    if param in ['name', 'owner', 'is_topic', 'index']:
+        self.__dict__[param] = value
+        return value
+    rsp = self.request(ParameterReq(index=self.index).set(param, value))
+    if rsp is None:
+        _warn('Could not set parameter ' + param)
+        return None
+    ursp = ParameterRsp()
+    ursp.__dict__.update(rsp.__dict__)
+    v = ursp.get(param)
+    if v != value:
+        _warn('Parameter ' + param + ' set to ' + str(v))
+    return v
+
+setattr(AgentID, '__setattr__', setter)
 
 
 class _CustomEncoder(_json.JSONEncoder):
@@ -276,6 +378,90 @@ def MessageClass(name, parent=Message, perf=None):
     globals()[sname] = class_
     mod = __import__('fjagepy')
     return getattr(mod, str(class_.__name__))
+
+
+#param
+_ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq')
+_ParameterRsp = MessageClass('org.arl.fjage.param.ParameterRsp')
+
+#shell
+PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq')
+GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq')
+ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq')
+
+
+class ParameterReq(_ParameterReq):
+
+    def __init__(self, index=-1, **kwargs):
+        super().__init__()
+        self.index = index
+        self.requests = []
+        self.perf = Performative.REQUEST
+        self.__dict__.update(kwargs)
+
+    def get(self, param):
+        self.requests.append({'param': param});
+        return self
+
+    def set(self, param, value):
+        self.requests.append({'param': param, 'value': value});
+        return self
+
+    def __str__(self):
+        p = ' '.join([_short(str(request['param'])) + ':' + (str(request['value']) if 'value' in request else '?') for request in self.requests])
+        return self.__class__.__name__ + ':' + self.perf + '[' + (('index:' + str(self.index)) if self.index > 0 else '') + p.strip() + ']'
+
+    def _repr_pretty_(self, p, cycle):
+        p.text(str(self) if not cycle else '...')
+
+
+class ParameterRsp(_ParameterRsp):
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.index = -1
+        self.values = dict()
+        self.perf = Performative.REQUEST
+        self.__dict__.update(kwargs)
+
+    def get(self, param):
+        if 'param' in self.__dict__ and self.param == param:
+            return _value(self.value)
+        if 'values' in self.__dict__ and self.values is not None:
+            if param in self.values:
+                return _value(self.values[param])
+        if 'param' in self.__dict__ and _short(self.param) == param:
+            return _value(self.value)
+        if 'values' not in self.__dict__:
+            return None
+        for v in self.values:
+            if _short(v) == param:
+                return _value(self.values[v])
+        return None
+
+    def parameters(self):
+        if 'values' in self.__dict__ and self.values is not None:
+            p = self.values.copy()
+        else:
+            p = {}
+        if 'param' in self.__dict__:
+            p[self.param] = self.value
+        for k in p:
+            if isinstance(p[k], dict):
+                p[k] = _value(p[k])
+        return p
+
+    def __str__(self):
+        p = ''
+        if 'param' in self.__dict__:
+            p += _short(str(self.param)) + ':' + str(_value(self.value)) + ' '
+        if 'values' in self.__dict__ and self.values is not None:
+            if len(self.values) > 0:
+                p += ' '.join([_short(str(v)) + ':' + str(_value(self.values[v])) for v in self.values])
+        return self.__class__.__name__ + ':' + self.perf + '[' + (('index:' + str(self.index)) if self.index > 0 else '') + p.strip() + ']'
+
+    def _repr_pretty_(self, p, cycle):
+        p.text(str(self) if not cycle else '...')
 
 
 class GenericMessage(Message):
@@ -510,11 +696,11 @@ class Gateway:
         rq = rq.replace('"###MSG###"', tmsg._serialize())
         try:
             name = self.socket.getpeername()
+            self.logger.debug(str(name[0]) + ":" + str(name[1]) + " >>> " + rq)
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
             self.keepalive = True
             self._socket_reconnect(self.keepalive)
-        self.logger.debug(str(name[0]) + ":" + str(name[1]) + " >>> " + rq)
         self.socket.sendall((rq + '\n').encode())
         return True
 
