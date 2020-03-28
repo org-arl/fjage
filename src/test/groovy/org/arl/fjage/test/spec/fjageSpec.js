@@ -229,6 +229,87 @@ describe('An AgentID', function () {
     expect(aid.isTopic()).toBe(true);
     expect(aid.toJSON()).toBe('#agent-name');
   });
+
+  it('should get the value of a single parameter', async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.get('y');
+    expect(val).toEqual(2);
+  });
+
+  it('should return null if asked to get the value of unknown parameter', async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.get('k');
+    expect(val).toEqual(null);
+  });
+
+  it('should set the value of a single parameter and return the new value', async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.set('a', 42);
+    expect(val).toEqual(42);
+    val = await aid.set('a', 0);
+    expect(val).toEqual(0);
+  });
+
+  it('should return null if asked to set the value of unknown parameter',  async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.get('k');
+    expect(val).toEqual(null);
+  });
+
+  it('should get the values of an array of parameters', async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.get(['y', 's']);
+    expect(val).toEqual([2, 'xxx']);
+  });
+
+  it('should set the values of an array of parameters and return the new values',  async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.set(['a','b'], [42, -32.876]);
+    expect(val).toEqual([42, -32.876]);
+    val = await aid.set(['a','b'], [0, 42]);
+    expect(val).toEqual([0, 42]);
+  });
+
+  it('should get the value of a single indexed parameter', async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.get('z', 1);
+    expect(val).toEqual(4);
+  });
+
+  it('should return null if asked to get the value of unknown indexed parameter', async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.get('k', 1);
+    expect(val).toEqual(null);
+  });
+
+  it('should set the value of a single indexed parameter and return the new value',  async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.set('z', 42, 1);
+    expect(val).toEqual(42);
+    val = await aid.set('z', 4, 1);
+    expect(val).toEqual(4);
+  });
+
+  it('should return null if asked to set the value of unknown indexed parameter', async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.get('k', 1);
+    expect(val).toEqual(null);
+  });
+
+  it('should get the values of an array of indexed parameters',  async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.get(['y', 's'], 1);
+    expect(val).toEqual([3, 'yyy']);
+  });
+
+  it('should set the values of an array of indexed parameters and return the new values', async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.set(['z', 's'], [42, 'boo'], 1);
+    expect(val).toEqual([42, 'yyy']);
+    val = await aid.set('z', 4, 1);
+    expect(val).toEqual(4);
+  });
+
 });
 
 describe('A Message', function () {

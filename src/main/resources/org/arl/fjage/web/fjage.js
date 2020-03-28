@@ -2,9 +2,6 @@
 
 const RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
 
-////// local variables
-
-const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
 
 ////// interface classes
 
@@ -791,6 +788,8 @@ if (typeof window.fjage === 'undefined') {
   Message.__clazz__ = 'org.arl.fjage.Message';
   window['Message'] = Message;
 }
+
+const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
 
 ////// private utilities
 
