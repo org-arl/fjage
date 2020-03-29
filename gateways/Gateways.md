@@ -106,6 +106,15 @@ All fjåge Gateway implementations should implement the following classes and me
 - Convenience method to send a _Message_ to an Agent represented by this id and wait for a response.
 - Optional if the language doesn't support self-referencing.
 
+### `get()` :: String name, (int index) -> Object
+- This gets the value of a parameter on the Agent that the AgentID refers to.
+- Convenience method to replace doing a ParameterReq to the Agent.
+- May be implemented as a getter for a property the AgentID object, with the parameter name being the property name, and the index being the array index (for e.g. agent.property[index]), if the language supports it.
+
+### `set()` :: String name, (int index), Object value,  -> Object
+- Convenience method to replace doing a ParameterReq to the Agent.
+- May be implemented as a setter for a property the AgentID object, with the parameter name being the property name, and the index being the array index (for e.g. agent.property[index] = value), if the language supports it.
+
 ### Notes
 - When serializing an AgentID, a `#` must be prepended to the AgentID name if the AgentID is a topic.
 

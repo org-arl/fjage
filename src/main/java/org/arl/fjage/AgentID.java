@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage;
 
 import java.io.Serializable;
+import org.arl.fjage.param.*;
 
 /**
  * An identifier for an agent or a topic.
@@ -156,6 +157,64 @@ public class AgentID implements Serializable, Comparable<AgentID> {
   public Message request(Message msg, long timeout) {
     msg.setRecipient(this);
     return owner.request(msg, timeout);
+  }
+
+  /**
+   * Sends a parameter request to the agent represented by this id and
+   * returns the parameter value from the agent, or null if unavailable.
+   *
+   * @param param parameter name or enum.
+   */
+  public Object get(Parameter param) {
+    return get(param, -1);
+  }
+
+  /**
+   * Sends a parameter request to the agent represented by this id and
+   * returns the parameter value from the agent, or null if unavailable.
+   *
+   * @param param parameter name or enum.
+   * @param ndx index of parameter (-1 for non-indexed parameters).
+   */
+  public Object get(Parameter param, int ndx) {
+    if (param == null) return null;
+    ParameterReq req = new ParameterReq(this).get(param);
+    if (ndx >= 0) req.setIndex(ndx);
+    Message rsp = request(req);
+    if (rsp == null) return null;
+    if (!(rsp instanceof ParameterRsp)) return null;
+    return ((ParameterRsp)rsp).get(param);
+  }
+
+  /**
+   * Sends a parameter request to the agent represented by this id to
+   * change the parameter value from the agent.
+   *
+   * @param param parameter name or enum.
+   * @param value value of the parameter.
+   * @return new value of the parameter, or null if unavailable/failed.
+   */
+  public Object set(Parameter param, Object value) {
+    return set(param, value, -1);
+  }
+
+  /**
+   * Sends a parameter request to the agent represented by this id to
+   * change the parameter value from the agent.
+   *
+   * @param param parameter name or enum.
+   * @param value value of the parameter.
+   * @param ndx index of parameter (-1 for non-indexed parameters).
+   * @return new value of the parameter, or null if unavailable/failed.
+   */
+  public Object set(Parameter param, Object value, int ndx) {
+    if (param == null) return null;
+    ParameterReq req = new ParameterReq(this).set(param, value);
+    if (ndx >= 0) req.setIndex(ndx);
+    Message rsp = request(req);
+    if (rsp == null) return null;
+    if (!(rsp instanceof ParameterRsp)) return null;
+    return ((ParameterRsp)rsp).get(param);
   }
 
   /////////////// Standard Java methods to customize
