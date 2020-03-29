@@ -450,6 +450,32 @@ public class ShellAgent extends Agent {
     return lang;
   }
 
+  /**
+   * Get title of the shell agent.
+   *
+   * @return title.
+   */
+  public String getTitle() {
+    return getName();
+  }
+
+  /**
+   * Get description of the shell agent.
+   *
+   * @return description.
+   */
+  public String getDescription() {
+    StringBuffer sb = new StringBuffer();
+    if (shell != null) sb.append("Interactive ");
+    else if (ephemeral) sb.append("Ephemeral ");
+    else sb.append("Non-interactive ");
+    String lang = getLanguage();
+    if (lang != null) sb.append(lang+" ");
+    sb.append("shell");
+    if (!enabled) sb.append(" (disabled)");
+    return sb.toString();
+  }
+
   @Override
   public String toString() {
     if (shell == null || engine == null) return super.toString();
