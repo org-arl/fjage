@@ -435,7 +435,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
     if (Thread.currentThread().getId() != tid)
       throw new FjageException("receive() should only be called from agent thread");
     long deadline = 0;
-    queue.commit(exclusions);
+    if (timeout != NON_BLOCKING) queue.commit(exclusions);
     Message m = queue.get(filter);
     if (m == null && timeout != NON_BLOCKING) {
       if (timeout != BLOCKING) deadline = currentTimeMillis() + timeout;
