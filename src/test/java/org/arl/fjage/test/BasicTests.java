@@ -463,6 +463,36 @@ public class BasicTests {
     assertTrue(client1.count + client2.count + client3.count > 100);
   }
 
+  @Test
+  public void testAIDParam() {
+    log.info("testAIDParam");
+    Platform platform = new RealTimePlatform();
+    Container container = new Container(platform);
+    ParamServerAgent server = new ParamServerAgent(false);
+    AIDParamClientAgent client1 = new AIDParamClientAgent();
+    AIDParamClientAgent client2 = new AIDParamClientAgent();
+    AIDParamClientAgent client3 = new AIDParamClientAgent();
+    container.add("S", server);
+    container.add("C1", client1);
+    container.add("C2", client2);
+    container.add("C3", client3);
+    platform.start();
+    platform.delay(10000);
+    platform.shutdown();
+    platform.delay(2000);
+    log.info("Successful: "+(client1.count + client2.count + client3.count));
+    log.info("Warnings: "+(client1.warnings + client2.warnings + client3.errors));
+    log.info("Errors: "+(server.errors + client1.errors + client2.errors + client3.errors));
+    assertTrue(server.errors == 0);
+    assertTrue(client1.errors == 0);
+    assertTrue(client2.errors == 0);
+    assertTrue(client3.errors == 0);
+    assertTrue(client1.warnings < 3);
+    assertTrue(client2.warnings < 3);
+    assertTrue(client3.warnings < 3);
+    assertTrue(client1.count + client2.count + client3.count > 100);
+  }
+
   private static class RequestMessage extends Message {
     private static final long serialVersionUID = 1L;
     public int x;
@@ -496,6 +526,8 @@ public class BasicTests {
     public float getY() { return 2; }
     public String getS() { return "xxx"; }
     public int setX(int x) { return x+1; }
+    public float getY(int ndx) { return ndx+42; }
+    public int setX(int ndx, int x) { return x+42; }
     public ParamServerAgent(boolean yor) {
       super();
       setYieldDuringReceive(yor);
@@ -507,7 +539,10 @@ public class BasicTests {
       add(new MessageBehavior() {
         @Override
         public void onReceive(Message msg) {
-          if (msg instanceof ParameterReq) errors++;
+          if (msg instanceof ParameterReq) {
+            log.warning("Got unexpected req: "+msg);
+            errors++;
+          }
           else if (msg instanceof RequestMessage) send(new ResponseMessage(msg));
         }
       });
@@ -537,7 +572,8 @@ public class BasicTests {
     }
     @Override
     public void init() {
-      add(new PoissonBehavior(200) {
+      delay(200);
+      add(new PoissonBehavior(100) {
         @Override
         public void onTick() {
           AgentID server = agent.agentForService("server");
@@ -591,6 +627,34 @@ public class BasicTests {
               errors++;
             }
           }
+          req = new ParameterReq().get(Params.y);
+          ((ParameterReq)req).setIndex(7);
+          req.setRecipient(server);
+          rsp = request(req, 1000);
+          if (rsp == null) {
+            log.warning("Unable to get y[7]");
+            warnings++;
+          } else {
+            Float y = (Float)((ParameterRsp)rsp).get(Params.y);
+            if (y == null || y != 49) {
+              log.warning("Bad value of y[7]: "+y);
+              errors++;
+            }
+          }
+          req = new ParameterReq().set(Params.x, 2);
+          ((ParameterReq)req).setIndex(7);
+          req.setRecipient(server);
+          rsp = request(req, 1000);
+          if (rsp == null) {
+            log.warning("Unable to set x[7]");
+            warnings++;
+          } else {
+            Integer x = (Integer)((ParameterRsp)rsp).get(Params.x);
+            if (x == null || x != 44) {
+              log.warning("Bad value of x[7]: "+x);
+              errors++;
+            }
+          }
           req = new ParameterReq();
           req.setRecipient(server);
           rsp = request(req, 1000);
@@ -621,6 +685,63 @@ public class BasicTests {
             warnings++;
           } else if (!(rsp instanceof ResponseMessage)) {
             log.warning("Bad response: "+rsp);
+            errors++;
+          }
+        }
+      });
+    }
+  }
+
+  private class AIDParamClientAgent extends Agent {
+    public int errors = 0;
+    public int warnings = 0;
+    public int count = 0;
+    public AIDParamClientAgent() {
+      super();
+    }
+    @Override
+    public void init() {
+      delay(1000);
+      add(new PoissonBehavior(200) {
+        @Override
+        public void onTick() {
+          AgentID server = agent.agentForService("server");
+          if (server == null) {
+            log.warning("Unable to find server");
+            errors++;
+            return;
+          }
+          count++;
+          Integer x = (Integer)server.get(Params.x);
+          if (x == null) {
+            log.warning("Unable to get x");
+            warnings++;
+          } else if (x != 1) {
+            log.warning("Bad value of x: "+x);
+            errors++;
+          }
+          x = (Integer)server.set(Params.x, 3);
+          if (x == null) {
+            log.warning("Unable to set x");
+            warnings++;
+          } else if (x != 4) {
+            log.warning("Bad value of set(x): "+x);
+            errors++;
+          }
+          Float y = (Float)server.get(Params.y, 7);
+          if (y == null) {
+            log.warning("Unable to get y[7]");
+            warnings++;
+          } else if (y != 49) {
+            log.warning("Bad value of y[7]: "+y);
+            errors++;
+          }
+          x = (Integer)server.set(Params.x, 3, 7);
+          if (x == null) {
+            log.warning("Unable to set x[7]");
+            warnings++;
+          } else if (x != 45) {
+            log.warning("Bad value of x[7]: "+x);
             errors++;
           }
         }
