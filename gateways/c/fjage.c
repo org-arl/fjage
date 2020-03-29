@@ -145,6 +145,9 @@ static long get_time_ms(void) {
 #define QUEUE_LEN         1024
 #define BUFLEN            65536
 
+#define PARAM_REQ         "org.arl.fjage.param.ParameterReq"
+#define PARAM_TIMEOUT     1000
+
 // poll_data() API return values
 #define DATA_AVAILABLE      0
 #define TIMED_OUT          -1
@@ -859,7 +862,7 @@ static void msg_read_json(fjage_msg_t msg, const char* s) {
   jsmn_init(&parser);
   m->ntokens = jsmn_parse(&parser, m->data, strlen(m->data), m->tokens, n);
   m->data_len = -1;
-  for (int i = 1; i < m->ntokens; i+=2) {
+  for (int i = 1; i < m->ntokens; i += 1+m->tokens[i].size) {
     char* t = m->data + m->tokens[i].start;
     t[m->tokens[i].end-m->tokens[i].start] = 0;
     if (!strcmp(t, "clazz") && m->clazz[0] == 0) {
@@ -1061,6 +1064,7 @@ const char* fjage_msg_get_string(fjage_msg_t msg, const char* key) {
     if (m->tokens[i].type == JSMN_STRING && (m->tokens[i+1].type == JSMN_STRING || m->tokens[i+1].type == JSMN_PRIMITIVE) && !strcmp(key, t)) {
       t = m->data + m->tokens[i+1].start;
       t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
+      if (m->tokens[i+1].type == JSMN_PRIMITIVE && !strcmp(t, "null")) t = NULL;
       return t;
     }
   }
@@ -1189,4 +1193,149 @@ void fjage_msg_destroy(fjage_msg_t msg) {
   free(m->data);
   free(m->tokens);
   free(msg);
+}
+
+int fjage_param_get_int(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, int defval) {
+  int v = defval;
+  fjage_msg_t msg = fjage_msg_create(PARAM_REQ, FJAGE_REQUEST);
+  fjage_msg_set_recipient(msg, aid);
+  fjage_msg_add_int(msg, "index", ndx);
+  fjage_msg_add_string(msg, "param", param);
+  msg = fjage_request(gw, msg, PARAM_TIMEOUT);
+  if (msg != NULL) {
+    if (fjage_msg_get_performative(msg) == FJAGE_INFORM) v = fjage_msg_get_int(msg, "value", defval);
+    fjage_msg_destroy(msg);
+  }
+  return v;
+}
+
+long fjage_param_get_long(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, long defval) {
+  long v = defval;
+  fjage_msg_t msg = fjage_msg_create(PARAM_REQ, FJAGE_REQUEST);
+  fjage_msg_set_recipient(msg, aid);
+  fjage_msg_add_int(msg, "index", ndx);
+  fjage_msg_add_string(msg, "param", param);
+  msg = fjage_request(gw, msg, PARAM_TIMEOUT);
+  if (msg != NULL) {
+    if (fjage_msg_get_performative(msg) == FJAGE_INFORM) v = fjage_msg_get_long(msg, "value", defval);
+    fjage_msg_destroy(msg);
+  }
+  return v;
+}
+
+float fjage_param_get_float(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, float defval) {
+  float v = defval;
+  fjage_msg_t msg = fjage_msg_create(PARAM_REQ, FJAGE_REQUEST);
+  fjage_msg_set_recipient(msg, aid);
+  fjage_msg_add_int(msg, "index", ndx);
+  fjage_msg_add_string(msg, "param", param);
+  msg = fjage_request(gw, msg, PARAM_TIMEOUT);
+  if (msg != NULL) {
+    if (fjage_msg_get_performative(msg) == FJAGE_INFORM) v = fjage_msg_get_float(msg, "value", defval);
+    fjage_msg_destroy(msg);
+  }
+  return v;
+}
+
+bool fjage_param_get_bool(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, bool defval) {
+  bool v = defval;
+  fjage_msg_t msg = fjage_msg_create(PARAM_REQ, FJAGE_REQUEST);
+  fjage_msg_set_recipient(msg, aid);
+  fjage_msg_add_int(msg, "index", ndx);
+  fjage_msg_add_string(msg, "param", param);
+  msg = fjage_request(gw, msg, PARAM_TIMEOUT);
+  if (msg != NULL) {
+    if (fjage_msg_get_performative(msg) == FJAGE_INFORM) v = fjage_msg_get_bool(msg, "value", defval);
+    fjage_msg_destroy(msg);
+  }
+  return v;
+}
+
+const char* fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx) {
+  const char* v = NULL;
+  fjage_msg_t msg = fjage_msg_create(PARAM_REQ, FJAGE_REQUEST);
+  fjage_msg_set_recipient(msg, aid);
+  fjage_msg_add_int(msg, "index", ndx);
+  fjage_msg_add_string(msg, "param", param);
+  msg = fjage_request(gw, msg, PARAM_TIMEOUT);
+  if (msg != NULL) {
+    if (fjage_msg_get_performative(msg) == FJAGE_INFORM) v = fjage_msg_get_string(msg, "value");
+    fjage_msg_destroy(msg);
+  }
+  return v;
+}
+
+int fjage_param_set_int(fjage_gw_t gw, fjage_aid_t aid, const char* param, int value, int ndx) {
+  int rv = -1;
+  fjage_msg_t msg = fjage_msg_create(PARAM_REQ, FJAGE_REQUEST);
+  fjage_msg_set_recipient(msg, aid);
+  fjage_msg_add_int(msg, "index", ndx);
+  fjage_msg_add_string(msg, "param", param);
+  fjage_msg_add_int(msg, "value", value);
+  msg = fjage_request(gw, msg, PARAM_TIMEOUT);
+  if (msg != NULL) {
+    if (fjage_msg_get_performative(msg) == FJAGE_INFORM) rv = 0;
+    fjage_msg_destroy(msg);
+  }
+  return rv;
+}
+
+int fjage_param_set_long(fjage_gw_t gw, fjage_aid_t aid, const char* param, long value, int ndx) {
+  int rv = -1;
+  fjage_msg_t msg = fjage_msg_create(PARAM_REQ, FJAGE_REQUEST);
+  fjage_msg_set_recipient(msg, aid);
+  fjage_msg_add_int(msg, "index", ndx);
+  fjage_msg_add_string(msg, "param", param);
+  fjage_msg_add_long(msg, "value", value);
+  msg = fjage_request(gw, msg, PARAM_TIMEOUT);
+  if (msg != NULL) {
+    if (fjage_msg_get_performative(msg) == FJAGE_INFORM) rv = 0;
+    fjage_msg_destroy(msg);
+  }
+  return rv;
+}
+
+int fjage_param_set_float(fjage_gw_t gw, fjage_aid_t aid, const char* param, float value, int ndx) {
+  int rv = -1;
+  fjage_msg_t msg = fjage_msg_create(PARAM_REQ, FJAGE_REQUEST);
+  fjage_msg_set_recipient(msg, aid);
+  fjage_msg_add_int(msg, "index", ndx);
+  fjage_msg_add_string(msg, "param", param);
+  fjage_msg_add_float(msg, "value", value);
+  msg = fjage_request(gw, msg, PARAM_TIMEOUT);
+  if (msg != NULL) {
+    if (fjage_msg_get_performative(msg) == FJAGE_INFORM) rv = 0;
+    fjage_msg_destroy(msg);
+  }
+  return rv;
+}
+
+int fjage_param_set_bool(fjage_gw_t gw, fjage_aid_t aid, const char* param, bool value, int ndx) {
+  int rv = -1;
+  fjage_msg_t msg = fjage_msg_create(PARAM_REQ, FJAGE_REQUEST);
+  fjage_msg_set_recipient(msg, aid);
+  fjage_msg_add_int(msg, "index", ndx);
+  fjage_msg_add_string(msg, "param", param);
+  fjage_msg_add_bool(msg, "value", value);
+  msg = fjage_request(gw, msg, PARAM_TIMEOUT);
+  if (msg != NULL) {
+    if (fjage_msg_get_performative(msg) == FJAGE_INFORM) rv = 0;
+    fjage_msg_destroy(msg);
+  }
+  return rv;
+}
+
+int fjage_param_set_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, const char* value, int ndx) {
+  int rv = -1;
+  fjage_msg_t msg = fjage_msg_create(PARAM_REQ, FJAGE_REQUEST);
+  fjage_msg_set_recipient(msg, aid);
+  fjage_msg_add_int(msg, "index", ndx);
+  fjage_msg_add_string(msg, "param", param);
+  fjage_msg_add_string(msg, "value", value);
+  msg = fjage_request(gw, msg, PARAM_TIMEOUT);
+  if (msg != NULL) {
+    if (fjage_msg_get_performative(msg) == FJAGE_INFORM) rv = 0;
+    fjage_msg_destroy(msg);
+  }
+  return rv;
 }

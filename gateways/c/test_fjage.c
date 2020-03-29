@@ -193,6 +193,25 @@ int main(int argc, char* argv[]) {
   fjage_msg_destroy(msg);
   fjage_aid_destroy(aid);
   fjage_aid_destroy(topic);
+  // FIXME: param tests are not perfect, since we don't have default agents with many params, but better than nothing...
+  aid = fjage_agent_for_service(gw, "org.arl.fjage.shell.Services.SHELL");
+  const char* lang = fjage_param_get_string(gw, aid, "org.arl.fjage.shell.ShellParam.language", -1);
+  test_assert("get param (+string)", lang != NULL && !strcmp(lang, "Groovy"));
+  test_assert("get param (+int)", fjage_param_get_int(gw, aid, "BLOCKING", -1, 0) == -1);
+  test_assert("get param (+long)", fjage_param_get_long(gw, aid, "BLOCKING", -1, 0) == -1);
+  test_assert("get param (+float)", fjage_param_get_float(gw, aid, "BLOCKING", -1, 0) == -1.0);
+  test_assert("get param (-string)", fjage_param_get_string(gw, aid, "dummy", -1) == NULL);
+  test_assert("get param (-int)", fjage_param_get_int(gw, aid, "dummy", -1, 0) == 0);
+  test_assert("get param (-long)", fjage_param_get_long(gw, aid, "dummy", -1, 0) == 0);
+  test_assert("get param (-float)", fjage_param_get_float(gw, aid, "dummy", -1, 0) == 0.0);
+  test_assert("set param (+string)", fjage_param_set_string(gw, aid, "dummy", "dummy", -1) == 0);
+  test_assert("set param (+int)", fjage_param_set_int(gw, aid, "dummy", 0, -1) == 0);
+  test_assert("set param (+long)", fjage_param_set_long(gw, aid, "dummy", 0, -1) == 0);
+  test_assert("set param (+float)", fjage_param_set_float(gw, aid, "dummy", 0.0, -1) == 0);
+  fjage_aid_destroy(aid);
+  aid = fjage_aid_topic("mytopic");
+  test_assert("set param (-string)", fjage_param_set_string(gw, aid, "dummy", "dummy", -1) < 0);
+  fjage_aid_destroy(aid);
   test_assert("close", fjage_close(gw) == 0);
   test_summary();
   return failed;

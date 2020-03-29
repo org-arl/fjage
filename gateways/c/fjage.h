@@ -383,6 +383,7 @@ const char* fjage_msg_get_string(fjage_msg_t msg, const char* key);
 ///
 /// @param msg            Message in read-only mode
 /// @param key            Key
+/// @param defval         Default value, if value unavailable
 /// @return               Integer value
 
 int fjage_msg_get_int(fjage_msg_t msg, const char* key, int defval);
@@ -391,6 +392,7 @@ int fjage_msg_get_int(fjage_msg_t msg, const char* key, int defval);
 ///
 /// @param msg            Message in read-only mode
 /// @param key            Key
+/// @param defval         Default value, if value unavailable
 /// @return               Long value
 
 long fjage_msg_get_long(fjage_msg_t msg, const char* key, long defval);
@@ -399,6 +401,7 @@ long fjage_msg_get_long(fjage_msg_t msg, const char* key, long defval);
 ///
 /// @param msg            Message in read-only mode
 /// @param key            Key
+/// @param defval         Default value, if value unavailable
 /// @return               Floating point value
 
 float fjage_msg_get_float(fjage_msg_t msg, const char* key, float defval);
@@ -407,6 +410,7 @@ float fjage_msg_get_float(fjage_msg_t msg, const char* key, float defval);
 ///
 /// @param msg            Message in read-only mode
 /// @param key            Key
+/// @param defval         Default value, if value unavailable
 /// @return               Boolean value
 
 bool fjage_msg_get_bool(fjage_msg_t msg, const char* key, bool defval);
@@ -434,5 +438,123 @@ int fjage_msg_get_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, i
 /// @return               Number of floats in the array
 
 int fjage_msg_get_float_array(fjage_msg_t msg, const char* key, float* value, int maxlen);
+
+/// Get an integer parameter from an agent. This is a utility function that sends a ParameterReq to an
+/// agent, and returns the value from the agent's response.
+///
+/// @param aid            AgentID of the target agent
+/// @param param          Name of the parameter
+/// @param ndx            Index of the parameter (-1 for non-indexed parameters)
+/// @param defval         Default value, if value unavailable
+/// @return               Parameter value, NULL
+
+int fjage_param_get_int(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, int defval);
+
+/// Get a long parameter from an agent. This is a utility function that sends a ParameterReq to an
+/// agent, and returns the value from the agent's response.
+///
+/// @param gw             Gateway
+/// @param aid            AgentID of the target agent
+/// @param param          Name of the parameter
+/// @param ndx            Index of the parameter (-1 for non-indexed parameters)
+/// @param defval         Default value, if value unavailable
+/// @return               Parameter value
+
+long fjage_param_get_long(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, long defval);
+
+/// Get a float parameter from an agent. This is a utility function that sends a ParameterReq to an
+/// agent, and returns the value from the agent's response.
+///
+/// @param gw             Gateway
+/// @param aid            AgentID of the target agent
+/// @param param          Name of the parameter
+/// @param ndx            Index of the parameter (-1 for non-indexed parameters)
+/// @param defval         Default value, if value unavailable
+/// @return               Parameter value
+
+float fjage_param_get_float(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, float defval);
+
+/// Get a boolean parameter from an agent. This is a utility function that sends a ParameterReq to an
+/// agent, and returns the value from the agent's response.
+///
+/// @param gw             Gateway
+/// @param aid            AgentID of the target agent
+/// @param param          Name of the parameter
+/// @param ndx            Index of the parameter (-1 for non-indexed parameters)
+/// @param defval         Default value, if value unavailable
+/// @return               Parameter value
+
+bool fjage_param_get_bool(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, bool defval);
+
+/// Get a string parameter from an agent. This is a utility function that sends a ParameterReq to an
+/// agent, and returns the value from the agent's response.
+///
+/// @param gw             Gateway
+/// @param aid            AgentID of the target agent
+/// @param param          Name of the parameter
+/// @param ndx            Index of the parameter (-1 for non-indexed parameters)
+/// @return               Parameter value, NULL if unavailable
+
+const char* fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx);
+
+/// Set an integer parameter on an agent. This is a utility function that sends a ParameterReq to an
+/// agent, and returns the value from the agent's response.
+///
+/// @param gw             Gateway
+/// @param aid            AgentID of the target agent
+/// @param param          Name of the parameter
+/// @param value          Value of the parameter
+/// @param ndx            Index of the parameter (-1 for non-indexed parameters)
+/// @return               0 on success, error code otherwise
+
+int fjage_param_set_int(fjage_gw_t gw, fjage_aid_t aid, const char* param, int value, int ndx);
+
+/// Set a long parameter on an agent. This is a utility function that sends a ParameterReq to an
+/// agent, and returns the value from the agent's response.
+///
+/// @param gw             Gateway
+/// @param aid            AgentID of the target agent
+/// @param param          Name of the parameter
+/// @param value          Value of the parameter
+/// @param ndx            Index of the parameter (-1 for non-indexed parameters)
+/// @return               0 on success, error code otherwise
+
+int fjage_param_set_long(fjage_gw_t gw, fjage_aid_t aid, const char* param, long value, int ndx);
+
+/// Set a float parameter on an agent. This is a utility function that sends a ParameterReq to an
+/// agent, and returns the value from the agent's response.
+///
+/// @param gw             Gateway
+/// @param aid            AgentID of the target agent
+/// @param param          Name of the parameter
+/// @param value          Value of the parameter
+/// @param ndx            Index of the parameter (-1 for non-indexed parameters)
+/// @return               0 on success, error code otherwise
+
+int fjage_param_set_float(fjage_gw_t gw, fjage_aid_t aid, const char* param, float value, int ndx);
+
+/// Set a boolean parameter on an agent. This is a utility function that sends a ParameterReq to an
+/// agent, and returns the value from the agent's response.
+///
+/// @param gw             Gateway
+/// @param aid            AgentID of the target agent
+/// @param param          Name of the parameter
+/// @param value          Value of the parameter
+/// @param ndx            Index of the parameter (-1 for non-indexed parameters)
+/// @return               0 on success, error code otherwise
+
+int fjage_param_set_bool(fjage_gw_t gw, fjage_aid_t aid, const char* param, bool value, int ndx);
+
+/// Set a string parameter on an agent. This is a utility function that sends a ParameterReq to an
+/// agent, and returns the value from the agent's response.
+///
+/// @param gw             Gateway
+/// @param aid            AgentID of the target agent
+/// @param param          Name of the parameter
+/// @param value          Value of the parameter
+/// @param ndx            Index of the parameter (-1 for non-indexed parameters)
+/// @return               0 on success, error code otherwise
+
+int fjage_param_set_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, const char* value, int ndx);
 
 #endif
