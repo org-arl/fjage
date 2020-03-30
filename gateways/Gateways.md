@@ -109,6 +109,7 @@ All fjåge Gateway implementations should implement the following classes and me
 ### `get()` :: String name, (int index) -> Object
 - Gets the value of a parameter on the Agent that the AgentID refers to.
 - Convenience method to replace doing a ParameterReq to get a parameter from an Agent.
+- If name is `null`, the all the parameters on the Agent must be returned (similar to ParameterReq's behavior).
 - May be implemented as a getter for a property the AgentID object, with the parameter name being the property name, and the index being the array index (for e.g. `agent.property[index]`), if the language supports it.
 
 
