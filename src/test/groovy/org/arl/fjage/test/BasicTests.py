@@ -49,15 +49,35 @@ class FjageTest(unittest.TestCase):
 
     def test_send_Message(self):
         """Test: Should be able to send a message to a agent running in master container"""
-        m = Message(recipient='shell')
+        m = Message(recipient='test')
         self.assertIsInstance(m, Message)
         self.assertTrue(self.g.send(m))
 
     def test_send_GenericMessage(self):
         """Test: Should be able to send a message to a agent running in master container"""
-        m = GenericMessage(recipient='shell', text='hello', data=[1, 2, 3])
+        m = GenericMessage(recipient='test', text='hello', data=[1, 2, 3])
         self.assertIsInstance(m, Message)
         self.assertTrue(self.g.send(m))
+
+    def test_parameters(self):
+        """Test: Should be able to set and get parameter values"""
+        self.assertEquals(self.g.agent('S').y, 2)           # should get the value of a single parameter
+        self.assertEquals(self.g.agent('S').k, None)        # should return None if asked to get the value of unknown parameter
+        # self.g.agent('S').a = 42                            # should set the value of a single parameter and return the new value
+        # self.assertEquals(self.g.agent('S').a, 42)
+        # self.g.agent('S').a = 0
+        # self.assertEquals(self.g.agent('S').a, 0)
+        # self.g.agent('S').k = 42                            # should return None if asked to set the value of unknown parameter
+        # self.assertEquals(self.g.agent('S').k, None)
+        # self.g.agent('S')[1].z = 4                          # should get the value of a single indexed parameter
+        # self.assertEquals(self.g.agent('S')[1].z, 4)
+        # self.assertEquals(self.g.agent('S')[1].k, None)     # should return None if asked to get the value of unknown indexed parameter
+        # self.g.agent('S')[1].z = 42                         # should set the value of a single indexed parameter and return the new value
+        # self.assertEquals(self.g.agent('S')[1].z, 42)
+        # self.g.agent('S')[1].z = 4
+        # self.assertEquals(self.g.agent('S')[1].z, 4)
+        # self.g.agent('S')[1].k = 1
+        # self.assertEquals(self.g.agent('S')[1].k, None)     # should return None if asked to set the value of unknown indexed test_parameters
 
     @classmethod
     def tearDownClass(cls):

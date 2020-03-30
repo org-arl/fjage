@@ -73,6 +73,8 @@ def _value(v):
 
 
 def _short(p):
+    if p is None:
+        return None
     return p.split('.')[-1]
 
 
@@ -173,7 +175,7 @@ class AgentID:
             p.text('...')
             return
         rsp = self.request(ParameterReq(index=self.index))
-        if rsp is None:
+        if (rsp is None) or (rsp.__dict__['param'] is None and rsp.__dict__['value'] is None):
             p.text(self.__str__())
             return
         ursp = ParameterRsp()
@@ -194,11 +196,15 @@ class AgentID:
             if prefix != oprefix:
                 oprefix = prefix
                 p.text('\n[' + prefix + ']\n')
-            p.text('  ' + pp[-1] + ' = ' + str(params[param]) + '\n')
+            if 'readonly' in list(ursp.__dict__.keys()) and ursp.__dict__['readonly'] is not None:
+                if param in ursp.__dict__['readonly']:
+                    p.text('  ' + pp[-1] + ' \u2907 ' + str(params[param]) + '\n')
+                else:
+                    p.text('  ' + pp[-1] + ' = ' + str(params[param]) + '\n')
 
 def getter(self, param):
     rsp = self.request(ParameterReq(index=self.index).get(param))
-    if rsp is None:
+    if (rsp is None) or (rsp.__dict__['param'] is None and rsp.__dict__['value'] is None):
         return None
     ursp = ParameterRsp()
     ursp.__dict__.update(rsp.__dict__)
@@ -214,7 +220,7 @@ def setter(self, param, value):
         self.__dict__[param] = value
         return value
     rsp = self.request(ParameterReq(index=self.index).set(param, value))
-    if rsp is None:
+    if (rsp is None) or (rsp.__dict__['param'] is None and rsp.__dict__['value'] is None):
         _warn('Could not set parameter ' + param)
         return None
     ursp = ParameterRsp()
@@ -434,9 +440,10 @@ class ParameterRsp(_ParameterRsp):
             return _value(self.value)
         if 'values' not in self.__dict__:
             return None
-        for v in self.values:
-            if _short(v) == param:
-                return _value(self.values[v])
+        if self.values is not None:
+            for v in self.values:
+                if _short(v) == param:
+                    return _value(self.values[v])
         return None
 
     def parameters(self):
