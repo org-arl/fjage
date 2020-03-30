@@ -252,7 +252,7 @@ describe('An AgentID', function () {
 
   it('should return null if asked to set the value of unknown parameter',  async function () {
     const aid = new AgentID('S', false, gw);
-    let val = await aid.get('k');
+    let val = await aid.set('k', 42);
     expect(val).toEqual(null);
   });
 
