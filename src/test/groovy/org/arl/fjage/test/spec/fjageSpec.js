@@ -270,6 +270,19 @@ describe('An AgentID', function () {
     expect(val).toEqual([0, 42]);
   });
 
+  it('should get the values of all parameter on a Agent', async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.get();
+    expect(val).toEqual({
+      'org.arl.fjage.test.Params.x': 1,
+      'org.arl.fjage.test.Params.y': 2,
+      'org.arl.fjage.test.Params.z': 2,
+      'org.arl.fjage.test.Params.s': 'xxx',
+      'org.arl.fjage.test.Params.a': 0,
+      'org.arl.fjage.test.Params.b': 42
+    });
+  });
+
   it('should get the value of a single indexed parameter', async function () {
     const aid = new AgentID('S', false, gw);
     let val = await aid.get('z', 1);
@@ -308,6 +321,16 @@ describe('An AgentID', function () {
     expect(val).toEqual([42, 'yyy']);
     val = await aid.set('z', 4, 1);
     expect(val).toEqual(4);
+  });
+
+  it('should get the values of all indexed parameter on a Agent', async function () {
+    const aid = new AgentID('S', false, gw);
+    let val = await aid.get(null, 1);
+    expect(val).toEqual({
+      'org.arl.fjage.test.Params.z': 4,
+      'org.arl.fjage.test.Params.s': 'yyy',
+      'org.arl.fjage.test.Params.y': 3
+    });
   });
 
 });

@@ -79,11 +79,11 @@ public class ParamServerAgent extends Agent {
   // These will have automatic Getter/Setter Param.a and Param.b
   int a = 0;
   float b = 42.0;
+  int z = 2;
 
   public int x = 1;
 
   // These are local variables (storage)
-  private int z = 2;
   private int z1 = 4;
 
   // This will be mapped to Param.y
@@ -95,16 +95,13 @@ public class ParamServerAgent extends Agent {
   public String getS(int index) { if (index == 1) return "yyy"; }
   public String setS(int index, String val) { if (index == 1) return "yyy"; }
 
-  // This will be mapped to Param.z
+  // This will be mapped to Param.z for index 1
   public int getZ(int index) {
     if (index == 1) return z1;
-    else if (index == -1) return z;
   }
+
   public int setZ(int index, int val) {
-    if (index == -1){
-      z = val;
-      return z;
-    } else if (index == 1) {
+    if (index == 1) {
       z1 = val;
       return z1;
     }
@@ -115,11 +112,16 @@ public class ParamServerAgent extends Agent {
   public ParamServerAgent() {
     super();
   }
+
   @Override
   public void init() {
     register("server");
-    add(new ParameterMessageBehavior(Params));
+    add(new ParameterMessageBehavior(Params){
+      @Override
+      protected List<? extends Parameter> getParameterList(int ndx) {
+        if (ndx < 0) return getParameterList();
+        else if (ndx == 1) return getParameterList();
+      }
+    });
   }
 }
-
-

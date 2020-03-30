@@ -163,7 +163,7 @@ export class AgentID {
   /**
    * Gets parameter(s) on the Agent referred to by this AgentID.
    *
-   * @param {(string|string[])} params - parameters name(s) to be get.
+   * @param {(null|string|string[])} params - parameters name(s) to be get. null implies get value of all parameters on the Agent.
    * @param {number} [index=-1] - index of parameter(s) to be get.
    * @return {Promise} - A promise which returns the value(s) of the parameters
    */
