@@ -3,6 +3,7 @@ package org.arl.fjage.test
 import org.arl.fjage.*
 import org.arl.fjage.remote.MasterContainer
 import org.junit.Test
+import org.arl.fjage.test.ParamServerAgent
 
 import static org.junit.Assert.assertTrue
 
