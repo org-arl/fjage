@@ -76,7 +76,7 @@ class GroovyExtensions {
       receive(f, timeout)
     }
 
-    AgentID.metaClass.propertyMissing = { String name, value ->
+    AgentID.metaClass.setProperty = { String name, value ->
       if (owner == null) throw new FjageException('Parameters not suported on unowned AgentID')
       Parameter p = new NamedParameter(name)
       ParameterReq req = new ParameterReq().set(p, value)
