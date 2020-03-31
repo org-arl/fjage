@@ -43,6 +43,8 @@ Following these rules guarantees that the agents transparently switch between th
 
 Agents may choose to provide one or more *services*. Rather than having to know the AgentID of an agent in advance, agents requiring the services of another agent may look for agents providing specific services via the *directory service*. Agents may choose to subscribe to and send messages to *topics*. All agents subscribing to a topic receive each message sent to that topic.
 
+Agents may advertise *parameters*. These are generic key-value pairs that can be read and optionally written to using a `ParameterReq` message. Agents typically use parameters for configuration and status reporting.
+
 That's pretty much it for the concepts that you need to understand to get started. If all of this seems a bit abstract at the moment, don't worry about it -- things will become clear shortly as we go through some examples.
 
 License

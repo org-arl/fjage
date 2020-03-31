@@ -14,6 +14,7 @@ Table of Contents
    services
    remote
    shell
+   params
    simulation
    pythongw
    cgw
