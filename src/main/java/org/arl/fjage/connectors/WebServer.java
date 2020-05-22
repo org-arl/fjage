@@ -20,6 +20,12 @@ import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.security.ConstraintMapping;
+import org.eclipse.jetty.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.security.HashLoginService;
+import org.eclipse.jetty.security.LoginService;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
+import org.eclipse.jetty.util.security.Constraint;
 
 /**
  * Web server instance manager.
@@ -133,19 +139,44 @@ public class WebServer {
     this(port, "127.0.0.1");
   }
 
-  protected WebServer(int port, String ip) {
+  protected WebServer(int port, String ip, String hashProp) {
     this.port = port;
     server = new Server(InetSocketAddress.createUnresolved(ip, port));
     server.setStopAtShutdown(true);
     if (port > 0) servers.put(port, this);
     contexts = new ContextHandlerCollection();
     HandlerCollection handlerCollection = new HandlerCollection();
+    handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });
+
     GzipHandler gzipHandler = new GzipHandler();
     gzipHandler.setIncludedMimeTypes("text/html", "text/plain", "text/xml", "text/css", "application/javascript", "text/javascript");
-    handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });
-    gzipHandler.setHandler(handlerCollection);
+
+    if (hashProp != null){
+      Constraint constraint = new Constraint(Constraint.__BASIC_AUTH, "user");
+      constraint.setAuthenticate(true);
+      constraint.setRoles(new String[]{"user"});
+      ConstraintMapping cm = new ConstraintMapping();
+      cm.setPathSpec("/*");
+      cm.setConstraint(constraint);
+
+      ConstraintSecurityHandler security = new ConstraintSecurityHandler();
+      security.setAuthenticator(new BasicAuthenticator());
+      security.setConstraintMappings(Arrays.asList(new ConstraintMapping[] { cm }));
+      HashLoginService loginService = new HashLoginService("UnetRealm", hashProp);
+      security.setLoginService(loginService);
+      security.setHandler(handlerCollection);
+
+      gzipHandler.setHandler(security);
+    } else{
+      gzipHandler.setHandler(handlerCollection);
+    }
+
     server.setHandler(gzipHandler);
     started = false;
+  }
+
+  protected WebServer(int port, String ip) {
+    this(port, ip, null);
   }
 
   /**

@@ -69,6 +69,8 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
 
   /////////////////////// Log levels
 
+  protected static int agentMaxLifetime = 600;
+
   protected static final Level ALL = Level.ALL;
   protected static final Level FINEST = Level.FINEST;
   protected static final Level FINER = Level.FINER;
