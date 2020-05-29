@@ -36,30 +36,34 @@
   var defaultCursorWidth;
   function connectSocket(term, url, path){
     const ws = new WebSocket('ws://' + url + path);
+    var attachAddon;
     window.ws = ws;
     ws.onerror = () => {
-      reconnectSocket(term, url, path ,ws);
+      reconnectSocket(term, attachAddon, url, path ,ws);
     };
     ws.onclose = () => {
-      reconnectSocket(term, url, path,ws);
+      reconnectSocket(term, attachAddon, url, path,ws);
     };
     ws.onopen = () => {
       console.log('Connected to ', path);
-      const attachAddon = new AttachAddon.AttachAddon(ws);
+      attachAddon = new AttachAddon.AttachAddon(ws);
       term.loadAddon(attachAddon);
       // enable cursor to indicate connection is back
       term.write("\u001B[?25h");
       term.write('\x1b[1G\x1b[2K');
+      term.setOption('cursorBlink', true);
+      term.setOption('theme', { cursor: '#ff0000'});
     };
   }
-  function reconnectSocket(term, url, path, ws){
-    disconnectSocket(term, ws);
+  function reconnectSocket(term,attachAddon,url, path, ws){
+    disconnectSocket(term,attachAddon, ws);
     setTimeout(() => {
       connectSocket(term, url, path);
     },1000);
   }
-  function disconnectSocket(term, ws){
+  function disconnectSocket(term,attachAddon, ws){
     // disable cursor to indicate no connection
+    if (attachAddon) attachAddon.dispose();
     term.write("\u001B[?25l");
     term.write('\x1b[1G\x1b[2K\x1b[31m\x1b[2m(connection lost)\x1b[0m');
     ws.onmessage = null;
