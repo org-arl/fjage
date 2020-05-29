@@ -2,7 +2,11 @@
 <head>
   <title>fjåge shell</title>
   <meta charset='utf-8'/>
-  <script src='hterm_all.js'></script>
+  <link rel="stylesheet" href="xterm.css" />
+  <script src='xterm.js'></script>
+  <script src='xterm-addon-attach.js'></script>
+  <script src='xterm-addon-fit.js'></script>
+  <script src='xterm-addon-web-links.js'></script>
   <style>
     html {
       height: 100%;
@@ -29,102 +33,55 @@
 <div id='terminal'></div>
 <script>
   const ignoreKeys = ['Meta-R', 'Meta-Shift-R'];
-  function setupHterm() {
-    const term = new hterm.Terminal();
-    term.onTerminalReady = function() {
-      const io = this.io.push();
-      io.onTerminalResize = () => {
-        const width = document.body.clientWidth;
-        var size = 15;
-        if (width > 820){
-          size = 15;
-        } else if (width > 660){
-          size = 14;
-        } else if (width > 520){
-          size = 13;
-        } else if (width > 500){
-          size = 12;
-        } else if (width > 460){
-          size = 11;
-        } else if (width > 340){
-          size = 10;
-        } else if (width > 290){
-          size = 9;
-        } else if (width > 250){
-          size = 8;
-        } else{
-          size = 7;
-        }
-        term.prefs_.set('font-size', size);
-      };
-      this.keyboard.characterEncoding = 'raw';
-      ignoreKeys.forEach(keyname => {
-        this.keyboard.bindings.addBinding(keyname, () => hterm.Keyboard.KeyActions.PASS);
-      });
-      // enable paste bracketing (seems to be needed for speed when pasting)
-      io.print('\x1b[?2004h')
-      connectIO(io, term);
-    };
-    term.decorate(document.querySelector('#terminal'));
-    // TODO Remove setTimeout when hterm fixes their bug 980671
-    setTimeout(() => {
-      term.installKeyboard();
-      term.setCursorBlink(true);
-      const urlParams = new URLSearchParams(window.location.search);
-      const scbVis = urlParams.get('scrollbar');
-      term.prefs_.set('scrollbar-visible', scbVis != "false");
-      window.term = term;
-    },50);
-  }
-  function connectIO(io, term){
-    const urlParams = new URLSearchParams(window.location.search);
-    var url = urlParams.get('url');
-    const path = window.location.pathname.replace(/\/[^/]*$/, '/ws/');
-    if (!url){
-      url = window.location.hostname + ':' + window.location.port;
-    }
+  var defaultCursorWidth;
+  function connectSocket(term, url, path){
     const ws = new WebSocket('ws://' + url + path);
     window.ws = ws;
     ws.onerror = () => {
-      reconnectIO(io,term,ws);
+      reconnectSocket(term, url, path ,ws);
     };
     ws.onclose = () => {
-      reconnectIO(io,term,ws);
+      reconnectSocket(term, url, path,ws);
     };
     ws.onopen = () => {
       console.log('Connected to ', path);
-      ws.onmessage = (evt) => {
-        io.print(evt.data);
-      };
-      io.onVTKeystroke = (string) => {
-        if (ws.readyState != ws.CLOSING && ws.readyState != ws.CLOSED) ws.send(string);
-      };
-      io.sendString = io.onVTKeystroke;
+      const attachAddon = new AttachAddon.AttachAddon(ws);
+      term.loadAddon(attachAddon);
       // enable cursor to indicate connection is back
-      term.setCursorVisible(true);
-      term.io.print('\x1b[1G\x1b[2K');
+      term.write("\u001B[?25h");
+      term.write('\x1b[1G\x1b[2K');
     };
   }
-  function reconnectIO(io, term, ws){
-    disconnectIO(io, term, ws);
+  function reconnectSocket(term, url, path, ws){
+    disconnectSocket(term, ws);
     setTimeout(() => {
-      connectIO(io, term);
+      connectSocket(term, url, path);
     },1000);
   }
-  function disconnectIO(io, term, ws){
-  // enable cursor to indicate connection is back
-    term.setCursorVisible(false);
-    term.io.print('\x1b[1G\x1b[2K\x1b[31m\x1b[2m(connection lost)\x1b[0m');
-    io.onVTKeystroke = () => {};
-    io.sendString = () => {};
+  function disconnectSocket(term, ws){
+    // disable cursor to indicate no connection
+    term.write("\u001B[?25l");
+    term.write('\x1b[1G\x1b[2K\x1b[31m\x1b[2m(connection lost)\x1b[0m');
     ws.onmessage = null;
     ws.onopen = null;
     ws.onclose = null;
     ws.onerror = null;
   }
   window.onload = function() {
-    hterm.defaultStorage = new lib.Storage.Memory();
-    lib.init(setupHterm);
+    var term = new Terminal();
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.loadAddon(new WebLinksAddon.WebLinksAddon());
+
+    term.open(document.getElementById('terminal'));
+    fitAddon.fit();
+    defaultCursorWidth = term.getOption("cursorWidth");
+
+    const urlParams = new URLSearchParams(window.location.search);
+    var url = urlParams.get('url') || window.location.hostname + ':' + window.location.port;;
+    const path = window.location.pathname.replace(/\/[^/]*$/, '/ws/');
+
+    connectSocket(term, url, path);
   };
   </script>
 </body>
