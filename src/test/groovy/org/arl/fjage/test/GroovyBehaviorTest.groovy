@@ -7,7 +7,7 @@ import org.junit.Test
 import java.time.Duration
 
 class GroovyBehaviorTest
-    extends AbstractSimulatorTest {
+    extends AbstractBehaviorTest {
 
   @Test
   void testOneShot() {
@@ -48,11 +48,11 @@ class GroovyBehaviorTest
       protected void init() {
         super.init()
 
-        final int[] countHolder = [0]
+        final AbstractBehaviorTest.IntHolder countHolder = new AbstractBehaviorTest.IntHolder()
         add(new CyclicBehavior({
-          if (countHolder[0] < 10) {
+          if (countHolder.getValue() < 10) {
             emitTestEvent("EVENT1")
-            countHolder[0]++
+            countHolder.increment()
           } else {
             stop()
           }
@@ -234,9 +234,9 @@ class GroovyBehaviorTest
       protected void init() {
         super.init()
 
-        add(new MessageBehavior(TestMessage.class, { message ->
-          if (message instanceof TestMessage) {
-            final TestMessage testMessage = (TestMessage) message
+        add(new MessageBehavior(AbstractBehaviorTest.BehaviorTestMessage.class, { message ->
+          if (message instanceof AbstractBehaviorTest.BehaviorTestMessage) {
+            final AbstractBehaviorTest.BehaviorTestMessage testMessage = (AbstractBehaviorTest.BehaviorTestMessage) message
             Assert.assertEquals("TEST1", testMessage.getData())
             emitTestEvent("EVENT1")
           }
@@ -249,12 +249,12 @@ class GroovyBehaviorTest
       protected void init() {
         super.init()
 
-        add(new MessageBehavior(TestMessage.class) {
+        add(new MessageBehavior(AbstractBehaviorTest.BehaviorTestMessage.class) {
 
           @Override
           void onReceive(Message message) {
-            if (message instanceof TestMessage) {
-              final TestMessage testMessage = (TestMessage) message
+            if (message instanceof AbstractBehaviorTest.BehaviorTestMessage) {
+              final AbstractBehaviorTest.BehaviorTestMessage testMessage = (AbstractBehaviorTest.BehaviorTestMessage) message
               Assert.assertEquals("TEST2", testMessage.getData())
               emitTestEvent("EVENT2")
             }
@@ -268,11 +268,11 @@ class GroovyBehaviorTest
         super.init()
 
         add(new WakerBehavior(5000, {
-          final TestMessage testMessage1 = new TestMessage("TEST1")
+          final AbstractBehaviorTest.BehaviorTestMessage testMessage1 = new AbstractBehaviorTest.BehaviorTestMessage("TEST1")
           testMessage1.setRecipient(recipient1)
           send(testMessage1)
 
-          final TestMessage testMessage2 = new TestMessage("TEST2")
+          final AbstractBehaviorTest.BehaviorTestMessage testMessage2 = new AbstractBehaviorTest.BehaviorTestMessage("TEST2")
           testMessage2.setRecipient(recipient2)
           send(testMessage2)
         }))
@@ -285,21 +285,5 @@ class GroovyBehaviorTest
 
     // ---- run ----
     run(Duration.ofMinutes(5))
-  }
-
-  private static class TestMessage
-      extends Message {
-
-    private final String data
-
-    TestMessage(String data) {
-      super()
-
-      this.data = data
-    }
-
-    String getData() {
-      return data
-    }
   }
 }

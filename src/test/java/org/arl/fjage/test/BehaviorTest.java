@@ -7,7 +7,7 @@ import org.junit.Test;
 import java.time.Duration;
 
 public class BehaviorTest
-    extends AbstractSimulatorTest {
+    extends AbstractBehaviorTest {
 
   @Test
   public void testOneShot() {
@@ -48,11 +48,11 @@ public class BehaviorTest
       protected void init() {
         super.init();
 
-        final int[] countHolder = new int[]{0};
+        final IntHolder countHolder = new IntHolder();
         add(new CyclicBehavior(() -> {
-          if (countHolder[0] < 10) {
+          if (countHolder.getValue() < 10) {
             emitTestEvent("EVENT1");
-            countHolder[0]++;
+            countHolder.increment();
           } else {
             stop();
           }
@@ -234,9 +234,9 @@ public class BehaviorTest
       protected void init() {
         super.init();
 
-        add(new MessageBehavior(TestMessage.class, message -> {
-          if (message instanceof TestMessage) {
-            final TestMessage testMessage = (TestMessage) message;
+        add(new MessageBehavior(BehaviorTestMessage.class, message -> {
+          if (message instanceof BehaviorTestMessage) {
+            final BehaviorTestMessage testMessage = (BehaviorTestMessage) message;
             Assert.assertEquals("TEST1", testMessage.getData());
             emitTestEvent("EVENT1");
           }
@@ -249,12 +249,12 @@ public class BehaviorTest
       protected void init() {
         super.init();
 
-        add(new MessageBehavior(TestMessage.class) {
+        add(new MessageBehavior(BehaviorTestMessage.class) {
 
           @Override
           public void onReceive(Message message) {
-            if (message instanceof TestMessage) {
-              final TestMessage testMessage = (TestMessage) message;
+            if (message instanceof BehaviorTestMessage) {
+              final BehaviorTestMessage testMessage = (BehaviorTestMessage) message;
               Assert.assertEquals("TEST2", testMessage.getData());
               emitTestEvent("EVENT2");
             }
@@ -268,11 +268,11 @@ public class BehaviorTest
         super.init();
 
         add(new WakerBehavior(5000, () -> {
-          final TestMessage testMessage1 = new TestMessage("TEST1");
+          final BehaviorTestMessage testMessage1 = new BehaviorTestMessage("TEST1");
           testMessage1.setRecipient(recipient1);
           send(testMessage1);
 
-          final TestMessage testMessage2 = new TestMessage("TEST2");
+          final BehaviorTestMessage testMessage2 = new BehaviorTestMessage("TEST2");
           testMessage2.setRecipient(recipient2);
           send(testMessage2);
         }));
@@ -285,21 +285,5 @@ public class BehaviorTest
 
     // ---- run ----
     run(Duration.ofMinutes(5));
-  }
-
-  private static class TestMessage
-      extends Message {
-
-    private final String data;
-
-    public TestMessage(String data) {
-      super();
-
-      this.data = data;
-    }
-
-    public String getData() {
-      return data;
-    }
   }
 }
