@@ -13,6 +13,11 @@ package org.arl.fjage;
 import java.io.Serializable;
 import java.util.*;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.arl.fjage.persistence.Store;
@@ -394,6 +399,16 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
     if (container == null) return false;
     m.setSender(aid);
     return container.send(m);
+  }
+
+  /**
+   * Prepares a request to be sent.
+   *
+   * @param request Request message.
+   * @return Request sender.
+   */
+  public RequestSender prepareRequest(Message request) {
+    return new InternalRequestSender(request);
   }
 
   /**
@@ -815,4 +830,440 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
     platform = null;
   }
 
+  /**
+   * Fluent request sender interface.
+   */
+  public interface RequestSender {
+
+    /**
+     * Adds a message consumer to be invoked when an AGREE response is received.
+     * There may be more than one message consumer, and all message consumers will be invoked when this condition is met.
+     * The Future will be marked as completed once the message consumer(s) are invoked.
+     *
+     * @param consumer Message consumer.
+     * @return This request sender.
+     */
+    RequestSender onAgree(Consumer<Message> consumer);
+
+    /**
+     * Adds a message consumer to be invoked when a REFUSE response is received.
+     * There may be more than one message consumer, and all message consumers will be invoked when this condition is met.
+     * The Future will be marked as completed once the message consumer(s) are invoked.
+     *
+     * @param consumer Message consumer.
+     * @return This request sender.
+     */
+    RequestSender onRefuse(Consumer<Message> consumer);
+
+    /**
+     * Adds a message consumer to be invoked when a FAILURE response is received.
+     * There may be more than one message consumer, and all message consumers will be invoked when this condition is met.
+     * The Future will be marked as completed once the message consumer(s) are invoked.
+     *
+     * @param consumer Message consumer.
+     * @return This request sender.
+     */
+    RequestSender onFailure(Consumer<Message> consumer);
+
+    /**
+     * Adds a message consumer to be invoked when an INFORM message is received.
+     * There may be more than one message consumer, and all message consumers will be invoked when this condition is met.
+     * The Future will be marked as completed once the message consumer(s) are invoked.
+     *
+     * @param consumer Message consumer.
+     * @return This request sender.
+     */
+    RequestSender onInform(Consumer<Message> consumer);
+
+    /**
+     * Adds a Runnable to be invoked when this operation times out.
+     * There may be more than one timeout Runnable, but only the one associated with the triggered timeout is invoked.
+     * The Future will be marked as completed once the Runnable is invoked.
+     *
+     * @param timeout  Timeout (ms).
+     * @param runnable Runnable.
+     * @return This request sender.
+     */
+    RequestSender onTimeout(long timeout, Runnable runnable);
+
+    /**
+     * Adds a message consumer to be invoked when a message that is not one of AGREE, REFUSE, FAILURE, INFORM is received.
+     * There may be more than one message consumer, and all message consumers will be invoked when this condition is met.
+     * The Future will be marked as completed once the message consumer(s) are invoked.
+     *
+     * @param consumer Message consumer.
+     * @return This request sender.
+     */
+    RequestSender otherwise(Consumer<Message> consumer);
+
+    /**
+     * Sends the message asynchronously.
+     * The returned Future will return the response message for any of the message types which have a message consumer associated.
+     *
+     * @return A Future returning the response message.
+     */
+    Future<Message> send();
+
+    /**
+     * Sends the message synchronously.
+     *
+     * @return A response message for any of the message types which have a message consumer associated, null if the operation timed out.
+     */
+    Message sendAndWait();
+  }
+
+  private class InternalRequestSender
+      implements RequestSender {
+
+    private final Message request;
+    private List<Consumer<Message>> onAgreeList;
+    private List<Consumer<Message>> onRefuseList;
+    private List<Consumer<Message>> onFailureList;
+    private List<Consumer<Message>> onInformList;
+    private List<Consumer<Message>> otherwiseList;
+    private List<TimeoutEntry> onTimeoutList;
+
+    private List<WakerBehavior> timeoutBehaviorList;
+    private StoppableMessageBehavior messageBehavior;
+
+    private volatile Message message;
+    private volatile boolean done = false;
+    private volatile boolean cancelled = false;
+
+    private InternalRequestSender(Message request) {
+      super();
+
+      this.request = request;
+    }
+
+    private <T> List<T> addHandler(List<T> handlerList, T handler) {
+      if (handlerList == null) {
+        handlerList = new ArrayList<>();
+      }
+      handlerList.add(handler);
+      return handlerList;
+    }
+
+    @Override
+    public RequestSender onAgree(Consumer<Message> consumer) {
+      onAgreeList = addHandler(onAgreeList, consumer);
+      return this;
+    }
+
+    @Override
+    public RequestSender onRefuse(Consumer<Message> consumer) {
+      onRefuseList = addHandler(onRefuseList, consumer);
+      return this;
+    }
+
+    @Override
+    public RequestSender onFailure(Consumer<Message> consumer) {
+      onFailureList = addHandler(onFailureList, consumer);
+      return this;
+    }
+
+    @Override
+    public RequestSender onInform(Consumer<Message> consumer) {
+      onInformList = addHandler(onInformList, consumer);
+      return this;
+    }
+
+    @Override
+    public RequestSender otherwise(Consumer<Message> consumer) {
+      otherwiseList = addHandler(otherwiseList, consumer);
+      return this;
+    }
+
+    @Override
+    public RequestSender onTimeout(long timeout, Runnable runnable) {
+      if (onTimeoutList == null) {
+        onTimeoutList = new ArrayList<>();
+      }
+      onTimeoutList.add(new TimeoutEntry(timeout, runnable));
+      return this;
+    }
+
+    @Override
+    public Future<Message> send() {
+      if ((onTimeoutList != null) && !onTimeoutList.isEmpty()) {
+        timeoutBehaviorList = new ArrayList<>();
+        for (final TimeoutEntry timeoutEntry : onTimeoutList) {
+          final WakerBehavior timeoutBehavior = new WakerBehavior(timeoutEntry.getTimeout()) {
+
+            @Override
+            public void onWake() {
+              if (done) {
+                return;
+              }
+              done = true;
+              try {
+                timeoutEntry.getRunnable().run();
+              } catch (Throwable t) {
+                log.log(Level.WARNING, "Exception", t);
+              }
+              stopBehaviors();
+            }
+          };
+          timeoutBehaviorList.add(timeoutBehavior);
+          add(timeoutBehavior);
+        }
+      }
+
+      messageBehavior = new StoppableMessageBehavior(new ReplyMessageFilter(request)) {
+
+        @Override
+        public void onReceive(Message message) {
+          if (done) {
+            return;
+          }
+          if (done()) {
+            return;
+          }
+          switch (message.getPerformative()) {
+            case AGREE:
+              consumeMessageAndMarkAsDone(onAgreeList, message);
+              break;
+            case REFUSE:
+              consumeMessageAndMarkAsDone(onRefuseList, message);
+              break;
+            case FAILURE:
+              consumeMessageAndMarkAsDone(onFailureList, message);
+              break;
+            case INFORM:
+              consumeMessageAndMarkAsDone(onInformList, message);
+              break;
+            default:
+              consumeMessageAndMarkAsDone(otherwiseList, message);
+              break;
+          }
+        }
+      };
+
+      add(messageBehavior);
+
+      Agent.this.send(request);
+
+      return new MessageFuture();
+    }
+
+    @Override
+    public Message sendAndWait() {
+      final Future<Message> future = send();
+      try {
+        return future.get();
+      } catch (ExecutionException | InterruptedException e) {
+        return null;
+      }
+    }
+
+    private void stopBehaviors() {
+      if (timeoutBehaviorList != null) {
+        for (final WakerBehavior timeoutBehavior : timeoutBehaviorList) {
+          timeoutBehavior.stop();
+        }
+      }
+      if (messageBehavior != null) {
+        messageBehavior.stop();
+      }
+    }
+
+    private void consumeMessageAndMarkAsDone(List<Consumer<Message>> consumers, Message message) {
+      if (done || (consumers == null) || consumers.isEmpty()) {
+        return;
+      }
+      InternalRequestSender.this.message = message;
+      done = true;
+      consumeMessage(consumers, message);
+    }
+
+    private void consumeMessage(List<Consumer<Message>> consumers, Message message) {
+      if ((consumers == null) || consumers.isEmpty()) {
+        return;
+      }
+      for (final Consumer<Message> consumer : consumers) {
+        if (consumer != null) {
+          try {
+            consumer.accept(message);
+          } catch (Throwable t) {
+            log.log(Level.WARNING, "Exception", t);
+          }
+        }
+      }
+    }
+
+    private class MessageFuture implements Future<Message> {
+
+      @Override
+      public boolean cancel(boolean mayInterruptIfRunning) {
+        if (done) {
+          return false;
+        }
+        try {
+          stopBehaviors();
+          return true;
+        } finally {
+          cancelled = true;
+          done = true;
+        }
+      }
+
+      @Override
+      public boolean isCancelled() {
+        return cancelled;
+      }
+
+      @Override
+      public boolean isDone() {
+        return done;
+      }
+
+      @Override
+      public Message get()
+          throws InterruptedException, ExecutionException {
+        try {
+          return doGet(0, null);
+        } catch (TimeoutException e) {
+          // should not be thrown
+          throw new RuntimeException(e);
+        }
+      }
+
+      @Override
+      public Message get(long timeout, TimeUnit unit)
+          throws InterruptedException, ExecutionException, TimeoutException {
+        if (unit == null) {
+          throw new NullPointerException();
+        }
+        return doGet(timeout, unit);
+      }
+
+      private Message doGet(long timeout, TimeUnit unit)
+          throws TimeoutException {
+        if (Thread.currentThread().getId() != tid) {
+          throw new FjageException("receive() should only be called from agent thread");
+        }
+        final Long timeoutMs = (unit != null) ? TimeUnit.MILLISECONDS.convert(timeout, unit) : null;
+        final Long deadline = (timeoutMs != null) ? currentTimeMillis() + timeoutMs : null;
+        while ((getState() != AgentState.FINISHING)
+            && !done
+            && ((deadline == null) || (currentTimeMillis() < deadline))) {
+          if (!executeBehavior()) {
+            block();
+          }
+          Thread.interrupted(); // interrupts used for disrupting timeouts only
+        }
+        if ((deadline != null) && (currentTimeMillis() >= deadline)) {
+          throw new TimeoutException();
+        }
+        return message;
+      }
+    }
+
+    private class TimeoutEntry {
+
+      private final long timeout;
+      private final Runnable runnable;
+
+      public TimeoutEntry(long timeout, Runnable runnable) {
+        super();
+
+        this.timeout = timeout;
+        this.runnable = runnable;
+      }
+
+      public long getTimeout() {
+        return timeout;
+      }
+
+      public Runnable getRunnable() {
+        return runnable;
+      }
+    }
+
+    private class ReplyMessageFilter
+        implements MessageFilter {
+
+      private final String messageId;
+
+      public ReplyMessageFilter(Message request) {
+        super();
+
+        messageId = request.getMessageID();
+        if (messageId == null) {
+          throw new IllegalArgumentException("Message does not have an ID");
+        }
+      }
+
+      @Override
+      public boolean matches(Message message) {
+        return ((message.getInReplyTo() != null) && message.getInReplyTo().equals(messageId));
+      }
+    }
+
+    private class StoppableMessageBehavior
+        extends Behavior {
+
+      private final MessageFilter filter;
+      private boolean quit = false;
+
+      public StoppableMessageBehavior() {
+        this((MessageFilter) null);
+      }
+
+      public StoppableMessageBehavior(final Class<?> cls) {
+        this(cls::isInstance);
+      }
+
+      public StoppableMessageBehavior(final MessageFilter filter) {
+        super();
+
+        this.filter = filter;
+      }
+
+      public boolean accepts(Message msg) {
+        if (filter == null) {
+          return true;
+        }
+        return filter.matches(msg);
+      }
+
+      public void onReceive(Message msg) {
+        if (action != null) {
+          action.call(msg);
+        }
+      }
+
+      @Override
+      public final void action() {
+        final Message msg;
+        if (filter == null) {
+          msg = agent.receive();
+        } else {
+          msg = agent.receive(filter, 0);
+        }
+        if (msg == null) {
+          block();
+        } else {
+          onReceive(msg);
+        }
+      }
+
+      public final void stop() {
+        quit = true;
+      }
+
+      @Override
+      public final boolean done() {
+        return quit;
+      }
+
+      @Override
+      public int getPriority() {
+        if (filter != null) {
+          return -100;
+        }
+        return 0;
+      }
+    }
+  }
 }
