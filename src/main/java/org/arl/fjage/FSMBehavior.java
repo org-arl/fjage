@@ -51,6 +51,26 @@ public class FSMBehavior extends Behavior {
   private State next = INIT;
   private State old = INIT;
 
+  ///////////// Public interface
+
+  /**
+   * Creates a FSM behavior.
+   */
+  public FSMBehavior() {
+    super();
+  }
+
+  /**
+   * Creates a FSM behavior.
+   *
+   * @param states States to be added to the FSM behavior.
+   */
+  public FSMBehavior(FSMBehavior.State... states) {
+    for (final FSMBehavior.State state : states) {
+      add(state);
+    }
+  }
+
   //////////// Overridden methods from superclass
 
   @Override
@@ -210,6 +230,8 @@ public class FSMBehavior extends Behavior {
      */
     protected Logger log = null;
 
+    private Runnable runnable;
+
     /////////// Constructor
 
     /**
@@ -222,14 +244,30 @@ public class FSMBehavior extends Behavior {
       this.name = name;
     }
 
+    /**
+     * Creates a named state. The name may later be reassigned when the state is
+     * added to the FSM.
+     *
+     * @param name name of the state.
+     * @param runnable Runnable to run.
+     */
+    public State(Object name, Runnable runnable) {
+      this(name);
+      this.runnable = runnable;
+    }
+
     /////////// Methods for subclass to override
 
     /**
      * This method is repeatedly called when the state is active. The default
-     * implementation simply blocks the behavior.
+     * implementation simply blocks the behavior unless a runnable was provided during instantiation.
      */
     public void action() {
-      block();
+      if (runnable != null) {
+        runnable.run();
+      } else {
+        block();
+      }
     }
 
     /**
@@ -326,7 +364,5 @@ public class FSMBehavior extends Behavior {
       if (fsm == null) return false;
       return fsm.isBlocked();
     }
-
   }
-
 }

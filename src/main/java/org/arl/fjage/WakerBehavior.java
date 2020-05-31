@@ -37,6 +37,19 @@ public class WakerBehavior extends Behavior {
   }
 
   /**
+   * Creates a behavior which is executed once after a specified delay.
+   *
+   * @param millis delay in milliseconds.
+   * @param runnable Runnable to run.
+   */
+  public WakerBehavior(long millis, Runnable runnable) {
+    this(millis);
+    if (runnable != null) {
+      this.action = param -> runnable.run();
+    }
+  }
+
+  /**
    * Returns the wakeup time for this behavior. On a real-time platform, the
    * time is the epoch time, while a discrete event simulator gives the wakeup
    * time in simulated time.
@@ -123,5 +136,20 @@ public class WakerBehavior extends Behavior {
     return Integer.MIN_VALUE;
   }
 
-}
+  /**
+   * Creates a new WakerBehavior which runs the specified Runnable once the specified delay expires.
+   *
+   * @param millis Delay in milliseconds.
+   * @param runnable Runnable to run.
+   * @return WakerBehavior
+   */
+  public static WakerBehavior create(long millis, final Runnable runnable) {
+    return new WakerBehavior(millis) {
 
+      @Override
+      public void onWake() {
+        runnable.run();
+      }
+    };
+  }
+}

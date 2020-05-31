@@ -42,6 +42,21 @@ public class PoissonBehavior extends Behavior {
   }
 
   /**
+   * Creates a behavior that simulates a Poisson arrival process with a
+   * specified average interarrival time. The equivalent arrival rate is given
+   * by the reciprocal of the average interarrival time.
+   *
+   * @param millis average interarrival time in milliseconds.
+   * @param runnable Runnable to run.
+   */
+  public PoissonBehavior(long millis, Runnable runnable) {
+    this(millis);
+    if (runnable != null) {
+      this.action = param -> runnable.run();
+    }
+  }
+
+  /**
    * Terminates the behavior.
    */
   public final void stop() {
@@ -128,4 +143,20 @@ public class PoissonBehavior extends Behavior {
     return Integer.MIN_VALUE;
   }
 
+  /**
+   * Creates a new PoissonBehavior which runs the specified Runnable on each arrival.
+   *
+   * @param millis Average inter-arrival time in milliseconds.
+   * @param runnable Runnable to run.
+   * @return PoissonBehavior
+   */
+  public static PoissonBehavior create(long millis, final Runnable runnable) {
+    return new PoissonBehavior(millis) {
+
+      @Override
+      public void onTick() {
+        runnable.run();
+      }
+    };
+  }
 }
