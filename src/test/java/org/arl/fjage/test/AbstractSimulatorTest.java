@@ -150,11 +150,20 @@ public abstract class AbstractSimulatorTest {
   }
 
   /**
+   * Registers the expectation that there will be a specified number of test events with the specified ID.
+   *
+   * @param id Test event ID.
+   */
+  protected void expectEventCount(String id, int count) {
+    expectations.add(new OccurrencesExpectation(id, count, count));
+  }
+
+  /**
    * Registers the expectation that the elapsed time between two specified test events will be within a certain range.
    * Note that if there are more than one test events with the specified ID, only the first test event will be used.
    *
-   * @param id1 ID of first test event.
-   * @param id2 ID of second test event.
+   * @param id1            ID of first test event.
+   * @param id2            ID of second test event.
    * @param minElapsedTime Minimum elapsed time (ms).
    * @param maxElapsedTime Maximum elapsed time (ms).
    */
@@ -167,12 +176,26 @@ public abstract class AbstractSimulatorTest {
    * within a certain range.
    * Note that if there are more than one test events with the specified ID, only the first test event will be used.
    *
-   * @param id ID of test event.
+   * @param id             ID of test event.
    * @param minElapsedTime Minimum elapsed time (ms).
    * @param maxElapsedTime Maximum elapsed time (ms).
    */
   protected void expectElapsedTimeBetweenEvents(String id, long minElapsedTime, long maxElapsedTime) {
     expectations.add(new RepeatingElapsedTimeExpectation(id, minElapsedTime, maxElapsedTime));
+  }
+
+  /**
+   * Registers the expectation that the average elapsed time between consecutive test events with the specified ID will
+   * be within a certain range.
+   * Note that if there are more than one test events with the specified ID, only the first test event will be used.
+   *
+   * @param id                    ID of test event.
+   * @param minAverageElapsedTime Minimum average elapsed time (ms).
+   * @param maxAverageElapsedTime Maximum average elapsed time (ms).
+   */
+  protected void expectAverageElapsedTimeBetweenEvents(String id, long minAverageElapsedTime,
+                                                       long maxAverageElapsedTime) {
+    expectations.add(new AverageElapsedTimeExpectation(id, minAverageElapsedTime, maxAverageElapsedTime));
   }
 
   private interface Expectation {
@@ -371,6 +394,59 @@ public abstract class AbstractSimulatorTest {
               "Maximum elapsed time between '%s' tests events should be at most %,dms, actual: %,dms",
               getId(), maxElapsedTime, elapsedTime));
         }
+      }
+    }
+  }
+
+  private static class AverageElapsedTimeExpectation
+      extends AbstractIdExpectation {
+
+    private final long minAverageElapsedTime;
+    private final long maxAverageElapsedTime;
+
+    private AverageElapsedTimeExpectation(String id, long minAverageElapsedTime, long maxAverageElapsedTime) {
+      super(id);
+
+      this.minAverageElapsedTime = minAverageElapsedTime;
+      this.maxAverageElapsedTime = maxAverageElapsedTime;
+    }
+
+    @Override
+    public void check(List<TestEvent> testEvents) {
+      // skip
+    }
+
+    @Override
+    public void checkAtEnd(List<TestEvent> testEvents) {
+      final List<TestEvent> collectedTestEvents = findEventById(testEvents, getId()).collect(Collectors.toList());
+      if (collectedTestEvents.isEmpty()) {
+        Assert.fail(String.format("Test event '%s' not present", getId()));
+        return;
+      }
+      if (collectedTestEvents.size() == 1) {
+        Assert.fail(String.format("More than one '%s' test event is expected", getId()));
+        return;
+      }
+      long totalElapsedTime = 0;
+      int count = 0;
+      for (int i = 0; i < collectedTestEvents.size() - 1; i++) {
+        final TestEvent event1 = collectedTestEvents.get(i);
+        final TestEvent event2 = collectedTestEvents.get(i + 1);
+        final long elapsedTime = event2.getTimestamp() - event1.getTimestamp();
+        totalElapsedTime += elapsedTime;
+        count++;
+      }
+      final double averageElapsedTime = (double) totalElapsedTime / (double) count;
+      if (averageElapsedTime < minAverageElapsedTime) {
+        Assert.fail(String.format(
+            "Minimum average elapsed time between '%s' tests events should be at least %,dms, actual: %,fms",
+            getId(), minAverageElapsedTime, averageElapsedTime));
+        return;
+      }
+      if (averageElapsedTime > maxAverageElapsedTime) {
+        Assert.fail(String.format(
+            "Maximum average elapsed time between '%s' tests events should be at most %,dms, actual: %,fms",
+            getId(), maxAverageElapsedTime, averageElapsedTime));
       }
     }
   }
