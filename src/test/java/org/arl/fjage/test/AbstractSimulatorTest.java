@@ -73,6 +73,15 @@ public abstract class AbstractSimulatorTest {
   }
 
   /**
+   * Returns the waiter.
+   *
+   * @return Waiter.
+   */
+  protected Waiter getWaiter() {
+    return waiter;
+  }
+
+  /**
    * Runs the test.
    *
    * @param duration Duration.
