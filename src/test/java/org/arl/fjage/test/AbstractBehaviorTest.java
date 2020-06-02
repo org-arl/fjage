@@ -8,6 +8,8 @@ public abstract class AbstractBehaviorTest
   protected static class BehaviorTestMessage
       extends Message {
 
+    private static final long serialVersionUID = 1L;
+
     private final String data;
 
     public BehaviorTestMessage(String data) {
