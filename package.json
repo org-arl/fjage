@@ -8,7 +8,8 @@
   },
   "devDependencies": {
     "documentation": "^12.1.4",
-    "puppeteer": "^1.20.0"
+    "puppeteer": "^1.20.0",
+    "diff": ">=3.5.0"
   },
   "scripts": {
     "test": "echo \"Use 'gradle test' instead\" && exit 1",
