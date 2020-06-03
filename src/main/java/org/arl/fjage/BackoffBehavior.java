@@ -21,6 +21,19 @@ public class BackoffBehavior extends Behavior {
   }
 
   /**
+   * Creates a behavior that is executed after a specified backoff.
+   *
+   * @param millis backoff in milliseconds.
+   * @param runnable Runnable to run.
+   */
+  public BackoffBehavior(long millis, Runnable runnable) {
+    this(millis);
+    if (runnable != null) {
+      this.action = param -> runnable.run();
+    }
+  }
+
+  /**
    * Terminates the behavior.
    */
   public final void stop() {
@@ -103,6 +116,4 @@ public class BackoffBehavior extends Behavior {
     super.reset();
     quit = false;
   }
-
 }
-

@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.util.function.Consumer;
+
 /**
  * A behavior that continuously monitors the incoming message queue. The
  * {@link #onReceive(Message)} method of this behavior is called for every
@@ -50,6 +52,46 @@ public class MessageBehavior extends Behavior {
    */
   public MessageBehavior(final MessageFilter filter) {
     this.filter = filter;
+  }
+
+  /**
+   * Creates a MessageBehavior that accepts all incoming messages.
+   *
+   * @param consumer Message consumer.
+   */
+  public MessageBehavior(Consumer<Message> consumer) {
+    this();
+    if (consumer != null) {
+      this.action = param -> consumer.accept((Message) param);
+    }
+  }
+
+  /**
+   * Creates a MessageBehavior that accepts all incoming messages of a given
+   * class.
+   *
+   * @param cls message class of interest.
+   * @param consumer Message consumer.
+   */
+  public MessageBehavior(final Class<?> cls, Consumer<Message> consumer) {
+    this(cls);
+    if (consumer != null) {
+      this.action = param -> consumer.accept((Message) param);
+    }
+  }
+
+  /**
+   * Creates a MessageBehavior that accepts all incoming messages that meet
+   * a given MessageFilter criteria.
+   *
+   * @param filter message filter.
+   * @param consumer Message consumer.
+   */
+  public MessageBehavior(final MessageFilter filter, Consumer<Message> consumer) {
+    this(filter);
+    if (consumer != null) {
+      this.action = param -> consumer.accept((Message) param);
+    }
   }
 
   /**
@@ -121,5 +163,56 @@ public class MessageBehavior extends Behavior {
     return 0;
   }
 
-}
+  /**
+   * Creates a new MessageBehavior which runs the specified Consumer on each incoming message.
+   *
+   * @param consumer Consumer to run.
+   * @return MessageBehavior
+   */
+  public static MessageBehavior create(final Consumer<Message> consumer) {
+    return new MessageBehavior() {
 
+      @Override
+      public void onReceive(Message message) {
+        consumer.accept(message);
+      }
+    };
+  }
+
+  /**
+   * Creates a new MessageBehavior which runs the specified Consumer on each incoming message that matches the message
+   * filter.
+   *
+   * @param messageClass Message class of interest.
+   * @param consumer Consumer to run.
+   * @return MessageBehavior
+   */
+
+  public static MessageBehavior create(Class<? extends Message> messageClass, final Consumer<Message> consumer) {
+    return new MessageBehavior(messageClass) {
+
+      @Override
+      public void onReceive(Message message) {
+        consumer.accept(message);
+      }
+    };
+  }
+
+  /**
+   * Creates a new MessageBehavior which runs the specified Consumer on each incoming message that matches the message
+   * filter.
+   *
+   * @param messageFilter Message filter.
+   * @param consumer Consumer to run.
+   * @return MessageBehavior
+   */
+  public static MessageBehavior create(MessageFilter messageFilter, final Consumer<Message> consumer) {
+    return new MessageBehavior(messageFilter) {
+
+      @Override
+      public void onReceive(Message message) {
+        consumer.accept(message);
+      }
+    };
+  }
+}

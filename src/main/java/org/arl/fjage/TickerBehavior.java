@@ -39,6 +39,19 @@ public class TickerBehavior extends Behavior {
   }
 
   /**
+   * Creates a behavior that is executed every specified period.
+   *
+   * @param millis period in milliseconds.
+   * @param runnable Runnable to run.
+   */
+  public TickerBehavior(long millis, Runnable runnable) {
+    this(millis);
+    if (runnable != null) {
+      this.action = param -> runnable.run();
+    }
+  }
+
+  /**
    * Terminates the behavior.
    */
   public final void stop() {
@@ -125,5 +138,20 @@ public class TickerBehavior extends Behavior {
     return Integer.MIN_VALUE;
   }
 
-}
+  /**
+   * Creates a new TickerBehavior which runs the specified Runnable every specified period.
+   *
+   * @param millis Period in milliseconds.
+   * @param runnable Runnable to run.
+   * @return TickerBehavior
+   */
+  public static TickerBehavior create(long millis, final Runnable runnable) {
+    return new TickerBehavior(millis) {
 
+      @Override
+      public void onTick() {
+        runnable.run();
+      }
+    };
+  }
+}
