@@ -421,7 +421,7 @@ public class BasicTests {
     platform.shutdown();
     platform.delay(2000);
     log.info("Successful: "+(client1.count + client2.count + client3.count));
-    log.info("Warnings: "+(client1.warnings + client2.warnings + client3.errors));
+    log.info("Warnings: "+(client1.warnings + client2.warnings + client3.warnings));
     log.info("Errors: "+(server.errors + client1.errors + client2.errors + client3.errors));
     assertTrue(server.errors == 0);
     assertTrue(client1.errors == 0);
@@ -451,7 +451,7 @@ public class BasicTests {
     platform.shutdown();
     platform.delay(2000);
     log.info("Successful: "+(client1.count + client2.count + client3.count));
-    log.info("Warnings: "+(client1.warnings + client2.warnings + client3.errors));
+    log.info("Warnings: "+(client1.warnings + client2.warnings + client3.warnings));
     log.info("Errors: "+(server.errors + client1.errors + client2.errors + client3.errors));
     assertTrue(server.errors == 0);
     assertTrue(client1.errors == 0);
@@ -481,7 +481,7 @@ public class BasicTests {
     platform.shutdown();
     platform.delay(2000);
     log.info("Successful: "+(client1.count + client2.count + client3.count));
-    log.info("Warnings: "+(client1.warnings + client2.warnings + client3.errors));
+    log.info("Warnings: "+(client1.warnings + client2.warnings + client3.warnings));
     log.info("Errors: "+(server.errors + client1.errors + client2.errors + client3.errors));
     assertTrue(server.errors == 0);
     assertTrue(client1.errors == 0);
