@@ -27,7 +27,7 @@ public class SlaveContainer extends RemoteContainer {
 
   ////////////// Private attributes
 
-  private static final long TIMEOUT = 5000;
+  private static final long TIMEOUT = 2000;
 
   private ConnectionHandler master;
   private String hostname, settings;
