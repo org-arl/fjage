@@ -108,9 +108,10 @@ export class AgentID {
    * @param {(string|string[])} params - parameters name(s) to be set.
    * @param {(Object|Object[])} values - parameters value(s) to be set.
    * @param {number} [index=-1] - index of parameter(s) to be set.
+   * @param {number} [timeout=5000] - timeout for the response.
    * @return {Promise} - A promise which returns the new value(s) of the parameters
    */
-  set (params, values, index=-1) {
+  set (params, values, index=-1, timeout=5000) {
     if (!params) return null;
     let msg = new ParameterReq();
     msg.recipient = this.name;
@@ -126,7 +127,7 @@ export class AgentID {
       msg.value = values;
     }
     msg.index = Number.isInteger(index) ? index : -1;
-    return this.owner.request(msg, 5000).then(rsp => {
+    return this.owner.request(msg, timeout).then(rsp => {
       return new Promise(resolve => {
         var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
         if (!rsp || rsp.perf != Performative.INFORM || !rsp.param){
@@ -165,9 +166,10 @@ export class AgentID {
    *
    * @param {(null|string|string[])} params - parameters name(s) to be get. null implies get value of all parameters on the Agent.
    * @param {number} [index=-1] - index of parameter(s) to be get.
+   * @param {number} [timeout=5000] - timeout for the response.
    * @return {Promise} - A promise which returns the value(s) of the parameters
    */
-  get(params, index=-1) {
+  get(params, index=-1, timeout=5000) {
     let msg = new ParameterReq();
     msg.recipient = this.name;
     if (params){
@@ -178,10 +180,11 @@ export class AgentID {
       }
     }
     msg.index = Number.isInteger(index) ? index : -1;
-    return this.owner.request(msg, 5000).then(rsp => {
+    return this.owner.request(msg, timeout).then(rsp => {
       return new Promise(resolve => {
         var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
         if (!rsp || rsp.perf != Performative.INFORM || (params && (!rsp.param))){
+          console.warn(`Parameter(s) ${params} could not be fetched`);
           resolve(ret);
           return;
         }
