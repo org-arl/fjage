@@ -1,13 +1,11 @@
 import numpy
 import json as _json
 import uuid as _uuid
-import time as _time
 import socket as _socket
 import threading as _td
 import logging as _log
 import base64 as _base64
 import struct as _struct
-import copy as _copy
 import time as _time
 from warnings import warn as _warn
 
@@ -18,44 +16,45 @@ def _current_time_millis():
     return int(round(_time.time() * 1000))
 
 
-def _b64toArray(base64, dtype, littleEndian=True):
+def _b64_to_array(base64, dtype, little_endian=True):
     """Convert from base64 to array.
     """
     s = _base64.b64decode(base64)
     rv = []
     if dtype == '[B':  # byte array
         count = len(s) // _struct.calcsize('b')
-        rv = list(_struct.unpack('<' + '{0}b'.format(count) if littleEndian else '>' + '{0}b'.format(count), s))
+        rv = list(_struct.unpack('<' + '{0}b'.format(count) if little_endian else '>' + '{0}b'.format(count), s))
     elif dtype == '[S':  # short array
         count = len(s) // _struct.calcsize('h')
-        rv = list(_struct.unpack('<' + '{0}h'.format(count) if littleEndian else '>' + '{0}h'.format(count), s))
+        rv = list(_struct.unpack('<' + '{0}h'.format(count) if little_endian else '>' + '{0}h'.format(count), s))
     elif dtype == '[I':  # integer array
         count = len(s) // _struct.calcsize('i')
-        rv = list(_struct.unpack('<' + '{0}i'.format(count) if littleEndian else '>' + '{0}i'.format(count), s))
+        rv = list(_struct.unpack('<' + '{0}i'.format(count) if little_endian else '>' + '{0}i'.format(count), s))
     elif dtype == '[J':  # long array
         count = len(s) // _struct.calcsize('l')
-        rv = list(_struct.unpack('<' + '{0}l'.format(count) if littleEndian else '>' + '{0}l'.format(count), s))
+        rv = list(_struct.unpack('<' + '{0}l'.format(count) if little_endian else '>' + '{0}l'.format(count), s))
     elif dtype == '[F':  # float array
         count = len(s) // _struct.calcsize('f')
-        rv = list(_struct.unpack('<' + '{0}f'.format(count) if littleEndian else '>' + '{0}f'.format(count), s))
+        rv = list(_struct.unpack('<' + '{0}f'.format(count) if little_endian else '>' + '{0}f'.format(count), s))
     elif dtype == '[D':  # double array
         count = len(s) // _struct.calcsize('d')
-        rv = list(_struct.unpack('<' + '{0}d'.format(count) if littleEndian else '>' + '{0}d'.format(count), s))
+        rv = list(_struct.unpack('<' + '{0}d'.format(count) if little_endian else '>' + '{0}d'.format(count), s))
     else:
         return
     return rv
 
 
-def _decodeBase64(m):
+def _decode_base64(m):
     """base64 JSON decoder.
     """
     if type(m) == dict and 'clazz' in list(m.keys()):
         clazz = m['clazz']
         if clazz.startswith('[') and len(clazz) == 2 and 'data' in list(m.keys()):
-            x = _b64toArray(m['data'], m['clazz'])
+            x = _b64_to_array(m['data'], m['clazz'])
             if x:
                 m = x
     return m
+
 
 def _value(v):
     if isinstance(v, dict):
@@ -85,12 +84,14 @@ class _GenericObject:
     def __repr__(self):
         return self.__dict__['clazz'] + '(...)'
 
+
 class Services:
     """Services provided by agents.
 
     Agents can be looked up based on the services they provide.
     """
     SHELL = 'org.arl.fjage.shell.Services.SHELL'
+
 
 class Action:
     """JSON message actions.
@@ -109,18 +110,18 @@ class Performative:
     """An action represented by a message. The performative actions are a subset of the
     FIPA ACL recommendations for interagent communication.
     """
-    REQUEST = "REQUEST"               #: Request an action to be performed.
-    AGREE = "AGREE"                   #: Agree to performing the requested action.
-    REFUSE = "REFUSE"                 #: Refuse to perform the requested action.
-    FAILURE = "FAILURE"               #: Notification of failure to perform a requested or agreed action.
-    INFORM = "INFORM"                 #: Notification of an event.
-    CONFIRM = "CONFIRM"               #: Confirm that the answer to a query is true.
-    DISCONFIRM = "DISCONFIRM"         #: Confirm that the answer to a query is false.
-    QUERY_IF = "QUERY_IF"             #: Query if some statement is true or false.
+    REQUEST = "REQUEST"  #: Request an action to be performed.
+    AGREE = "AGREE"  #: Agree to performing the requested action.
+    REFUSE = "REFUSE"  #: Refuse to perform the requested action.
+    FAILURE = "FAILURE"  #: Notification of failure to perform a requested or agreed action.
+    INFORM = "INFORM"  #: Notification of an event.
+    CONFIRM = "CONFIRM"  #: Confirm that the answer to a query is true.
+    DISCONFIRM = "DISCONFIRM"  #: Confirm that the answer to a query is false.
+    QUERY_IF = "QUERY_IF"  #: Query if some statement is true or false.
     NOT_UNDERSTOOD = "NOT_UNDERSTOOD"  # : Notification that a message was not understood.
-    CFP = "CFP"                       #: Call for proposal.
-    PROPOSE = "PROPOSE"               #: Response for CFP.
-    CANCEL = "CANCEL"                 #: Cancel pending request.
+    CFP = "CFP"  #: Call for proposal.
+    PROPOSE = "PROPOSE"  #: Response for CFP.
+    CANCEL = "CANCEL"  #: Cancel pending request.
 
 
 class AgentID:
@@ -158,8 +159,7 @@ class AgentID:
         return self.request(msg)
 
     def _to_json(self):
-        return '#'+self.name if self.is_topic else self.name
-
+        return '#' + self.name if self.is_topic else self.name
 
     def __getitem__(self, index):
         # c = AgentID(self.name, owner=self.owner)
@@ -202,6 +202,7 @@ class AgentID:
                 else:
                     p.text('  ' + pp[-1] + ' = ' + str(params[param]) + '\n')
 
+
 def getter(self, param):
     rsp = self.request(ParameterReq(index=self.index).get(param))
     if (rsp is None) or (rsp.__dict__['param'] is None and rsp.__dict__['value'] is None):
@@ -213,7 +214,9 @@ def getter(self, param):
     else:
         return None
 
+
 setattr(AgentID, '__getattr__', getter)
+
 
 def setter(self, param, value):
     if param in ['name', 'owner', 'is_topic', 'index']:
@@ -229,6 +232,7 @@ def setter(self, param, value):
     if v != value:
         _warn('Parameter ' + param + ' set to ' + str(v))
     return v
+
 
 setattr(AgentID, '__setattr__', setter)
 
@@ -293,13 +297,13 @@ class Message(object):
         for key, value in data.items():
             if key.endswith('__isComplex'):
                 continue
-            if (key+'__isComplex') in cplx:
+            if (key + '__isComplex') in cplx:
                 self.__dict__[key] = numpy.asarray(data[key][0::2]) + 1j * numpy.asarray(data[key][1::2])
             else:
                 self.__dict__[key] = data[key]
 
     def _deserialize(self, obj):
-        if (type(obj) == str or isinstance(obj, str)):
+        if type(obj) == str or isinstance(obj, str):
             obj = _json.loads(obj)
         qclazz = obj['clazz']
         clazz = qclazz.split('.')[-1]
@@ -307,7 +311,8 @@ class Message(object):
             mod = __import__('fjagepy')
             clazz = getattr(mod, clazz)
             rv = clazz()
-        except:
+        except Exception as e:
+            self.logger.critical("Exception: " + str(e))
             rv = Message()
         rv.__clazz__ = qclazz
         rv._inflate(obj['data'])
@@ -362,6 +367,7 @@ class Message(object):
             return
         return p.text(self.__str__())
 
+
 def MessageClass(name, parent=Message, perf=None):
     """Creates a unqualified message class based on a fully qualified name.
     """
@@ -379,6 +385,7 @@ def MessageClass(name, parent=Message, perf=None):
             self.__dict__[k] = v
             if isinstance(v, AgentID):
                 self.__dict__[k] = v.name
+
     sname = name.split('.')[-1]
     class_ = type(sname, (parent,), {"__init__": setclazz})
     globals()[sname] = class_
@@ -386,11 +393,11 @@ def MessageClass(name, parent=Message, perf=None):
     return getattr(mod, str(class_.__name__))
 
 
-#param
+# param
 _ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq')
 _ParameterRsp = MessageClass('org.arl.fjage.param.ParameterRsp')
 
-#shell
+# shell
 PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq')
 GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq')
 ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq')
@@ -406,16 +413,19 @@ class ParameterReq(_ParameterReq):
         self.__dict__.update(kwargs)
 
     def get(self, param):
-        self.requests.append({'param': param});
+        self.requests.append({'param': param})
         return self
 
     def set(self, param, value):
-        self.requests.append({'param': param, 'value': value});
+        self.requests.append({'param': param, 'value': value})
         return self
 
     def __str__(self):
-        p = ' '.join([_short(str(request['param'])) + ':' + (str(request['value']) if 'value' in request else '?') for request in self.requests])
-        return self.__class__.__name__ + ':' + self.perf + '[' + (('index:' + str(self.index)) if self.index > 0 else '') + p.strip() + ']'
+        p = ' '.join(
+            [_short(str(request['param'])) + ':' + (str(request['value']) if 'value' in request else '?') for request in
+             self.requests])
+        return self.__class__.__name__ + ':' + self.perf + '[' + (
+            ('index:' + str(self.index)) if self.index > 0 else '') + p.strip() + ']'
 
     def _repr_pretty_(self, p, cycle):
         p.text(str(self) if not cycle else '...')
@@ -465,7 +475,8 @@ class ParameterRsp(_ParameterRsp):
         if 'values' in self.__dict__ and self.values is not None:
             if len(self.values) > 0:
                 p += ' '.join([_short(str(v)) + ':' + str(_value(self.values[v])) for v in self.values])
-        return self.__class__.__name__ + ':' + self.perf + '[' + (('index:' + str(self.index)) if self.index > 0 else '') + p.strip() + ']'
+        return self.__class__.__name__ + ':' + self.perf + '[' + (
+            ('index:' + str(self.index)) if self.index > 0 else '') + p.strip() + ']'
 
     def _repr_pretty_(self, p, cycle):
         p.text(str(self) if not cycle else '...')
@@ -513,7 +524,7 @@ class Gateway:
             self.subscriptions = list()
             self.pending = dict()
             self.cv = _td.Condition()
-            self.recv_thread = _td.Thread(target=self.__recv_proc, args=(self.q, self.subscriptions, ))
+            self.recv_thread = _td.Thread(target=self.__recv_proc, args=(self.q,))
             self.recv_thread.daemon = True
             self.logger.info("Connecting to " + str(hostname) + ":" + str(port))
             try:
@@ -541,7 +552,7 @@ class Gateway:
         self._update_watch()
 
     def isConnected(self):
-        if self.connection == False:
+        if not self.connection:
             return False
         else:
             return True
@@ -549,7 +560,7 @@ class Gateway:
     def _parse_dispatch(self, rmsg, q):
         """Parse incoming messages and respond to them or dispatch them.
         """
-        req = _json.loads(rmsg, object_hook=_decodeBase64)
+        req = _json.loads(rmsg, object_hook=_decode_base64)
         rsp = dict()
         if "id" in req:
             req['id'] = _uuid.UUID(req['id'])
@@ -590,9 +601,9 @@ class Gateway:
                         try:
                             m = Message()
                             demsg = m._deserialize(msg)
+                            q.append(demsg)
                         except Exception as e:
                             self.logger.critical("Exception: Class loading failed - " + str(e))
-                        q.append(demsg)
                         self.cv.acquire()
                         self.cv.notify()
                         self.cv.release()
@@ -601,9 +612,9 @@ class Gateway:
                             try:
                                 m = Message()
                                 demsg = m._deserialize(msg)
+                                q.append(demsg)
                             except Exception as e:
                                 self.logger.critical("Exception: Class loading failed - " + str(e))
-                            q.append(demsg)
                             self.cv.acquire()
                             self.cv.notify()
                             self.cv.release()
@@ -633,23 +644,25 @@ class Gateway:
                     self.logger.info('Reconnected..')
                     break
                 except Exception as e:
+                    self.logger.critical("Exception:" + str(e))
                     _time.sleep(5)
         else:
             self.logger.info('The remote connection is closed..\n')
 
     def _update_watch(self):
-        rq = {'action': Action.WANTS_MESSAGES_FOR, 'agentIDs': [self.aid.name]+['#'+topic for topic in self.subscriptions]}
+        rq = {'action': Action.WANTS_MESSAGES_FOR,
+              'agentIDs': [self.aid.name] + ['#' + topic for topic in self.subscriptions]}
         self.socket.sendall((_json.dumps(rq, cls=_CustomEncoder) + '\n').encode())
 
-    def __recv_proc(self, q, subscriptions):
+    def __recv_proc(self, q):
         """Receive process.
         """
-        parenthesis_count = 0
-        rmsg = ""
         try:
             name = self.socket.getpeername()
+            m = str(name[0]) + ":" + str(name[1])
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
+            m = "#"
             self.keepalive = True
             self._socket_reconnect(self.keepalive)
         while True:
@@ -663,7 +676,7 @@ class Gateway:
                     else:
                         self.connection = True
                         break
-                self.logger.debug(str(name[0]) + ":" + str(name[1]) + " <<< " + rmsg)
+                self.logger.debug(m + " <<< " + rmsg)
                 # Parse and dispatch incoming messages
                 self._parse_dispatch(rmsg, q)
             except Exception as e:
@@ -694,7 +707,7 @@ class Gateway:
         if not tmsg.recipient:
             return False
         tmsg.sender = self.aid.name
-        if tmsg.perf == None:
+        if tmsg.perf is None:
             if tmsg.__clazz__.endswith('Req'):
                 tmsg.perf = Performative.REQUEST
             else:
@@ -711,10 +724,10 @@ class Gateway:
         self.socket.sendall((rq + '\n').encode())
         return True
 
-    def _retrieveFromQueue(self, filter):
+    def _retrieve_from_queue(self, filter):
         rmsg = None
         try:
-            if filter == None and len(self.q):
+            if filter is None and len(self.q):
                 rmsg = self.q.pop()
             # If filter is a Message, look for a Message in the
             # receive Queue which was inReplyTo that message.
@@ -729,7 +742,7 @@ class Gateway:
             # If filter is a class, look for a Message of that class.
             elif isinstance(filter, type):
                 for i in self.q:
-                    if (isinstance(i, Message) and isinstance(i, filter)):
+                    if isinstance(i, Message) and isinstance(i, filter):
                         try:
                             rmsg = self.q.pop(self.q.index(i))
                         except Exception as e:
@@ -754,10 +767,10 @@ class Gateway:
         :param timeout: timeout in milliseconds.
         :returns: received message matching the filter, null on timeout.
         """
-        rmsg = self._retrieveFromQueue(filter)
-        if (rmsg == None and timeout != self.NON_BLOCKING):
+        rmsg = self._retrieve_from_queue(filter)
+        if rmsg is None and timeout != self.NON_BLOCKING:
             deadline = _current_time_millis() + timeout
-            while (rmsg == None and (timeout == self.BLOCKING or _current_time_millis() < deadline)):
+            while rmsg is None and (timeout == self.BLOCKING or _current_time_millis() < deadline):
                 if timeout == self.BLOCKING:
                     self.cv.acquire()
                     self.cv.wait()
@@ -767,7 +780,7 @@ class Gateway:
                     t = deadline - _current_time_millis()
                     self.cv.wait(t / 1000)
                     self.cv.release()
-                rmsg = self._retrieveFromQueue(filter)
+                rmsg = self._retrieve_from_queue(filter)
         if not rmsg:
             return None
         return rmsg
@@ -811,14 +824,13 @@ class Gateway:
         """
         return AgentID(name, owner=self)
 
-
     def subscribe(self, topic):
         """Subscribes the gateway to receive all messages sent to the given topic.
 
         :param topic: the topic to subscribe to.
         """
         if isinstance(topic, AgentID):
-            if topic.is_topic == False:
+            if not topic.is_topic:
                 new_topic = AgentID(topic.name + "__ntf", True, owner=self)
             else:
                 new_topic = topic
@@ -838,7 +850,7 @@ class Gateway:
         :param topic: the topic to unsubscribe.
         """
         if isinstance(topic, AgentID):
-            if topic.is_topic == False:
+            if not topic.is_topic:
                 new_topic = AgentID(topic.name + "__ntf", True, owner=self)
             else:
                 new_topic = topic
@@ -846,7 +858,8 @@ class Gateway:
                 return False
             try:
                 self.subscriptions.remove(new_topic.name)
-            except:
+            except Exception as e:
+                self.logger.critical("Exception:" + str(e))
                 self.logger.debug("No such topic subscribed: " + new_topic.name)
                 return False
             self._update_watch()
