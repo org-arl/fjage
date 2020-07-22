@@ -218,19 +218,18 @@ public class FSMBehavior extends Behavior {
     /////////// Private attributes
 
     private Object name;
+    private Runnable runnable;
 
     /**
      * Parent FSM.
      */
-    protected FSMBehavior fsm = null;
+    public FSMBehavior fsm = null;
 
     /**
      * Logger for the behavior to log messages to. This logger defaults to the same
      * logger as the owning agent's logger.
      */
-    protected Logger log = null;
-
-    private Runnable runnable;
+    public Logger log = null;
 
     /////////// Constructor
 
@@ -321,14 +320,14 @@ public class FSMBehavior extends Behavior {
      *
      * @param name name of the state to change to.
      */
-    protected void setNextState(Object name) {
+    public void setNextState(Object name) {
       if (fsm != null) fsm.setNextState(name);
     }
 
     /**
      * Terminates the FSM.
      */
-    protected void terminate() {
+    public void terminate() {
       if (fsm != null) fsm.terminate();
     }
 
@@ -336,7 +335,7 @@ public class FSMBehavior extends Behavior {
      * Blocks the behavior.
      * @see org.arl.fjage.Behavior#block()
      */
-    protected void block() {
+    public void block() {
       if (fsm != null) fsm.block();
     }
 
@@ -344,7 +343,7 @@ public class FSMBehavior extends Behavior {
      * Blocks the behavior.
      * @see org.arl.fjage.Behavior#block(long)
      */
-    protected void block(long millis) {
+    public void block(long millis) {
       if (fsm != null) fsm.block(millis);
     }
 
@@ -352,7 +351,7 @@ public class FSMBehavior extends Behavior {
      * Restarts the behavior.
      * @see org.arl.fjage.Behavior#restart()
      */
-    protected void restart() {
+    public void restart() {
       if (fsm != null) fsm.restart();
     }
 
@@ -360,7 +359,7 @@ public class FSMBehavior extends Behavior {
      * Checks if the behavior is blocked.
      * @see org.arl.fjage.Behavior#isBlocked()
      */
-    protected boolean isBlocked() {
+    public boolean isBlocked() {
       if (fsm == null) return false;
       return fsm.isBlocked();
     }
