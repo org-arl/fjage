@@ -770,11 +770,13 @@ class Gateway:
         rmsg = self._retrieve_from_queue(filter)
         if rmsg is None and timeout != self.NON_BLOCKING:
             deadline = _current_time_millis() + timeout
-            while rmsg is None and (timeout == self.BLOCKING or _current_time_millis() < deadline):
+            blocking = True
+            while rmsg is None and ((timeout == self.BLOCKING and blocking == True)  or (_current_time_millis() < deadline)):
                 if timeout == self.BLOCKING:
                     self.cv.acquire()
                     self.cv.wait()
                     self.cv.release()
+                    blocking = False
                 elif timeout > 0:
                     self.cv.acquire()
                     t = deadline - _current_time_millis()
