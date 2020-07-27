@@ -268,6 +268,50 @@ public class ParameterMessageBehavior extends MessageBehavior {
     return rsp;
   }
 
+  private double[] asDoubleArray(List<?> a) {
+    try {
+      double[] x = new double[a.size()];
+      for (int i = 0; i < a.size(); i++)
+        x[i] = ((Number)a.get(i)).doubleValue();
+      return x;
+    } catch (Exception ex) {
+      throw new ArrayStoreException();
+    }
+  }
+
+  private float[] asFloatArray(List<?> a) {
+    try {
+      float[] x = new float[a.size()];
+      for (int i = 0; i < a.size(); i++)
+        x[i] = ((Number)a.get(i)).floatValue();
+      return x;
+    } catch (Exception ex) {
+      throw new ArrayStoreException();
+    }
+  }
+
+  private long[] asLongArray(List<?> a) {
+    try {
+      long[] x = new long[a.size()];
+      for (int i = 0; i < a.size(); i++)
+        x[i] = ((Number)a.get(i)).longValue();
+      return x;
+    } catch (Exception ex) {
+      throw new ArrayStoreException();
+    }
+  }
+
+  private int[] asIntArray(List<?> a) {
+    try {
+      int[] x = new int[a.size()];
+      for (int i = 0; i < a.size(); i++)
+        x[i] = ((Number)a.get(i)).intValue();
+      return x;
+    } catch (Exception ex) {
+      throw new ArrayStoreException();
+    }
+  }
+
   private Object invokeCompatibleSetter(String name, Object value) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     NoSuchMethodException nsme = null;
     try {
@@ -295,6 +339,34 @@ public class ParameterMessageBehavior extends MessageBehavior {
       try {
         return MethodUtils.invokeMethod(agent, name, nvalue.intValue());
       } catch (NoSuchMethodException ex) {
+        // do nothing
+      }
+    }
+    if (value instanceof List) {
+      List<?> lvalue = (List<?>) value;
+      try {
+        return MethodUtils.invokeMethod(agent, name, (Object)asDoubleArray(lvalue));
+      } catch (NoSuchMethodException | ArrayStoreException ex) {
+        // do nothing
+      }
+      try {
+        return MethodUtils.invokeMethod(agent, name, (Object)asFloatArray(lvalue));
+      } catch (NoSuchMethodException | ArrayStoreException ex) {
+        // do nothing
+      }
+      try {
+        return MethodUtils.invokeMethod(agent, name, (Object)asLongArray(lvalue));
+      } catch (NoSuchMethodException | ArrayStoreException ex) {
+        // do nothing
+      }
+      try {
+        return MethodUtils.invokeMethod(agent, name, (Object)asIntArray(lvalue));
+      } catch (NoSuchMethodException | ArrayStoreException ex) {
+        // do nothing
+      }
+      try {
+        return MethodUtils.invokeMethod(agent, name, (Object)lvalue.toArray(new String[0]));
+      } catch (NoSuchMethodException | ArrayStoreException ex) {
         // do nothing
       }
     }
@@ -328,6 +400,34 @@ public class ParameterMessageBehavior extends MessageBehavior {
       try {
         return MethodUtils.invokeMethod(agent, name, ndx, nvalue.intValue());
       } catch (NoSuchMethodException ex) {
+        // do nothing
+      }
+    }
+    if (value instanceof List) {
+      List<?> lvalue = (List<?>) value;
+      try {
+        return MethodUtils.invokeMethod(agent, name, ndx, asDoubleArray(lvalue));
+      } catch (NoSuchMethodException | ArrayStoreException ex) {
+        // do nothing
+      }
+      try {
+        return MethodUtils.invokeMethod(agent, name, ndx, asFloatArray(lvalue));
+      } catch (NoSuchMethodException | ArrayStoreException ex) {
+        // do nothing
+      }
+      try {
+        return MethodUtils.invokeMethod(agent, name, ndx, asLongArray(lvalue));
+      } catch (NoSuchMethodException | ArrayStoreException ex) {
+        // do nothing
+      }
+      try {
+        return MethodUtils.invokeMethod(agent, name, ndx, asIntArray(lvalue));
+      } catch (NoSuchMethodException | ArrayStoreException ex) {
+        // do nothing
+      }
+      try {
+        return MethodUtils.invokeMethod(agent, name, ndx, lvalue.toArray(new String[0]));
+      } catch (NoSuchMethodException | ArrayStoreException ex) {
         // do nothing
       }
     }
