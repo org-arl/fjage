@@ -65,7 +65,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   public long currentTimeMillis() {
     return time;
   }
-  
+
   @Override
   public long nanoTime() {
     return time*1000;
@@ -123,7 +123,9 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   @Override
   public void shutdown() {
     super.shutdown();
-    events.clear();
+    synchronized (events) {
+      events.clear();
+    }
     synchronized (this) {
       notify();
     }
@@ -141,7 +143,9 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
       while (running) {
         while (e != null && e.time <= time) {
           log.fine("Fire "+e);
-          events.poll().task.run();
+          synchronized (events) {
+            if (events.size() > 0) events.poll().task.run();
+          }
           e = events.peek();
         }
         Thread.yield();
@@ -179,5 +183,5 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
       }
     }
   }
-  
+
 }
