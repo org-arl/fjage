@@ -589,6 +589,7 @@ public class BasicTests {
           if (rsp == null) {
             log.warning("Unable to get x");
             warnings++;
+            return;
           } else {
             Integer x = (Integer)((ParameterRsp)rsp).get(Params.x);
             if (x == null || x != 1) {
@@ -602,6 +603,7 @@ public class BasicTests {
           if (rsp == null) {
             log.warning("Unable to set x");
             warnings++;
+            return;
           } else {
             Integer x = (Integer)((ParameterRsp)rsp).get(Params.x);
             if (x == null || x != 4) {
@@ -615,6 +617,7 @@ public class BasicTests {
           if (rsp == null) {
             log.warning("Unable to get y and s");
             warnings++;
+            return;
           } else {
             Float y = (Float)((ParameterRsp)rsp).get(Params.y);
             if (y == null || y != 2) {
@@ -634,6 +637,7 @@ public class BasicTests {
           if (rsp == null) {
             log.warning("Unable to get y[7]");
             warnings++;
+            return;
           } else {
             Float y = (Float)((ParameterRsp)rsp).get(Params.y);
             if (y == null || y != 49) {
@@ -648,6 +652,7 @@ public class BasicTests {
           if (rsp == null) {
             log.warning("Unable to set x[7]");
             warnings++;
+            return;
           } else {
             Integer x = (Integer)((ParameterRsp)rsp).get(Params.x);
             if (x == null || x != 44) {
@@ -661,6 +666,7 @@ public class BasicTests {
           if (rsp == null) {
             log.warning("Unable to get x, y and s");
             warnings++;
+            return;
           } else {
             Integer x = (Integer)((ParameterRsp)rsp).get(Params.x);
             if (x == null || x != 1) {
@@ -683,6 +689,7 @@ public class BasicTests {
           if (rsp == null) {
             log.warning("No response from server");
             warnings++;
+            return;
           } else if (!(rsp instanceof ResponseMessage)) {
             log.warning("Bad response: "+rsp);
             errors++;
@@ -716,6 +723,7 @@ public class BasicTests {
           if (x == null) {
             log.warning("Unable to get x");
             warnings++;
+            return;
           } else if (x != 1) {
             log.warning("Bad value of x: "+x);
             errors++;
@@ -724,6 +732,7 @@ public class BasicTests {
           if (x == null) {
             log.warning("Unable to set x");
             warnings++;
+            return;
           } else if (x != 4) {
             log.warning("Bad value of set(x): "+x);
             errors++;
@@ -732,6 +741,7 @@ public class BasicTests {
           if (y == null) {
             log.warning("Unable to get y[7]");
             warnings++;
+            return;
           } else if (y != 49) {
             log.warning("Bad value of y[7]: "+y);
             errors++;
@@ -740,6 +750,7 @@ public class BasicTests {
           if (x == null) {
             log.warning("Unable to set x[7]");
             warnings++;
+            return;
           } else if (x != 45) {
             log.warning("Bad value of x[7]: "+x);
             errors++;
