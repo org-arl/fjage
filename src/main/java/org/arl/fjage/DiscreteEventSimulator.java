@@ -42,11 +42,26 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   private Queue<DiscreteEvent> events = new PriorityBlockingQueue<DiscreteEvent>();
   private Logger log = Logger.getLogger(getClass().getName());
   private Thread thread = null;
+  private float speed = Float.NaN;
 
   /////////// Implementation methods
 
+  /**
+   * Creates a DiscreteEventSimulator that runs as fast as possible.
+   */
   public DiscreteEventSimulator() {
     LogHandlerProxy.install(this, log);
+  }
+
+  /**
+   * Creates a DiscreteEventSimulator that runs approximately at speed x realtime,
+   * ignoring processing time.
+   *
+   * @param speed speed up with respect to real time.
+   */
+  public DiscreteEventSimulator(float speed) {
+    LogHandlerProxy.install(this, log);
+    this.speed = speed;
   }
 
   @Deprecated
@@ -160,7 +175,18 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
           }
         }
         e = events.peek();
-        if (e != null) time = e.time;
+        if (e != null) {
+          long dt = e.time - time;
+          if (dt > 0 && !Float.isNaN(speed)) {
+            long t = Math.round(dt/speed);
+            try {
+              Thread.sleep(t);
+            } catch (InterruptedException ex) {
+              Thread.currentThread().interrupt();
+            }
+          }
+          time = e.time;
+        }
         else {
           log.fine("No more events pending, initiating shutdown");
           shutdown();
