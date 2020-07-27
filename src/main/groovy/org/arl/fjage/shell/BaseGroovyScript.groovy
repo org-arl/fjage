@@ -317,8 +317,7 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding()
     if (binding.hasVariable('__agent__')) {
       Agent a = binding.getVariable('__agent__')
-      Platform p = a.getPlatform()
-      p.delay(millis)
+      a.delay(millis)
     }
     else Thread.sleep(millis)
   }

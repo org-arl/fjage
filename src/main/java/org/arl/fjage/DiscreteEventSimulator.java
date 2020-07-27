@@ -93,15 +93,15 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
     long t = time + millis;
     long dt = millis;
     while (dt > 0) {
-      addEvent(new DiscreteEvent(time, t, new TimerTask() {
-        @Override
-        public void run() {
-          synchronized (sync) {
-            sync.notify();
-          }
-        }
-      }, true));
       synchronized (sync) {
+        addEvent(new DiscreteEvent(time, t, new TimerTask() {
+          @Override
+          public void run() {
+            synchronized (sync) {
+              sync.notify();
+            }
+          }
+        }, true));
         try {
           sync.wait();
         } catch (InterruptedException e) {
@@ -177,6 +177,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
         e = events.peek();
         if (e != null) {
           long dt = e.time - time;
+          time = e.time;
           if (dt > 0 && !Float.isNaN(speed)) {
             long t = Math.round(dt/speed);
             try {
@@ -185,7 +186,6 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
               Thread.currentThread().interrupt();
             }
           }
-          time = e.time;
         }
         else {
           log.fine("No more events pending, initiating shutdown");

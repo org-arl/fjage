@@ -71,6 +71,9 @@ public abstract class Platform implements TimestampProvider {
 
   /**
    * Delays execution by a specified number of milliseconds of platform time.
+   * <p>
+   * This method should not be called by an agent directly, as it may deadlock.
+   * An agent should use {@link Agent#delay()} instead.
    *
    * @param millis number of milliseconds to delay execution.
    */
