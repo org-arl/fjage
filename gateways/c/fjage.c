@@ -511,7 +511,7 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
     return NULL;
   }
 #ifdef _WIN32
-  long NONBLOCK_MODE = 1;
+  u_long NONBLOCK_MODE = 1;
   ioctlsocket(fgw->sockfd, FIONBIO, &NONBLOCK_MODE);
 #else
   fcntl(fgw->sockfd, F_SETFL, O_NONBLOCK);

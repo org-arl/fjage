@@ -45,7 +45,7 @@ public class SerialPortConnector implements Connector {
   @Override
   public String getName() {
     if (com == null) return "serial://[closed]";
-    return "serial://"+com.getDescriptivePortName​();
+    return "serial://"+com.getDescriptivePortName();
   }
 
   @Override
