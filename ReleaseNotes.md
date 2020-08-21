@@ -1,5 +1,12 @@
 # Release Notes
 
+## v1.8.0
+
+* Java Lambda support
+* Fluent API
+* Add support for array parameter setting from lists
+* Small bug fixes
+
 ## v1.7.0
 
 * New [parameter API](https://fjage.readthedocs.io/en/latest/params.html)
