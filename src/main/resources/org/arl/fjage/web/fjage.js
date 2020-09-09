@@ -327,12 +327,12 @@ export class Gateway {
    * @param {string} pathname - path of the master container to connect to
    * @param {int} timeout     - timeout for fjage level messages
    */
-  constructor(hostname=window.location.hostname, port=window.location.port, pathname='/ws/', timeout=1000) {
+  constructor(hostname = defaultHostName, port = defaultPort, pathname=defaultPathname, timeout=1000) {
     var url = new URL('ws://localhost');
     url.hostname = hostname;
     url.port = port || 80;
     url.pathname = pathname;
-    let existing = window.fjage.getGateway(url);
+    let existing = globalCtx.fjage.getGateway(url);
     if (existing) return existing;
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
@@ -347,17 +347,24 @@ export class Gateway {
     this.keepAlive = true;                // reconnect if websocket connection gets closed/errored
     this.debug = false;                   // debug info to be logged to console?
     this.aid = new AgentID('WebGW-'+_guid(4));         // gateway agent name
-    this._websockSetup(url);
-    window.fjage.gateways.push(this);
+    this._transportSetup(url);
+    globalCtx.fjage.gateways.push(this);
   }
 
-  _onWebsockOpen() {
+  // _transportSetup() {
+  //   return isBrowser ? this._websockSetup() : this._tcpSetup()
+  // }
+
+  _onTransportOpen() {
     if(this.debug) console.log('Connected to ', this.sock.url);
     this.connObservers.forEach(co => {if(co) co(true);});
-    this.sock.onclose = this._websockReconnect.bind(this);
-    this.sock.onmessage = event => {
-      this._onWebsockRx.call(this,event.data);
+    this.sock.onclose = this._transportReconnect.bind(this);
+
+    let onMessageCallback = event => {
+      this._onDataRx.call(this, event.data);
     };
+    if (isBrowser) this.sock.onmessage = onMessageCallback
+    else this.sock.ondata =
     this.sock.send('{"alive": true}\n');
     this._update_watch();
     this._firstConn = false;
@@ -366,7 +373,7 @@ export class Gateway {
     this.pendingOnOpen.length = 0;
   }
 
-  _onWebsockRx(data) {
+  _onDataRx(data) {
     var obj;
     if (this.debug) console.log('< '+data);
     try {
@@ -416,19 +423,32 @@ export class Gateway {
     }
   }
 
-  _websockSetup(url){
+  _transportSetup(url){
     try {
-      this.sock = new WebSocket(url);
-      this.sock.onerror = this._websockReconnect.bind(this);
-      this.sock.onopen = this._onWebsockOpen.bind(this);
+      this.sock = isBrowser ? new transport(url) : net.createConnection(url.port, url.host);
+      this.sock.onerror = this._transportReconnect.bind(this);
+      this.sock.onopen = this._onTransportOpen.bind(this);
+      this.sock.onconnect = this._onTransportOpen.bind(this);
+      if (!isBrowser){
+        this.socket.setKeepAlive(true)
+        this.socket.setTimeout(0);
+      }
     } catch (error) {
       if(this.debug) console.log('Connection failed to ', this.sock.url);
       return;
     }
   }
 
-  _websockReconnect(){
-    if (this._firstConn || !this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
+  _isTransportReady(){
+    return (isBrowser && this.sock.readyState == this.sock.CONNECTING) || (this.sock.connecting || this.sock.pending)
+  }
+
+  _isTransportConnected(){
+    return (isBrowser && this.sock.readyState == this.sock.OPEN) || this.sock.
+  }
+
+  _transportReconnect(){
+    if (this._firstConn || !this.keepAlive || _isTransportBusy()) return;
     if (this._firstReConn) this.connObservers.forEach(co => {if(co) co(false);});
     this._firstReConn = false;
     if(this.debug) console.log('Reconnecting to ', this.sock.url);
@@ -436,7 +456,7 @@ export class Gateway {
       this.pending = {};
       this.pendingOnOpen = [];
       this.flush();
-      this._websockSetup(this.sock.url);
+      this._transportSetup(this.sock.url);
     }, RECONNECT_TIME);
   }
 
@@ -732,15 +752,15 @@ export class Gateway {
         this.sock.send('{"alive": false}\n');
         this.sock.onclose = null;
         this.sock.close();
-        var index = window.fjage.gateways.indexOf(this);
-        window.fjage.gateways.splice(index,1);
+        var index = globalCtx.fjage.gateways.indexOf(this);
+        globalCtx.fjage.gateways.splice(index,1);
       });
     } else if (this.sock.readyState == this.sock.OPEN) {
       this.sock.send('{"alive": false}\n');
       this.sock.onclose = null;
       this.sock.close();
-      var index = window.fjage.gateways.indexOf(this);
-      window.fjage.gateways.splice(index,1);
+      var index = globalCtx.fjage.gateways.indexOf(this);
+      globalCtx.fjage.gateways.splice(index,1);
     }
   }
 
@@ -762,7 +782,7 @@ export const Services = {
 export function MessageClass(name, parent=Message) {
   let sname = name.replace(/^.*\./, '');
   let pname = parent.__clazz__.replace(/^.*\./, '');
-  window[sname] = class extends window[pname] {
+  globalCtx[sname] = class extends globalCtx[pname] {
     constructor(params) {
       super();
       this.__clazz__ = name;
@@ -774,22 +794,41 @@ export function MessageClass(name, parent=Message) {
       }
     }
   };
-  window[sname].__clazz__ = name;
-  return window[sname];
+  globalCtx[sname].__clazz__ = name;
+  return globalCtx[sname];
 }
 
 ////// global
 
-if (typeof window.fjage === 'undefined') {
-  window.fjage = {};
-  window.fjage.gateways = [];
-  window.fjage.MessageClass = MessageClass;
-  window.fjage.getGateway = function (url){
-    var f = window.fjage.gateways.filter(g => g.sock.url == url);
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
+let globalCtx = isBrowser ? window : global;
+let transport = null
+let defaultHostName = ""
+let defaultPort = 0
+let defaultPathname = ""
+
+if (!isBrowser){
+  let net = await import('net');
+  transport = net.Socket
+  defaultHostName = "127.0.0.1"
+  defaultPort = "1100"
+} else{
+  transport = WebSocket
+  defaultHostName = globalCtx.location.hostname
+  defaultPort = globalCtx.location.port
+  defaultPathname = "/ws/"
+}
+
+if (typeof globalCtx.fjage === 'undefined') {
+  globalCtx.fjage = {};
+  globalCtx.fjage.gateways = [];
+  globalCtx.fjage.MessageClass = MessageClass;
+  globalCtx.fjage.getGateway = function (url){
+    var f = globalCtx.fjage.gateways.filter(g => g.sock.url == url);
     if (f.length ) return f[0];
   };
   Message.__clazz__ = 'org.arl.fjage.Message';
-  window['Message'] = Message;
+  globalCtx['Message'] = Message;
 }
 
 const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
@@ -809,7 +848,7 @@ function _guid(len) {
 
 // convert from base 64 to array
 function _b64toArray(base64, dtype, littleEndian=true) {
-  let s =  window.atob(base64);
+  let s = globalCtx.atob(base64);
   let len = s.length;
   let bytes = new Uint8Array(len);
   for (var i = 0; i < len; i++)
