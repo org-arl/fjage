@@ -36,4 +36,4 @@ do
 done
 
 mkdir -p logs
-java -cp "$CLASSPATH" -Dfjage.web=$WEB $OPT1 org.arl.fjage.shell.GroovyBoot $@ etc/initrc.groovy
+java -cp "$CLASSPATH" -Dfile.encoding=UTF-8 -Dfjage.web=$WEB $OPT1 org.arl.fjage.shell.GroovyBoot $@ etc/initrc.groovy
