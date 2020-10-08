@@ -257,6 +257,7 @@ static fjage_msg_t mqueue_get(fjage_gw_t gw, const char* clazz, const char* id) 
   _fjage_gw_t* fgw = gw;
   fjage_msg_t msg = NULL;
   for (int i = fgw->mqueue_tail; i != fgw->mqueue_head && msg == NULL; i++) {
+    if (i >= QUEUE_LEN) i = i%QUEUE_LEN;
     if (fgw->mqueue[i] != NULL) {
       if (clazz != NULL) {
         const char* clazz1 = fjage_msg_get_clazz(fgw->mqueue[i]);
@@ -287,13 +288,13 @@ static fjage_msg_t mqueue_get_any(fjage_gw_t gw, const char** clazzes, int clazz
   fjage_msg_t msg = NULL;
   if (clazzes == NULL || clazzlen < 1) return msg;
   for (int i = fgw->mqueue_tail; i != fgw->mqueue_head && msg == NULL; i++) {
+    if (i >= QUEUE_LEN) i = i%QUEUE_LEN;
     if (fgw->mqueue[i] != NULL) {
       const char* clazz1 = fjage_msg_get_clazz(fgw->mqueue[i]);
       if (clazz1 == NULL || ! mqueue_compare_any(clazz1, clazzes, clazzlen)) continue;
       msg = fgw->mqueue[i];
       fgw->mqueue[i] = NULL;
       if (i == fgw->mqueue_tail) fgw->mqueue_tail = (fgw->mqueue_tail+1) % QUEUE_LEN;
-      // break out
     }
   }
   return msg;
