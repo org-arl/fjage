@@ -256,8 +256,7 @@ static fjage_msg_t mqueue_get(fjage_gw_t gw, const char* clazz, const char* id) 
   if (gw == NULL) return NULL;
   _fjage_gw_t* fgw = gw;
   fjage_msg_t msg = NULL;
-  for (int i = fgw->mqueue_tail; i != fgw->mqueue_head && msg == NULL;) {
-    i = (i + 1) % QUEUE_LEN;
+  for (int i = fgw->mqueue_tail; i != fgw->mqueue_head && msg == NULL; i = (i + 1) % QUEUE_LEN) {
     if (fgw->mqueue[i] != NULL) {
       if (clazz != NULL) {
         const char* clazz1 = fjage_msg_get_clazz(fgw->mqueue[i]);
@@ -287,8 +286,7 @@ static fjage_msg_t mqueue_get_any(fjage_gw_t gw, const char** clazzes, int clazz
   _fjage_gw_t* fgw = gw;
   fjage_msg_t msg = NULL;
   if (clazzes == NULL || clazzlen < 1) return msg;
-  for (int i = fgw->mqueue_tail; i != fgw->mqueue_head && msg == NULL;) {
-    i = (i+1)%QUEUE_LEN;
+  for (int i = fgw->mqueue_tail; i != fgw->mqueue_head && msg == NULL; i = (i + 1) % QUEUE_LEN) {
     if (fgw->mqueue[i] != NULL) {
       const char* clazz1 = fjage_msg_get_clazz(fgw->mqueue[i]);
       if (clazz1 == NULL || ! mqueue_compare_any(clazz1, clazzes, clazzlen)) continue;
