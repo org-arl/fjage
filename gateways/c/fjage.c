@@ -1126,22 +1126,24 @@ bool fjage_msg_get_bool(fjage_msg_t msg, const char* key, bool defval) {
 int fjage_msg_get_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int maxlen) {
   const char* s = fjage_msg_get_string(msg, key);
   if (s == NULL) s = fjage_msg_get_data(msg, key);
-  if (s == NULL) return -1;
+  if (s == NULL || strlen(s) == 0) return -1;
   size_t buflen;
-  unsigned char* buf = b64_decode_ex(s, strlen(s), &buflen);
+  void* buf = b64_decode_ex(s, strlen(s), &buflen);
   if (buf == NULL) return -1;
   if (buflen <= maxlen) memcpy(value, buf, buflen);
+  free(buf);
   return buflen;
 }
 
 int fjage_msg_get_float_array(fjage_msg_t msg, const char* key, float* value, int maxlen) {
   const char* s = fjage_msg_get_string(msg, key);
   if (s == NULL) s = fjage_msg_get_data(msg, key);
-  if (s == NULL) return -1;
+  if (s == NULL || strlen(s) == 0) return -1;
   size_t buflen;
-  unsigned char* buf = b64_decode_ex(s, strlen(s), &buflen);
+  void* buf = b64_decode_ex(s, strlen(s), &buflen);
   if (buf == NULL) return -1;
   if (buflen <= maxlen*sizeof(float)) memcpy(value, buf, buflen);
+  free(buf);
   return buflen/sizeof(float);
 }
 
