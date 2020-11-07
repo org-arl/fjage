@@ -308,6 +308,15 @@ void fjage_msg_add_bool(fjage_msg_t msg, const char* key, bool value);
 
 void fjage_msg_add_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int len);
 
+/// Add an integer array value to a message.
+///
+/// @param msg            Message in write-only mode
+/// @param key            Key
+/// @param value          Pointer to the int array
+/// @param len            Length of the int array (number of ints)
+
+void fjage_msg_add_int_array(fjage_msg_t msg, const char* key, int32_t* value, int len);
+
 /// Add a floating point array value to a message.
 ///
 /// @param msg            Message in write-only mode
@@ -426,6 +435,18 @@ bool fjage_msg_get_bool(fjage_msg_t msg, const char* key, bool defval);
 /// @return               Number of bytes in the byte array
 
 int fjage_msg_get_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int maxlen);
+
+/// Get an integer array value. If only the length of the array is desired (so that
+/// an array can be allocated), passing NULL as value and 0 as maxlen returns
+/// the array length.
+///
+/// @param msg            Message in read-only mode
+/// @param key            Key
+/// @param value          Pointer to an int array to receive data, or NULL
+/// @param maxlen         The maximum number of ints to receive, or 0 if value is NULL
+/// @return               Number of ints in the byte array
+
+int fjage_msg_get_int_array(fjage_msg_t msg, const char* key, int32_t* value, int maxlen);
 
 /// Get a floating point array value. If only the length of the array is desired (so that
 /// an array can be allocated), passing NULL as value and 0 as maxlen returns

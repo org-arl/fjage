@@ -21,5 +21,6 @@ class TestMessage extends org.arl.fjage.Message {
   boolean mytbool
   boolean myfbool
   byte[] mydata
+  int[] myidata
   float[] mysignal
 }
