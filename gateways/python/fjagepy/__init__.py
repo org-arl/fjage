@@ -307,12 +307,16 @@ class Message(object):
             obj = _json.loads(obj)
         qclazz = obj['clazz']
         clazz = qclazz.replace('.', '_')
+        if clazz == 'org_arl_fjage_Message':
+            clazz = 'Message'
+        elif clazz == 'org_arl_fjage_GenericMessage':
+            clazz = 'GenericMessage'
         try:
             mod = __import__('fjagepy')
             clazz = getattr(mod, clazz)
             rv = clazz()
         except Exception as e:
-            self.logger.critical("Exception: " + str(e))
+            _log.getLogger('org.arl.fjage').warning("Class instantiation failed: " + str(e))
             rv = Message()
         rv.__clazz__ = qclazz
         rv._inflate(obj['data'])
