@@ -306,7 +306,7 @@ class Message(object):
         if type(obj) == str or isinstance(obj, str):
             obj = _json.loads(obj)
         qclazz = obj['clazz']
-        clazz = qclazz.split('.')[-1]
+        clazz = qclazz.replace('.', '_')
         try:
             mod = __import__('fjagepy')
             clazz = getattr(mod, clazz)
@@ -386,7 +386,7 @@ def MessageClass(name, parent=Message, perf=None):
             if isinstance(v, AgentID):
                 self.__dict__[k] = v.name
 
-    sname = name.split('.')[-1]
+    sname = name.replace('.', '_')
     class_ = type(sname, (parent,), {"__init__": setclazz})
     globals()[sname] = class_
     mod = __import__('fjagepy')
