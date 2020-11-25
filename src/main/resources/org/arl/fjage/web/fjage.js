@@ -1,7 +1,7 @@
 ////// settings
 
 const RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
-
+const MAX_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
 
 ////// interface classes
 
@@ -395,7 +395,10 @@ export class Gateway {
             break;
           }
         }
-        this.queue.push(msg);
+        if(!consumed) {
+          if (this.queue.length >= MAX_QUEUE_SIZE) this.queue.shift();
+          this.queue.push(msg);
+        }
       }
     } else {
       // respond to standard requests that every container must
