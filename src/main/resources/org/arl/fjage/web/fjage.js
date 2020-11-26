@@ -1,7 +1,7 @@
 ////// settings
 
 const RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
-
+const MAX_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
 
 ////// interface classes
 
@@ -386,9 +386,19 @@ export class Gateway {
       if ((msg.recipient == this.aid.toJSON() )|| this.subscriptions[msg.recipient]) {
         for (var i = 0; i < this.msgObservers.length; i++)
           if (this.msgObservers[i](msg)) return;
-        this.queue.push(msg);
-        for (var key in this.listener)        // iterate over internal callbacks, until one consumes the message
-          if (this.listener[key]()) break;    // callback returns true if it has consumed the message
+        var consumed = false;
+         // iterate over internal callbacks, until one consumes the message
+        for (var key in this.listener){
+          // callback returns true if it has consumed the message
+          if (this.listener[key](msg)) {
+            consumed = true;
+            break;
+          }
+        }
+        if(!consumed) {
+          if (this.queue.length >= MAX_QUEUE_SIZE) this.queue.shift();
+          this.queue.push(msg);
+        }
       }
     } else {
       // respond to standard requests that every container must
@@ -479,28 +489,28 @@ export class Gateway {
     });
   }
 
+  _matchMessage(filter, msg){
+    if (typeof filter == 'string' || filter instanceof String) {
+      return 'inReplyTo' in msg && msg.inReplyTo == filter;
+    } else if (Object.prototype.hasOwnProperty.call(filter, 'msgID')) {
+      return 'inReplyTo' in msg && msg.inReplyTo == filter.msgID;
+    } else if (filter.__proto__.name == 'Message') {
+      return filter.__clazz__ == msg.__clazz__;
+    } else if (typeof filter == 'function') {
+      return filter(msg);
+    } else {
+      return msg instanceof filter;
+    }
+  }
+
   _getMessageFromQueue(filter) {
     if (!this.queue.length) return;
     if (!filter) return this.queue.shift();
 
-    var filtMsgs = this.queue.filter( msg => {
-      if (typeof filter == 'string' || filter instanceof String) {
-        return 'inReplyTo' in msg && msg.inReplyTo == filter;
-      } else if (Object.prototype.hasOwnProperty.call(filter, 'msgID')) {
-        return 'inReplyTo' in msg && msg.inReplyTo == filter.msgID;
-      }else if (filter.__proto__.name == 'Message'){
-        return filter.__clazz__ == msg.__clazz__;
-      }else if (typeof filter ==  'function' ){
-        return filter(msg);
-      }else{
-        return msg instanceof filter;
-      }
-    });
+    let matchedMsg = this.queue.find( msg => this._matchMessage(filter, msg));
+    if (matchedMsg) this.queue.splice(this.queue.indexOf(matchedMsg, 1));
 
-    if (filtMsgs.length){
-      this.queue.splice(this.queue.indexOf(filtMsgs[0]), 1);
-      return filtMsgs[0];
-    }
+    return matchedMsg
   }
 
   _update_watch() {
@@ -710,9 +720,8 @@ export class Gateway {
           resolve();
         }, timeout);
       }
-      this.listener[lid] = () => {
-        msg = this._getMessageFromQueue.call(this,filter);
-        if (!msg) return false;
+      this.listener[lid] = msg => {
+        if (!this._matchMessage(filter, msg)) return false;
         if(timer) clearTimeout(timer);
         delete this.listener[lid];
         resolve(msg);
