@@ -237,7 +237,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
           try {
             pin.write(c);
           } catch (IOException ex) {
-            // do nothing
+            log.warning(ex.toString());
           }
         }
       }

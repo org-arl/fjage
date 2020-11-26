@@ -75,7 +75,7 @@ class ConnectionHandler extends Thread {
       try {
         s = in.readLine();
       } catch(IOException ex) {
-        // do nothing
+        log.warning(ex.toString());
       }
       if (s == null) break;
       log.fine(this.getName() +" <<< "+s);
