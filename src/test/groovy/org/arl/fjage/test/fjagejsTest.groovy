@@ -11,7 +11,7 @@ for full license details.
 package org.arl.fjage.test
 
 import org.arl.fjage.*
-import org.arl.fjage.param.*;
+import org.arl.fjage.param.*
 import org.arl.fjage.connectors.WebServer
 import org.arl.fjage.connectors.WebSocketConnector
 import org.arl.fjage.remote.MasterContainer
@@ -23,6 +23,7 @@ import org.arl.fjage.test.ParamServerAgent
 import static org.junit.Assert.assertTrue
 
 class fjagejsTest {
+
 
   @Test
   void fjageJSTest() {
@@ -36,19 +37,47 @@ class fjagejsTest {
     container.addConnector(new WebSocketConnector(8080, "/ws", true))
     platform.start()
     container.add('test', new Agent(){
+
+      protected Message processRequest(Message msg) {
+        if (msg instanceof SendMsgReq){
+          println("Received SendMsgReq : " + msg.num + " : " + msg.sender)
+          add(new OneShotBehavior() {
+            @Override
+            public void action() {
+              (1..msg.num).each{
+                println ("Sending rsp : " + it)
+                def rsp = new SendMsgRsp(msg)
+                rsp.id = it
+                send rsp
+              }
+            }
+          })
+          return new Message(msg, Performative.AGREE)
+        }
+        return null
+      }
+
       @Override
       protected void init() {
         add(new MessageBehavior(){
           @Override
           void onReceive(Message msg) {
-            println("Received: " + msg.performative + ',' + msg.recipient + ',' + msg.sender)
-            testResult = msg.performative == Performative.AGREE
-            testPending = false
+            println("Received: " + msg.performative + ' , ' + msg.recipient + ' , ' + msg.sender)
+            if (msg.performative == Performative.REQUEST) {
+              println("Received request : " + msg.class)
+              Message rsp = processRequest(msg)
+              if (rsp == null) rsp = new Message(msg, Performative.NOT_UNDERSTOOD)
+              send rsp
+            } else {
+              println("Received not request ")
+              testResult = msg.performative == Performative.AGREE
+              testPending = false
+            }
           }
         })
       }
     })
-    container.add("S", new ParamServerAgent());
+    container.add("S", new ParamServerAgent())
     def ret = 0
     if (System.getProperty('manualJSTest') == null){
       // Run Jasmine based test in puppeteer.
@@ -69,5 +98,16 @@ class fjagejsTest {
     container.shutdown()
     platform.shutdown()
     assertTrue(ret == 0 && testResult)
+  }
+}
+
+class SendMsgReq extends Message {
+  int num
+}
+
+class SendMsgRsp extends Message {
+  int id
+  SendMsgRsp(Message req) {
+    super(req, Performative.INFORM)   // create a response with inReplyTo = req
   }
 }

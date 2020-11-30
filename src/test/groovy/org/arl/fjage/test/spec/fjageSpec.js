@@ -8,6 +8,8 @@ const GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq');
 const GetFileRsp = MessageClass('org.arl.fjage.shell.GetFileRsp');
 const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
 const PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq');
+const SendMsgReq = MessageClass('org.arl.fjage.test.SendMsgReq');
+const SendMsgRsp = MessageClass('org.arl.fjage.test.SendMsgRsp');
 
 const ValidFjageActions = ['agents', 'containsAgent', 'services', 'agentForService', 'agentsForService', 'send', 'shutdown'];
 const ValidFjagePerformatives = ['REQUEST', 'AGREE', 'REFUSE', 'FAILURE', 'INFORM', 'CONFIRM', 'DISCONFIRM', 'QUERY_IF', 'NOT_UNDERSTOOD', 'CFP', 'PROPOSE', 'CANCEL', ];
@@ -125,6 +127,7 @@ describe('A Gateway', function () {
       }, 100);
     }, 100);
   });
+
   it('should remove itself from global array when closed', function (done) {
     const gw = new Gateway();
     setTimeout(() => {
@@ -135,6 +138,7 @@ describe('A Gateway', function () {
       }, 100);
     }, 100);
   });
+
   it('should send a message over WebSocket', function(done){
     const shell = new AgentID('shell');
     const gw = new Gateway();
@@ -151,6 +155,7 @@ describe('A Gateway', function () {
       },100);
     },100);
   });
+
   it('should send a WebSocket message of valid fjage message structure', function(done){
     const shell = new AgentID('shell');
     const gw = new Gateway();
@@ -167,6 +172,7 @@ describe('A Gateway', function () {
       },100);
     },100);
   });
+
   it('should send correct ShellExecReq of valid fjage message structure', function(done){
     const shell = new AgentID('shell');
     const gw = new Gateway();
@@ -183,6 +189,7 @@ describe('A Gateway', function () {
       },100);
     },100);
   });
+
   it('should send correct ShellExecReq of valid fjage message structure created using param constructor', function(done){
     const shell = new AgentID('shell');
     const gw = new Gateway();
@@ -197,8 +204,22 @@ describe('A Gateway', function () {
       },100);
     },100);
   });
-});
 
+  it('should only store the latest 128 messages in the receive queue', function(done) {
+    const gw = new Gateway();
+    let smr = new SendMsgReq();
+    smr.num = 256;
+    smr.perf = Performative.REQUEST;
+    smr.recipient = gw.agent('test');
+    gw.send(smr);
+    setTimeout(() => {
+      expect(gw.queue.length).toBeLessThanOrEqual(128)
+      var ids = gw.queue.map(m => m.id);
+      expect(ids.every(id => id >= 128)).toBeTruthy()
+      done()
+    }, 4000);
+  });
+});
 
 describe('An AgentID', function () {
   var gw;
@@ -386,7 +407,6 @@ describe('A MessageClass', function () {
     }).not.toThrow();
   });
 });
-
 
 describe('Shell GetFile/PutFile', function () {
   var gw, shell;
