@@ -28,7 +28,7 @@
     "xterm-addon-web-links": "^0.4.0"
   },
   "devDependencies": {
-    "documentation": "^12.1.4",
+    "documentation": "^13.1.0",
     "puppeteer": "^1.20.0",
     "diff": ">=5.0.0",
     "websocket-extensions": ">=0.1.4"
