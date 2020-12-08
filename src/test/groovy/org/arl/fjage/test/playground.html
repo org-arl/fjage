@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>fjåge test!</title>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@creativebulma/bulma-collapsible@1.0.4/dist/css/bulma-collapsible.min.css">
+	<script
+		src="https://cdn.jsdelivr.net/npm/@creativebulma/bulma-collapsible@1.0.4/dist/js/bulma-collapsible.min.js"></script>
+	<script type="module" src="../fjage.js"></script>
+</head>
+
+<body>
+	<template id="tmsg">
+		<a class="panel-block">
+			<span class="panel-icon"> </span>
+		</a>
+	</template>
+	<section class="section">
+		<div class="container">
+			<h1 class="title">
+				fjåge Playground
+			</h1>
+			<nav class="level">
+				<div class="level-left">
+					<div class="level-item">
+						<div class="field has-addons">
+							<p class="control">
+								<input class="input" type="text" placeholder="IP address" id="ipaddr" value="13.212.107.168">
+							</p>
+							<p class="control">
+								<a class="button is-info" id="connect">Connect</a>
+							</p>
+						</div>
+					</div>
+				</div>
+				<div class="level-right"></div>
+					<div class="level-item"></div>
+						<label class="checkbox">
+							<input type="checkbox" id="raw">
+							Raw mode
+						</label>
+					</div>
+				</div>
+			</nav>
+			<div class="pt-4">
+				<nav class="panel">
+					<p class="panel-heading"> Messages </p>
+					<div class="panel-msglist" id="mlist">
+
+					</div>
+					<div class="panel-block">
+							<input class="input" type="text" placeholder="Send a JSON" id="send" disabled>
+					</div>
+				</nav>
+			</div>
+		</div>
+	</section>
+</body>
+<style>
+	.panel-msglist {
+		overflow-y: scroll;
+		height: 65vh;
+	}
+
+	a.panel-block {
+		overflow-wrap: anywhere;
+	}
+</style>
+<script type="module">
+	import { AgentID, Gateway, MessageClass, Message, Performative, Services } from './fjage.js';
+	window.addEventListener('load', () => {
+		bulmaCollapsible.attach();
+
+		const ipaddr = document.getElementById('ipaddr');
+		const send = document.getElementById('send');
+		const raw = document.getElementById('raw');
+		const tmsg = document.getElementById('tmsg');
+		const mlist = document.getElementById('mlist');
+		var gw;
+		var history = []
+		var hcount;
+
+		var filtMsg = ["DatagramNtf", "PosePositionNtf"]
+
+		document.getElementById('connect').addEventListener('click', ({target}) => {
+			if (target.innerHTML == "Connect"){
+				connectToMaster(ipaddr.value)
+				target.classList.replace('is-info', 'is-warning')
+				target.innerHTML = "Disconnect"
+				ipaddr.disabled = true
+				send.disabled = false
+				raw.disabled = true
+			}else if (target.innerHTML == "Disconnect"){
+				target.classList.replace('is-warning', 'is-info')
+				disconnectFromMaster()
+				target.innerHTML = "Connect"
+				ipaddr.disabled = false
+				send.disabled = true
+				raw.disabled = false
+				send.value = ""
+			}
+		});
+
+		send.addEventListener('keyup', ({key}) => {
+			if (key === "Enter") {
+			let j = send.value
+			try {
+				JSON.parse(j)
+			} catch (error) {
+				console.log("Invalid JSON : " + j)
+				return;
+			}
+			console.log(">>> " + j)
+			gw.sock.send(j+"\n")
+			const msgel = tmsg.content.cloneNode(true)
+			msgel.firstElementChild.firstElementChild.innerText = "＜"
+			let t = document.createTextNode(j.toString().substring(0, 240))
+			msgel.firstElementChild.appendChild(t)
+			mlist.appendChild(msgel);
+			mlist.scrollTop = mlist.scrollHeight;
+			history.push(j);
+			send.value = ""
+			hcount = 0;
+			}else if (key == "ArrowUp"){
+				if (hcount < -(history.length+1)) hcount = -history.length+1;
+				var h = history[history.length - 1 + hcount]
+				send.value = h ? h : ""
+				hcount--;
+			} else if (key == "ArrowDown") {
+				if(hcount>0) hcount=0;
+				var h = history[history.length - 1 + hcount]
+				send.value = h ? h : ""
+				hcount++;
+			}
+		});
+
+		function connectToMaster(ipaddr) {
+			console.log("Connecting to " + ipaddr);
+			gw = new Gateway(ipaddr,8080)
+			gw.addEventListener(raw.checked ? 'rx' : 'rxmsg', msg => {
+				console.log(">>> " + msg)
+				var chk = (filtMsg.find(f => msg.toString().includes(f)));
+				if (chk && chk.length > 0) return;
+				const msgel = tmsg.content.cloneNode(true)
+				msgel.firstElementChild.firstElementChild.innerText = "＞"
+				let t = document.createTextNode(msg.toString().substring(0, 240))
+				msgel.firstElementChild.appendChild(t)
+				mlist.appendChild(msgel);
+				mlist.scrollTop = mlist.scrollHeight;
+			})
+		}
+
+		function disconnectFromMaster() {
+			console.log("Disconnecting..");
+			gw.close()
+			gw = null
+		}
+	})
+
+</script>
+
+</html>
