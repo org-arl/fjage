@@ -341,8 +341,7 @@ export class Gateway {
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
-    this.msgObservers = [];               // external observers wanting to listen incoming messages
-    this.connObservers = [];              // external observers for socket connection opening and closing
+    this.eventListeners = {};             // external listeners wanting to listen internal events
     this.queue = [];                      // incoming message queue
     this.keepAlive = true;                // reconnect if websocket connection gets closed/errored
     this.debug = false;                   // debug info to be logged to console?
@@ -351,9 +350,17 @@ export class Gateway {
     window.fjage.gateways.push(this);
   }
 
+  _sendEvent(type, val) {
+    if (Array.isArray(this.eventListeners[type])) {
+      this.eventListeners[type].forEach(l => {
+        l && {}.toString.call(l) === '[object Function]' && l(val)
+      })
+    }
+  }
+
   _onWebsockOpen() {
     if(this.debug) console.log('Connected to ', this.sock.url);
-    this.connObservers.forEach(co => {if(co) co(true);});
+    this._sendEvent('conn', true);
     this.sock.onclose = this._websockReconnect.bind(this);
     this.sock.onmessage = event => {
       this._onWebsockRx.call(this,event.data);
@@ -369,12 +376,14 @@ export class Gateway {
   _onWebsockRx(data) {
     var obj;
     if (this.debug) console.log('< '+data);
+    this._sendEvent('rx', data)
     try {
       obj = JSON.parse(data, _decodeBase64);
     }catch(e){
       console.warn('JSON Parsing error: ' + e + '\nJSON : ' + data);
       return;
     }
+    this._sendEvent('rxp', obj)
     if ('id' in obj && obj.id in this.pending) {
       // response to a pending request to master
       this.pending[obj.id](obj);
@@ -383,10 +392,17 @@ export class Gateway {
       // incoming message from master
       let msg = Message._deserialize(obj.message);
       if (!msg) return;
+      this._sendEvent('rxmsg', msg)
       if ((msg.recipient == this.aid.toJSON() )|| this.subscriptions[msg.recipient]) {
-        for (var i = 0; i < this.msgObservers.length; i++)
-          if (this.msgObservers[i](msg)) return;
         var consumed = false;
+        if (Array.isArray(this.eventListeners['message'])){
+          for (var i = 0; i < this.eventListeners['message'].length; i++) {
+            if (this.eventListeners['message'][i](msg)) {
+              consumed = true;
+              break;
+            }
+          }
+        }
          // iterate over internal callbacks, until one consumes the message
         for (var key in this.listener){
           // callback returns true if it has consumed the message
@@ -439,7 +455,7 @@ export class Gateway {
 
   _websockReconnect(){
     if (this._firstConn || !this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
-    if (this._firstReConn) this.connObservers.forEach(co => {if(co) co(false);});
+    if (this._firstReConn) this._sendEvent('conn', false);
     this._firstReConn = false;
     if(this.debug) console.log('Reconnecting to ', this.sock.url);
     setTimeout(() => {
@@ -454,7 +470,8 @@ export class Gateway {
     let sock = this.sock;
     if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
     if (sock.readyState == sock.OPEN) {
-      if (this.debug) console.log('> '+s);
+      console.log('> '+s);
+      this._sendEvent('tx', s)
       sock.send(s+'\n');
       return true;
     } else if (sock.readyState == sock.CONNECTING) {
@@ -473,7 +490,7 @@ export class Gateway {
     return new Promise(resolve => {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
-        if (this.debug) console.log('Receive Timeout : ' + rq);
+        console.log('Receive Timeout : ' + rq);
         resolve();
       }, this.sock.readyState == this.sock.CONNECTING ? 8*this._timeout : this._timeout);
       this.pending[rq.id] = rsp => {
@@ -524,13 +541,40 @@ export class Gateway {
   }
 
   /**
+   * Add an event listener to listen to various events happening on this Gateway
+   *
+   * @param {string} type - type of event to be listened to.
+   * @param {function} listener - new callback/function to be called when the event happens
+   * @returns {void}
+   */
+  addEventListener(type, listener) {
+    if (!Array.isArray(this.eventListeners[type])){
+      this.eventListeners[type] = [];
+    }
+    this.eventListeners[type].push(listener);
+  }
+
+  /**
+   * Remove an event listener.
+   *
+   * @param {string} type - type of event the listener was for
+   * @param {function} listener - callback/function which was to be called when the event happens
+   * @returns {void}
+   */
+  removeEventListener(type, listener) {
+    if (!this.eventListeners[type]) return;
+    let ndx = this.eventListeners[type].indexOf(listener);
+    if (ndx >= 0) this.eventListeners[type].splice(ndx, 1);
+  }
+
+  /**
    * Add a new listener to listen to all {Message}s sent to this Gateway
    *
    * @param {function} listener - new callback/function to be called when a {Message} is received.
    * @returns {void}
    */
   addMessageListener(listener) {
-    this.msgObservers.push(listener);
+    this.addEventListener('message',listener);
   }
 
   /**
@@ -540,8 +584,7 @@ export class Gateway {
    * @returns {void}
    */
   removeMessageListener(listener) {
-    let ndx = this.msgObservers.indexOf(listener);
-    if (ndx >= 0) this.msgObservers.splice(ndx, 1);
+    this.removeEventListener('message', listener);
   }
 
   /**
@@ -551,7 +594,7 @@ export class Gateway {
    * @returns {void}
    */
   addConnListener(listener) {
-    this.connObservers.push(listener);
+    this.addEventListener('conn', listener);
   }
 
   /**
@@ -561,8 +604,7 @@ export class Gateway {
    * @returns {void}
    */
   removeConnListener(listener) {
-    let ndx = this.connObservers.indexOf(listener);
-    if (ndx >= 0) this.connObservers.splice(ndx, 1);
+    this.removeEventListener('conn', listener);
   }
 
   /**
@@ -716,7 +758,7 @@ export class Gateway {
       if (timeout > 0){
         timer = setTimeout(() => {
           delete this.listener[lid];
-          if (this.debug) console.log('Receive Timeout : ' + filter);
+          console.log('Receive Timeout : ' + filter);
           resolve();
         }, timeout);
       }
