@@ -17,6 +17,7 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;
 import org.arl.fjage.AgentID;
 import org.arl.fjage.connectors.*;
+import org.arl.fjage.auth.*;
 
 /**
  * Handles a JSON/TCP connection with remote container.
@@ -35,10 +36,22 @@ class ConnectionHandler extends Thread {
   private boolean alive, keepAlive, closeOnDead;
   private ExecutorService pool = Executors.newSingleThreadExecutor();
   private Set<AgentID> watchList = new HashSet<>();
+  private Firewall fw;
 
   public ConnectionHandler(Connector conn, RemoteContainer container) {
     this.conn = conn;
     this.container = container;
+    this.fw = new AllowAll();
+    setName(conn.toString());
+    alive = false;
+    keepAlive = true;
+    closeOnDead = (conn instanceof TcpConnector) && (container instanceof MasterContainer);
+  }
+
+  public ConnectionHandler(Connector conn, RemoteContainer container, Firewall fw) {
+    this.conn = conn;
+    this.container = container;
+    this.fw = fw;
     setName(conn.toString());
     alive = false;
     keepAlive = true;
@@ -70,6 +83,7 @@ class ConnectionHandler extends Thread {
         println(ALIVE);
       }
     }
+    fw.authenticate(conn, null);
     while (conn != null) {
       String s = null;
       try {
@@ -98,7 +112,7 @@ class ConnectionHandler extends Thread {
       try {
         JsonMessage rq = JsonMessage.fromJson(s);
         if (rq.action == null) {
-          if (rq.id != null) {
+          if (fw.permit(rq) && rq.id != null) {
             // response to some request
             Object obj = pending.get(rq.id);
             if (obj != null) {
@@ -110,12 +124,14 @@ class ConnectionHandler extends Thread {
           }
         } else {
           // new request
-          pool.execute(new RemoteTask(rq));
+          if (rq.action == Action.AUTH) fw.authenticate(conn, rq.creds);
+          else if (fw.permit(rq)) pool.execute(new RemoteTask(rq));
         }
       } catch(Exception ex) {
         log.warning("Bad JSON request: "+ex.toString() + " in " + s);
       }
     }
+    fw.authenticate(conn, null);
     close();
     pool.shutdown();
   }
@@ -213,6 +229,7 @@ class ConnectionHandler extends Thread {
   }
 
   boolean wantsMessagesFor(AgentID aid) {
+    if (!fw.permit(aid)) return false;
     synchronized(watchList) {
       if (watchList.isEmpty()) return true;
       return watchList.contains(aid);

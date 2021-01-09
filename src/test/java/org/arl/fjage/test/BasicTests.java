@@ -15,6 +15,7 @@ import org.arl.fjage.remote.Gateway;
 import org.arl.fjage.remote.MasterContainer;
 import org.arl.fjage.remote.SlaveContainer;
 import org.arl.fjage.persistence.Store;
+import org.arl.fjage.auth.*;
 import org.arl.fjage.shell.*;
 import org.arl.fjage.param.*;
 import org.junit.Before;
@@ -176,6 +177,93 @@ public class BasicTests {
     req = new NuisanceMessage(server.getAgentID());
     rsp = gw.request(req, 100);
     assertNull(rsp);
+    gw.close();
+    platform.shutdown();
+  }
+
+  @Test
+  public void testFirewall1() throws IOException {
+    log.info("testFirewall1");
+    Platform platform = new RealTimePlatform();
+    MasterContainer master = new MasterContainer(platform, new AllowAll());
+    ServerAgent server = new ServerAgent();
+    master.add("S", server);
+    platform.start();
+    Gateway gw = new Gateway("localhost", master.getPort());
+    Message rsp = gw.receive(100);
+    assertNull(rsp);
+    AgentID s = gw.agentForService("server");
+    assertNotNull(s);
+    Message req = new RequestMessage(server.getAgentID());
+    rsp = gw.request(req, 100);
+    assertNotNull(rsp);
+    gw.close();
+    platform.shutdown();
+    assertEquals(1, server.requests);
+  }
+
+  @Test
+  public void testFirewall2() throws IOException {
+    log.info("testFirewall2");
+    Platform platform = new RealTimePlatform();
+    MasterContainer master = new MasterContainer(platform, new DenyAll());
+    ServerAgent server = new ServerAgent();
+    master.add("S", server);
+    platform.start();
+    Gateway gw = new Gateway("localhost", master.getPort());
+    Message rsp = gw.receive(100);
+    assertNull(rsp);
+    AgentID s = gw.agentForService("server");
+    assertNull(s);
+    Message req = new RequestMessage(server.getAgentID());
+    rsp = gw.request(req, 100);
+    assertNull(rsp);
+    gw.close();
+    platform.shutdown();
+    assertEquals(0, server.requests);
+  }
+
+  @Test
+  public void testFirewall3() throws IOException {
+    log.info("testFirewall3");
+    Platform platform = new RealTimePlatform();
+    MasterContainer master = new MasterContainer(platform, new AllowAfterAuth());
+    ServerAgent server = new ServerAgent();
+    master.add("S", server);
+    platform.start();
+    Gateway gw = new Gateway("localhost", master.getPort());
+    Message rsp = gw.receive(100);
+    assertNull(rsp);
+    AgentID s = gw.agentForService("server");
+    assertNull(s);
+    gw.authenticate("somecreds");
+    s = gw.agentForService("server");
+    assertNotNull(s);
+    Message req = new RequestMessage(server.getAgentID());
+    rsp = gw.request(req, 100);
+    assertNotNull(rsp);
+    gw.close();
+    platform.shutdown();
+    assertEquals(1, server.requests);
+  }
+
+  @Test
+  public void testFirewall4() throws IOException {
+    log.info("testFirewall4");
+    Platform platform = new RealTimePlatform();
+    MasterContainer master = new MasterContainer(platform, new AllowAfterAuth());
+    platform.start();
+    Gateway gw = new Gateway("localhost", master.getPort());
+    gw.subscribe(new AgentID("test1", true));
+    master.send(new NuisanceMessage(new AgentID("test1", true)));
+    Message msg = gw.receive(100);
+    assertNull(msg);
+    gw.authenticate("somecreds");
+    gw.subscribe(new AgentID("test1", true));
+    master.send(new NuisanceMessage(new AgentID("test1", true)));
+    msg = gw.receive(100);
+    assertNotNull(msg);
+    assertSame(msg.getClass(), NuisanceMessage.class);
     gw.close();
     platform.shutdown();
   }

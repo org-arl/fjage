@@ -106,6 +106,23 @@ public class SlaveContainer extends RemoteContainer {
     connectToMaster();
   }
 
+  /////////////// slave-specific methods
+
+  /**
+   * Authenticate to master container.
+   *
+   * @param creds credentials to authenticate with.
+   */
+  public void authenticate(String creds) {
+    if (master == null) return;
+    JsonMessage rq = new JsonMessage();
+    rq.action = Action.AUTH;
+    rq.creds = creds;
+    rq.id = UUID.randomUUID().toString();
+    String json = rq.toJson();
+    master.println(json);
+  }
+
   /////////////// Container interface methods to override
 
   @Override

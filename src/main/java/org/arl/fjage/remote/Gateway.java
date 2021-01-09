@@ -160,6 +160,16 @@ public class Gateway implements Messenger, Closeable {
   }
 
   /**
+   * Authenticate to server.
+   *
+   * @param creds credentials to authenticate with.
+   */
+  public void authenticate(String creds) {
+    if (container != null && container instanceof SlaveContainer)
+      ((SlaveContainer)container).authenticate(creds);
+  }
+
+  /**
    * Gets the agent ID associated with the gateway.
    *
    * @return agent ID
