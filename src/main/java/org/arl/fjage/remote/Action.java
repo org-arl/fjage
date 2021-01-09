@@ -16,6 +16,7 @@ import com.google.gson.annotations.SerializedName;
  * JSON message actions.
  */
 enum Action {
+  @SerializedName("auth")             AUTH,
   @SerializedName("agents")           AGENTS,
   @SerializedName("containsAgent")    CONTAINS_AGENT,
   @SerializedName("services")         SERVICES,
