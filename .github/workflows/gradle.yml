@@ -32,4 +32,4 @@ jobs:
     - name: Setup npm CI
       run: npm ci
     - name: Build with Gradle
-      run: ./gradlew -d test
+      run: ./gradlew test
