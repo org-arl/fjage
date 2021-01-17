@@ -17,7 +17,7 @@ import org.arl.fjage.remote.JsonMessage;
 /**
  * An abstract firewall class that allows all traffic to pass through once
  * authenticated. Authentication is implemented by a class that extends this
- * class by implemeting the {@link Firewall#authenticate()} method.
+ * class by implemeting the {@link Firewall#authenticate(Connector,String)} method.
  */
 public abstract class AbstractFirewall implements Firewall {
 
