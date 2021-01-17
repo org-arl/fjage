@@ -124,8 +124,12 @@ class ConnectionHandler extends Thread {
           }
         } else {
           // new request
-          if (rq.action == Action.AUTH) fw.authenticate(conn, rq.creds);
+          if (rq.action == Action.AUTH) {
+            boolean b = fw.authenticate(conn, rq.creds);
+            println("{\"auth\": " + b + "}");
+          }
           else if (fw.permit(rq)) pool.execute(new RemoteTask(rq));
+          else println("{\"auth\": false}");
         }
       } catch(Exception ex) {
         log.warning("Bad JSON request: "+ex.toString() + " in " + s);
