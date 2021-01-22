@@ -608,6 +608,33 @@ export class Gateway {
   }
 
   /**
+   * Add an event listener to listen to various events happening on this Gateway
+   *
+   * @param {string} credentials - credentials for authenticating with a master container
+   * @return {Promise} - a promise which resolves with the authenication response is received.
+   */
+  async authenticate(credentials) {
+    let rq = { action: 'auth', creds: credentials, id: _guid(8)};
+    let s = this._websockTx(rq);
+    return new Promise(resolve => {
+      let timer = setTimeout(() => { 
+        this.removeEventListener('rx', authListner);
+        resolve(false); 
+      }, 1000);
+      function authListner(json){
+        let j = json.trim()
+        if(j == '{"auth": true}'){
+          resolve(true); 
+        }
+        else if (j == '{"auth": false}'){
+          resolve(false); 
+        }
+      }
+      this.addEventListener('rx', authListner);
+    })
+  }
+
+  /**
    * Gets the agent ID associated with the gateway.
    *
    * @return {string} agent ID
