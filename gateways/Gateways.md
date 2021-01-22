@@ -15,7 +15,7 @@ All fjåge Gateway implementations should implement the following classes and me
 
 ### `authenticate` :: String credentials -> Boolean
 - Tries to authenticate the Gateway connection with the master container.
-- Must send the credential string using command `{"action":"auth","creds":"boo","id":""}`
+- Must send the credential string using command `{"action":"auth","creds":"boo"}`
 - Must wait for a the first `{"auth": true}` or `{"auth": false}` received from the master and return the result.
 - Must default timeout to 1000 millisecond.
 
