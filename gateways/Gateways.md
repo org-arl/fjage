@@ -13,7 +13,13 @@ All fjåge Gateway implementations should implement the following classes and me
 - Must return a `null` if the connection to master container fails on the first attempt.
 - May support auto-reconnect, where, once a connection with the master container is established if the connection fails, the Gateway tries to reconnect automatically.
 
-### `getAgentID()` :: Void -> AgentID
+### `authenticate` :: String credentials -> Boolean
+- Tries to authenticate the Gateway connection with the master container.
+- Must send the credential string using command `{"auth": "<credentials>"}`
+- Must wait for a the first `{"auth": true}` or `{"auth": false}` received from the master and return the result.
+- Must default timeout to 1000 millisecond.
+
+### `getAgentID()` :: Void -> AgentID | Error
 -  Returns the _AgentID_ associated with the gateway.
 -  May be implemented as a property `agentID` on the _Gateway_.
 
@@ -21,10 +27,10 @@ All fjåge Gateway implementations should implement the following classes and me
 - Closes the _Gateway_.
 - Must send a `{"alive": false}` message to the master container before closing.
 
-### `send()` :: Message -> Boolean
+### `send()` :: Message -> Boolean  
 - Sends a _Message_ to the recipient indicated in the message.
 
-### `receive()` :: (Object filter), (Int timeout) -> Message
+### `receive()` :: (Object filter), (Int timeout) -> Message | Error
 - Returns a _Message_ received by the agent.
 - May accept optional filter and timeout arguments.
 - May support filter of type `MessageClass class` to filter for a message of a specific class.
@@ -37,6 +43,7 @@ All fjåge Gateway implementations should implement the following classes and me
 
 ### `request()` :: Message, (Int timeout) -> Message
 - Sends a request and waits for a response.
+- May return an `Error` of type `AuthorizationError` if a `{"auth": false}` is seen while waiting for the response
 - Must not **block** if timeout is 0.
 - Must **block** indefinitely if timeout is -1.
 - Must **block** for timeout milliseconds otherwise.
@@ -62,12 +69,14 @@ All fjåge Gateway implementations should implement the following classes and me
 ### `unsubscribe()` :: AgentID -> Boolean
 - Unsubscribes the gateway from a given topic.
 
-### `agentForService()` :: String -> AgentID
+### `agentForService()` :: String -> AgentID | Error
 - Finds an agent that provides a named service.
+- Must default timeout to 1000 millisecond.
 
-### `agentsForService()` :: String -> [AgentID]
+### `agentsForService()` :: String -> [AgentID] | Error
 - Find all agents that provides a named service.
 - Returns an array/list.
+- Must default timeout to 1000 millisecond.
 
 ### `flush()` :: Void -> Void
 - Flushes the incoming queue in the `Gateway`.
