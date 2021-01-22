@@ -470,7 +470,7 @@ export class Gateway {
     let sock = this.sock;
     if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
     if (sock.readyState == sock.OPEN) {
-      console.log('> '+s);
+      if(this.debug) console.log('> '+s);
       this._sendEvent('tx', s)
       sock.send(s+'\n');
       return true;
