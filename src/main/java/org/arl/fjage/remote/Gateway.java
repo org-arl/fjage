@@ -163,10 +163,12 @@ public class Gateway implements Messenger, Closeable {
    * Authenticate to server.
    *
    * @param creds credentials to authenticate with.
+   * @return true if authenticated, false otherwise.
    */
-  public void authenticate(String creds) {
+  public boolean authenticate(String creds) {
     if (container != null && container instanceof SlaveContainer)
-      ((SlaveContainer)container).authenticate(creds);
+      return ((SlaveContainer)container).authenticate(creds);
+    return false;
   }
 
   /**

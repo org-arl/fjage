@@ -14,6 +14,7 @@ import java.util.*;
 import java.io.IOException;
 import org.arl.fjage.*;
 import org.arl.fjage.connectors.*;
+import org.arl.fjage.auth.AuthFailureException;
 
 /**
  * Slave container attached to a master container. Agents in linked
@@ -112,15 +113,17 @@ public class SlaveContainer extends RemoteContainer {
    * Authenticate to master container.
    *
    * @param creds credentials to authenticate with.
+   * @return true if authenticated, false otherwise.
    */
-  public void authenticate(String creds) {
-    if (master == null) return;
+  public boolean authenticate(String creds) {
+    if (master == null) return false;
     JsonMessage rq = new JsonMessage();
     rq.action = Action.AUTH;
     rq.creds = creds;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    master.println(json);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    return rsp != null && rsp.auth != null && rsp.auth;
   }
 
   /////////////// Container interface methods to override
@@ -180,6 +183,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
+    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
     return rsp.agentIDs;
   }
 
@@ -192,6 +196,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
+    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
     return rsp.services;
   }
 
@@ -205,6 +210,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
+    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
     return rsp.agentID;
   }
 
@@ -218,6 +224,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
+    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
     return rsp.agentIDs;
   }
 

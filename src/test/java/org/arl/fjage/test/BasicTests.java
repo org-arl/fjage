@@ -209,8 +209,12 @@ public class BasicTests {
     master.add("S", server);
     platform.start();
     Gateway gw = new Gateway("localhost", master.getPort());
-    AgentID s = gw.agentForService("server");
-    assertNull(s);
+    try {
+      gw.agentForService("server");
+      fail("Should have thrown AuthFailureException");
+    } catch (AuthFailureException ex) {
+      // all good
+    }
     Message req = new RequestMessage(server.getAgentID());
     Message rsp = gw.request(req, 1000);
     assertNull(rsp);
@@ -228,10 +232,14 @@ public class BasicTests {
     master.add("S", server);
     platform.start();
     Gateway gw = new Gateway("localhost", master.getPort());
-    AgentID s = gw.agentForService("server");
-    assertNull(s);
+    try {
+      gw.agentForService("server");
+      fail("Should have thrown AuthFailureException");
+    } catch (AuthFailureException ex) {
+      // all good
+    }
     gw.authenticate("somecreds");
-    s = gw.agentForService("server");
+    AgentID s = gw.agentForService("server");
     assertNotNull(s);
     Message req = new RequestMessage(server.getAgentID());
     Message rsp = gw.request(req, 1000);

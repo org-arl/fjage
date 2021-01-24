@@ -32,6 +32,7 @@ public class JsonMessage {
   public Message message;
   public Boolean relay;
   public String creds;
+  public Boolean auth;
 
   private static GsonBuilder gsonBuilder = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)

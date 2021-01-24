@@ -126,10 +126,10 @@ class ConnectionHandler extends Thread {
           // new request
           if (rq.action == Action.AUTH) {
             boolean b = fw.authenticate(conn, rq.creds);
-            println("{\"auth\": " + b + "}");
+            respondAuth(rq, b);
           }
           else if (fw.permit(rq)) pool.execute(new RemoteTask(rq));
-          else println("{\"auth\": false}");
+          else respondAuth(rq, false);
         }
       } catch(Exception ex) {
         log.warning("Bad JSON request: "+ex.toString() + " in " + s);
@@ -144,6 +144,14 @@ class ConnectionHandler extends Thread {
   public String toString() {
     if (conn == null) return super.toString();
     return conn.toString();
+  }
+
+  private void respondAuth(JsonMessage rq, boolean auth) {
+    JsonMessage rsp = new JsonMessage();
+    rsp.inResponseTo = rq.action;
+    rsp.id = rq.id;
+    rsp.auth = auth;
+    println(rsp.toJson());
   }
 
   private void respond(JsonMessage rq, boolean answer) {
