@@ -3,6 +3,7 @@ plugins {
     id 'eclipse'
     id 'maven'
     id 'signing'
+    id 'com.adarshr.test-logger' version '2.1.1'
 }
 
 defaultTasks 'jars'
@@ -57,6 +58,7 @@ compileGroovy {
 }
 
 test {
+  systemProperty "random.testing.seed", new Random().nextInt()
   systemProperties project.properties.subMap(["manualJSTest"])
   systemProperties project.properties.subMap(["manualPyTest"])
 }
@@ -71,12 +73,14 @@ jar {
   }
 }
 
-test {
-  testLogging {
-    events "passed", "skipped", "failed"
-    exceptionFormat "full"
-  }
+testlogger {
+  showFullStackTraces false
+  showStandardStreams true
+  showPassedStandardStreams false
+  showSkippedStandardStreams false
+  showFailedStandardStreams true
 }
+
 
 task jars(dependsOn: jar, type: Copy) {
   into "$buildDir/libs"
