@@ -508,7 +508,7 @@ export class Gateway {
     if (!filter) return this.queue.shift();
 
     let matchedMsg = this.queue.find( msg => this._matchMessage(filter, msg));
-    if (matchedMsg) this.queue.splice(this.queue.indexOf(matchedMsg, 1));
+    if (matchedMsg) this.queue.splice(this.queue.indexOf(matchedMsg), 1);
 
     return matchedMsg
   }
