@@ -1,7 +1,9 @@
-apply plugin: 'groovy'
-apply plugin: 'eclipse'
-apply plugin: 'maven'
-apply plugin: 'signing'
+plugins {
+    id 'groovy'
+    id 'eclipse'
+    id 'maven'
+    id 'signing'
+}
 
 defaultTasks 'jars'
 
@@ -25,18 +27,18 @@ repositories {
 }
 
 dependencies {
-  compile 'org.codehaus.groovy:groovy:2.5.9'
-  compile 'org.jline:jline:3.12.1'
-  compile 'org.apache.commons:commons-lang3:3.9'
-  compile 'commons-io:commons-io:2.6'
-  compile 'uk.com.robust-it:cloning:1.9.12'
-  compile 'org.eclipse.jetty:jetty-server:9.4.26.v20200117'
-  compile 'org.eclipse.jetty:jetty-servlet:9.4.26.v20200117'
-  compile 'org.eclipse.jetty.websocket:websocket-server:9.4.26.v20200117'
-  compile 'com.google.code.gson:gson:2.8.5'
-  compile 'com.fazecast:jSerialComm:2.5.1'
-  testCompile 'junit:junit:4.12'
-  testCompile 'net.jodah:concurrentunit:0.4.6'
+  implementation 'org.codehaus.groovy:groovy:2.5.9'
+  implementation 'org.jline:jline:3.12.1'
+  implementation 'org.apache.commons:commons-lang3:3.9'
+  implementation 'commons-io:commons-io:2.6'
+  implementation 'uk.com.robust-it:cloning:1.9.12'
+  implementation 'org.eclipse.jetty:jetty-server:9.4.26.v20200117'
+  implementation 'org.eclipse.jetty:jetty-servlet:9.4.26.v20200117'
+  implementation 'org.eclipse.jetty.websocket:websocket-server:9.4.26.v20200117'
+  implementation 'com.google.code.gson:gson:2.8.5'
+  implementation 'com.fazecast:jSerialComm:2.5.1'
+  testImplementation 'junit:junit:4.12'
+  testImplementation 'net.jodah:concurrentunit:0.4.6'
 }
 
 compileJava {
