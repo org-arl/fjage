@@ -516,7 +516,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
         return s.equals(mid);
       }
     }, timeout);
-    if (rsp != null) return null;
+    if (rsp != null) return rsp;
     if (container instanceof SlaveContainer)
       ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
     return null;
