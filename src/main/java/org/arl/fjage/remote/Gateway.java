@@ -245,7 +245,9 @@ public class Gateway implements Messenger, Closeable {
 
   @Override
   public Message receive(final Message m, long timeout) {
-    return receive(new MessageFilter() {
+    if (container instanceof SlaveContainer)
+      ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
+    Message rsp = receive(new MessageFilter() {
       private String mid = m.getMessageID();
       @Override
       public boolean matches(Message m) {
@@ -254,6 +256,10 @@ public class Gateway implements Messenger, Closeable {
         return s.equals(mid);
       }
     }, timeout);
+    if (rsp != null) return rsp;
+    if (container instanceof SlaveContainer)
+      ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
+    return null;
   }
 
   @Override

@@ -27,10 +27,12 @@ class ConnectionHandler extends Thread {
   private final String ALIVE = "{\"alive\": true}";
   private final String SIGN_OFF = "{\"alive\": false}";
   private final int TIMEOUT = 5000;
+  private final int FAILED_SIZE = 256;
 
   private Connector conn;
   private DataOutputStream out;
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
+  private Deque<String> failed = new ArrayDeque<String>(FAILED_SIZE);
   private Logger log = Logger.getLogger(getClass().getName());
   private RemoteContainer container;
   private boolean alive, keepAlive, closeOnDead;
@@ -112,13 +114,19 @@ class ConnectionHandler extends Thread {
       try {
         JsonMessage rq = JsonMessage.fromJson(s);
         if (rq.action == null) {
-          if (fw.permit(rq) && rq.id != null) {
+          if (rq.id != null) {
             // response to some request
             Object obj = pending.get(rq.id);
             if (obj != null) {
               pending.put(rq.id, rq);
               synchronized(obj) {
                 obj.notify();
+              }
+            } else if (rq.auth != null) {
+              synchronized(failed) {
+                while (failed.size() >= FAILED_SIZE)
+                  failed.poll();
+                failed.offer(rq.id);
               }
             }
           }
@@ -245,6 +253,12 @@ class ConnectionHandler extends Thread {
     synchronized(watchList) {
       if (watchList.isEmpty()) return true;
       return watchList.contains(aid);
+    }
+  }
+
+  boolean checkAuthFailure(String id) {
+    synchronized(failed) {
+      return failed.contains(id);
     }
   }
 

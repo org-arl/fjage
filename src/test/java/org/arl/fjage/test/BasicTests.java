@@ -216,8 +216,12 @@ public class BasicTests {
       // all good
     }
     Message req = new RequestMessage(server.getAgentID());
-    Message rsp = gw.request(req, 1000);
-    assertNull(rsp);
+    try {
+      gw.request(req, 1000);
+      fail("Should have thrown AuthFailureException");
+    } catch (AuthFailureException ex) {
+      // all good
+    }
     gw.close();
     platform.shutdown();
     assertEquals(0, server.requests);
