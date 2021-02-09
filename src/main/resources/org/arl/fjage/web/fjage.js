@@ -353,8 +353,8 @@ export class Gateway {
   _sendEvent(type, val) {
     if (Array.isArray(this.eventListeners[type])) {
       this.eventListeners[type].forEach(l => {
-        l && {}.toString.call(l) === '[object Function]' && l(val)
-      })
+        l && {}.toString.call(l) === '[object Function]' && l(val);
+      });
     }
   }
 
@@ -376,14 +376,14 @@ export class Gateway {
   _onWebsockRx(data) {
     var obj;
     if (this.debug) console.log('< '+data);
-    this._sendEvent('rx', data)
+    this._sendEvent('rx', data);
     try {
       obj = JSON.parse(data, _decodeBase64);
     }catch(e){
       console.warn('JSON Parsing error: ' + e + '\nJSON : ' + data);
       return;
     }
-    this._sendEvent('rxp', obj)
+    this._sendEvent('rxp', obj);
     if ('id' in obj && obj.id in this.pending) {
       // response to a pending request to master
       this.pending[obj.id](obj);
@@ -392,7 +392,7 @@ export class Gateway {
       // incoming message from master
       let msg = Message._deserialize(obj.message);
       if (!msg) return;
-      this._sendEvent('rxmsg', msg)
+      this._sendEvent('rxmsg', msg);
       if ((msg.recipient == this.aid.toJSON() )|| this.subscriptions[msg.recipient]) {
         var consumed = false;
         if (Array.isArray(this.eventListeners['message'])){
@@ -403,7 +403,7 @@ export class Gateway {
             }
           }
         }
-         // iterate over internal callbacks, until one consumes the message
+        // iterate over internal callbacks, until one consumes the message
         for (var key in this.listener){
           // callback returns true if it has consumed the message
           if (this.listener[key](msg)) {
@@ -474,7 +474,7 @@ export class Gateway {
     if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
     if (sock.readyState == sock.OPEN) {
       if(this.debug) console.log('> '+s);
-      this._sendEvent('tx', s)
+      this._sendEvent('tx', s);
       sock.send(s+'\n');
       return true;
     } else if (sock.readyState == sock.CONNECTING) {
@@ -530,7 +530,7 @@ export class Gateway {
     let matchedMsg = this.queue.find( msg => this._matchMessage(filter, msg));
     if (matchedMsg) this.queue.splice(this.queue.indexOf(matchedMsg), 1);
 
-    return matchedMsg
+    return matchedMsg;
   }
 
   _update_watch() {
@@ -711,6 +711,7 @@ export class Gateway {
       if (msg.__clazz__.endsWith('Req')) msg.perf = Performative.REQUEST;
       else msg.perf = Performative.INFORM;
     }
+    this._sendEvent('txmsg', msg);
     let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
     rq = rq.replace('"###MSG###"', msg._serialize());
     return !!this._websockTx(rq);
