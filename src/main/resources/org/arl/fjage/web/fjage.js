@@ -493,7 +493,7 @@ export class Gateway {
     return new Promise(resolve => {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
-        console.log('Receive Timeout : ' + rq);
+        if (this.debug) console.log('Receive Timeout : ' + rq);
         resolve();
       }, this.sock.readyState == this.sock.CONNECTING ? 8*this._timeout : this._timeout);
       this.pending[rq.id] = rsp => {
@@ -762,7 +762,7 @@ export class Gateway {
       if (timeout > 0){
         timer = setTimeout(() => {
           delete this.listener[lid];
-          console.log('Receive Timeout : ' + filter);
+          if (this.debug) console.log('Receive Timeout : ' + filter);
           resolve();
         }, timeout);
       }
