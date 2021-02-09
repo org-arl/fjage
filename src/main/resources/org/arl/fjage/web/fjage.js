@@ -447,6 +447,9 @@ export class Gateway {
       this.sock = new WebSocket(url);
       this.sock.onerror = this._websockReconnect.bind(this);
       this.sock.onopen = this._onWebsockOpen.bind(this);
+      this.sock.onclose = () => {
+        this._sendEvent('conn', false);
+      };
     } catch (error) {
       if(this.debug) console.log('Connection failed to ', this.sock.url);
       return;
