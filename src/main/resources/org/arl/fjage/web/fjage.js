@@ -391,6 +391,7 @@ export class Gateway {
     } else if (obj.action == 'send') {
       // incoming message from master
       let msg = Message._deserialize(obj.message);
+      msg.ts = Date.now();
       if (!msg) return;
       this._sendEvent('rxmsg', msg);
       if ((msg.recipient == this.aid.toJSON() )|| this.subscriptions[msg.recipient]) {
@@ -407,6 +408,9 @@ export class Gateway {
         for (var key in this.listener){
           // callback returns true if it has consumed the message
           if (this.listener[key](msg)) {
+            let req = this.listener[key].msg;
+            let rsp = msg;
+            console.log('Got reply to ' + req.msgID + ' => ' + rsp.msgID + ' [' + rsp.ts - req.ts + ']');
             consumed = true;
             break;
           }
@@ -714,7 +718,11 @@ export class Gateway {
     this._sendEvent('txmsg', msg);
     let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
     rq = rq.replace('"###MSG###"', msg._serialize());
-    return !!this._websockTx(rq);
+    let rv = !!this._websockTx(rq);
+    if (rv){
+      msg.ts = Date.now();
+    }
+    return rv;
   }
 
   /**
@@ -763,16 +771,20 @@ export class Gateway {
         timer = setTimeout(() => {
           delete this.listener[lid];
           if (this.debug) console.log('Receive Timeout : ' + filter);
+          if (Object.prototype.hasOwnProperty.call(filter, 'msgID')) {
+            console.warn('Timed out waiting for : ' + filter.msgID + '[' + timeout +']');
+          }
           resolve();
         }, timeout);
       }
-      this.listener[lid] = msg => {
-        if (!this._matchMessage(filter, msg)) return false;
+      this.listener[lid] = rsp => {
+        if (!this._matchMessage(filter, rsp)) return false;
         if(timer) clearTimeout(timer);
         delete this.listener[lid];
-        resolve(msg);
+        resolve(rsp);
         return true;
       };
+      this.listener[lid].msg = msg;
     });
   }
 
