@@ -255,6 +255,10 @@ export class Message {
         suffix = ' ...';
         continue;
       }
+      if (typeof this[k] == 'string' && this[k].includes('\n')){
+        suffix = ' ...';
+        continue;
+      }
       s += ' ' + k + ':' + this[k];
     }
     s += suffix;
@@ -407,10 +411,11 @@ export class Gateway {
         // iterate over internal callbacks, until one consumes the message
         for (var key in this.listener){
           // callback returns true if it has consumed the message
+          let filter = this.listener[key].filter;
           if (this.listener[key](msg)) {
-            let req = this.listener[key].msg;
-            let rsp = msg;
-            console.log('Got reply to ' + req.msgID + ' => ' + rsp.msgID + ' [' + rsp.ts - req.ts + ']');
+            if(this.debug) {
+              console.log('# Got reply to ' + filter.toString() + ' => ' + msg.toString() + ' [' + (msg.ts - filter.ts) + ' ms]');
+            }
             consumed = true;
             break;
           }
@@ -719,9 +724,7 @@ export class Gateway {
     let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
     rq = rq.replace('"###MSG###"', msg._serialize());
     let rv = !!this._websockTx(rq);
-    if (rv){
-      msg.ts = Date.now();
-    }
+    if (rv) msg.ts = Date.now();
     return rv;
   }
 
@@ -770,10 +773,7 @@ export class Gateway {
       if (timeout > 0){
         timer = setTimeout(() => {
           delete this.listener[lid];
-          if (this.debug) console.log('Receive Timeout : ' + filter);
-          if (Object.prototype.hasOwnProperty.call(filter, 'msgID')) {
-            console.warn('Timed out waiting for : ' + filter.msgID + '[' + timeout +']');
-          }
+          if (this.debug) console.warn('Timed out waiting for : ' + filter.toString()  + '[' + timeout +']');
           resolve();
         }, timeout);
       }
@@ -784,7 +784,7 @@ export class Gateway {
         resolve(rsp);
         return true;
       };
-      this.listener[lid].msg = msg;
+      this.listener[lid].filter = filter;
     });
   }
 
