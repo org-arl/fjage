@@ -1,4 +1,4 @@
-CFLAGS=-std=c99 -Wall -O2 -_DEFAULT_SOURCE
+CFLAGS=-std=c99 -Wall -O2 -D_DEFAULT_SOURCE
 
 all: libfjage.a
 
