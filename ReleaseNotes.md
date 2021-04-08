@@ -1,5 +1,10 @@
 # Release Notes
 
+## v1.9.0
+
+* Authentication framework
+* Bug fixes and version upgrades
+
 ## v1.8.0
 
 * Java Lambda support
