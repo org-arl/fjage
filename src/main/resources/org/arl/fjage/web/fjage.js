@@ -1,7 +1,7 @@
 ////// settings
 
 const RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
-
+const MAX_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
 
 ////// interface classes
 
@@ -341,8 +341,7 @@ export class Gateway {
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
-    this.msgObservers = [];               // external observers wanting to listen incoming messages
-    this.connObservers = [];              // external observers for socket connection opening and closing
+    this.eventListeners = {};             // external listeners wanting to listen internal events
     this.queue = [];                      // incoming message queue
     this.keepAlive = true;                // reconnect if websocket connection gets closed/errored
     this.debug = false;                   // debug info to be logged to console?
@@ -351,9 +350,17 @@ export class Gateway {
     window.fjage.gateways.push(this);
   }
 
+  _sendEvent(type, val) {
+    if (Array.isArray(this.eventListeners[type])) {
+      this.eventListeners[type].forEach(l => {
+        l && {}.toString.call(l) === '[object Function]' && l(val);
+      });
+    }
+  }
+
   _onWebsockOpen() {
     if(this.debug) console.log('Connected to ', this.sock.url);
-    this.connObservers.forEach(co => {if(co) co(true);});
+    this._sendEvent('conn', true);
     this.sock.onclose = this._websockReconnect.bind(this);
     this.sock.onmessage = event => {
       this._onWebsockRx.call(this,event.data);
@@ -369,12 +376,14 @@ export class Gateway {
   _onWebsockRx(data) {
     var obj;
     if (this.debug) console.log('< '+data);
+    this._sendEvent('rx', data);
     try {
       obj = JSON.parse(data, _decodeBase64);
     }catch(e){
       console.warn('JSON Parsing error: ' + e + '\nJSON : ' + data);
       return;
     }
+    this._sendEvent('rxp', obj);
     if ('id' in obj && obj.id in this.pending) {
       // response to a pending request to master
       this.pending[obj.id](obj);
@@ -383,12 +392,29 @@ export class Gateway {
       // incoming message from master
       let msg = Message._deserialize(obj.message);
       if (!msg) return;
+      this._sendEvent('rxmsg', msg);
       if ((msg.recipient == this.aid.toJSON() )|| this.subscriptions[msg.recipient]) {
-        for (var i = 0; i < this.msgObservers.length; i++)
-          if (this.msgObservers[i](msg)) return;
-        this.queue.push(msg);
-        for (var key in this.listener)        // iterate over internal callbacks, until one consumes the message
-          if (this.listener[key]()) break;    // callback returns true if it has consumed the message
+        var consumed = false;
+        if (Array.isArray(this.eventListeners['message'])){
+          for (var i = 0; i < this.eventListeners['message'].length; i++) {
+            if (this.eventListeners['message'][i](msg)) {
+              consumed = true;
+              break;
+            }
+          }
+        }
+        // iterate over internal callbacks, until one consumes the message
+        for (var key in this.listener){
+          // callback returns true if it has consumed the message
+          if (this.listener[key](msg)) {
+            consumed = true;
+            break;
+          }
+        }
+        if(!consumed) {
+          if (this.queue.length >= MAX_QUEUE_SIZE) this.queue.shift();
+          this.queue.push(msg);
+        }
       }
     } else {
       // respond to standard requests that every container must
@@ -421,6 +447,9 @@ export class Gateway {
       this.sock = new WebSocket(url);
       this.sock.onerror = this._websockReconnect.bind(this);
       this.sock.onopen = this._onWebsockOpen.bind(this);
+      this.sock.onclose = () => {
+        this._sendEvent('conn', false);
+      };
     } catch (error) {
       if(this.debug) console.log('Connection failed to ', this.sock.url);
       return;
@@ -429,7 +458,7 @@ export class Gateway {
 
   _websockReconnect(){
     if (this._firstConn || !this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
-    if (this._firstReConn) this.connObservers.forEach(co => {if(co) co(false);});
+    if (this._firstReConn) this._sendEvent('conn', false);
     this._firstReConn = false;
     if(this.debug) console.log('Reconnecting to ', this.sock.url);
     setTimeout(() => {
@@ -444,7 +473,8 @@ export class Gateway {
     let sock = this.sock;
     if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
     if (sock.readyState == sock.OPEN) {
-      if (this.debug) console.log('> '+s);
+      if(this.debug) console.log('> '+s);
+      this._sendEvent('tx', s);
       sock.send(s+'\n');
       return true;
     } else if (sock.readyState == sock.CONNECTING) {
@@ -479,28 +509,28 @@ export class Gateway {
     });
   }
 
+  _matchMessage(filter, msg){
+    if (typeof filter == 'string' || filter instanceof String) {
+      return 'inReplyTo' in msg && msg.inReplyTo == filter;
+    } else if (Object.prototype.hasOwnProperty.call(filter, 'msgID')) {
+      return 'inReplyTo' in msg && msg.inReplyTo == filter.msgID;
+    } else if (filter.__proto__.name == 'Message') {
+      return filter.__clazz__ == msg.__clazz__;
+    } else if (typeof filter == 'function') {
+      return filter(msg);
+    } else {
+      return msg instanceof filter;
+    }
+  }
+
   _getMessageFromQueue(filter) {
     if (!this.queue.length) return;
     if (!filter) return this.queue.shift();
 
-    var filtMsgs = this.queue.filter( msg => {
-      if (typeof filter == 'string' || filter instanceof String) {
-        return 'inReplyTo' in msg && msg.inReplyTo == filter;
-      } else if (Object.prototype.hasOwnProperty.call(filter, 'msgID')) {
-        return 'inReplyTo' in msg && msg.inReplyTo == filter.msgID;
-      }else if (filter.__proto__.name == 'Message'){
-        return filter.__clazz__ == msg.__clazz__;
-      }else if (typeof filter ==  'function' ){
-        return filter(msg);
-      }else{
-        return msg instanceof filter;
-      }
-    });
+    let matchedMsg = this.queue.find( msg => this._matchMessage(filter, msg));
+    if (matchedMsg) this.queue.splice(this.queue.indexOf(matchedMsg), 1);
 
-    if (filtMsgs.length){
-      this.queue.splice(this.queue.indexOf(filtMsgs[0]), 1);
-      return filtMsgs[0];
-    }
+    return matchedMsg;
   }
 
   _update_watch() {
@@ -514,13 +544,40 @@ export class Gateway {
   }
 
   /**
+   * Add an event listener to listen to various events happening on this Gateway
+   *
+   * @param {string} type - type of event to be listened to.
+   * @param {function} listener - new callback/function to be called when the event happens
+   * @returns {void}
+   */
+  addEventListener(type, listener) {
+    if (!Array.isArray(this.eventListeners[type])){
+      this.eventListeners[type] = [];
+    }
+    this.eventListeners[type].push(listener);
+  }
+
+  /**
+   * Remove an event listener.
+   *
+   * @param {string} type - type of event the listener was for
+   * @param {function} listener - callback/function which was to be called when the event happens
+   * @returns {void}
+   */
+  removeEventListener(type, listener) {
+    if (!this.eventListeners[type]) return;
+    let ndx = this.eventListeners[type].indexOf(listener);
+    if (ndx >= 0) this.eventListeners[type].splice(ndx, 1);
+  }
+
+  /**
    * Add a new listener to listen to all {Message}s sent to this Gateway
    *
    * @param {function} listener - new callback/function to be called when a {Message} is received.
    * @returns {void}
    */
   addMessageListener(listener) {
-    this.msgObservers.push(listener);
+    this.addEventListener('message',listener);
   }
 
   /**
@@ -530,8 +587,7 @@ export class Gateway {
    * @returns {void}
    */
   removeMessageListener(listener) {
-    let ndx = this.msgObservers.indexOf(listener);
-    if (ndx >= 0) this.msgObservers.splice(ndx, 1);
+    this.removeEventListener('message', listener);
   }
 
   /**
@@ -541,7 +597,7 @@ export class Gateway {
    * @returns {void}
    */
   addConnListener(listener) {
-    this.connObservers.push(listener);
+    this.addEventListener('conn', listener);
   }
 
   /**
@@ -551,8 +607,7 @@ export class Gateway {
    * @returns {void}
    */
   removeConnListener(listener) {
-    let ndx = this.connObservers.indexOf(listener);
-    if (ndx >= 0) this.connObservers.splice(ndx, 1);
+    this.removeEventListener('conn', listener);
   }
 
   /**
@@ -656,6 +711,7 @@ export class Gateway {
       if (msg.__clazz__.endsWith('Req')) msg.perf = Performative.REQUEST;
       else msg.perf = Performative.INFORM;
     }
+    this._sendEvent('txmsg', msg);
     let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
     rq = rq.replace('"###MSG###"', msg._serialize());
     return !!this._websockTx(rq);
@@ -710,9 +766,8 @@ export class Gateway {
           resolve();
         }, timeout);
       }
-      this.listener[lid] = () => {
-        msg = this._getMessageFromQueue.call(this,filter);
-        if (!msg) return false;
+      this.listener[lid] = msg => {
+        if (!this._matchMessage(filter, msg)) return false;
         if(timer) clearTimeout(timer);
         delete this.listener[lid];
         resolve(msg);

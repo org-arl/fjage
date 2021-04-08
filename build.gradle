@@ -91,6 +91,12 @@ javadoc.doLast {
   }
 }
 
+task jsdoc(type: Exec){
+  workingDir '.'
+  executable 'npm'
+  args = ['run', 'docs']
+}
+
 ////// tasks for MavenCentral deployment
 
 task javadocJar(type: Jar, dependsOn: javadoc) {

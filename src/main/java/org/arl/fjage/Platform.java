@@ -73,7 +73,7 @@ public abstract class Platform implements TimestampProvider {
    * Delays execution by a specified number of milliseconds of platform time.
    * <p>
    * This method should not be called by an agent directly, as it may deadlock.
-   * An agent should use {@link Agent#delay()} instead.
+   * An agent should use {@link Agent#delay(long)} instead.
    *
    * @param millis number of milliseconds to delay execution.
    */
@@ -185,34 +185,6 @@ public abstract class Platform implements TimestampProvider {
    */
   public void setNetworkInterface(NetworkInterface nif) {
     this.nif = nif;
-  }
-
-  /**
-   * Sets the TCP/IP port for platforms supporting remote connections. This
-   * defaults to 1099, the Java RMI port.
-   *
-   * @deprecated As of release 1.4, RMI support has been deprecated.
-   *
-   * @param port TCP/IP port number.
-   * @throws java.lang.UnsupportedOperationException if remote connections are not supported.
-   */
-  @Deprecated
-  public void setPort(int port) {
-    this.port = port;
-  }
-
-  /**
-   * Gets the TCP/IP port for platforms supporting remote connections. This
-   * defaults to 1099, the Java RMI port.
-   *
-   * @deprecated As of release 1.4, RMI support has been deprecated.
-   *
-   * @return TCP/IP port number
-   * @throws java.lang.UnsupportedOperationException if remote connections are not supported.
-   */
-  @Deprecated
-  public int getPort() {
-    return port;
   }
 
   /**

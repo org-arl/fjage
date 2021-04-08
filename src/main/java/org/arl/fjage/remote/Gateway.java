@@ -160,6 +160,18 @@ public class Gateway implements Messenger, Closeable {
   }
 
   /**
+   * Authenticate to server.
+   *
+   * @param creds credentials to authenticate with.
+   * @return true if authenticated, false otherwise.
+   */
+  public boolean authenticate(String creds) {
+    if (container != null && container instanceof SlaveContainer)
+      return ((SlaveContainer)container).authenticate(creds);
+    return false;
+  }
+
+  /**
    * Gets the agent ID associated with the gateway.
    *
    * @return agent ID
@@ -233,7 +245,9 @@ public class Gateway implements Messenger, Closeable {
 
   @Override
   public Message receive(final Message m, long timeout) {
-    return receive(new MessageFilter() {
+    if (container instanceof SlaveContainer)
+      ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
+    Message rsp = receive(new MessageFilter() {
       private String mid = m.getMessageID();
       @Override
       public boolean matches(Message m) {
@@ -242,6 +256,10 @@ public class Gateway implements Messenger, Closeable {
         return s.equals(mid);
       }
     }, timeout);
+    if (rsp != null) return rsp;
+    if (container instanceof SlaveContainer)
+      ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
+    return null;
   }
 
   @Override

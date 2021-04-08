@@ -33,3 +33,6 @@ if (web) {
 }
 container.add 'shell', shell
 platform.start()
+
+String url = "http://localhost:8080/shell/index.html"
+if (web) println 'fjåge web shell: ' + url

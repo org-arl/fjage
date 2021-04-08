@@ -14,6 +14,7 @@ import java.util.*;
 import java.io.IOException;
 import org.arl.fjage.*;
 import org.arl.fjage.connectors.*;
+import org.arl.fjage.auth.*;
 
 /**
  * Master container supporting multiple remote slave containers. Agents in linked
@@ -32,6 +33,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private TcpServer listener = null;
   private List<ConnectionHandler> slaves = new ArrayList<ConnectionHandler>();
   private boolean needsCleanup = false;
+  private Firewall fw = new AllowAll();
 
   ////////////// Constructors
 
@@ -42,6 +44,19 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    */
   public MasterContainer(Platform platform) {
     super(platform);
+    openTcpServer(0);
+  }
+
+  /**
+   * Creates a master container, runs its TCP server on an automatically selected port,
+   * with a specified firewall.
+   *
+   * @param platform platform on which the container runs.
+   * @param fw firewall to use.
+   */
+  public MasterContainer(Platform platform, Firewall fw) {
+    super(platform);
+    this.fw = fw;
     openTcpServer(0);
   }
 
@@ -57,6 +72,20 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   }
 
   /**
+   * Creates a master container, runs its TCP server on a specified port,
+   * with a specified firewall.
+   *
+   * @param platform platform on which the container runs.
+   * @param port port on which the container's TCP server runs.
+   * @param fw firewall to use.
+   */
+  public MasterContainer(Platform platform, int port, Firewall fw) {
+    super(platform);
+    this.fw = fw;
+    openTcpServer(port);
+  }
+
+  /**
    * Creates a named master container, runs its TCP server on an automatically selected port.
    *
    * @param platform platform on which the container runs.
@@ -64,6 +93,20 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    */
   public MasterContainer(Platform platform, String name) {
     super(platform, name);
+    openTcpServer(0);
+  }
+
+  /**
+   * Creates a named master container, runs its TCP server on an automatically selected port,
+   * with a specified firewall.
+   *
+   * @param platform platform on which the container runs.
+   * @param name name of the container.
+   * @param fw firewall to use.
+   */
+  public MasterContainer(Platform platform, String name, Firewall fw) {
+    super(platform, name);
+    this.fw = fw;
     openTcpServer(0);
   }
 
@@ -80,65 +123,18 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   }
 
   /**
-   * Creates a master container running a RS232 server.
-   *
-   * @param platform platform on which the container runs.
-   * @param devname device name of the RS232 port.
-   * @param baud baud rate for the RS232 port.
-   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
-   */
-  @Deprecated
-  public MasterContainer(Platform platform, String devname, int baud, String settings) throws IOException {
-    super(platform);
-    addConnector(new SerialPortConnector(devname, baud, settings));
-  }
-
-  /**
-   * Creates a named master container running a RS232 server.
+   * Creates a named master container, runs its TCP server on a specified port,
+   * with a specified firewall.
    *
    * @param platform platform on which the container runs.
    * @param name of the container.
-   * @param devname device name of the RS232 port.
-   * @param baud baud rate for the RS232 port.
-   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
+   * @param port port on which the container's TCP server runs.
+   * @param fw firewall to use.
    */
-  @Deprecated
-  public MasterContainer(Platform platform, String name, String devname, int baud, String settings) throws IOException {
-    super(platform);
-    addConnector(new SerialPortConnector(devname, baud, settings));
-  }
-
-  /**
-   * Creates a master container running a RS232 server and a TCP server.
-   *
-   * @param platform platform on which the container runs.
-   * @param port port on which the container's TCP server runs (0 to select port automatically).
-   * @param devname device name of the RS232 port.
-   * @param baud baud rate for the RS232 port.
-   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
-   */
-  @Deprecated
-  public MasterContainer(Platform platform, int port, String devname, int baud, String settings) throws IOException {
-    super(platform);
+  public MasterContainer(Platform platform, String name, int port, Firewall fw) {
+    super(platform, name);
+    this.fw = fw;
     openTcpServer(port);
-    addConnector(new SerialPortConnector(devname, baud, settings));
-  }
-
-  /**
-   * Creates a named master container running a RS232 server and a TCP server.
-   *
-   * @param platform platform on which the container runs.
-   * @param name of the container.
-   * @param port port on which the container's TCP server runs (0 to select port automatically).
-   * @param devname device name of the RS232 port.
-   * @param baud baud rate for the RS232 port.
-   * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
-   */
-  @Deprecated
-  public MasterContainer(Platform platform, String name, int port, String devname, int baud, String settings) throws IOException {
-    super(platform);
-    openTcpServer(port);
-    addConnector(new SerialPortConnector(devname, baud, settings));
   }
 
   /**
@@ -152,13 +148,30 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   }
 
   /**
-   * Adds a connector over which the master container listens.
+   * Adds a connector over which the master container listens. The connector uses
+   * any default firewall configured for the container.
    *
    * @param conn connector.
    */
   public void addConnector(Connector conn) {
     log.info("Listening on "+conn.getName());
-    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this);
+    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this, fw);
+    synchronized(slaves) {
+      slaves.add(t);
+    }
+    t.start();
+  }
+
+  /**
+   * Adds a connector over which the master container listens, but with a custom
+   * firewall for that connector.
+   *
+   * @param conn connector.
+   * @param fw firewall.
+   */
+  public void addConnector(Connector conn, Firewall fw) {
+    log.info("Listening on "+conn.getName());
+    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this, fw);
     synchronized(slaves) {
       slaves.add(t);
     }
@@ -364,7 +377,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   public void connected(Connector conn) {
     log.info("Incoming connection "+conn.toString());
-    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this);
+    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this, fw);
     synchronized(slaves) {
       slaves.add(t);
     }

@@ -14,6 +14,7 @@ import java.util.*;
 import java.io.IOException;
 import org.arl.fjage.*;
 import org.arl.fjage.connectors.*;
+import org.arl.fjage.auth.AuthFailureException;
 
 /**
  * Slave container attached to a master container. Agents in linked
@@ -32,7 +33,6 @@ public class SlaveContainer extends RemoteContainer {
   private ConnectionHandler master;
   private String hostname, settings;
   private int port, baud;
-  private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
   private boolean quit = false;
   private String watchListCache = null;
 
@@ -106,6 +106,34 @@ public class SlaveContainer extends RemoteContainer {
     connectToMaster();
   }
 
+  /////////////// slave-specific methods
+
+  /**
+   * Authenticate to master container.
+   *
+   * @param creds credentials to authenticate with.
+   * @return true if authenticated, false otherwise.
+   */
+  public boolean authenticate(String creds) {
+    if (master == null) return false;
+    JsonMessage rq = new JsonMessage();
+    rq.action = Action.AUTH;
+    rq.creds = creds;
+    rq.id = UUID.randomUUID().toString();
+    String json = rq.toJson();
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    return rsp != null && rsp.auth != null && rsp.auth;
+  }
+
+  /**
+   * Checks for authentication failure on send.
+   * <p>
+   * INTERNAL USE ONLY.
+   */
+  public void checkAuthFailure(String id) {
+    if (master.checkAuthFailure(id)) throw new AuthFailureException();
+  }
+
   /////////////// Container interface methods to override
 
   @Override
@@ -118,7 +146,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
-    return rsp != null && rsp.answer;
+    return rsp != null && rsp.answer != null && rsp.answer;
   }
 
   @Override
@@ -136,6 +164,7 @@ public class SlaveContainer extends RemoteContainer {
       if (!relay) return super.send(m, false);
       JsonMessage rq = new JsonMessage();
       rq.action = Action.SEND;
+      rq.id = m.getMessageID();
       rq.message = m;
       rq.relay = true;
       String json = rq.toJson();
@@ -146,6 +175,7 @@ public class SlaveContainer extends RemoteContainer {
       if (!relay) return false;
       JsonMessage rq = new JsonMessage();
       rq.action = Action.SEND;
+      rq.id = m.getMessageID();
       rq.message = m;
       rq.relay = true;
       String json = rq.toJson();
@@ -163,6 +193,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
+    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
     return rsp.agentIDs;
   }
 
@@ -175,6 +206,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
+    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
     return rsp.services;
   }
 
@@ -188,6 +220,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
+    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
     return rsp.agentID;
   }
 
@@ -201,6 +234,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
+    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
     return rsp.agentIDs;
   }
 

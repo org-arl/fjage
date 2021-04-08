@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.arl.fjage.persistence.Store;
+import org.arl.fjage.remote.SlaveContainer;
 
 /**
  * Base class to be extended by all agents. An agent must be added to a container
@@ -504,7 +505,9 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
 
   @Override
   public Message receive(final Message m, long timeout) {
-    return receive(new MessageFilter() {
+    if (container instanceof SlaveContainer)
+      ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
+    Message rsp = receive(new MessageFilter() {
       private String mid = m.getMessageID();
       @Override
       public boolean matches(Message m) {
@@ -513,6 +516,10 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
         return s.equals(mid);
       }
     }, timeout);
+    if (rsp != null) return rsp;
+    if (container instanceof SlaveContainer)
+      ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
+    return null;
   }
 
   @Override

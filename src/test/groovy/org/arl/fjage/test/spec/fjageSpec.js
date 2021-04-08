@@ -8,9 +8,16 @@ const GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq');
 const GetFileRsp = MessageClass('org.arl.fjage.shell.GetFileRsp');
 const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
 const PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq');
+const SendMsgReq = MessageClass('org.arl.fjage.test.SendMsgReq');
+const SendMsgRsp = MessageClass('org.arl.fjage.test.SendMsgRsp');
+const TestCompleteNtf = MessageClass('org.arl.fjage.test.TestCompleteNtf');
 
 const ValidFjageActions = ['agents', 'containsAgent', 'services', 'agentForService', 'agentsForService', 'send', 'shutdown'];
 const ValidFjagePerformatives = ['REQUEST', 'AGREE', 'REFUSE', 'FAILURE', 'INFORM', 'CONFIRM', 'DISCONFIRM', 'QUERY_IF', 'NOT_UNDERSTOOD', 'CFP', 'PROPOSE', 'CANCEL', ];
+
+function timeout(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function fjageMessageChecker() {
   return {
@@ -125,6 +132,7 @@ describe('A Gateway', function () {
       }, 100);
     }, 100);
   });
+
   it('should remove itself from global array when closed', function (done) {
     const gw = new Gateway();
     setTimeout(() => {
@@ -135,6 +143,7 @@ describe('A Gateway', function () {
       }, 100);
     }, 100);
   });
+
   it('should send a message over WebSocket', function(done){
     const shell = new AgentID('shell');
     const gw = new Gateway();
@@ -151,6 +160,7 @@ describe('A Gateway', function () {
       },100);
     },100);
   });
+
   it('should send a WebSocket message of valid fjage message structure', function(done){
     const shell = new AgentID('shell');
     const gw = new Gateway();
@@ -167,6 +177,7 @@ describe('A Gateway', function () {
       },100);
     },100);
   });
+
   it('should send correct ShellExecReq of valid fjage message structure', function(done){
     const shell = new AgentID('shell');
     const gw = new Gateway();
@@ -183,6 +194,7 @@ describe('A Gateway', function () {
       },100);
     },100);
   });
+
   it('should send correct ShellExecReq of valid fjage message structure created using param constructor', function(done){
     const shell = new AgentID('shell');
     const gw = new Gateway();
@@ -197,8 +209,54 @@ describe('A Gateway', function () {
       },100);
     },100);
   });
-});
 
+  it('should only store the latest 128 messages in the receive queue', function(done) {
+    const gw = new Gateway();
+    gw.flush();
+    let smr = new SendMsgReq();
+    smr.num = 256;
+    smr.type = 0;
+    smr.perf = Performative.REQUEST;
+    smr.recipient = gw.agent('test');
+    gw.send(smr);
+    setTimeout(() => {
+      expect(gw.queue.length).toBeLessThanOrEqual(128)
+      if (gw.queue.length == 128){
+        var ids = gw.queue.map(m => m.id).filter( id => !!id).sort();
+        expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1)
+        expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128)
+      }
+      done()
+    }, 4000);
+  });
+
+  it('should be able to send and receive many messages asynchronously', async function(done) {
+    const NMSG = 64;
+    const gw = new Gateway();
+    gw.flush();
+    var rxed = new Array(NMSG).fill(false);
+
+    for (var type = 1; type <= NMSG; type++){
+      let smr = new SendMsgReq();
+      smr.num = 1;
+      smr.type = type;
+      smr.perf = Performative.REQUEST;
+      smr.recipient = gw.agent('test');
+      gw.send(smr);
+    }
+
+    for (type = 1; type <= NMSG; type++){
+      let m = await gw.receive(m => m instanceof SendMsgRsp,1000)
+      if (m && m.type){
+        rxed[m.type-1] = true;
+      }else{
+        console.warn("Error getting SendMsgRsp #"+type+" : " + m);
+      }
+    }
+    expect(rxed).not.toContain(false);
+    done();
+  });
+});
 
 describe('An AgentID', function () {
   var gw;
@@ -387,7 +445,6 @@ describe('A MessageClass', function () {
   });
 });
 
-
 describe('Shell GetFile/PutFile', function () {
   var gw, shell;
   beforeAll(() => {
@@ -420,7 +477,8 @@ describe('Shell GetFile/PutFile', function () {
     const rsp = gw.request(pfr, 2000);
     expect(rsp).not.toBeNull();
     rsp.then(msg => {
-      expect(msg).toBeTruthy();
+      expect(msg).toBeDefined();
+      expect(msg.perf).toBeDefined();
       expect(msg.perf).toEqual(Performative.AGREE);
       done();
     });
@@ -433,7 +491,8 @@ describe('Shell GetFile/PutFile', function () {
     const rsp = gw.request(req);
     expect(rsp).not.toBeNull();
     rsp.then(msg => {
-      expect(msg).toBeTruthy();
+      expect(msg).toBeDefined();
+      expect(msg.perf).toBeDefined();
       expect(msg.perf).toEqual(Performative.AGREE);
       done();
     });
@@ -773,25 +832,39 @@ describe('Shell GetFile/PutFile', function () {
 });
 
 
-function sendTestStatus(status) {
+function sendTestStatus(status, trace) {
   var gw = new Gateway();
-  let msg = new Message();
+  let msg = new TestCompleteNtf();
   msg.recipient = gw.agent('test');
-  msg.perf = status ? Performative.AGREE : Performative.FAILURE;
+  msg.perf = Performative.INFORM
+  msg.status = status;
+  msg.trace = trace;
   gw.send(msg);
   gw.close();
 }
 
-var autoReporter = {
-  jasmineDone: function (result) {
-    console.log('Finished suite: ' + result.overallStatus);
+var failedSpecs = [];
+const autoReporter = {
+  specDone: function (result) {
+    result.status == "failed" && failedSpecs.push(result);
+  },
+
+  jasmineDone: function(result){
+    var trace = "";
+    for(var i = 0; i < failedSpecs.length; i++) {
+      trace += 'Failed : ' + failedSpecs[i].fullName + '\n'
+      for (var j = 0; j < failedSpecs[i].failedExpectations.length; j++){
+        trace += failedSpecs[i].failedExpectations[j].stack + '\n'
+      }
+      trace += '\n'
+    }
     const params = new URLSearchParams(window.location.search);
     if (params && params.get('send') == 'false') return;
     if (params && params.get('refresh') == 'true' && result.overallStatus == 'passed') {
       setTimeout(() => window.location.reload(),3000);
       return;
     }
-    sendTestStatus(result.overallStatus == 'passed');
+    sendTestStatus(result.overallStatus == 'passed', trace);
   }
 };
 

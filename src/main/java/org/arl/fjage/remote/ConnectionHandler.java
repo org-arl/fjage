@@ -17,6 +17,7 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;
 import org.arl.fjage.AgentID;
 import org.arl.fjage.connectors.*;
+import org.arl.fjage.auth.*;
 
 /**
  * Handles a JSON/TCP connection with remote container.
@@ -26,19 +27,33 @@ class ConnectionHandler extends Thread {
   private final String ALIVE = "{\"alive\": true}";
   private final String SIGN_OFF = "{\"alive\": false}";
   private final int TIMEOUT = 5000;
+  private final int FAILED_SIZE = 256;
 
   private Connector conn;
   private DataOutputStream out;
   private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
+  private Deque<String> failed = new ArrayDeque<String>(FAILED_SIZE);
   private Logger log = Logger.getLogger(getClass().getName());
   private RemoteContainer container;
   private boolean alive, keepAlive, closeOnDead;
   private ExecutorService pool = Executors.newSingleThreadExecutor();
   private Set<AgentID> watchList = new HashSet<>();
+  private Firewall fw;
 
   public ConnectionHandler(Connector conn, RemoteContainer container) {
     this.conn = conn;
     this.container = container;
+    this.fw = new AllowAll();
+    setName(conn.toString());
+    alive = false;
+    keepAlive = true;
+    closeOnDead = (conn instanceof TcpConnector) && (container instanceof MasterContainer);
+  }
+
+  public ConnectionHandler(Connector conn, RemoteContainer container, Firewall fw) {
+    this.conn = conn;
+    this.container = container;
+    this.fw = fw;
     setName(conn.toString());
     alive = false;
     keepAlive = true;
@@ -70,6 +85,7 @@ class ConnectionHandler extends Thread {
         println(ALIVE);
       }
     }
+    fw.authenticate(conn, null);
     while (conn != null) {
       String s = null;
       try {
@@ -106,16 +122,28 @@ class ConnectionHandler extends Thread {
               synchronized(obj) {
                 obj.notify();
               }
+            } else if (rq.auth != null) {
+              synchronized(failed) {
+                while (failed.size() >= FAILED_SIZE)
+                  failed.poll();
+                failed.offer(rq.id);
+              }
             }
           }
         } else {
           // new request
-          pool.execute(new RemoteTask(rq));
+          if (rq.action == Action.AUTH) {
+            boolean b = fw.authenticate(conn, rq.creds);
+            respondAuth(rq, b);
+          }
+          else if (fw.permit(rq)) pool.execute(new RemoteTask(rq));
+          else respondAuth(rq, false);
         }
       } catch(Exception ex) {
         log.warning("Bad JSON request: "+ex.toString() + " in " + s);
       }
     }
+    fw.authenticate(conn, null);
     close();
     pool.shutdown();
   }
@@ -124,6 +152,14 @@ class ConnectionHandler extends Thread {
   public String toString() {
     if (conn == null) return super.toString();
     return conn.toString();
+  }
+
+  private void respondAuth(JsonMessage rq, boolean auth) {
+    JsonMessage rsp = new JsonMessage();
+    rsp.inResponseTo = rq.action;
+    rsp.id = rq.id;
+    rsp.auth = auth;
+    println(rsp.toJson());
   }
 
   private void respond(JsonMessage rq, boolean answer) {
@@ -213,9 +249,16 @@ class ConnectionHandler extends Thread {
   }
 
   boolean wantsMessagesFor(AgentID aid) {
+    if (!fw.permit(aid)) return false;
     synchronized(watchList) {
       if (watchList.isEmpty()) return true;
       return watchList.contains(aid);
+    }
+  }
+
+  boolean checkAuthFailure(String id) {
+    synchronized(failed) {
+      return failed.contains(id);
     }
   }
 

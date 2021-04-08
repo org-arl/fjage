@@ -2,14 +2,16 @@
   "name": "fjage",
   "version": "1.8.0",
   "description": "Framework for Java and Groovy Agents",
-  "main": "index.js",
+  "main": "fjage.js",
+  "private": "true",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
     "test": "echo \"Use 'gradle test' instead\" && exit 1",
     "docs": "documentation build src/main/resources/org/arl/fjage/web/fjage.js -f html -o docs/jsdoc",
-    "xterm": "cp node_modules/{xterm-addon-web-links,xterm-addon-attach,xterm-addon-fit}/lib/*.js src/main/resources/org/arl/fjage/web/shell; cp node_modules/xterm/lib/xterm.js src/main/resources/org/arl/fjage/web/shell; cp node_modules/xterm/css/xterm.css src/main/resources/org/arl/fjage/web/shell"
+    "xterm": "cp node_modules/{xterm-addon-web-links,xterm-addon-attach,xterm-addon-fit}/lib/*.js src/main/resources/org/arl/fjage/web/shell; cp node_modules/xterm/lib/xterm.js src/main/resources/org/arl/fjage/web/shell; cp node_modules/xterm/css/xterm.css src/main/resources/org/arl/fjage/web/shell",
+    "build": "rm -rf dist && npx webpack && cat ./package.json | grep -v '\"private\":' > dist/package.json"
   },
   "repository": {
     "type": "git",
@@ -22,15 +24,15 @@
   },
   "homepage": "https://github.com/org-arl/fjage#readme",
   "dependencies": {
-    "xterm": "^4.6.0",
+    "xterm": "^4.11.0",
     "xterm-addon-attach": "^0.6.0",
-    "xterm-addon-fit": "^0.4.0",
+    "xterm-addon-fit": "^0.5.0",
     "xterm-addon-web-links": "^0.4.0"
   },
   "devDependencies": {
-    "documentation": "^12.1.4",
-    "puppeteer": "^1.20.0",
-    "diff": ">=3.5.0",
+    "diff": ">=5.0.0",
+    "documentation": "^13.2.0",
+    "puppeteer": "^8.0.0",
     "websocket-extensions": ">=0.1.4"
   }
 }

@@ -205,7 +205,7 @@ class AgentID:
 
 def getter(self, param):
     rsp = self.request(ParameterReq(index=self.index).get(param))
-    if (rsp is None) or (rsp.__dict__['param'] is None and rsp.__dict__['value'] is None):
+    if (rsp is None) or (rsp.perf is not Performative.INFORM) or (rsp.__dict__.get('param') is None and rsp.__dict__.get('value') is None):
         return None
     ursp = ParameterRsp()
     ursp.__dict__.update(rsp.__dict__)
@@ -223,7 +223,7 @@ def setter(self, param, value):
         self.__dict__[param] = value
         return value
     rsp = self.request(ParameterReq(index=self.index).set(param, value))
-    if (rsp is None) or (rsp.__dict__['param'] is None and rsp.__dict__['value'] is None):
+    if (rsp is None) or (rsp.perf is not Performative.INFORM) or (rsp.__dict__.get('param') is None and rsp.__dict__.get('value') is None):
         _warn('Could not set parameter ' + param)
         return None
     ursp = ParameterRsp()
