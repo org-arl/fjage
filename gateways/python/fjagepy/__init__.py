@@ -518,6 +518,7 @@ class Gateway:
         self.connection = None
         self.keepalive = True
         self.logger = _log.getLogger('org.arl.fjage')
+        self.cancel = False
         try:
             self.aid = AgentID("PythonGW-" + str(_uuid.uuid4()), owner=self)
             self.q = list()
@@ -770,13 +771,14 @@ class Gateway:
         rmsg = self._retrieve_from_queue(filter)
         if rmsg is None and timeout != self.NON_BLOCKING:
             deadline = _current_time_millis() + timeout
-            blocking = True
-            while rmsg is None and ((timeout == self.BLOCKING and blocking == True)  or (_current_time_millis() < deadline)):
+            while (rmsg is None) and (timeout == self.BLOCKING or _current_time_millis() < deadline):
                 if timeout == self.BLOCKING:
                     self.cv.acquire()
                     self.cv.wait()
                     self.cv.release()
-                    blocking = False
+                    if self.cancel:
+                        self.cancel = False
+                        break
                 elif timeout > 0:
                     self.cv.acquire()
                     t = deadline - _current_time_millis()
