@@ -1058,13 +1058,19 @@ void fjage_msg_set_in_reply_to(fjage_msg_t msg, const char* id) {
 const char* fjage_msg_get_string(fjage_msg_t msg, const char* key) {
   if (msg == NULL) return NULL;
   _fjage_msg_t* m = msg;
+  int skip = -1;
   for (int i = 1; i < m->ntokens-1; i += 2) {
     char* t = m->data + m->tokens[i].start;
-    if (m->tokens[i].type == JSMN_STRING && (m->tokens[i+1].type == JSMN_STRING || m->tokens[i+1].type == JSMN_PRIMITIVE) && !strcmp(key, t)) {
+    if (skip <= 0 && m->tokens[i].type == JSMN_STRING && (m->tokens[i+1].type == JSMN_STRING || m->tokens[i+1].type == JSMN_PRIMITIVE) && !strcmp(key, t)) {
       t = m->data + m->tokens[i+1].start;
       t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
       if (m->tokens[i+1].type == JSMN_PRIMITIVE && !strcmp(t, "null")) t = NULL;
       return t;
+    }
+    if (skip > 0) skip--;
+    if (m->tokens[i+1].type == JSMN_OBJECT) {
+      if (skip < 0) skip = 0;
+      else skip += m->tokens[i+1].size;
     }
   }
   return NULL;
@@ -1073,19 +1079,24 @@ const char* fjage_msg_get_string(fjage_msg_t msg, const char* key) {
 static const char* fjage_msg_get_data(fjage_msg_t msg, const char* key) {
   if (msg == NULL) return NULL;
   _fjage_msg_t* m = msg;
-  int n = -1;
+  int skip = -1;
+  int acq = 0;
   for (int i = 1; i < m->ntokens-1; i += 2) {
     char* t = m->data + m->tokens[i].start;
-    if (n < 0) {
-      if (m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_OBJECT && !strcmp(t, key)) n = m->tokens[i+1].size;
-    } else {
-      n--;
-      if (n < 0) return NULL;
-      if (m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_STRING && !strcmp(t, "data")) {
-        t = m->data + m->tokens[i+1].start;
-        t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
-        return t;
-      }
+    if (!acq && skip == 0 && m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_OBJECT && !strcmp(t, key)) acq = 1;
+    else if (acq && m->tokens[i+1].type == JSMN_STRING && !strcmp(t, "data")) {
+      t = m->data + m->tokens[i+1].start;
+      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
+      if (m->tokens[i+1].type == JSMN_PRIMITIVE && !strcmp(t, "null")) t = NULL;
+      return t;
+    }
+    if (skip > 0) {
+      skip--;
+      if (skip == 0 && acq) return NULL;
+    }
+    if (m->tokens[i+1].type == JSMN_OBJECT) {
+      if (skip < 0) skip = 0;
+      else skip += m->tokens[i+1].size;
     }
   }
   return NULL;

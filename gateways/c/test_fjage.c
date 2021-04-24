@@ -17,7 +17,7 @@ for full license details.
 // $ ./fjage
 //
 // In another terminal window:
-// $ cd fjage/main/c
+// $ cd gateways/c
 // $ make test
 //
 ////////////////////////////////////////////////////////////////////
@@ -127,10 +127,10 @@ int main(int argc, char* argv[]) {
   fjage_msg_add_bool(msg, "myfbool", false);
   unsigned char data[7] = { 7,6,5,4,3,2,1 };
   fjage_msg_add_byte_array(msg, "mydata", data, 7);
-  int32_t idata[7] = { 7,6,5,4,3,2,1 };
-  fjage_msg_add_int_array(msg, "myidata", idata, 7);
-  float signal[7] = { 3,1,4,1,5,9,2 };
-  fjage_msg_add_float_array(msg, "mysignal", signal, 7);
+  int32_t idata[8] = { 7,6,5,4,3,2,1,0 };
+  fjage_msg_add_int_array(msg, "myidata", idata, 8);
+  float signal[6] = { 3,1,4,1,5,9 };
+  fjage_msg_add_float_array(msg, "mysignal", signal, 6);
   test_assert("send", fjage_send(gw, msg) == 0);
   msg = fjage_receive(gw, NULL, NULL, 1000);
   test_assert("receive (+)", msg != NULL);
@@ -144,17 +144,17 @@ int main(int argc, char* argv[]) {
   test_assert("msg_get_float", fabs(fjage_msg_get_float(msg, "myfloat", 0)-2.7) < 0.01);
   test_assert("msg_get_bool", fjage_msg_get_bool(msg, "mytbool", false) && !fjage_msg_get_bool(msg, "myfbool", true));
   test_assert("msg_get_byte_array (len)", fjage_msg_get_byte_array(msg, "mydata", NULL, 0) == 7);
-  test_assert("msg_get_int_array (len)", fjage_msg_get_int_array(msg, "myidata", NULL, 0) == 7);
-  test_assert("msg_get_float_array (len)", fjage_msg_get_float_array(msg, "mysignal", NULL, 0) == 7);
+  test_assert("msg_get_int_array (len)", fjage_msg_get_int_array(msg, "myidata", NULL, 0) == 8);
+  test_assert("msg_get_float_array (len)", fjage_msg_get_float_array(msg, "mysignal", NULL, 0) == 6);
   memset(data, 0, sizeof(data));
   memset(idata, 0, sizeof(idata));
   memset(signal, 0, sizeof(signal));
   fjage_msg_get_byte_array(msg, "mydata", data, 7);
-  fjage_msg_get_int_array(msg, "myidata", idata, 7);
-  fjage_msg_get_float_array(msg, "mysignal", signal, 7);
+  fjage_msg_get_int_array(msg, "myidata", idata, 8);
+  fjage_msg_get_float_array(msg, "mysignal", signal, 6);
   test_assert("msg_get_byte_array", data[0] == 7 && data[1] == 6 && data[2] == 5 && data[3] == 4 && data[4] == 3 && data[5] == 2 && data[6] == 1);
-  test_assert("msg_get_int_array", idata[0] == 7 && idata[1] == 6 && idata[2] == 5 && idata[3] == 4 && idata[4] == 3 && idata[5] == 2 && idata[6] == 1);
-  test_assert("msg_get_float_array", signal[0] == 3 && signal[1] == 1 && signal[2] == 4 && signal[3] == 1 && signal[4] == 5 && signal[5] == 9 && signal[6] == 2);
+  test_assert("msg_get_int_array", idata[0] == 7 && idata[1] == 6 && idata[2] == 5 && idata[3] == 4 && idata[4] == 3 && idata[5] == 2 && idata[6] == 1 && idata[7] == 0);
+  test_assert("msg_get_float_array", signal[0] == 3 && signal[1] == 1 && signal[2] == 4 && signal[3] == 1 && signal[4] == 5 && signal[5] == 9);
   fjage_msg_destroy(msg);
   double t0 = current_time();
   msg = fjage_receive(gw, NULL, NULL, 1000);
