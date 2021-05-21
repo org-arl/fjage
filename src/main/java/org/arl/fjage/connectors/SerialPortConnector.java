@@ -29,10 +29,15 @@ public class SerialPortConnector implements Connector {
    */
   public SerialPortConnector(String devname, int baud, String settings) throws IOException {
     if (settings != null && settings != "N81") throw new IOException("Bad serial port settings");
-    com = SerialPort.getCommPort(devname);
-    com.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
-    com.openPort();
-    com.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+    com = AccessController.doPrivileged(new PrivilegedAction<Void>() {
+      public SerialPort run() {
+        SerialPort c = SerialPort.getCommPort(devname);
+        c.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
+        c.openPort();
+        c.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+        return SerialPort;
+      }
+    });
   }
 
   /**
