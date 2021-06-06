@@ -1,6 +1,8 @@
 const SOCKET_OPEN = "open"
 const SOCKET_OPENING = "opening"
 
+var createConnection;
+
 
 export default class TCPconnector {
 
@@ -30,10 +32,10 @@ export default class TCPconnector {
   }
 
   _sockInit(host, port){
-    if (!this.createConnection){
+    if (!createConnection){
       try {
         import('net').then(module => {
-          this.createConnection = module.createConnection;
+          createConnection = module.createConnection;
           this._sockSetup(host, port);
         })
       }catch(error){
@@ -45,9 +47,9 @@ export default class TCPconnector {
   }
 
   _sockSetup(host, port){
-    if(!this.createConnection) return;
+    if(!createConnection) return;
     try{
-      this.sock = this.createConnection({ "host": host, "port": port });
+      this.sock = createConnection({ "host": host, "port": port });
       this.sock.setEncoding('utf8');
       this.sock.on('connect', this._onSockOpen.bind(this));
       this.sock.on('error', this._sockReconnect.bind(this));

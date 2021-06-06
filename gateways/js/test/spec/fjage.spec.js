@@ -152,9 +152,7 @@ describe('A Gateway', function () {
   it('should send a message over a socket', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
-    await delay(1000);
     spyOn(gw.connector.sock, 'send').and.callThrough();
-    await delay(100);
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
     req.recipient = shell;
@@ -167,7 +165,6 @@ describe('A Gateway', function () {
   it('should send a socket message of valid fjage message structure', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
-    await delay(1000);
     spyOn(gw.connector.sock, 'send').and.callThrough();
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
@@ -181,9 +178,7 @@ describe('A Gateway', function () {
   it('should send correct ShellExecReq of valid fjage message structure', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
-    await delay(1000);
     spyOn(gw.connector.sock, 'send').and.callThrough();
-    await delay(100);
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
     req.recipient = shell;
@@ -196,9 +191,7 @@ describe('A Gateway', function () {
   it('should send correct ShellExecReq of valid fjage message structure created using param constructor', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
-    await delay(1000);
     spyOn(gw.connector.sock, 'send').and.callThrough();
-    await delay(100);
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq({recipient: shell, cmd: 'boo'});
     gw.request(req);
