@@ -1,0 +1,45 @@
+{
+  "name": "fjage",
+  "version": "1.9.0",
+  "description": "Framework for Java and Groovy Agents",
+  "exports": "./dist/cjs/fjage.cjs",
+  "module": "dist/fjage.js",
+  "files": [
+    "dist/**"
+  ],
+  "private": "true",
+  "type": "module",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build": "rm -rf dist/ && rollup -c rollup.config.js",
+    "test": "rm test/spec/fjageSpec.* && node test/spec/create-spec.cjs && jasmine test/spec/fjageSpec.cjs",
+    "clean": "rm -rf dist/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/org-arl/fjage.git"
+  },
+  "contributors": [
+    "Mandar Chitre (http://www.chitre.net)",
+    "Chinmay Pendharkar (http://chinpen.net)"
+  ],
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/org-arl/fjage/issues"
+  },
+  "homepage": "https://github.com/org-arl/fjage#readme",
+  "devDependencies": {
+    "@babel/core": "^7.14.2",
+    "@babel/preset-env": "^7.14.2",
+    "@rollup/plugin-node-resolve": "^13.0.0",
+    "documentation": "^13.2.5",
+    "jasmine": "^3.7.0",
+    "puppeteer": "^9.1.1",
+    "rollup": "^2.47.0"
+  },
+  "dependencies": {
+    "browser-or-node": "^1.3.0"
+  }
+}

@@ -1,9 +1,6 @@
-////// settings
+import { isBrowser, isNode, isJsDom, isWebWorker } from "../node_modules/browser-or-node/src/index.js";
 
-const RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
-const MAX_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
-
-////// interface classes
+const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
 
 /**
  * An action represented by a message. The performative actions are a subset of the
@@ -90,7 +87,7 @@ export class AgentID {
    * @return {string} string representation of the agent id.
    */
   toString() {
-    return this.toJSON() + ((this.owner && this.owner.sock) ? ` on ${this.owner.sock.url}` : '');
+    return this.toJSON() + ((this.owner && this.owner.connector) ? ` on ${this.owner.connector.url}` : '');
   }
 
   /**
@@ -131,7 +128,6 @@ export class AgentID {
       return new Promise(resolve => {
         var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
         if (!rsp || rsp.perf != Performative.INFORM || !rsp.param){
-          console.warn(`Parameter(s) ${params} could not be set`);
           resolve(ret);
           return;
         }
@@ -142,17 +138,10 @@ export class AgentID {
           const rvals = Object.keys(rsp.values);
           ret = params.map((p, i) => {
             let f = rvals.find(rv => rv.endsWith(p));
-            if (f){
-              if (rsp.values[f] != values[i]){
-                console.warn(`WARNING: Parameter ${p} set to ${rsp.values[f]}`);
-              }
-              return rsp.values[f];
-            }else null;
+            if (f) return rsp.values[f];
+            else return null;
           });
         }else{
-          if (rsp.value != values){
-            console.warn(`WARNING: Parameter ${params} set to ${rsp.value}`);
-          }
           ret = rsp.value;
         }
         resolve(ret);
@@ -184,7 +173,6 @@ export class AgentID {
       return new Promise(resolve => {
         var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
         if (!rsp || rsp.perf != Performative.INFORM || (params && (!rsp.param))){
-          console.warn(`Parameter(s) ${params} could not be fetched`);
           resolve(ret);
           return;
         }
@@ -241,6 +229,7 @@ export class Message {
   toString() {
     let s = '';
     let suffix = '';
+    if (!this.__clazz__) return'';
     let clazz = this.__clazz__;
     clazz = clazz.replace(/^.*\./, '');
     let perf = this.perf;
@@ -285,13 +274,13 @@ export class Message {
       try {
         obj = JSON.parse(obj);
       }catch(e){
-        console.warn('JSON Parsing error: ' + e + '\nJSON : ' + obj);
         return null;
       }
     }
     let qclazz = obj.clazz;
     let clazz = qclazz.replace(/^.*\./, '');
-    let rv = eval('try { new '+clazz+'() } catch(ex) { new Message() }');
+    let rv = this.isPrototypeOf(gObj[clazz]) ? new gObj[clazz] : new Message();
+    // let rv = eval('try { new '+clazz+'() } catch(ex) { new Message() }');
     rv.__clazz__ = qclazz;
     rv._inflate(obj.data);
     return rv;
@@ -317,37 +306,61 @@ export class GenericMessage extends Message {
  * or slave container can be accessed using this gateway.
  *
  */
-export class Gateway {
+ export class Gateway {
 
   /**
    * Creates a gateway connecting to a specified master container over Websockets.
    *
-   * @param {string} hostname - hostname of the master container to connect to
-   * @param {int} port        - port of the master container to connect to
-   * @param {string} pathname - path of the master container to connect to
-   * @param {int} timeout     - timeout for fjage level messages
+   * @param {Object} opts
+   * @param {String} opts.hostname - hostname/ip address of the master container to connect to
+   * @param {Number} opts.port - port number of the master container to connect to
+   * @param {String} opts.pathname - path of the master container to connect to
+   * @param {String} opts.keepAlive - try to reconnect if the connection is lost
+   * @param {int} opts.queueSize     - size of the queue of received messages that haven't been consumed yet
+   * @param {int} opts.timeout     - timeout for fjage level messages
    */
-  constructor(hostname=window.location.hostname, port=window.location.port, pathname='/ws/', timeout=1000) {
-    var url = new URL('ws://localhost');
-    url.hostname = hostname;
-    url.port = port || 80;
-    url.pathname = pathname;
-    let existing = window.fjage.getGateway(url);
+  constructor(opts = {}) {
+    let defaults;
+    var url;
+    if (isBrowser){
+      defaults = {
+        "hostname": window.location.hostname,
+        "port": window.location.port,
+        "pathname" : "/ws/",
+        "timeout": 1000,
+        "keepAlive" : true,
+        "queueSize": DEFAULT_QUEUE_SIZE
+      };
+      url = new URL('ws://localhost')
+    } else {
+      defaults = {
+        "hostname": "localhost",
+        "port": "1100",
+        "pathname": "",
+        "timeout": 1000,
+        "keepAlive" : true,
+        "queueSize": DEFAULT_QUEUE_SIZE
+      };
+      url = new URL('tcp://localhost')
+    }
+    opts = Object.assign({}, defaults, opts);
+    url.hostname = opts.hostname;
+    url.port = opts.port || 80;
+    url.pathname = opts.pathname;
+    let existing = gObj.fjage.getGateway(url);
     if (existing) return existing;
-    this._firstConn = true;               // if the Gateway has managed to connect to a server before
-    this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
-    this._timeout = timeout;              // timeout for fjage level messages (agentForService etc)
+    this._timeout = opts.timeout;         // timeout for fjage level messages (agentForService etc)
+    this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
+    this._queueSize = opts.queueSize      // size of queue
     this.pending = {};                    // msgid to callback mapping for pending requests to server
-    this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
     this.eventListeners = {};             // external listeners wanting to listen internal events
     this.queue = [];                      // incoming message queue
-    this.keepAlive = true;                // reconnect if websocket connection gets closed/errored
     this.debug = false;                   // debug info to be logged to console?
-    this.aid = new AgentID('WebGW-'+_guid(4));         // gateway agent name
-    this._websockSetup(url);
-    window.fjage.gateways.push(this);
+    this.aid = new AgentID(isBrowser ? 'WebGW-' : 'NodeGW-'+_guid(4));         // gateway agent name
+    this.connector = this._createConnector(url);
+    gObj.fjage.gateways.push(this);
   }
 
   _sendEvent(type, val) {
@@ -358,29 +371,13 @@ export class Gateway {
     }
   }
 
-  _onWebsockOpen() {
-    if(this.debug) console.log('Connected to ', this.sock.url);
-    this._sendEvent('conn', true);
-    this.sock.onclose = this._websockReconnect.bind(this);
-    this.sock.onmessage = event => {
-      this._onWebsockRx.call(this,event.data);
-    };
-    this.sock.send('{"alive": true}\n');
-    this._update_watch();
-    this._firstConn = false;
-    this._firstReConn = true;
-    this.pendingOnOpen.forEach(cb => cb());
-    this.pendingOnOpen.length = 0;
-  }
-
-  _onWebsockRx(data) {
+  _onMsgRx(data) {
     var obj;
     if (this.debug) console.log('< '+data);
     this._sendEvent('rx', data);
     try {
       obj = JSON.parse(data, _decodeBase64);
     }catch(e){
-      console.warn('JSON Parsing error: ' + e + '\nJSON : ' + data);
       return;
     }
     this._sendEvent('rxp', obj);
@@ -412,7 +409,7 @@ export class Gateway {
           }
         }
         if(!consumed) {
-          if (this.queue.length >= MAX_QUEUE_SIZE) this.queue.shift();
+          if (this.queue.length >= this._queueSize) this.queue.shift();
           this.queue.push(msg);
         }
       }
@@ -438,75 +435,65 @@ export class Gateway {
       default:
         rsp = undefined;
       }
-      if (rsp) this._websockTx(rsp);
+      if (rsp) this._msgTx(rsp);
     }
   }
 
-  _websockSetup(url){
-    try {
-      this.sock = new WebSocket(url);
-      this.sock.onerror = this._websockReconnect.bind(this);
-      this.sock.onopen = this._onWebsockOpen.bind(this);
-      this.sock.onclose = () => {
-        this._sendEvent('conn', false);
-      };
-    } catch (error) {
-      if(this.debug) console.log('Connection failed to ', this.sock.url);
-      return;
-    }
-  }
-
-  _websockReconnect(){
-    if (this._firstConn || !this.keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
-    if (this._firstReConn) this._sendEvent('conn', false);
-    this._firstReConn = false;
-    if(this.debug) console.log('Reconnecting to ', this.sock.url);
-    setTimeout(() => {
-      this.pending = {};
-      this.pendingOnOpen = [];
-      this.flush();
-      this._websockSetup(this.sock.url);
-    }, RECONNECT_TIME);
-  }
-
-  _websockTx(s) {
-    let sock = this.sock;
-    if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
-    if (sock.readyState == sock.OPEN) {
-      if(this.debug) console.log('> '+s);
-      this._sendEvent('tx', s);
-      sock.send(s+'\n');
-      return true;
-    } else if (sock.readyState == sock.CONNECTING) {
-      this.pendingOnOpen.push(() => {
-        if (this.debug) console.log('> '+s);
-        sock.send(s+'\n');
-      });
-      return true;
-    }
-    return false;
+  _msgTx(s) {
+    if(this.debug) console.log('> '+s);
+    this._sendEvent('tx', s);
+    return this.connector.write(s+'\n');
   }
 
   // returns a Promise
-  _websockTxRx(rq) {
+  _msgTxRx(rq) {
     rq.id = _guid(8);
     return new Promise(resolve => {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
         if (this.debug) console.log('Receive Timeout : ' + rq);
         resolve();
-      }, this.sock.readyState == this.sock.CONNECTING ? 8*this._timeout : this._timeout);
+      }, 8*this._timeout);
       this.pending[rq.id] = rsp => {
         clearTimeout(timer);
         resolve(rsp);
       };
-      if (!this._websockTx.call(this,rq)) {
+      if (!this._msgTx.call(this,rq)) {
         clearTimeout(timer);
         delete this.pending[rq.id];
         if (this.debug) console.log('Transmit Timeout : ' + rq);
         resolve();
       }
     });
+  }
+
+
+
+  _createConnector(url){
+    let conn;
+    if (isBrowser || isWebWorker){
+      conn =  new Connector({
+        "hostname":url.hostname,
+        "port":url.port,
+        "pathname":url.pathname,
+        "keepAlive": this._keepAlive
+      });
+    }else if (isNode || isJsDom){
+      conn = new Connector({
+        "hostname":url.hostname,
+        "port":url.port,
+        "keepAlive": this._keepAlive
+      });
+    }
+    conn.setReadCallback(this._onMsgRx.bind(this))
+    conn.addConnectionListener(state => {
+      if (state == true){
+        this.flush()
+        this.connector.write('{"alive": true}\n');
+        this._update_watch();
+      }
+    })
+    return conn;
   }
 
   _matchMessage(filter, msg){
@@ -540,7 +527,7 @@ export class Gateway {
     // let watch = Object.keys(this.subscriptions);
     // watch.push(this.aid.getName());
     // let rq = { action: 'wantsMessagesFor', agentIDs: watch };
-    // this._websockTx(rq);
+    // this._msgTx(rq);
   }
 
   /**
@@ -677,7 +664,7 @@ export class Gateway {
    */
   async agentForService(service) {
     let rq = { action: 'agentForService', service: service };
-    let rsp = await this._websockTxRx(rq);
+    let rsp = await this._msgTxRx(rq);
     if (!rsp || !rsp.agentID) return;
     return new AgentID(rsp.agentID, false, this);
   }
@@ -690,7 +677,7 @@ export class Gateway {
    */
   async agentsForService(service) {
     let rq = { action: 'agentsForService', service: service };
-    let rsp = await this._websockTxRx(rq);
+    let rsp = await this._msgTxRx(rq);
     let aids = [];
     if (!rsp || !Array.isArray(rsp.agentIDs)) return aids;
     for (var i = 0; i < rsp.agentIDs.length; i++)
@@ -714,7 +701,7 @@ export class Gateway {
     this._sendEvent('txmsg', msg);
     let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
     rq = rq.replace('"###MSG###"', msg._serialize());
-    return !!this._websockTx(rq);
+    return !!this._msgTx(rq);
   }
 
   /**
@@ -782,21 +769,9 @@ export class Gateway {
    * @returns {void}
    */
   close() {
-    if (this.sock.readyState == this.sock.CONNECTING) {
-      this.pendingOnOpen.push(() => {
-        this.sock.send('{"alive": false}\n');
-        this.sock.onclose = null;
-        this.sock.close();
-        var index = window.fjage.gateways.indexOf(this);
-        window.fjage.gateways.splice(index,1);
-      });
-    } else if (this.sock.readyState == this.sock.OPEN) {
-      this.sock.send('{"alive": false}\n');
-      this.sock.onclose = null;
-      this.sock.close();
-      var index = window.fjage.gateways.indexOf(this);
-      window.fjage.gateways.splice(index,1);
-    }
+    this.connector.close()
+    var index = gObj.fjage.gateways.indexOf(this);
+    gObj.fjage.gateways.splice(index,1);
   }
 
 }
@@ -817,7 +792,7 @@ export const Services = {
 export function MessageClass(name, parent=Message) {
   let sname = name.replace(/^.*\./, '');
   let pname = parent.__clazz__.replace(/^.*\./, '');
-  window[sname] = class extends window[pname] {
+  gObj[sname] = class extends gObj[pname] {
     constructor(params) {
       super();
       this.__clazz__ = name;
@@ -829,42 +804,26 @@ export function MessageClass(name, parent=Message) {
       }
     }
   };
-  window[sname].__clazz__ = name;
-  return window[sname];
+  gObj[sname].__clazz__ = name;
+  return gObj[sname];
 }
-
-////// global
-
-if (typeof window.fjage === 'undefined') {
-  window.fjage = {};
-  window.fjage.gateways = [];
-  window.fjage.MessageClass = MessageClass;
-  window.fjage.getGateway = function (url){
-    var f = window.fjage.gateways.filter(g => g.sock.url == url);
-    if (f.length ) return f[0];
-  };
-  Message.__clazz__ = 'org.arl.fjage.Message';
-  window['Message'] = Message;
-}
-
-const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
 
 ////// private utilities
 
 // generate random ID with length 4*len characters
 function _guid(len) {
-  function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+    function s4() {
+      return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+    }
+    let s = s4();
+    for (var i = 0; i < len-1; i++)
+      s += s4();
+    return s;
   }
-  let s = s4();
-  for (var i = 0; i < len-1; i++)
-    s += s4();
-  return s;
-}
-
+  
 // convert from base 64 to array
 function _b64toArray(base64, dtype, littleEndian=true) {
-  let s =  window.atob(base64);
+  let s = gObj.atob(base64);
   let len = s.length;
   let bytes = new Uint8Array(len);
   for (var i = 0; i < len; i++)
@@ -916,3 +875,35 @@ function _decodeBase64(k, d) {
   }
   return d;
 }
+
+////// global
+
+
+var gObj = {};
+var Connector;
+if (isBrowser){
+  gObj = window
+  import("./WSConnector.js").then(module => {
+    Connector = module.default;
+  })
+} else if (isJsDom || isNode){
+  gObj = global
+  gObj.atob = a => Buffer.from(a, 'base64').toString('binary')
+  import("./TCPConnector.js").then(module => {
+    Connector = module.default;
+  })
+}
+
+if (typeof gObj.fjage === 'undefined') {
+  gObj.fjage = {};
+  gObj.fjage.gateways = [];
+  gObj.fjage.MessageClass = MessageClass;
+  gObj.fjage.getGateway = function (url){
+    var f = gObj.fjage.gateways.filter(g => g.connector.url.toString() == url.toString());
+    if (f.length ) return f[0];
+  };
+  Message.__clazz__ = 'org.arl.fjage.Message';
+  gObj['Message'] = Message;
+}
+  
+const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
