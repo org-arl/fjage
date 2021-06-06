@@ -29,7 +29,7 @@ class fjagejsTest {
   @Test
   void fjageJSTest() {
     def testRes = [
-      "browser": [
+      browser: [
         isComplete: false,
         didPass: false,
         trace: ""
@@ -57,7 +57,7 @@ class fjagejsTest {
             if (msg instanceof TestCompleteNtf){
               println("${msg.type} test complete : ${msg.status?"PASSED":"FAILED"}")
               testRes[msg.type].isComplete = true
-              testRes[msg.type].status = msg.status
+              testRes[msg.type].didPass = msg.status
               testRes[msg.type].trace = msg.trace
             } else {
               println("No idea what to do with ${msg.class}")
@@ -82,13 +82,12 @@ class fjagejsTest {
       }
     }else{
       println "Waiting for user to run manual tests.."
-      while (! testRes['node'].isComplete || ! testRes['browser'].isComplete){
-        println("Waiting... ${testRes['node'].isComplete } : ${testRes['browser'].isComplete}")
+      while (!testRes['node'].isComplete || !testRes['browser'].isComplete){
         platform.delay(1000)
       }
       println "-------------------Logs from fjagejs-------------------------"
     }
-    println "FjageJS Test complete : ${testResult ? "passed" : "failed"}."
+    println "FjageJS Test complete : ${testRes["node"].didPass && testRes["browser"].didPass ? "passed" : "failed"}."
     if (!testRes["node"].didPass){
       println  "JASMINE (node) >> \n${testRes["node"].trace.trim()}"
     }

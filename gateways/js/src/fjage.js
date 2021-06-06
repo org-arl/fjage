@@ -1,4 +1,6 @@
 import { isBrowser, isNode, isJsDom, isWebWorker } from "../node_modules/browser-or-node/src/index.js";
+import TCPConnector from "./TCPConnector"
+import WSConnector from "./WSConnector"
 
 const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
 
@@ -442,7 +444,7 @@ export class GenericMessage extends Message {
   _msgTx(s) {
     if(this.debug) console.log('> '+s);
     this._sendEvent('tx', s);
-    return this.connector.write(s+'\n');
+    return this.connector.write(s);
   }
 
   // returns a Promise
@@ -472,14 +474,14 @@ export class GenericMessage extends Message {
   _createConnector(url){
     let conn;
     if (isBrowser || isWebWorker){
-      conn =  new Connector({
+      conn =  new WSConnector({
         "hostname":url.hostname,
         "port":url.port,
         "pathname":url.pathname,
         "keepAlive": this._keepAlive
       });
     }else if (isNode || isJsDom){
-      conn = new Connector({
+      conn = new TCPConnector({
         "hostname":url.hostname,
         "port":url.port,
         "keepAlive": this._keepAlive
@@ -489,7 +491,7 @@ export class GenericMessage extends Message {
     conn.addConnectionListener(state => {
       if (state == true){
         this.flush()
-        this.connector.write('{"alive": true}\n');
+        this.connector.write('{"alive": true}');
         this._update_watch();
       }
     })
@@ -880,18 +882,11 @@ function _decodeBase64(k, d) {
 
 
 var gObj = {};
-var Connector;
 if (isBrowser){
   gObj = window
-  import("./WSConnector.js").then(module => {
-    Connector = module.default;
-  })
 } else if (isJsDom || isNode){
   gObj = global
   gObj.atob = a => Buffer.from(a, 'base64').toString('binary')
-  import("./TCPConnector.js").then(module => {
-    Connector = module.default;
-  })
 }
 
 if (typeof gObj.fjage === 'undefined') {

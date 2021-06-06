@@ -39,7 +39,7 @@ export default class WSConnector {
       this.sock.onopen = this._onWebsockOpen.bind(this);
       this.sock.onclose = () => {this._sendConnEvent(false)};
     } catch (error) {
-      if(this.debug) console.log('Connection failed to ', this.sock.url);
+      if(this.debug) console.log('Connection failed to ', url);
       return;
     }
   }
@@ -68,7 +68,7 @@ export default class WSConnector {
 
   toString(){
     let s = ""
-    s += "WSConnector [" + this.sock.url.toString() + "]"
+    s += "WSConnector [" + this.sock ? this.sock.url.toString() : "" + "]"
     return s
   }
 
@@ -77,14 +77,13 @@ export default class WSConnector {
    * @param {String} s - string to be written out of the connector to the master
    */
   write(s){
-    let sock = this.sock;
-    if (sock.readyState == sock.OPEN) {
-      sock.send(s+'\n');
-      return true;
-    } else if (sock.readyState == sock.CONNECTING) {
+    if (!this.sock || this.sock.readyState == this.sock.CONNECTING){
       this.pendingOnOpen.push(() => {
-        sock.send(s+'\n');
+        this.sock.send(s+'\n');
       });
+      return true;
+    } else if (this.sock.readyState == this.sock.OPEN) {
+      this.sock.send(s+'\n');
       return true;
     }
     return false;
@@ -128,6 +127,7 @@ export default class WSConnector {
    * Close the connector
    */
   close(){
+    if (!this.sock) return;
     if (this.sock.readyState == this.sock.CONNECTING) {
       this.pendingOnOpen.push(() => {
         this.sock.send('{"alive": false}\n');

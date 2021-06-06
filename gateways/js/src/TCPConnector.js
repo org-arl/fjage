@@ -1,5 +1,3 @@
-import { createConnection } from 'net'
-
 const SOCKET_OPEN = "open"
 const SOCKET_OPENING = "opening"
 
@@ -21,7 +19,7 @@ export default class TCPconnector {
       this._buf = ""
       this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
       this.connListeners = [];              // external listeners wanting to listen connection events
-      this._sockSetup(host, port)
+      this._sockInit(host, port)
   }
 
 
@@ -31,16 +29,32 @@ export default class TCPconnector {
     });
   }
 
+  _sockInit(host, port){
+    if (!this.createConnection){
+      try {
+        import('net').then(module => {
+          this.createConnection = module.createConnection;
+          this._sockSetup(host, port);
+        })
+      }catch(error){
+        if(this.debug) console.log('Unable to import net module');
+      }
+    }else{
+      this._sockSetup(host, port);
+    }  
+  }
+
   _sockSetup(host, port){
-    try {
-      this.sock = createConnection({ "host": host, "port": port });
+    if(!this.createConnection) return;
+    try{
+      this.sock = this.createConnection({ "host": host, "port": port });
       this.sock.setEncoding('utf8');
       this.sock.on('connect', this._onSockOpen.bind(this));
       this.sock.on('error', this._sockReconnect.bind(this));
       this.sock.on('close', () => {this._sendConnEvent(false)});
       this.sock.send = data => {this.sock.write(data)}
     } catch (error) {
-      if(this.debug) console.log('Connection failed to ', this.sock.remoteAddress + ":" + this.sock.remotePort);
+      if(this.debug) console.log('Connection failed to ', this.sock.host + ":" + this.sock.port);
       return;
     }
   }
@@ -79,7 +93,7 @@ export default class TCPconnector {
 
   toString(){
     let s = ""
-    s += "TCPConnector [" + this.sock.remoteAddress.toString() + ":" + this.sock.remotePort.toString() + "]"
+    s += "TCPConnector [" + this.sock ? this.sock.remoteAddress.toString() + ":" + this.sock.remotePort.toString() : "" + "]"
     return s
   }
 
@@ -88,14 +102,13 @@ export default class TCPconnector {
    * @param {String} s - string to be written out of the connector to the master
    */
   write(s){
-    let sock = this.sock;
-    if (sock.readyState == SOCKET_OPEN) {
-      sock.send(s+'\n');
-      return true;
-    } else if (sock.readyState == SOCKET_OPENING) {
+    if (!this.sock || this.sock.readyState == SOCKET_OPENING){
       this.pendingOnOpen.push(() => {
-        sock.send(s+'\n');
+        this.sock.send(s+'\n');
       });
+      return true;
+    } else if (this.sock.readyState == SOCKET_OPEN) {
+      this.sock.send(s+'\n');
       return true;
     }
     return false;
@@ -139,6 +152,7 @@ export default class TCPconnector {
    * Close the connector
    */
   close(){
+    if (!this.sock) return;
     if (this.sock.readyState == SOCKET_OPENING) {
       this.pendingOnOpen.push(() => {
         this.sock.send('{"alive": false}\n');

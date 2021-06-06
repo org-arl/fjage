@@ -151,9 +151,10 @@ describe('A Gateway', function () {
     expect(gObj.fjage.gateways.find(el => el == gw)).toBeUndefined();
   });
 
-  it('should send a message over WebSocket', async function() {
+  it('should send a message over a socket', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
+    await delay(1000);
     spyOn(gw.connector.sock, 'send').and.callThrough();
     await delay(100);
     gw.connector.sock.send.calls.reset();
@@ -165,11 +166,11 @@ describe('A Gateway', function () {
     expect(gw.connector.sock.send).toHaveBeenCalled();
   });
 
-  it('should send a WebSocket message of valid fjage message structure', async function() {
+  it('should send a socket message of valid fjage message structure', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
+    await delay(1000);
     spyOn(gw.connector.sock, 'send').and.callThrough();
-    await delay(100);
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
     req.recipient = shell;
@@ -182,6 +183,7 @@ describe('A Gateway', function () {
   it('should send correct ShellExecReq of valid fjage message structure', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
+    await delay(1000);
     spyOn(gw.connector.sock, 'send').and.callThrough();
     await delay(100);
     gw.connector.sock.send.calls.reset();
@@ -196,6 +198,7 @@ describe('A Gateway', function () {
   it('should send correct ShellExecReq of valid fjage message structure created using param constructor', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
+    await delay(1000);
     spyOn(gw.connector.sock, 'send').and.callThrough();
     await delay(100);
     gw.connector.sock.send.calls.reset();
@@ -699,7 +702,6 @@ describe('Shell GetFile/PutFile', function () {
 
 
 function sendTestStatus(status, trace, type) {
-  console.log("Sending status ", status, type);
   var gw = new Gateway(gwOpts);
   let msg = new TestCompleteNtf();
   msg.recipient = gw.agent('test');
@@ -717,7 +719,7 @@ const autoReporter = {
     result.status == "failed" && failedSpecs.push(result);
   },
 
-  jasmineDone: function(result){
+  jasmineDone: function(result, done){
     var trace = "";
     for(var i = 0; i < failedSpecs.length; i++) {
       trace += 'Failed : ' + failedSpecs[i].fullName + '\n'
@@ -735,6 +737,9 @@ const autoReporter = {
       }
     }
     sendTestStatus(result.overallStatus == 'passed', trace, testType);
+    setTimeout(() => {
+      done();
+    },500)
   }
 };
 
