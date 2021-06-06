@@ -111,6 +111,7 @@ class ConnectionHandler extends Thread {
         }
       }
       // handle JSON messages
+      if (s.length() < 2) continue;
       try {
         JsonMessage rq = JsonMessage.fromJson(s);
         if (rq.action == null) {
