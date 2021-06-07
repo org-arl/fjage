@@ -13,7 +13,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "build": "rm -rf dist/ && rollup -c rollup.config.js",
+    "build": "npm version $(cat '../../VERSION'); rm -rf dist/ && rollup -c rollup.config.js",
     "test": "rm test/spec/fjageSpec.* && node test/spec/create-spec.cjs && jasmine test/spec/fjageSpec.cjs; node test/browser-test.cjs",
     "clean": "rm -rf dist/"
   },
