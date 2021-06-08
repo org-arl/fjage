@@ -13,7 +13,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "build": "npm version $(cat '../../VERSION'); rm -rf dist/ && rollup -c rollup.config.js",
+    "build": "npm version --allow-same-version $(cat '../../VERSION'); rm -rf dist/ && rollup -c rollup.config.js",
     "test": "rm test/spec/fjageSpec.* && node test/spec/create-spec.cjs && jasmine test/spec/fjageSpec.cjs; node test/browser-test.cjs",
     "clean": "rm -rf dist/"
   },
@@ -38,8 +38,8 @@
     "documentation": "^13.2.5",
     "jasmine": "^3.7.0",
     "node-static": "^0.7.11",
-    "puppeteer": "^9.1.1",
-    "rollup": "^2.47.0",
+    "puppeteer": "^10.0.0",
+    "rollup": "^2.51.1",
     "rollup-plugin-terser": "^7.0.2"
   },
   "dependencies": {
