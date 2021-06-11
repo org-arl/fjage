@@ -3,7 +3,7 @@
   "version": "1.9.0",
   "description": "Framework for Java and Groovy Agents",
   "exports": "./dist/cjs/fjage.cjs",
-  "module": "dist/mjs/fjage.js",
+  "module": "dist/esm/fjage.js",
   "files": [
     "dist/**"
   ],

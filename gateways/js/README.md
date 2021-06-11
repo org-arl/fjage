@@ -18,7 +18,7 @@ A distribution ready bundle is available for types of modules systems commonly u
 
 ### [CommonJS](dist/cjs)
 
-### [ECMAScript modules](dist/mjs)
+### [ECMAScript modules](dist/esm)
 
 ### [UMD](dist)
 
