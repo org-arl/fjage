@@ -1,6 +1,5 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import { terser } from 'rollup-plugin-terser';
-import babel from '@rollup/plugin-babel';
 import pkg from './package.json';
 import { spawn } from 'child_process';
 
@@ -15,9 +14,6 @@ export default [
     input,
     plugins: [
       nodeResolve(),
-      babel({
-        babelHelpers: 'bundled',
-      }),
       terser(),
     ],
     output: {
@@ -37,7 +33,7 @@ export default [
       {
         format: 'esm',
         exports: 'named',
-        dir : 'dist/mjs',
+        dir : 'dist/esm',
         chunkFileNames: '[name].js',
         banner : `/* fjage.js v${pkg.version}${commit?'/'+commit:''} ${new Date().toISOString()} */\n`
       },

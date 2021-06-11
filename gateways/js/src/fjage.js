@@ -282,7 +282,6 @@ export class Message {
     let qclazz = obj.clazz;
     let clazz = qclazz.replace(/^.*\./, '');
     let rv = this.isPrototypeOf(gObj[clazz]) ? new gObj[clazz] : new Message();
-    // let rv = eval('try { new '+clazz+'() } catch(ex) { new Message() }');
     rv.__clazz__ = qclazz;
     rv._inflate(obj.data);
     return rv;
@@ -788,13 +787,13 @@ export const Services = {
 /**
  * Creates a unqualified message class based on a fully qualified name.
  * @param {string} name - fully qualified name of the message class to be created.
- * @param {string} [parent] - Class of the parent MessageClass to inherit from.
+ * @param {class} [parent] - Class of the parent MessageClass to inherit from.
  * @returns {function} constructor for the unqualified message class.
  */
 export function MessageClass(name, parent=Message) {
   let sname = name.replace(/^.*\./, '');
-  let pname = parent.__clazz__.replace(/^.*\./, '');
-  gObj[sname] = class extends gObj[pname] {
+  // let pname = parent.__clazz__.replace(/^.*\./, '');
+  gObj[sname] = class extends parent {
     constructor(params) {
       super();
       this.__clazz__ = name;
@@ -889,14 +888,14 @@ if (isBrowser){
   gObj.atob = a => Buffer.from(a, 'base64').toString('binary')
 }
 
-if (typeof gObj.fjage === 'undefined') {
-  gObj.fjage = {};
+if (typeof gObj.fjage === 'undefined') gObj.fjage = {};
+if (typeof gObj.fjage.gateways == 'undefined'){
   gObj.fjage.gateways = [];
-  gObj.fjage.MessageClass = MessageClass;
   gObj.fjage.getGateway = function (url){
     var f = gObj.fjage.gateways.filter(g => g.connector.url.toString() == url.toString());
     if (f.length ) return f[0];
   };
+  gObj.fjage.MessageClass = MessageClass;
   Message.__clazz__ = 'org.arl.fjage.Message';
   gObj['Message'] = Message;
 }

@@ -14,7 +14,7 @@ const cjs_includes = [
 ]
 
 const esm_includes = [
-    "import { Performative, AgentID, Message, Gateway, MessageClass } from '../../dist/mjs/fjage.js'",
+    "import { Performative, AgentID, Message, Gateway, MessageClass } from '../../dist/esm/fjage.js'",
     "import { isBrowser, isNode, isJsDom } from '../../node_modules/browser-or-node/src/index.js'",
     ""
 ]
