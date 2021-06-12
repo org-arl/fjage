@@ -3,7 +3,10 @@ const SOCKET_OPENING = "opening"
 
 var createConnection;
 
-
+/**
+ * @class
+ * @ignore
+ */
 export default class TCPconnector {
 
   /**
@@ -126,6 +129,7 @@ export default class TCPconnector {
 
   /**
    * @callback TCPConnector~ReadCallback
+   * @ignore
    * @param {string} s - incoming message string
    */
   

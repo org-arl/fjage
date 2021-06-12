@@ -202,18 +202,12 @@ export class AgentID {
 }
 
 /**
- * Base class for messages transmitted by one agent to another. This class provides
- * the basic attributes of messages and is typically extended by application-specific
- * message classes. To ensure that messages can be sent between agents running
- * on remote containers, all attributes of a message must be serializable.
+ * Base class for messages transmitted by one agent to another. Creates an empty message.
+ * @param {Message} inReplyTo - message to which this response corresponds to.
+ * @param {Performative} perf  - performative
  */
 export class Message {
 
-  /**
-   * Creates an empty message.
-   * @param {Message} inReplyTo - message to which this response corresponds to.
-   * @param {Performative} perf  - performative
-   */
   constructor(inReplyTo={msgID:null, sender:null}, perf='') {
     this.__clazz__ = 'org.arl.fjage.Message';
     this.msgID = _guid(8);
@@ -255,6 +249,7 @@ export class Message {
   // convert a message into a JSON string
   // NOTE: we don't do any base64 encoding for TX as
   //       we don't know what data type is intended
+  /** @private */
   _serialize() {
     let clazz = this.__clazz__;
     let data = JSON.stringify(this, (k,v) => {
@@ -265,12 +260,14 @@ export class Message {
   }
 
   // inflate a data dictionary into the message
+  /** @private */
   _inflate(data) {
     for (var key in data)
       this[key] = data[key];
   }
 
   // convert a dictionary (usually from decoding JSON) into a message
+  /** @private */
   static _deserialize(obj) {
     if (typeof obj == 'string' || obj instanceof String) {
       try {
@@ -303,23 +300,18 @@ export class GenericMessage extends Message {
 }
 
 /**
- * Gateway to communicate with agents from Java classes. Only agents in a master
- * or slave container can be accessed using this gateway.
+ * Creates a gateway connecting to a specified master container over Websockets.
  *
+ * @param {Object} opts
+ * @param {String} opts.hostname - hostname/ip address of the master container to connect to
+ * @param {Number} opts.port - port number of the master container to connect to
+ * @param {String} opts.pathname - path of the master container to connect to
+ * @param {String} opts.keepAlive - try to reconnect if the connection is lost
+ * @param {int} opts.queueSize     - size of the queue of received messages that haven't been consumed yet
+ * @param {int} opts.timeout     - timeout for fjage level messages
  */
  export class Gateway {
 
-  /**
-   * Creates a gateway connecting to a specified master container over Websockets.
-   *
-   * @param {Object} opts
-   * @param {String} opts.hostname - hostname/ip address of the master container to connect to
-   * @param {Number} opts.port - port number of the master container to connect to
-   * @param {String} opts.pathname - path of the master container to connect to
-   * @param {String} opts.keepAlive - try to reconnect if the connection is lost
-   * @param {int} opts.queueSize     - size of the queue of received messages that haven't been consumed yet
-   * @param {int} opts.timeout     - timeout for fjage level messages
-   */
   constructor(opts = {}) {
     let defaults;
     var url;
@@ -364,6 +356,7 @@ export class GenericMessage extends Message {
     gObj.fjage.gateways.push(this);
   }
 
+  /** @private */
   _sendEvent(type, val) {
     if (Array.isArray(this.eventListeners[type])) {
       this.eventListeners[type].forEach(l => {
@@ -372,6 +365,7 @@ export class GenericMessage extends Message {
     }
   }
 
+  /** @private */
   _onMsgRx(data) {
     var obj;
     if (this.debug) console.log('< '+data);
@@ -440,13 +434,14 @@ export class GenericMessage extends Message {
     }
   }
 
+  /** @private */
   _msgTx(s) {
     if(this.debug) console.log('> '+s);
     this._sendEvent('tx', s);
     return this.connector.write(s);
   }
 
-  // returns a Promise
+  /** @private */
   _msgTxRx(rq) {
     rq.id = _guid(8);
     return new Promise(resolve => {
@@ -468,8 +463,7 @@ export class GenericMessage extends Message {
     });
   }
 
-
-
+  /** @private */
   _createConnector(url){
     let conn;
     if (isBrowser || isWebWorker){
@@ -497,6 +491,7 @@ export class GenericMessage extends Message {
     return conn;
   }
 
+  /** @private */
   _matchMessage(filter, msg){
     if (typeof filter == 'string' || filter instanceof String) {
       return 'inReplyTo' in msg && msg.inReplyTo == filter;
@@ -511,6 +506,7 @@ export class GenericMessage extends Message {
     }
   }
 
+  /** @private */
   _getMessageFromQueue(filter) {
     if (!this.queue.length) return;
     if (!filter) return this.queue.shift();
@@ -521,6 +517,7 @@ export class GenericMessage extends Message {
     return matchedMsg;
   }
 
+  /** @private */
   _update_watch() {
     // FIXME : Turning off wantsMessagesFor in fjagejs for now as it breaks multiple browser
     // windows connecting to the same master container.
@@ -719,7 +716,7 @@ export class GenericMessage extends Message {
    *
    * @param {string} msg - message to send.
    * @param {number} [timeout=1000] - timeout in milliseconds.
-   * @return {Promise} a promise which resolves with the received response message, null on timeout.
+   * @return {Promise<Message|null>} a promise which resolves with the received response message, null on timeout.
    */
   async request(msg, timeout=1000) {
     this.send(msg);
@@ -731,7 +728,7 @@ export class GenericMessage extends Message {
    *
    * @param {function} [filter=undefined] - original message to which a response is expected, or a MessageClass of the type of message to match, or a closure to use to match against the message.
    * @param {number} [timeout=0] - timeout in milliseconds.
-   * @return {Message} received response message, null on timeout.
+   * @return {Promise<Message|null>} received response message, null on timeout.
    */
   receive(filter=undefined, timeout=0) {
     return new Promise(resolve => {
@@ -787,7 +784,7 @@ export const Services = {
 /**
  * Creates a unqualified message class based on a fully qualified name.
  * @param {string} name - fully qualified name of the message class to be created.
- * @param {class} [parent] - Class of the parent MessageClass to inherit from.
+ * @param {function} [parent] - class of the parent MessageClass to inherit from.
  * @returns {function} constructor for the unqualified message class.
  */
 export function MessageClass(name, parent=Message) {
@@ -812,6 +809,7 @@ export function MessageClass(name, parent=Message) {
 ////// private utilities
 
 // generate random ID with length 4*len characters
+/** @private */
 function _guid(len) {
     function s4() {
       return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
@@ -823,6 +821,7 @@ function _guid(len) {
   }
   
 // convert from base 64 to array
+/** @private */
 function _b64toArray(base64, dtype, littleEndian=true) {
   let s = gObj.atob(base64);
   let len = s.length;
@@ -863,6 +862,7 @@ function _b64toArray(base64, dtype, littleEndian=true) {
 }
 
 // base 64 JSON decoder
+/** @private */
 function _decodeBase64(k, d) {
   if (d === null) {
     return null;

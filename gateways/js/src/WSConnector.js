@@ -1,5 +1,9 @@
 const DEFAULT_RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
 
+/**
+ * @class
+ * @ignore
+ */
 export default class WSConnector {
 
   /**
@@ -92,6 +96,7 @@ export default class WSConnector {
   /**
    * Set a callback for receiving incoming strings from the connector
    * @param {WSConnector~ReadCallback} cb - callback that is called when the connector gets a string
+   * @ignore
    */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onWebsockRx = cb;
@@ -99,6 +104,7 @@ export default class WSConnector {
 
   /**
    * @callback WSConnector~ReadCallback
+   * @ignore
    * @param {string} s - incoming message string
    */
   
