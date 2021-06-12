@@ -92,7 +92,7 @@ javadoc.doLast {
 }
 
 task jsdoc(type: Exec){
-  workingDir '.'
+  workingDir 'gateways/js'
   executable 'npm'
   args = ['run', 'docs']
 }
