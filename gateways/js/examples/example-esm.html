@@ -1,7 +1,7 @@
 <html>
     <head>
         <script type="module">
-            import { Performative, AgentID, Message, Gateway, MessageClass } from './node_modules/fjage/dist/esm/fjage.js'
+            import { AgentID, Gateway, MessageClass } from './node_modules/fjage/dist/esm/fjage.js'
             const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
             (async function () {
                 const shell = new AgentID('shell');

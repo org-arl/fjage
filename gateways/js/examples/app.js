@@ -1,4 +1,4 @@
-import { Performative, AgentID, Message, Gateway, MessageClass } from './node_modules/fjage/dist/esm/fjage.js'
+import { AgentID, Gateway, MessageClass } from './node_modules/fjage/dist/esm/fjage.js'
 
 const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
 

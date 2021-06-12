@@ -1,13 +1,12 @@
 {
   "name": "fjage",
   "version": "1.9.0",
-  "description": "Framework for Java and Groovy Agents",
+  "description": "JS Gateway for fjåge",
   "exports": "./dist/cjs/fjage.cjs",
   "module": "dist/esm/fjage.js",
   "files": [
     "dist/**"
   ],
-  "private": "true",
   "type": "module",
   "directories": {
     "doc": "docs"

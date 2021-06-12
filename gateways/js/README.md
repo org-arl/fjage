@@ -1,28 +1,54 @@
 # fjåge JavaScript Gateway (fjage.js)
 
-fjåge Gateway for JavaScript, supports both browser (WebSocket) and Node.js (TCP) based connections to a fjåge container.
+A fjåge Gateway implementation in JavaScript, supports both browser (WebSocket) and Node.js (TCP) based connections to a fjåge [Master Container](https://fjage.readthedocs.io/en/latest/remote.html#master-and-slave-containers).
 
 ## Installation
 
 ```sh
-$ npm install fjagejs
+$ npm install fjage
 ```
 
 ## Documentation
 
-API documentation of the latest version of fjagejs is published at https://org-arl.github.io/fjage/jsdoc/
+API documentation of the latest version of fjage.js is published at https://org-arl.github.io/fjage/jsdoc/
 
 ## Usage
 
-A distribution ready bundle is available for types of modules systems commonly used in the JS world.
+A distribution ready bundle is available for types of modules systems commonly used in the JS world. Examples of how to use it for the different modules systems are available in the [examples](/examples) directory.
+
+At runtime, fjage.js will check it's own context (browser or Node.js) and accordingly use the appropriate `Connector` for connecting to the master container.
 
 ### [CommonJS](dist/cjs)
 
+```
+const { Performative, AgentID, Message, Gateway, MessageClass } = require('fjage');
+const shell = new AgentID('shell');
+const gw = new Gateway({
+    hostname: 'localhost',
+    port : '5081',
+});
+```
+
 ### [ECMAScript modules](dist/esm)
 
+```
+import { Performative, AgentID, Message, Gateway, MessageClass } from 'fjage.js'
+const shell = new AgentID('shell');
+const gw = new Gateway({
+    hostname: 'localhost',
+    port : '5081',
+});
+```
+
 ### [UMD](dist)
-
-
-## Examples
-
-A fjåge Gateway can be used to communicate with a fjåge Container and send standard fjåge messages over either WebSocket (browser) or TCP (Node.js) connections.
+```
+<script src="fjage.min.js"></script>
+<script>
+    const shell = new fjage.AgentID('shell');
+    const gw = new fjage.Gateway({
+        hostname: 'localhost',
+        port : '8080',
+        pathname: '/ws/'
+    });
+</script>
+```
