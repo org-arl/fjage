@@ -436,6 +436,7 @@ export class GenericMessage extends Message {
 
   /** @private */
   _msgTx(s) {
+    if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
     if(this.debug) console.log('> '+s);
     this._sendEvent('tx', s);
     return this.connector.write(s);
@@ -730,7 +731,7 @@ export class GenericMessage extends Message {
    * @param {number} [timeout=0] - timeout in milliseconds.
    * @return {Promise<Message|null>} received response message, null on timeout.
    */
-  receive(filter=undefined, timeout=0) {
+  async receive(filter=undefined, timeout=0) {
     return new Promise(resolve => {
       let msg = this._getMessageFromQueue.call(this,filter);
       if (msg) {
