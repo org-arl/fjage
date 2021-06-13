@@ -14,16 +14,23 @@ export default [
     input,
     plugins: [
       nodeResolve(),
-      terser(),
     ],
-    output: {
+    output: [{
+      file: `dist/${pkg.name}.js`,
+      format: 'umd',
+      name: 'fjage',
+      esModule: false,
+      exports: 'named',
+      sourcemap: true,
+    },{
       file: `dist/${pkg.name}.min.js`,
       format: 'umd',
       name: 'fjage',
       esModule: false,
       exports: 'named',
       sourcemap: true,
-    },
+      plugins: [terser()]
+    }],
   },
   // ESM and CJS
   {

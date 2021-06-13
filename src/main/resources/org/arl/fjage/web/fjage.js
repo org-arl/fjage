@@ -1,0 +1,1 @@
+../../../../../../../gateways/js/dist/fjage.js
