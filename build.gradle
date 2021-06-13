@@ -76,7 +76,7 @@ test {
   }
 }
 
-task jars(dependsOn: [ 'jar', 'fjagejs' ], type: Copy) {
+task jars(dependsOn: jar, type: Copy) {
   into "$buildDir/libs"
   from configurations.runtimeClasspath
 }
@@ -91,10 +91,11 @@ javadoc.doLast {
   }
 }
 
-task fjagejs(type: Exec){
-  workingDir 'gateways/js'
-  executable 'npm'
-  args = ['run', 'build']
+compileJava.doLast {
+  exec {
+    workingDir 'gateways/js'
+    commandLine 'npm', 'run', 'build'
+  }
 }
 
 task jsdoc(type: Exec){
