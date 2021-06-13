@@ -12,8 +12,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "build": "npm version --allow-same-version $(cat '../../VERSION'); rm -rf dist/ && rollup -c rollup.config.js",
-    "test": "rm test/spec/fjageSpec.* && node test/spec/create-spec.cjs && jasmine test/spec/fjageSpec.cjs; node test/browser-test.cjs",
+    "build": "rm -rf dist/ && rollup -c rollup.config.js",
+    "test": "node test/spec/create-spec.cjs && jasmine test/spec/fjageSpec.cjs; node test/browser-test.cjs",
     "docs": "documentation build src/fjage.js -f html --github --document-exported -o ../../docs/jsdoc",
     "clean": "rm -rf dist/"
   },
