@@ -1,3 +1,5 @@
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass it expect describe spyOn beforeAll afterAll beforeEach jasmine*/
+
 const DIRNAME = '/tmp';
 const FILENAME = 'fjage-test.txt';
 const TEST_STRING = 'this is a test';
@@ -417,7 +419,7 @@ describe('A MessageClass', function () {
       const NewMessage = MessageClass(msgName);
       expect(typeof NewMessage).toEqual('function');
       expect(NewMessage.__clazz__).toEqual(msgName);
-      let nm = new NewMessage();
+      new NewMessage();
     }).not.toThrow();
   });
 
