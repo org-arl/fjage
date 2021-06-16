@@ -735,8 +735,7 @@ class Gateway:
             self.logger.debug(str(name[0]) + ":" + str(name[1]) + " >>> " + rq)
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
-            self.keepalive = True
-            self._socket_reconnect(self.keepalive)
+            return False
         self.socket.sendall((rq + '\n').encode())
         return True
 
