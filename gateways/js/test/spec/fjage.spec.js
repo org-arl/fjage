@@ -17,21 +17,21 @@ var gwOpts;
 var gObj = {};
 var testType;
 if (isBrowser){
-  gObj = window
+  gObj = window;
   gwOpts = { 
     hostname: 'localhost',
     port : '8080',
     pathname: '/ws/'
-  }
-  testType = "browser"
+  };
+  testType = 'browser';
 } else if (isJsDom || isNode){
-  gObj = global
+  gObj = global;
   gwOpts = { 
     hostname: 'localhost',
     port : '5081',
     pathname: ''
-  }
-  testType = "node"
+  };
+  testType = 'node';
 }
 
 function delay(ms) {
@@ -118,7 +118,8 @@ describe('A Gateway', function () {
     gw.close();
   });
 
-  it('should cache Gateways to the same url+port', async function () {
+  it('should cache Gateways to the same url+port in browser', async function () {
+    if (!isBrowser) return;
     const gw = new Gateway(gwOpts);
     const gw2 = new Gateway(gwOpts);
     expect(gw).toBe(gw2);
@@ -127,6 +128,7 @@ describe('A Gateway', function () {
   });
 
   it('should register itself with the global fjage object', async function () {
+    if (!isBrowser) return;
     var gw = new Gateway(gwOpts);
     expect(gObj.fjage.gateways).toContain(gw);
     await delay(100);
@@ -142,6 +144,7 @@ describe('A Gateway', function () {
   });
 
   it('should remove itself from global array when closed', async function () {
+    if (!isBrowser) return;
     const gw = new Gateway(gwOpts);
     await delay(100);
     gw.close();
@@ -152,6 +155,7 @@ describe('A Gateway', function () {
   it('should send a message over a socket', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
+    await delay(100); // delay allow for imports
     spyOn(gw.connector.sock, 'send').and.callThrough();
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
@@ -165,6 +169,7 @@ describe('A Gateway', function () {
   it('should send a socket message of valid fjage message structure', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
+    await delay(100); // delay allow for imports
     spyOn(gw.connector.sock, 'send').and.callThrough();
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
@@ -178,6 +183,7 @@ describe('A Gateway', function () {
   it('should send correct ShellExecReq of valid fjage message structure', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
+    await delay(100); // delay allow for imports
     spyOn(gw.connector.sock, 'send').and.callThrough();
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
@@ -191,6 +197,7 @@ describe('A Gateway', function () {
   it('should send correct ShellExecReq of valid fjage message structure created using param constructor', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
+    await delay(100); // delay allow for imports
     spyOn(gw.connector.sock, 'send').and.callThrough();
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq({recipient: shell, cmd: 'boo'});
@@ -209,11 +216,11 @@ describe('A Gateway', function () {
     smr.recipient = gw.agent('echo');
     gw.send(smr);
     await delay(4000);
-    expect(gw.queue.length).toBeLessThanOrEqual(128)
+    expect(gw.queue.length).toBeLessThanOrEqual(128);
     if (gw.queue.length == 128){
       var ids = gw.queue.map(m => m.id).filter( id => !!id).sort();
-      expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1)
-      expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128)
+      expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1);
+      expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128);
     }
   });
 
@@ -233,11 +240,11 @@ describe('A Gateway', function () {
     }
 
     for (type = 1; type <= NMSG; type++){
-      let m = await gw.receive(m => m instanceof SendMsgRsp,1000)
+      let m = await gw.receive(m => m instanceof SendMsgRsp,1000);
       if (m && m.type){
         rxed[m.type-1] = true;
       }else{
-        console.warn("Error getting SendMsgRsp #"+type+" : " + m);
+        console.warn('Error getting SendMsgRsp #'+type+' : ' + m);
       }
     }
     expect(rxed).not.toContain(false);
@@ -696,7 +703,7 @@ function sendTestStatus(status, trace, type) {
   var gw = new Gateway(gwOpts);
   let msg = new TestCompleteNtf();
   msg.recipient = gw.agent('test');
-  msg.perf = Performative.INFORM
+  msg.perf = Performative.INFORM;
   msg.status = status;
   msg.trace = trace;
   msg.type = type;
@@ -707,17 +714,17 @@ function sendTestStatus(status, trace, type) {
 var failedSpecs = [];
 const autoReporter = {
   specDone: function (result) {
-    result.status == "failed" && failedSpecs.push(result);
+    result.status == 'failed' && failedSpecs.push(result);
   },
 
   jasmineDone: function(result, done){
-    var trace = "";
+    var trace = '';
     for(var i = 0; i < failedSpecs.length; i++) {
-      trace += 'Failed : ' + failedSpecs[i].fullName + '\n'
+      trace += 'Failed : ' + failedSpecs[i].fullName + '\n';
       for (var j = 0; j < failedSpecs[i].failedExpectations.length; j++){
-        trace += failedSpecs[i].failedExpectations[j].stack + '\n'
+        trace += failedSpecs[i].failedExpectations[j].stack + '\n';
       }
-      trace += '\n'
+      trace += '\n';
     }
     if (isBrowser){
       const params = new URLSearchParams(window.location.search);
@@ -730,7 +737,7 @@ const autoReporter = {
     sendTestStatus(result.overallStatus == 'passed', trace, testType);
     setTimeout(() => {
       done();
-    },500)
+    },500);
   }
 };
 

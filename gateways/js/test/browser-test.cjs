@@ -1,7 +1,9 @@
+#!/usr/bin/env node
+
 const puppeteer = require('puppeteer');
 const statik = require('node-static');
 
-console.log("\nSetting up local static server");
+console.log("\nSetting up local static server at http://localhost:8000/test");
 const file = new statik.Server('.');
 let server = require('http').createServer(function (request, response) {
   request.addListener('end', function () {

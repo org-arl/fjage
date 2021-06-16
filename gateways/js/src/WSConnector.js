@@ -16,18 +16,18 @@ export default class WSConnector {
    * @param {Number} opts.reconnectTime - time before reconnection is attempted after an error
    */
   constructor(opts = {}) {
-      this.url = new URL('ws://localhost');
-      this.url.hostname = opts.hostname;      
-      this.url.port = opts.port
-      this.url.pathname = opts.pathname;
-      this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
-      this._keepAlive = opts.keepAlive;
-      this.debug = opts.debug || false;      // debug info to be logged to console?
-      this._firstConn = true;               // if the Gateway has managed to connect to a server before
-      this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
-      this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
-      this.connListeners = [];              // external listeners wanting to listen connection events
-      this._websockSetup(this.url);
+    this.url = new URL('ws://localhost');
+    this.url.hostname = opts.hostname;      
+    this.url.port = opts.port;
+    this.url.pathname = opts.pathname;
+    this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
+    this._keepAlive = opts.keepAlive;
+    this.debug = opts.debug || false;      // debug info to be logged to console?
+    this._firstConn = true;               // if the Gateway has managed to connect to a server before
+    this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
+    this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
+    this.connListeners = [];              // external listeners wanting to listen connection events
+    this._websockSetup(this.url);
   }
 
   _sendConnEvent(val) {
@@ -41,7 +41,7 @@ export default class WSConnector {
       this.sock = new WebSocket(url);
       this.sock.onerror = this._websockReconnect.bind(this);
       this.sock.onopen = this._onWebsockOpen.bind(this);
-      this.sock.onclose = () => {this._sendConnEvent(false)};
+      this.sock.onclose = () => {this._sendConnEvent(false);};
     } catch (error) {
       if(this.debug) console.log('Connection failed to ', url);
       return;
@@ -63,7 +63,7 @@ export default class WSConnector {
     if(this.debug) console.log('Connected to ', this.sock.url);
     this._sendConnEvent(true);
     this.sock.onclose = this._websockReconnect.bind(this);
-    this.sock.onmessage = event => { if (this._onWebsockRx) this._onWebsockRx.call(this,event.data) };
+    this.sock.onmessage = event => { if (this._onWebsockRx) this._onWebsockRx.call(this,event.data); };
     this._firstConn = false;
     this._firstReConn = true;
     this.pendingOnOpen.forEach(cb => cb());
@@ -71,9 +71,9 @@ export default class WSConnector {
   }
 
   toString(){
-    let s = ""
-    s += "WSConnector [" + this.sock ? this.sock.url.toString() : "" + "]"
-    return s
+    let s = '';
+    s += 'WSConnector [' + this.sock ? this.sock.url.toString() : '' + ']';
+    return s;
   }
 
   /**

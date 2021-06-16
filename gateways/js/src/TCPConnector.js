@@ -1,5 +1,5 @@
-const SOCKET_OPEN = "open"
-const SOCKET_OPENING = "opening"
+const SOCKET_OPEN = 'open';
+const SOCKET_OPENING = 'opening';
 
 var createConnection;
 
@@ -16,15 +16,15 @@ export default class TCPconnector {
     * @param {Number} opts.port - port number of the master container to connect to
     */
   constructor(opts = {}) {
-      this.url = new URL('tcp://localhost');
-      let host = opts.hostname || 'localhost'
-      let port = opts.port || -1
-      this.url.hostname = opts.hostname
-      this.url.port = opts.port
-      this._buf = ""
-      this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
-      this.connListeners = [];              // external listeners wanting to listen connection events
-      this._sockInit(host, port)
+    this.url = new URL('tcp://localhost');
+    let host = opts.hostname || 'localhost';
+    let port = opts.port || -1;
+    this.url.hostname = opts.hostname;
+    this.url.port = opts.port;
+    this._buf = '';
+    this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
+    this.connListeners = [];              // external listeners wanting to listen connection events
+    this._sockInit(host, port);
   }
 
 
@@ -40,7 +40,7 @@ export default class TCPconnector {
         import('net').then(module => {
           createConnection = module.createConnection;
           this._sockSetup(host, port);
-        })
+        });
       }catch(error){
         if(this.debug) console.log('Unable to import net module');
       }
@@ -52,14 +52,14 @@ export default class TCPconnector {
   _sockSetup(host, port){
     if(!createConnection) return;
     try{
-      this.sock = createConnection({ "host": host, "port": port });
+      this.sock = createConnection({ 'host': host, 'port': port });
       this.sock.setEncoding('utf8');
       this.sock.on('connect', this._onSockOpen.bind(this));
       this.sock.on('error', this._sockReconnect.bind(this));
-      this.sock.on('close', () => {this._sendConnEvent(false)});
-      this.sock.send = data => {this.sock.write(data)}
+      this.sock.on('close', () => {this._sendConnEvent(false);});
+      this.sock.send = data => {this.sock.write(data);};
     } catch (error) {
-      if(this.debug) console.log('Connection failed to ', this.sock.host + ":" + this.sock.port);
+      if(this.debug) console.log('Connection failed to ', this.sock.host + ':' + this.sock.port);
       return;
     }
   }
@@ -68,7 +68,7 @@ export default class TCPconnector {
     if (this._firstConn || !this.keepAlive || this.sock.readyState == SOCKET_OPENING || this.sock.readyState == SOCKET_OPEN) return;
     if (this._firstReConn) this._sendConnEvent(false);
     this._firstReConn = false;
-    if(this.debug) console.log('Reconnecting to ', this.sock.remoteAddress + ":" + this.sock.remotePort);
+    if(this.debug) console.log('Reconnecting to ', this.sock.remoteAddress + ':' + this.sock.remotePort);
     setTimeout(() => {
       this.pendingOnOpen = [];
       this._sockSetup(this.sock.url);
@@ -81,7 +81,7 @@ export default class TCPconnector {
     this.sock.on('data', this._processSockData.bind(this));
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
-    this._buf = ""
+    this._buf = '';
   }
 
   _processSockData(s){
@@ -97,9 +97,9 @@ export default class TCPconnector {
   }
 
   toString(){
-    let s = ""
-    s += "TCPConnector [" + this.sock ? this.sock.remoteAddress.toString() + ":" + this.sock.remotePort.toString() : "" + "]"
-    return s
+    let s = '';
+    s += 'TCPConnector [' + this.sock ? this.sock.remoteAddress.toString() + ':' + this.sock.remotePort.toString() : '' + ']';
+    return s;
   }
 
   /**

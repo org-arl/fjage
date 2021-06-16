@@ -1,6 +1,8 @@
-import { isBrowser, isNode, isJsDom, isWebWorker } from "../node_modules/browser-or-node/src/index.js";
-import TCPConnector from "./TCPConnector"
-import WSConnector from "./WSConnector"
+/* global global Buffer */
+
+import { isBrowser, isNode, isJsDom, isWebWorker } from '../node_modules/browser-or-node/src/index.js';
+import TCPConnector from './TCPConnector';
+import WSConnector from './WSConnector';
 
 const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
 
@@ -108,9 +110,9 @@ export class AgentID {
    * @param {(Object|Object[])} values - parameters value(s) to be set.
    * @param {number} [index=-1] - index of parameter(s) to be set.
    * @param {number} [timeout=5000] - timeout for the response.
-   * @return {Promise} - A promise which returns the new value(s) of the parameters
+   * @return {Promise<(Object|Object[])>} - A promise which returns the new value(s) of the parameters
    */
-  set (params, values, index=-1, timeout=5000) {
+  async set (params, values, index=-1, timeout=5000) {
     if (!params) return null;
     let msg = new ParameterReq();
     msg.recipient = this.name;
@@ -126,29 +128,20 @@ export class AgentID {
       msg.value = values;
     }
     msg.index = Number.isInteger(index) ? index : -1;
-    return this.owner.request(msg, timeout).then(rsp => {
-      return new Promise(resolve => {
-        var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
-        if (!rsp || rsp.perf != Performative.INFORM || !rsp.param){
-          resolve(ret);
-          return;
-        }
-
-        if (Array.isArray(params)){
-          if (!rsp.values) rsp.values = {};
-          if (rsp.param) rsp.values[rsp.param] = rsp.value;
-          const rvals = Object.keys(rsp.values);
-          ret = params.map((p, i) => {
-            let f = rvals.find(rv => rv.endsWith(p));
-            if (f) return rsp.values[f];
-            else return null;
-          });
-        }else{
-          ret = rsp.value;
-        }
-        resolve(ret);
+    const rsp = await this.owner.request(msg, timeout);
+    var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
+    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) return ret;
+    if (Array.isArray(params)) {
+      if (!rsp.values) rsp.values = {};
+      if (rsp.param) rsp.values[rsp.param] = rsp.value;
+      const rvals = Object.keys(rsp.values);
+      return params.map( p => {
+        let f = rvals.find(rv => rv.endsWith(p));
+        return f ? rsp.values[f] : null;
       });
-    });
+    } else {
+      return rsp.value;
+    }
   }
 
 
@@ -158,46 +151,35 @@ export class AgentID {
    * @param {(null|string|string[])} params - parameters name(s) to be get. null implies get value of all parameters on the Agent.
    * @param {number} [index=-1] - index of parameter(s) to be get.
    * @param {number} [timeout=5000] - timeout for the response.
-   * @return {Promise} - A promise which returns the value(s) of the parameters
+   * @return {Promise<(Object|Object[])>} - A promise which returns the value(s) of the parameters
    */
-  get(params, index=-1, timeout=5000) {
+  async get(params, index=-1, timeout=5000) {
     let msg = new ParameterReq();
     msg.recipient = this.name;
     if (params){
-      if (Array.isArray(params)){
-        msg.requests = params.map(p => {return {'param': p};});
-      }else{
-        msg.param = params;
-      }
+      if (Array.isArray(params)) msg.requests = params.map(p => {return {'param': p};});
+      else msg.param = params;
     }
     msg.index = Number.isInteger(index) ? index : -1;
-    return this.owner.request(msg, timeout).then(rsp => {
-      return new Promise(resolve => {
-        var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
-        if (!rsp || rsp.perf != Performative.INFORM || (params && (!rsp.param))){
-          resolve(ret);
-          return;
-        }
-        // Request for listing of all parameters.
-        if (!params){
-          if (!rsp.values) rsp.values = {};
-          if (rsp.param) rsp.values[rsp.param] = rsp.value;
-          ret = rsp.values;
-        } else if (Array.isArray(params)) {
-          if (!rsp.values) rsp.values = {};
-          if (rsp.param) rsp.values[rsp.param] = rsp.value;
-          const rvals = Object.keys(rsp.values);
-          ret = params.map(p => {
-            let f = rvals.find(rv => rv.endsWith(p));
-            return f ? rsp.values[f] : null ;
-          });
-        } else{
-          ret = rsp.value;
-        }
-
-        resolve(ret);
+    const rsp = await this.owner.request(msg, timeout);
+    var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
+    if (!rsp || rsp.perf != Performative.INFORM || (params && (!rsp.param))) return ret;
+    // Request for listing of all parameters.
+    if (!params) {
+      if (!rsp.values) rsp.values = {};
+      if (rsp.param) rsp.values[rsp.param] = rsp.value;
+      return rsp.values;
+    } else if (Array.isArray(params)) {
+      if (!rsp.values) rsp.values = {};
+      if (rsp.param) rsp.values[rsp.param] = rsp.value;
+      const rvals = Object.keys(rsp.values);
+      return params.map(p => {
+        let f = rvals.find(rv => rv.endsWith(p));
+        return f ? rsp.values[f] : null;
       });
-    });
+    } else {
+      return rsp.value;
+    }
   }
 }
 
@@ -251,7 +233,7 @@ export class Message {
   //       we don't know what data type is intended
   /** @private */
   _serialize() {
-    let clazz = this.__clazz__;
+    let clazz = this.__clazz__ || 'org.arl.fjage.Message';
     let data = JSON.stringify(this, (k,v) => {
       if (k.startsWith('__')) return;
       return v;
@@ -278,7 +260,7 @@ export class Message {
     }
     let qclazz = obj.clazz;
     let clazz = qclazz.replace(/^.*\./, '');
-    let rv = this.isPrototypeOf(gObj[clazz]) ? new gObj[clazz] : new Message();
+    let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
     rv.__clazz__ = qclazz;
     rv._inflate(obj.data);
     return rv;
@@ -309,42 +291,37 @@ export class GenericMessage extends Message {
  * @param {String} opts.keepAlive - try to reconnect if the connection is lost
  * @param {int} opts.queueSize     - size of the queue of received messages that haven't been consumed yet
  * @param {int} opts.timeout     - timeout for fjage level messages
+ *//**
+ * The old, deprecated way to construct a Gateway
+ * @deprecated Since version 1.9.1
+ * @param {string} hostname - hostname of the master container to connect to
+ * @param {int} port        - port of the master container to connect to
+ * @param {string} pathname - path of the master container to connect to
+ * @param {int} timeout     - timeout for fjage level messages
  */
- export class Gateway {
+export class Gateway {
 
-  constructor(opts = {}) {
-    let defaults;
-    var url;
-    if (isBrowser){
-      defaults = {
-        "hostname": window.location.hostname,
-        "port": window.location.port,
-        "pathname" : "/ws/",
-        "timeout": 1000,
-        "keepAlive" : true,
-        "queueSize": DEFAULT_QUEUE_SIZE
+  constructor(opts = {}, port, pathname='/ws/', timeout=1000) {
+    // Support for deprecated constructor
+    if (typeof opts === 'string' || opts instanceof String){
+      opts = {
+        'hostname': opts,
+        'port' : port || gObj.location.port, 
+        'pathname' : pathname,
+        'timeout' : timeout
       };
-      url = new URL('ws://localhost')
-    } else {
-      defaults = {
-        "hostname": "localhost",
-        "port": "1100",
-        "pathname": "",
-        "timeout": 1000,
-        "keepAlive" : true,
-        "queueSize": DEFAULT_QUEUE_SIZE
-      };
-      url = new URL('tcp://localhost')
+      console.warn('Deprecated use of Gateway constructor');
     }
-    opts = Object.assign({}, defaults, opts);
+    opts = Object.assign({}, GATEWAY_DEFAULTS, opts);
+    var url = DEFAULT_URL;
     url.hostname = opts.hostname;
-    url.port = opts.port || 80;
+    url.port = opts.port;
     url.pathname = opts.pathname;
-    let existing = gObj.fjage.getGateway(url);
+    let existing = this._getGWCache(url);
     if (existing) return existing;
     this._timeout = opts.timeout;         // timeout for fjage level messages (agentForService etc)
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
-    this._queueSize = opts.queueSize      // size of queue
+    this._queueSize = opts.queueSize;      // size of queue
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
@@ -353,7 +330,7 @@ export class GenericMessage extends Message {
     this.debug = false;                   // debug info to be logged to console?
     this.aid = new AgentID(isBrowser ? 'WebGW-' : 'NodeGW-'+_guid(4));         // gateway agent name
     this.connector = this._createConnector(url);
-    gObj.fjage.gateways.push(this);
+    this._addGWCache(this);
   }
 
   /** @private */
@@ -467,28 +444,28 @@ export class GenericMessage extends Message {
   /** @private */
   _createConnector(url){
     let conn;
-    if (isBrowser || isWebWorker){
+    if (url.protocol.startsWith('ws')){
       conn =  new WSConnector({
-        "hostname":url.hostname,
-        "port":url.port,
-        "pathname":url.pathname,
-        "keepAlive": this._keepAlive
+        'hostname':url.hostname,
+        'port':url.port,
+        'pathname':url.pathname,
+        'keepAlive': this._keepAlive
       });
-    }else if (isNode || isJsDom){
+    }else if (url.protocol.startsWith('tcp')){
       conn = new TCPConnector({
-        "hostname":url.hostname,
-        "port":url.port,
-        "keepAlive": this._keepAlive
+        'hostname':url.hostname,
+        'port':url.port,
+        'keepAlive': this._keepAlive
       });
-    }
-    conn.setReadCallback(this._onMsgRx.bind(this))
+    } else return null;
+    conn.setReadCallback(this._onMsgRx.bind(this));
     conn.addConnectionListener(state => {
       if (state == true){
-        this.flush()
+        this.flush();
         this.connector.write('{"alive": true}');
         this._update_watch();
       }
-    })
+    });
     return conn;
   }
 
@@ -516,6 +493,27 @@ export class GenericMessage extends Message {
     if (matchedMsg) this.queue.splice(this.queue.indexOf(matchedMsg), 1);
 
     return matchedMsg;
+  }
+
+  /** @private */
+  _getGWCache(url){
+    if (!gObj.fjage || !gObj.fjage.gateways) return null;
+    var f = gObj.fjage.gateways.filter(g => g.connector.url.toString() == url.toString());
+    if (f.length ) return f[0];
+    return null;
+  }
+  
+  /** @private */
+  _addGWCache(gw){
+    if (!gObj.fjage || !gObj.fjage.gateways) return;
+    gObj.fjage.gateways.push(gw);
+  }
+  
+  /** @private */
+  _removeGWCache(gw){
+    if (!gObj.fjage || !gObj.fjage.gateways) return;
+    var index = gObj.fjage.gateways.indexOf(gw);
+    if (index != null) gObj.fjage.gateways.splice(index,1);
   }
 
   /** @private */
@@ -768,9 +766,8 @@ export class GenericMessage extends Message {
    * @returns {void}
    */
   close() {
-    this.connector.close()
-    var index = gObj.fjage.gateways.indexOf(this);
-    gObj.fjage.gateways.splice(index,1);
+    this.connector.close();
+    this._removeGWCache(this);
   }
 
 }
@@ -790,8 +787,8 @@ export const Services = {
  */
 export function MessageClass(name, parent=Message) {
   let sname = name.replace(/^.*\./, '');
-  // let pname = parent.__clazz__.replace(/^.*\./, '');
-  gObj[sname] = class extends parent {
+  if (MessageClass[sname]) return MessageClass[sname];
+  let cls = class extends parent {
     constructor(params) {
       super();
       this.__clazz__ = name;
@@ -803,8 +800,9 @@ export function MessageClass(name, parent=Message) {
       }
     }
   };
-  gObj[sname].__clazz__ = name;
-  return gObj[sname];
+  cls.__clazz__ = name;
+  MessageClass[sname] = cls;
+  return cls;
 }
 
 ////// private utilities
@@ -812,14 +810,14 @@ export function MessageClass(name, parent=Message) {
 // generate random ID with length 4*len characters
 /** @private */
 function _guid(len) {
-    function s4() {
-      return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-    }
-    let s = s4();
-    for (var i = 0; i < len-1; i++)
-      s += s4();
-    return s;
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
   }
+  let s = s4();
+  for (var i = 0; i < len-1; i++)
+    s += s4();
+  return s;
+}
   
 // convert from base 64 to array
 /** @private */
@@ -880,25 +878,35 @@ function _decodeBase64(k, d) {
 
 ////// global
 
-
-var gObj = {};
-if (isBrowser){
-  gObj = window
+const GATEWAY_DEFAULTS = {};
+let gObj = {};
+let DEFAULT_URL;
+if (isBrowser || isWebWorker){
+  gObj = window;
+  Object.assign(GATEWAY_DEFAULTS, {
+    'hostname': gObj.location.hostname,
+    'port': gObj.location.port,
+    'pathname' : '/ws/',
+    'timeout': 1000,
+    'keepAlive' : true,
+    'queueSize': DEFAULT_QUEUE_SIZE
+  });
+  DEFAULT_URL = new URL('ws://localhost');
+  // Enable caching of Gateways
+  if (typeof gObj.fjage === 'undefined') gObj.fjage = {};
+  if (typeof gObj.fjage.gateways == 'undefined')gObj.fjage.gateways = [];
 } else if (isJsDom || isNode){
-  gObj = global
-  gObj.atob = a => Buffer.from(a, 'base64').toString('binary')
+  gObj = global;
+  Object.assign(GATEWAY_DEFAULTS, {
+    'hostname': 'localhost',
+    'port': '1100',
+    'pathname': '',
+    'timeout': 1000,
+    'keepAlive' : true,
+    'queueSize': DEFAULT_QUEUE_SIZE
+  });
+  DEFAULT_URL = new URL('tcp://localhost');
+  gObj.atob = a => Buffer.from(a, 'base64').toString('binary');
 }
 
-if (typeof gObj.fjage === 'undefined') gObj.fjage = {};
-if (typeof gObj.fjage.gateways == 'undefined'){
-  gObj.fjage.gateways = [];
-  gObj.fjage.getGateway = function (url){
-    var f = gObj.fjage.gateways.filter(g => g.connector.url.toString() == url.toString());
-    if (f.length ) return f[0];
-  };
-  gObj.fjage.MessageClass = MessageClass;
-  Message.__clazz__ = 'org.arl.fjage.Message';
-  gObj['Message'] = Message;
-}
-  
 const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
