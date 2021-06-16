@@ -26,5 +26,5 @@ Useful Links
 ------------
 
 * `fjåge GitHub home <http://github.com/org-arl/fjage>`_
-* `fjåge API documentation <http://org-arl.github.com/fjage/javadoc/>`_
+* `fjåge API documentation <http://org-arl.github.io/fjage/javadoc/>`_
 * `fjåge issue tracking <http://github.com/org-arl/fjage/issues>`_

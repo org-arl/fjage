@@ -8,7 +8,7 @@ fjåge provides a **lightweight** and **easy-to-learn** platform for `agent-orie
 Why fjåge?
 ----------
 
-Several frameworks exist for agent-oriented software development. For Java programmers, `JADE <http://jade.tilab.com/>`_ provides a `FIPA <http://www.fipa.org/>`_-compliant framework for multi-agent systems. The `API <http://org-arl.github.com/fjage/javadoc/>`_ for fjåge is largely based on the API available in JADE, and so any developer familiar with JADE should have very little difficulty learning to develop using fjåge. However, there are some significant differences between the philosophy between the two projects. The key advantages of fjåge are:
+Several frameworks exist for agent-oriented software development. For Java programmers, `JADE <http://jade.tilab.com/>`_ provides a `FIPA <http://www.fipa.org/>`_-compliant framework for multi-agent systems. The `API <http://org-arl.github.io/fjage/javadoc/>`_ for fjåge is largely based on the API available in JADE, and so any developer familiar with JADE should have very little difficulty learning to develop using fjåge. However, there are some significant differences between the philosophy between the two projects. The key advantages of fjåge are:
 
 * fjåge is designed to be very **lightweight and fast**, and is suitable for Java-capable embedded systems.
 * The API for fjåge is kept very simple with a view to making it **easy to learn**, and having very little scaffolding code. This enables a **quick agent development cycle**.

@@ -274,7 +274,7 @@ Now, we can test the indexed parameters:
 .. Javadoc links
 .. -------------
 ..
-.. _ParameterMessageBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/param/ParameterMessageBehavior.html
-.. _Parameter: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/param/Parameter.html
-.. _ParameterReq: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/param/ParameterReq.html
-.. _ParameterRsp: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/param/ParameterRsp.html
+.. _ParameterMessageBehavior: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/param/ParameterMessageBehavior.html
+.. _Parameter: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/param/Parameter.html
+.. _ParameterReq: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/param/ParameterReq.html
+.. _ParameterRsp: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/param/ParameterRsp.html
