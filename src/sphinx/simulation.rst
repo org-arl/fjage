@@ -47,4 +47,4 @@ Now running `fjage.sh` should run the agents in the discrete event simulation mo
 .. Javadoc links
 .. -------------
 ..
-.. _RandomNumberGenerator: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/RandomNumberGenerator.html
+.. _RandomNumberGenerator: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/RandomNumberGenerator.html

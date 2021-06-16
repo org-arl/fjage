@@ -220,14 +220,14 @@ An example two-shot behavior is shown below::
 .. Javadoc links
 .. -------------
 ..
-.. _Agent: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/Agent.html
-.. _Behavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/Behavior.html
-.. _OneShotBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/OneShotBehavior.html
-.. _CyclicBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/CyclicBehavior.html
-.. _WakerBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/WakerBehavior.html
-.. _TickerBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/TickerBehavior.html
-.. _BackoffBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/BackoffBehavior.html
-.. _PoissonBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/PoissonBehavior.html
-.. _MessageBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/MessageBehavior.html
-.. _FSMBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/FSMBehavior.html
-.. _TestBehavior: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/TestBehavior.html
+.. _Agent: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/Agent.html
+.. _Behavior: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/Behavior.html
+.. _OneShotBehavior: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/OneShotBehavior.html
+.. _CyclicBehavior: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/CyclicBehavior.html
+.. _WakerBehavior: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/WakerBehavior.html
+.. _TickerBehavior: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/TickerBehavior.html
+.. _BackoffBehavior: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/BackoffBehavior.html
+.. _PoissonBehavior: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/PoissonBehavior.html
+.. _MessageBehavior: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/MessageBehavior.html
+.. _FSMBehavior: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/FSMBehavior.html
+.. _TestBehavior: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/TestBehavior.html

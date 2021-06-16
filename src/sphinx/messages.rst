@@ -198,6 +198,6 @@ Then switch to using the fast cloner::
 .. Javadoc links
 .. -------------
 ..
-.. _Message: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/Message.html
-.. _Performative: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/Performative.html
-.. _GenericMessage: http://org-arl.github.com/fjage/javadoc/index.html?org/arl/fjage/GenericMessage.html
+.. _Message: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/Message.html
+.. _Performative: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/Performative.html
+.. _GenericMessage: http://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/GenericMessage.html
