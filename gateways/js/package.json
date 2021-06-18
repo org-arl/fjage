@@ -1,6 +1,6 @@
 {
   "name": "fjage",
-  "version": "1.9.1-rc3",
+  "version": "1.9.1-rc4",
   "description": "JS Gateway for fjåge",
   "exports": "./dist/cjs/fjage.cjs",
   "module": "dist/esm/fjage.js",
