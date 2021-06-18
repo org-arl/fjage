@@ -29,9 +29,9 @@ export const Performative = {
 /**
  * An identifier for an agent or a topic.
  * @class
- * @param {string} name - name of the agent.
- * @param {boolean} topic - name of topic.
- * @param {Gateway} owner - Gateway owner for this AgentID.
+ * @param {string} name - name of the agent
+ * @param {boolean} topic - name of topic
+ * @param {Gateway} owner - Gateway owner for this AgentID
  */
 export class AgentID {
 
@@ -45,7 +45,7 @@ export class AgentID {
   /**
    * Gets the name of the agent or topic.
    *
-   * @return {string} name of agent or topic.
+   * @returns {string} - name of agent or topic
    */
   getName() {
     return this.name;
@@ -54,8 +54,7 @@ export class AgentID {
   /**
    * Returns true if the agent id represents a topic.
    *
-   * @return {boolean} true if the agent id represents a topic,
-   *         false if it represents an agent.
+   * @returns {boolean} - true if the agent id represents a topic, false if it represents an agent
    */
   isTopic() {
     return this.topic;
@@ -64,7 +63,7 @@ export class AgentID {
   /**
    * Sends a message to the agent represented by this id.
    *
-   * @param {string} msg - message to send.
+   * @param {string} msg - message to send
    * @returns {void}
    */
   send(msg) {
@@ -73,14 +72,13 @@ export class AgentID {
   }
 
   /**
-   * Sends a request to the agent represented by this id and waits for
-   * a return message for 1 second.
+   * Sends a request to the agent represented by this id and waits for a reponse.
    *
-   * @param {Message} msg - request to send.
-   * @param {number} [timeout=1000] - timeout in milliseconds.
-   * @return {Message} response.
+   * @param {Message} msg - request to send
+   * @param {number} [timeout=1000] - timeout in milliseconds
+   * @returns {Promise<Message>} - response
    */
-  request(msg, timeout=1000) {
+  async request(msg, timeout=1000) {
     msg.recipient = this.toJSON();
     return this.owner.request(msg, timeout);
   }
@@ -88,7 +86,7 @@ export class AgentID {
   /**
    * Gets a string representation of the agent id.
    *
-   * @return {string} string representation of the agent id.
+   * @returns {string} - string representation of the agent id
    */
   toString() {
     return this.toJSON() + ((this.owner && this.owner.connector) ? ` on ${this.owner.connector.url}` : '');
@@ -97,7 +95,7 @@ export class AgentID {
   /**
    * Gets a JSON string representation of the agent id.
    *
-   * @return {string} JSON string representation of the agent id.
+   * @returns {string} - JSON string representation of the agent id
    */
   toJSON() {
     return (this.topic ? '#' : '') + this.name;
@@ -106,11 +104,11 @@ export class AgentID {
   /**
    * Sets parameter(s) on the Agent referred to by this AgentID.
    *
-   * @param {(string|string[])} params - parameters name(s) to be set.
-   * @param {(Object|Object[])} values - parameters value(s) to be set.
-   * @param {number} [index=-1] - index of parameter(s) to be set.
-   * @param {number} [timeout=5000] - timeout for the response.
-   * @return {Promise<(Object|Object[])>} - A promise which returns the new value(s) of the parameters
+   * @param {(string|string[])} params - parameters name(s) to be set
+   * @param {(Object|Object[])} values - parameters value(s) to be set
+   * @param {number} [index=-1] - index of parameter(s) to be set
+   * @param {number} [timeout=5000] - timeout for the response
+   * @returns {Promise<(Object|Object[])>} - a promise which returns the new value(s) of the parameters
    */
   async set (params, values, index=-1, timeout=5000) {
     if (!params) return null;
@@ -148,10 +146,10 @@ export class AgentID {
   /**
    * Gets parameter(s) on the Agent referred to by this AgentID.
    *
-   * @param {(?string|?string[])} params - parameters name(s) to be get. null implies get value of all parameters on the Agent.
-   * @param {number} [index=-1] - index of parameter(s) to be get.
-   * @param {number} [timeout=5000] - timeout for the response.
-   * @return {Promise<(?Object|?Object[])>} - A promise which returns the value(s) of the parameters
+   * @param {(?string|?string[])} params - parameters name(s) to be get, null implies get value of all parameters on the Agent
+   * @param {number} [index=-1] - index of parameter(s) to be get
+   * @param {number} [timeout=5000] - timeout for the response
+   * @returns {Promise<(?Object|?Object[])>} - a promise which returns the value(s) of the parameters
    */
   async get(params, index=-1, timeout=5000) {
     let msg = new ParameterReq();
@@ -186,8 +184,8 @@ export class AgentID {
 /**
  * Base class for messages transmitted by one agent to another. Creates an empty message.
  * @class
- * @param {Message} inReplyTo - message to which this response corresponds to.
- * @param {Performative} perf  - performative
+ * @param {Message} inReplyTo - message to which this response corresponds to
+ * @param {Performative} - performative
  */
 export class Message {
 
@@ -203,7 +201,7 @@ export class Message {
   /**
    * Gets a string representation of the message.
    *
-   * @return {string} string representation.
+   * @returns {string} - string representation
    */
   toString() {
     let s = '';
@@ -532,7 +530,7 @@ export class Gateway {
   /**
    * Add an event listener to listen to various events happening on this Gateway
    *
-   * @param {string} type - type of event to be listened to.
+   * @param {string} type - type of event to be listened to
    * @param {function} listener - new callback/function to be called when the event happens
    * @returns {void}
    */
@@ -559,7 +557,7 @@ export class Gateway {
   /**
    * Add a new listener to listen to all {Message}s sent to this Gateway
    *
-   * @param {function} listener - new callback/function to be called when a {Message} is received.
+   * @param {function} listener - new callback/function to be called when a {Message} is received
    * @returns {void}
    */
   addMessageListener(listener) {
@@ -569,7 +567,7 @@ export class Gateway {
   /**
    * Remove a message listener.
    *
-   * @param {function} listener - removes a previously registered listener/callback.
+   * @param {function} listener - removes a previously registered listener/callback
    * @returns {void}
    */
   removeMessageListener(listener) {
@@ -579,7 +577,7 @@ export class Gateway {
   /**
    * Add a new listener to get notified when the connection to master is created and terminated.
    *
-   * @param {function} listener - new callback/function to be called connection to master is created and terminated.
+   * @param {function} listener - new callback/function to be called connection to master is created and terminated
    * @returns {void}
    */
   addConnListener(listener) {
@@ -589,7 +587,7 @@ export class Gateway {
   /**
    * Remove a connection listener.
    *
-   * @param {function} listener - removes a previously registered listener/callback.
+   * @param {function} listener - removes a previously registered listener/callback
    * @returns {void}
    */
   removeConnListener(listener) {
@@ -599,7 +597,7 @@ export class Gateway {
   /**
    * Gets the agent ID associated with the gateway.
    *
-   * @return {string} agent ID
+   * @returns {string} - agent ID
    */
   getAgentID() {
     return this.aid;
@@ -609,7 +607,7 @@ export class Gateway {
    * Get an AgentID for a given agent name.
    *
    * @param {string} name - name of agent
-   * @return {AgentID} AgentID for the given name.
+   * @returns {AgentID} - AgentID for the given name
    */
   agent(name) {
     return new AgentID(name, false, this);
@@ -618,9 +616,9 @@ export class Gateway {
   /**
    * Returns an object representing the named topic.
    *
-   * @param {string|AgentID} topic - name of the topic or AgentID.
-   * @param {string} topic2 - name of the topic if the topic param is an AgentID.
-   * @returns {AgentID} object representing the topic.
+   * @param {string|AgentID} topic - name of the topic or AgentID
+   * @param {string} topic2 - name of the topic if the topic param is an AgentID
+   * @returns {AgentID} - object representing the topic
    */
   topic(topic, topic2) {
     if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic, true, this);
@@ -633,8 +631,8 @@ export class Gateway {
   /**
    * Subscribes the gateway to receive all messages sent to the given topic.
    *
-   * @param {AgentID} topic - the topic to subscribe to.
-   * @return {boolean} true if the subscription is successful, false otherwise.
+   * @param {AgentID} topic - the topic to subscribe to
+   * @returns {boolean} - true if the subscription is successful, false otherwise
    */
   subscribe(topic) {
     if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
@@ -645,7 +643,7 @@ export class Gateway {
   /**
    * Unsubscribes the gateway from a given topic.
    *
-   * @param {AgentID} topic - the topic to unsubscribe.
+   * @param {AgentID} topic - the topic to unsubscribe
    * @returns {void}
    */
   unsubscribe(topic) {
@@ -658,8 +656,8 @@ export class Gateway {
    * Finds an agent that provides a named service. If multiple agents are registered
    * to provide a given service, any of the agents' id may be returned.
    *
-   * @param {string} service - service the named service of interest.
-   * @return {Promise<?AgentID>} - A promise which returns an agent id for an agent that provides the service when resolved.
+   * @param {string} service - the named service of interest
+   * @returns {Promise<?AgentID>} - a promise which returns an agent id for an agent that provides the service when resolved
    */
   async agentForService(service) {
     let rq = { action: 'agentForService', service: service };
@@ -671,8 +669,8 @@ export class Gateway {
   /**
    * Finds all agents that provides a named service.
    *
-   * @param {string} service - service the named service of interest.
-   * @return {Promise<Array<?AgentID>>} - A promise which returns an array of all agent ids that provides the service when resolved.
+   * @param {string} service - the named service of interest
+   * @returns {Promise<?AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
    */
   async agentsForService(service) {
     let rq = { action: 'agentsForService', service: service };
@@ -688,8 +686,8 @@ export class Gateway {
    * Sends a message to the recipient indicated in the message. The recipient
    * may be an agent or a topic.
    *
-   * @param {Message} msg - message to be sent.
-   * @returns {boolean} status - if sending was successful.
+   * @param {Message} msg - message to be sent
+   * @returns {boolean} - if sending was successful
    */
   send(msg) {
     msg.sender = this.aid.toJSON();
@@ -713,11 +711,12 @@ export class Gateway {
   }
 
   /**
-   * Sends a request and waits for a response. This method returns a {Promise} which resolves when a response is received or if no response is received after the timeout.
+   * Sends a request and waits for a response. This method returns a {Promise} which resolves when a response 
+   * is received or if no response is received after the timeout.
    *
-   * @param {string} msg - message to send.
-   * @param {number} [timeout=1000] - timeout in milliseconds.
-   * @return {Promise<?Message>} a promise which resolves with the received response message, null on timeout.
+   * @param {string} msg - message to send
+   * @param {number} [timeout=1000] - timeout in milliseconds
+   * @returns {Promise<?Message>} - a promise which resolves with the received response message, null on timeout
    */
   async request(msg, timeout=1000) {
     this.send(msg);
@@ -725,11 +724,13 @@ export class Gateway {
   }
 
   /**
-   * Returns a response message received by the gateway. This method returns a {Promise} which resolves when a response is received or if no response is received after the timeout.
+   * Returns a response message received by the gateway. This method returns a {Promise} which resolves when 
+   * a response is received or if no response is received after the timeout.
    *
-   * @param {function} [filter=] - original message to which a response is expected, or a MessageClass of the type of message to match, or a closure to use to match against the message.
-   * @param {number} [timeout=0] - timeout in milliseconds.
-   * @return {Promise<?Message>} received response message, null on timeout.
+   * @param {function} [filter=] - original message to which a response is expected, or a MessageClass of the type 
+   * of message to match, or a closure to use to match against the message
+   * @param {number} [timeout=0] - timeout in milliseconds
+   * @returns {Promise<?Message>} - received response message, null on timeout
    */
   async receive(filter, timeout=0) {
     return new Promise(resolve => {
@@ -783,9 +784,9 @@ export const Services = {
 
 /**
  * Creates a unqualified message class based on a fully qualified name.
- * @param {string} name - fully qualified name of the message class to be created.
- * @param {class} [parent=Message] - class of the parent MessageClass to inherit from.
- * @returns {function} constructor for the unqualified message class.
+ * @param {string} name - fully qualified name of the message class to be created
+ * @param {class} [parent=Message] - class of the parent MessageClass to inherit from
+ * @returns {function} - constructor for the unqualified message class
  * @example 
  * const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
  * let pReq = new ParameterReq()
