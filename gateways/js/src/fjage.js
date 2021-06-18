@@ -9,6 +9,7 @@ const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages 
 /**
  * An action represented by a message. The performative actions are a subset of the
  * FIPA ACL recommendations for interagent communication.
+ * @typedef {Object} Performative
  */
 export const Performative = {
   REQUEST: 'REQUEST',               // Request an action to be performed
@@ -27,15 +28,14 @@ export const Performative = {
 
 /**
  * An identifier for an agent or a topic.
+ * @class
+ * @param {string} name - name of the agent.
+ * @param {boolean} topic - name of topic.
+ * @param {Gateway} owner - Gateway owner for this AgentID.
  */
 export class AgentID {
 
-  /**
-    * Create an AgentID
-    * @param {string} name - name of the agent.
-    * @param {boolean} topic - name of topic.
-    * @param {Gateway} owner - Gateway owner for this AgentID.
-    */
+
   constructor(name, topic, owner) {
     this.name = name;
     this.topic = topic;
@@ -148,10 +148,10 @@ export class AgentID {
   /**
    * Gets parameter(s) on the Agent referred to by this AgentID.
    *
-   * @param {(null|string|string[])} params - parameters name(s) to be get. null implies get value of all parameters on the Agent.
+   * @param {(?string|?string[])} params - parameters name(s) to be get. null implies get value of all parameters on the Agent.
    * @param {number} [index=-1] - index of parameter(s) to be get.
    * @param {number} [timeout=5000] - timeout for the response.
-   * @return {Promise<(Object|Object[])>} - A promise which returns the value(s) of the parameters
+   * @return {Promise<(?Object|?Object[])>} - A promise which returns the value(s) of the parameters
    */
   async get(params, index=-1, timeout=5000) {
     let msg = new ParameterReq();
@@ -185,6 +185,7 @@ export class AgentID {
 
 /**
  * Base class for messages transmitted by one agent to another. Creates an empty message.
+ * @class
  * @param {Message} inReplyTo - message to which this response corresponds to.
  * @param {Performative} perf  - performative
  */
@@ -269,6 +270,7 @@ export class Message {
 
 /**
  * A message class that can convey generic messages represented by key-value pairs.
+ * @class
  * @extends Message
  */
 export class GenericMessage extends Message {
@@ -282,22 +284,22 @@ export class GenericMessage extends Message {
 }
 
 /**
- * Creates a gateway connecting to a specified master container over Websockets.
- *
+ * A gateway for connecting to a fjage master container. The new version of the constructor
+ * uses an options object instead of individual parameters. The old version with 
+ * 
+ * 
+ * @class
  * @param {Object} opts
- * @param {String} opts.hostname - hostname/ip address of the master container to connect to
- * @param {Number} opts.port - port number of the master container to connect to
- * @param {String} opts.pathname - path of the master container to connect to
- * @param {String} opts.keepAlive - try to reconnect if the connection is lost
- * @param {int} opts.queueSize     - size of the queue of received messages that haven't been consumed yet
- * @param {int} opts.timeout     - timeout for fjage level messages
- *//**
- * The old, deprecated way to construct a Gateway
- * @deprecated Since version 1.9.1
- * @param {string} hostname - hostname of the master container to connect to
- * @param {int} port        - port of the master container to connect to
- * @param {string} pathname - path of the master container to connect to
- * @param {int} timeout     - timeout for fjage level messages
+ * @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
+ * @param {number} [opts.port=1100]          - port number of the master container to connect to
+ * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
+ * @param {string} [opts.keepAlive=true]     - try to reconnect if the connection is lost
+ * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
+ * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
+ * @param {string} [hostname="localhost"]    - <strike>Deprecated : hostname/ip address of the master container to connect to</strike>
+ * @param {number} [port=]                   - <strike>Deprecated : port number of the master container to connect to</strike>
+ * @param {string} [pathname=="/ws/"]        - <strike>Deprecated : path of the master container to connect to (for WebSockets)</strike>
+ * @param {number} [timeout=1000]            - <strike>Deprecated : timeout for fjage level messages in ms</strike>
  */
 export class Gateway {
 
@@ -657,7 +659,7 @@ export class Gateway {
    * to provide a given service, any of the agents' id may be returned.
    *
    * @param {string} service - service the named service of interest.
-   * @return {Promise} - A promise which returns an agent id for an agent that provides the service when resolved.
+   * @return {Promise<?AgentID>} - A promise which returns an agent id for an agent that provides the service when resolved.
    */
   async agentForService(service) {
     let rq = { action: 'agentForService', service: service };
@@ -670,7 +672,7 @@ export class Gateway {
    * Finds all agents that provides a named service.
    *
    * @param {string} service - service the named service of interest.
-   * @return {Promise} - A promise which returns an array of all agent ids that provides the service when resolved.
+   * @return {Promise<?AgentID>} - A promise which returns an array of all agent ids that provides the service when resolved.
    */
   async agentsForService(service) {
     let rq = { action: 'agentsForService', service: service };
@@ -715,7 +717,7 @@ export class Gateway {
    *
    * @param {string} msg - message to send.
    * @param {number} [timeout=1000] - timeout in milliseconds.
-   * @return {Promise<Message|null>} a promise which resolves with the received response message, null on timeout.
+   * @return {Promise<?Message>} a promise which resolves with the received response message, null on timeout.
    */
   async request(msg, timeout=1000) {
     this.send(msg);
@@ -725,11 +727,11 @@ export class Gateway {
   /**
    * Returns a response message received by the gateway. This method returns a {Promise} which resolves when a response is received or if no response is received after the timeout.
    *
-   * @param {function} [filter=undefined] - original message to which a response is expected, or a MessageClass of the type of message to match, or a closure to use to match against the message.
+   * @param {function} [filter=] - original message to which a response is expected, or a MessageClass of the type of message to match, or a closure to use to match against the message.
    * @param {number} [timeout=0] - timeout in milliseconds.
-   * @return {Promise<Message|null>} received response message, null on timeout.
+   * @return {Promise<?Message>} received response message, null on timeout.
    */
-  async receive(filter=undefined, timeout=0) {
+  async receive(filter, timeout=0) {
     return new Promise(resolve => {
       let msg = this._getMessageFromQueue.call(this,filter);
       if (msg) {
@@ -782,8 +784,11 @@ export const Services = {
 /**
  * Creates a unqualified message class based on a fully qualified name.
  * @param {string} name - fully qualified name of the message class to be created.
- * @param {function} [parent] - class of the parent MessageClass to inherit from.
+ * @param {class} [parent=Message] - class of the parent MessageClass to inherit from.
  * @returns {function} constructor for the unqualified message class.
+ * @example 
+ * const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
+ * let pReq = new ParameterReq()
  */
 export function MessageClass(name, parent=Message) {
   let sname = name.replace(/^.*\./, '');

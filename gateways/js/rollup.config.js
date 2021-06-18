@@ -22,6 +22,7 @@ export default [
       esModule: false,
       exports: 'named',
       sourcemap: true,
+      banner : `/* fjage.js v${pkg.version}${commit?'/'+commit:''} ${new Date().toISOString()} */\n`
     },{
       file: `dist/${pkg.name}.min.js`,
       format: 'umd',
@@ -29,6 +30,7 @@ export default [
       esModule: false,
       exports: 'named',
       sourcemap: true,
+      banner : `/* fjage.js v${pkg.version}${commit?'/'+commit:''} ${new Date().toISOString()} */\n`,
       plugins: [terser()]
     }],
   },

@@ -10,10 +10,10 @@ var createConnection;
 export default class TCPconnector {
 
   /**
-    * Create an TCPconnector
+    * Create an TCPConnector to connect to a fjage master over TCP
     * @param {Object} opts
-    * @param {String} opts.hostname - ip address/hostname of the master container to connect to
-    * @param {Number} opts.port - port number of the master container to connect to
+    * @param {String} [opts.hostname='localhost'] - ip address/hostname of the master container to connect to
+    * @param {number} opts.port - port number of the master container to connect to
     */
   constructor(opts = {}) {
     this.url = new URL('tcp://localhost');
@@ -104,7 +104,8 @@ export default class TCPconnector {
 
   /**
    * Write a string to the connector
-   * @param {String} s - string to be written out of the connector to the master
+   * @param {string} s - string to be written out of the connector to the master
+   * @return {boolean} - true if connect was able to write or queue the string to the underlying socket
    */
   write(s){
     if (!this.sock || this.sock.readyState == SOCKET_OPENING){
@@ -144,6 +145,7 @@ export default class TCPconnector {
   /**
    * Remove listener for connection events
    * @param {function} listener - remove the listener for connection
+   * @return {boolean} - true if the listner was removed successfully
    */
   removeConnectionListener(listener) {
     let ndx = this.connListeners.indexOf(listener);

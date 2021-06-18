@@ -7,13 +7,13 @@ const DEFAULT_RECONNECT_TIME = 5000;       // ms, delay between retries to conne
 export default class WSConnector {
 
   /**
-   * Create an WSConnector
+   * Create an WSConnector to connect to a fjage master over WebSockets
    * @param {Object} opts
-   * @param {String} opts.hostname - hostname/ip address of the master container to connect to
-   * @param {Number} opts.port - port number of the master container to connect to
-   * @param {String} opts.pathname - path of the master container to connect to
+   * @param {string} opts.hostname - hostname/ip address of the master container to connect to
+   * @param {number} opts.port - port number of the master container to connect to
+   * @param {string} opts.pathname - path of the master container to connect to
    * @param {boolean} opts.keepAlive - try to reconnect if the connection is lost
-   * @param {Number} opts.reconnectTime - time before reconnection is attempted after an error
+   * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
    */
   constructor(opts = {}) {
     this.url = new URL('ws://localhost');
@@ -78,7 +78,7 @@ export default class WSConnector {
 
   /**
    * Write a string to the connector
-   * @param {String} s - string to be written out of the connector to the master
+   * @param {string} s - string to be written out of the connector to the master
    */
   write(s){
     if (!this.sock || this.sock.readyState == this.sock.CONNECTING){
@@ -119,6 +119,7 @@ export default class WSConnector {
   /**
    * Remove listener for connection events
    * @param {function} listener - remove the listener for connection
+   * @return {boolean} - true if the listner was removed successfully
    */
   removeConnectionListener(listener) {
     let ndx = this.connListeners.indexOf(listener);
