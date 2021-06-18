@@ -672,7 +672,7 @@ export class Gateway {
    * Finds all agents that provides a named service.
    *
    * @param {string} service - service the named service of interest.
-   * @return {Promise<?AgentID>} - A promise which returns an array of all agent ids that provides the service when resolved.
+   * @return {Promise<Array<?AgentID>>} - A promise which returns an array of all agent ids that provides the service when resolved.
    */
   async agentsForService(service) {
     let rq = { action: 'agentsForService', service: service };
