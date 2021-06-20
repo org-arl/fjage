@@ -26,13 +26,16 @@ import com.google.gson.reflect.TypeToken;
 class ArrayAdapterFactory implements TypeAdapterFactory {
 
   private boolean bare;
+  private int threshold;
 
   public ArrayAdapterFactory() {
     bare = false;
+    threshold = 16;
   }
 
-  public ArrayAdapterFactory(boolean bare) {
+  public ArrayAdapterFactory(boolean bare, int threshold) {
     this.bare = bare;
+    this.threshold = threshold;
   }
 
   @SuppressWarnings("unchecked")
@@ -51,6 +54,7 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
       @Override
       public void write(JsonWriter out, T value) throws IOException {
         if (value == null) out.nullValue();
+        else if (len(value) < threshold) outval(out, value);
         else {
           byte[] data;
           if (compType.equals(byte.class)) data = (byte[])value;
@@ -140,6 +144,67 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
           return (T)array;
         }
         return null;
+      }
+
+      private int len(T value) {
+        if (compType.equals(byte.class)) return ((byte[])value).length;
+        else if (compType.equals(int.class)) return ((int[])value).length;
+        else if (compType.equals(short.class)) return ((short[])value).length;
+        else if (compType.equals(long.class)) return ((long[])value).length;
+        else if (compType.equals(float.class)) return ((float[])value).length;
+        else if (compType.equals(double.class)) return ((double[])value).length;
+        return 0;
+      }
+
+      private void outval(JsonWriter out, T value) throws IOException {
+        if (compType.equals(byte.class)) writeArray(out, (byte[])value);
+        else if (compType.equals(int.class)) writeArray(out, (int[])value);
+        else if (compType.equals(short.class)) writeArray(out, (short[])value);
+        else if (compType.equals(long.class)) writeArray(out, (long[])value);
+        else if (compType.equals(float.class)) writeArray(out, (float[])value);
+        else if (compType.equals(double.class)) writeArray(out, (double[])value);
+      }
+
+      private void writeArray(JsonWriter out, byte[] arr) throws IOException {
+        out.beginArray();
+        for (int i = 0; i < arr.length; i++)
+          out.value(arr[i]);
+        out.endArray();
+      }
+
+      private void writeArray(JsonWriter out, int[] arr) throws IOException {
+        out.beginArray();
+        for (int i = 0; i < arr.length; i++)
+          out.value(arr[i]);
+        out.endArray();
+      }
+
+      private void writeArray(JsonWriter out, short[] arr) throws IOException {
+        out.beginArray();
+        for (int i = 0; i < arr.length; i++)
+          out.value(arr[i]);
+        out.endArray();
+      }
+
+      private void writeArray(JsonWriter out, long[] arr) throws IOException {
+        out.beginArray();
+        for (int i = 0; i < arr.length; i++)
+          out.value(arr[i]);
+        out.endArray();
+      }
+
+      private void writeArray(JsonWriter out, float[] arr) throws IOException {
+        out.beginArray();
+        for (int i = 0; i < arr.length; i++)
+          out.value(arr[i]);
+        out.endArray();
+      }
+
+      private void writeArray(JsonWriter out, double[] arr) throws IOException {
+        out.beginArray();
+        for (int i = 0; i < arr.length; i++)
+          out.value(arr[i]);
+        out.endArray();
       }
 
     };
