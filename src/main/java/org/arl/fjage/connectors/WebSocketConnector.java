@@ -14,6 +14,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 import org.eclipse.jetty.websocket.api.*;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
@@ -227,7 +230,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
 
     @OnWebSocketError
     public void onError(Throwable t) {
-      log.warning(t.getMessage());
+      log.warning(t.toString());
     }
 
     @OnWebSocketMessage
@@ -250,12 +253,20 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
       try {
         if (session != null && session.isOpen()) {
           long start = System.currentTimeMillis();
-          session.getRemote().sendString(s);
+          Future<Void> f = session.getRemote().sendStringByFuture(s);
+          try {
+            f.get(500, TimeUnit.MILLISECONDS);
+          } catch (TimeoutException e){
+            log.warning("Sending timed out. Closing connection to " + session.getRemoteAddress());
+            session.disconnect();
+          } catch (Exception e){
+            log.warning(e.toString());
+          }
           long t = System.currentTimeMillis()-start;
           log.finest("Sent " + s.length() + " bytes to "+session.getRemote().getInetSocketAddress() + " (" + t +" ms)");
         }
       } catch (Exception e) {
-        log.warning(e.getMessage());
+        log.warning(e.toString());
       }
     }
 
