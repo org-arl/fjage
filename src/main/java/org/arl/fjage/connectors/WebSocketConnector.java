@@ -171,10 +171,10 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
           if (buf == null) break;
           s = new String(buf);
         }
-        int i = 0;
+        int i = 1;
         int l = wsHandlers.size();
         for (WSHandler t: wsHandlers) {
-          log.finest("Writing to "+i+ " of "+l+" open sessions");
+          log.finest("Writing to "+ (i++) + " of "+l+" open sessions");
           t.write(s);
         }
         try {
