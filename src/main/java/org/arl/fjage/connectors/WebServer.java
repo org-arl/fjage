@@ -21,7 +21,6 @@ import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
-import org.eclipse.jetty.rewrite.handler.RewriteRegexRule;
 import org.eclipse.jetty.rewrite.handler.Rule;
 import org.eclipse.jetty.util.resource.PathResource;
 import java.nio.file.Path;
@@ -322,12 +321,6 @@ public class WebServer {
     log.info("Adding rewrite rule: "+rule);
     try {
       rewrite.addRule(rule);
-      // ResourceHandler resHandler = new ResourceHandler();
-      // resHandler.setResourceBase(dir.getAbsolutePath());
-      // resHandler.setWelcomeFiles(new String[]{ "index.html" });
-      // resHandler.setDirectoriesListed(false);
-      // rewrite.setHandler(resHandler);
-      log.info("Added rule.");
     } catch (Exception ex) {
       log.warning("Unable to add rule "+rule+": "+ex.toString());
     }
