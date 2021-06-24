@@ -10,16 +10,25 @@ for full license details.
 
 package org.arl.fjage.connectors;
 
-import java.util.*;
-import java.io.*;
-import java.net.InetSocketAddress;
-import javax.servlet.http.*;
-import javax.servlet.ServletException;
-import org.eclipse.jetty.util.log.*;
-import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.rewrite.handler.RewriteHandler;
+import org.eclipse.jetty.rewrite.handler.Rule;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.*;
-import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.util.log.Log;
+import org.eclipse.jetty.util.log.Logger;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Web server instance manager.
@@ -124,6 +133,7 @@ public class WebServer {
   //////// instance attributes and methods
 
   protected Server server;
+  protected RewriteHandler rewrite;
   protected ContextHandlerCollection contexts;
   protected Map<String,ContextHandler> staticContexts = new HashMap<String,ContextHandler>();
   protected boolean started;
@@ -139,11 +149,26 @@ public class WebServer {
     server.setStopAtShutdown(true);
     if (port > 0) servers.put(port, this);
     contexts = new ContextHandlerCollection();
+    rewrite = new RewriteHandler();
+    rewrite.setRewriteRequestURI(true);
+    rewrite.setRewritePathInfo(true);
+
+    // Just for logging requests to the / context
+    ContextHandler c = new ContextHandler("/");
+    c.setHandler(new AbstractHandler() {
+      @Override
+      public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        log.info("[Context /]: received request " + target + " :: " + request.getMethod() + " :: " + request.getRequestURI()  + " :: " + request.getContextPath() + " :: " + request.getPathInfo());
+      }
+    });
+    contexts.addHandler(c);
+
     HandlerCollection handlerCollection = new HandlerCollection();
     GzipHandler gzipHandler = new GzipHandler();
     gzipHandler.setIncludedMimeTypes("text/html", "text/plain", "text/xml", "text/css", "application/javascript", "text/javascript");
     handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });
-    gzipHandler.setHandler(handlerCollection);
+    gzipHandler.setHandler(rewrite);
+    rewrite.setHandler(handlerCollection);
     server.setHandler(gzipHandler);
     started = false;
   }
@@ -278,6 +303,15 @@ public class WebServer {
    */
   public void add(String context, File dir) {
     add(context, dir, "public, max-age=31536000");
+  }
+
+  /**
+   * Adds a rewrite Rule to the Web Server
+   *
+   * @param r rewrite Rule to be added
+   */
+  public void addRule(Rule r){
+    rewrite.addRule(r);
   }
 
   /**

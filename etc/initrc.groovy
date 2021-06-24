@@ -2,6 +2,7 @@ import org.arl.fjage.*
 import org.arl.fjage.remote.*
 import org.arl.fjage.shell.*
 import org.arl.fjage.connectors.*
+import org.eclipse.jetty.rewrite.handler.RewriteRegexRule
 
 boolean web = System.properties.getProperty('fjage.web') == 'true'
 int port = 5081
@@ -25,6 +26,10 @@ container = new MasterContainer(platform, port)
 if (devname != null)  container.addConnector(new SerialPortConnector(devname, baud, 'N81'))
 if (web) {
   WebServer.getInstance(8080).add("/", "/org/arl/fjage/web")
+  RewriteRegexRule oldToNew = new RewriteRegexRule();
+  oldToNew.setRegex("/missions/.*\$");
+  oldToNew.setReplacement("/shell/index.html");
+  WebServer.getInstance(8080).addRule(oldToNew);
   Connector conn = new WebSocketConnector(8080, "/shell/ws")
   shell = new ShellAgent(new ConsoleShell(conn), new GroovyScriptEngine())
   container.addConnector(new WebSocketConnector(8080, "/ws", true))
