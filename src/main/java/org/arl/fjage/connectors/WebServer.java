@@ -22,9 +22,6 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
 import org.eclipse.jetty.rewrite.handler.Rule;
-import org.eclipse.jetty.util.resource.PathResource;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * Web server instance manager.
