@@ -262,8 +262,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
           } catch (Exception e){
             log.warning(e.toString());
           }
-          long t = System.currentTimeMillis()-start;
-          log.finest("Sent " + s.length() + " bytes to "+session.getRemote().getInetSocketAddress() + " (" + t +" ms)");
+          log.finest("Sent " + s.length() + " bytes to "+session.getRemote().getInetSocketAddress() + " (" + (System.currentTimeMillis()-start) +" ms)");
         }
       } catch (Exception e) {
         log.warning(e.toString());
