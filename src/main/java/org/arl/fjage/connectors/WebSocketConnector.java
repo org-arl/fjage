@@ -174,12 +174,8 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
           if (buf == null) break;
           s = new String(buf);
         }
-        int i = 1;
-        int l = wsHandlers.size();
-        for (WSHandler t: wsHandlers) {
-          log.finest("Writing to "+ (i++) + " of "+l+" open sessions");
+        for (WSHandler t: wsHandlers)
           t.write(s);
-        }
         try {
           Thread.sleep(10);
         } catch (InterruptedException ex) {
@@ -252,7 +248,6 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     void write(String s) {
       try {
         if (session != null && session.isOpen()) {
-          long start = System.currentTimeMillis();
           Future<Void> f = session.getRemote().sendStringByFuture(s);
           try {
             f.get(500, TimeUnit.MILLISECONDS);
@@ -262,7 +257,6 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
           } catch (Exception e){
             log.warning(e.toString());
           }
-          log.finest("Sent " + s.length() + " bytes to "+session.getRemote().getInetSocketAddress() + " (" + (System.currentTimeMillis()-start) +" ms)");
         }
       } catch (Exception e) {
         log.warning(e.toString());
