@@ -108,7 +108,7 @@ task updatexterm {
   doLast {
     exec {
       workingDir '.'
-      commandLine 'npm', 'install', 'xterm@4.11.0', 'xterm-addon-attach@0.6.0', 'xterm-addon-fit@0.5.0', 'xterm-addon-web-links@0.4.0'
+      commandLine 'npm', 'install', 'xterm@4.13.0', 'xterm-addon-attach@0.6.0', 'xterm-addon-fit@0.5.0', 'xterm-addon-web-links@0.4.0'
     }
     copy {
       from (['node_modules/xterm-addon-web-links/lib', 'node_modules/xterm-addon-attach/lib', 'node_modules/xterm-addon-fit/lib', 'node_modules/xterm/lib']) { 
