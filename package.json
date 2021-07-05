@@ -32,7 +32,7 @@
   "devDependencies": {
     "diff": ">=5.0.0",
     "documentation": "^13.2.5",
-    "puppeteer": "^10.0.0",
+    "puppeteer": "^10.1.0",
     "websocket-extensions": ">=0.1.4"
   }
 }
