@@ -1231,24 +1231,29 @@ void fjage_msg_add_bool(fjage_msg_t msg, const char* key, bool value) {
   if (s != NULL) sprintf(s, "\"%s\": %s, ", key, value?"true":"false");
 }
 
+static void fjage_msg_add_b64(fjage_msg_t msg, const char* key, const char* value, const char* clazz) {
+  char* s = msg_append(msg, strlen(key)+strlen(clazz)+strlen(value)+32);
+  if (s != NULL) sprintf(s, "\"%s\": {\"clazz\": \"%s\", \"data\": \"%s\"}, ", key, clazz, value);
+}
+
 void fjage_msg_add_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int len) {
   char* s = b64_encode((unsigned char*)value, len);
   if (s == NULL) return;
-  fjage_msg_add_string(msg, key, s);
+  fjage_msg_add_b64(msg, key, s, "[B");
   free(s);
 }
 
 void fjage_msg_add_int_array(fjage_msg_t msg, const char* key, int32_t* value, int len) {
   char* s = b64_encode((unsigned char*)value, len*sizeof(int32_t));
   if (s == NULL) return;
-  fjage_msg_add_string(msg, key, s);
+  fjage_msg_add_b64(msg, key, s, "[I");
   free(s);
 }
 
 void fjage_msg_add_float_array(fjage_msg_t msg, const char* key, float* value, int len) {
   char* s = b64_encode((unsigned char*)value, len*sizeof(float));
   if (s == NULL) return;
-  fjage_msg_add_string(msg, key, s);
+  fjage_msg_add_b64(msg, key, s, "[F");
   free(s);
 }
 
