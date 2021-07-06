@@ -131,6 +131,17 @@ int main(int argc, char* argv[]) {
   fjage_msg_add_int_array(msg, "myidata", idata, 8);
   float signal[6] = { 3,1,4,1,5,9 };
   fjage_msg_add_float_array(msg, "mysignal", signal, 6);
+  unsigned char ldata[100];
+  int32_t lidata[100];
+  float lsignal[100];
+  for (int i = 0; i < 100; i++) {
+    ldata[i] = i;
+    lidata[i] = 50-i;
+    lsignal[i] = 100-i;
+  }
+  fjage_msg_add_byte_array(msg, "myldata", ldata, 100);
+  fjage_msg_add_int_array(msg, "mylidata", lidata, 100);
+  fjage_msg_add_float_array(msg, "mylsignal", lsignal, 100);
   test_assert("send", fjage_send(gw, msg) == 0);
   msg = fjage_receive(gw, NULL, NULL, 1000);
   test_assert("receive (+)", msg != NULL);
@@ -146,6 +157,9 @@ int main(int argc, char* argv[]) {
   test_assert("msg_get_byte_array (len)", fjage_msg_get_byte_array(msg, "mydata", NULL, 0) == 7);
   test_assert("msg_get_int_array (len)", fjage_msg_get_int_array(msg, "myidata", NULL, 0) == 8);
   test_assert("msg_get_float_array (len)", fjage_msg_get_float_array(msg, "mysignal", NULL, 0) == 6);
+  test_assert("msg_get_byte_array (long len)", fjage_msg_get_byte_array(msg, "myldata", NULL, 0) == 100);
+  test_assert("msg_get_int_array (long len)", fjage_msg_get_int_array(msg, "mylidata", NULL, 0) == 100);
+  test_assert("msg_get_float_array (long len)", fjage_msg_get_float_array(msg, "mylsignal", NULL, 0) == 100);
   memset(data, 0, sizeof(data));
   memset(idata, 0, sizeof(idata));
   memset(signal, 0, sizeof(signal));
@@ -155,6 +169,21 @@ int main(int argc, char* argv[]) {
   test_assert("msg_get_byte_array", data[0] == 7 && data[1] == 6 && data[2] == 5 && data[3] == 4 && data[4] == 3 && data[5] == 2 && data[6] == 1);
   test_assert("msg_get_int_array", idata[0] == 7 && idata[1] == 6 && idata[2] == 5 && idata[3] == 4 && idata[4] == 3 && idata[5] == 2 && idata[6] == 1 && idata[7] == 0);
   test_assert("msg_get_float_array", signal[0] == 3 && signal[1] == 1 && signal[2] == 4 && signal[3] == 1 && signal[4] == 5 && signal[5] == 9);
+  memset(ldata, 0, sizeof(ldata));
+  memset(lidata, 0, sizeof(lidata));
+  memset(lsignal, 0, sizeof(lsignal));
+  fjage_msg_get_byte_array(msg, "myldata", ldata, 100);
+  fjage_msg_get_int_array(msg, "mylidata", lidata, 100);
+  fjage_msg_get_float_array(msg, "mylsignal", lsignal, 100);
+  bool ok1 = true, ok2 = true, ok3 = true;
+  for (int i = 0; i < 100; i++) {
+    if (ldata[i] != i) ok1 = false;
+    if (lidata[i] != 50-i) ok2 = false;
+    if (lsignal[i] != 100-i) ok3 = false;
+  }
+  test_assert("msg_get_byte_array (long)", ok1);
+  test_assert("msg_get_int_array (long)", ok2);
+  test_assert("msg_get_float_array (long)", ok3);
   fjage_msg_destroy(msg);
   double t0 = current_time();
   msg = fjage_receive(gw, NULL, NULL, 1000);

@@ -23,4 +23,7 @@ class TestMessage extends org.arl.fjage.Message {
   byte[] mydata
   int[] myidata
   float[] mysignal
+  byte[] myldata
+  int[] mylidata
+  float[] mylsignal
 }
