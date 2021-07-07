@@ -218,7 +218,7 @@ public class WebServer {
       log.warning("Unable to stop context "+handler.getContextPath()+": "+ex.toString());
     }
     contexts.removeHandler(handler);
-    if (contexts.getHandlers().length <= staticContexts.size()) stop();
+    if (contexts.getHandlers() == null || contexts.getHandlers().length <= staticContexts.size()) stop();
   }
 
   /**

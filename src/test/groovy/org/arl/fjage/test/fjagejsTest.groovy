@@ -19,6 +19,7 @@ import org.arl.fjage.shell.EchoScriptEngine
 import org.arl.fjage.shell.ShellAgent
 import org.junit.Test
 import org.arl.fjage.test.ParamServerAgent
+import org.arl.fjage.test.EchoServerAgent
 
 import static org.junit.Assert.assertTrue
 
@@ -27,67 +28,49 @@ class fjagejsTest {
 
   @Test
   void fjageJSTest() {
-    def testResult = false
-    def testTrace = ""
-    def testPending = true
+    def testRes = [
+      browser: [
+        isComplete: false,
+        didPass: false,
+        trace: ""
+      ],
+      node: [
+        isComplete: false,
+        didPass: false,
+        trace: ""
+      ]
+    ]
     def platform = new RealTimePlatform()
     def container = new MasterContainer(platform, 5081)
-    container.add("shell", new ShellAgent(new EchoScriptEngine()))
-    WebServer.getInstance(8080).add("/", "/org/arl/fjage/web")
-    WebServer.getInstance(8080).add("/test", new File('src/test/groovy/org/arl/fjage/test'))
     container.addConnector(new WebSocketConnector(8080, "/ws", true))
+    container.add("shell", new ShellAgent(new EchoScriptEngine()))
     platform.start()
+    container.add('echo', new EchoServerAgent())
+    container.add("S", new ParamServerAgent())
     container.add('test', new Agent(){
-
-      protected Message processRequest(Message msg) {
-        if (msg instanceof SendMsgReq){
-          // println("Received SendMsgReq [${msg.type}] : ${msg.num} : ${msg.sender}")
-          add(new OneShotBehavior() {
-            @Override
-            public void action() {
-              (1..msg.num).each{
-                def rsp = new SendMsgRsp(msg)
-                rsp.id = it
-                rsp.type = msg.type
-                send rsp
-              }
-            }
-          })
-          return new Message(msg, Performative.AGREE)
-        }
-        return null
-      }
-
       @Override
       protected void init() {
         add(new MessageBehavior(){
           @Override
           void onReceive(Message msg) {
-            if (msg.performative == Performative.REQUEST) {
-              // println("Received request : ${msg.class}")
-              Message rsp = processRequest(msg)
-              if (rsp == null) rsp = new Message(msg, Performative.NOT_UNDERSTOOD)
-              send rsp
-            } else if (msg.performative == Performative.INFORM) {
-              // println("Received ntf : ${msg.class} :: ${msg.status}" )
-              if (msg instanceof TestCompleteNtf){
-                testResult = msg.status
-                testTrace = msg.trace
-                testPending = false
-              }
+            println("Received something.. ${msg}")
+            if (msg instanceof TestCompleteNtf){
+              println("${msg.type} test complete : ${msg.status?"PASSED":"FAILED"}")
+              testRes[msg.type].isComplete = true
+              testRes[msg.type].didPass = msg.status
+              testRes[msg.type].trace = msg.trace
             } else {
-              println("No idea what to do with " + msg.class)
+              println("No idea what to do with ${msg.class}")
             }
           }
         })
       }
     })
-    container.add("S", new ParamServerAgent())
     def ret = 0
     if (System.getProperty('manualJSTest') == null){
       // Run Jasmine based test in puppeteer.
       println "Running automated tests using puppeteer"
-      def proc = "node src/test/groovy/org/arl/fjage/test/server.js".execute()
+      def proc = ['npm', '--prefix', 'gateways/js/', 'run', 'test'].execute()
       def sout = new StringBuilder(), serr = new StringBuilder()
       proc.consumeProcessOutput(sout, serr)
       proc.waitFor()
@@ -99,39 +82,31 @@ class fjagejsTest {
       }
     }else{
       println "Waiting for user to run manual tests.."
-      while (testPending){
+      while (!testRes['node'].isComplete || !testRes['browser'].isComplete){
         platform.delay(1000)
       }
       println "-------------------Logs from fjagejs-------------------------"
     }
-    println "FjageJS Test complete : ${testResult ? "passed" : "failed"}."
-    if (!testResult){
-      println  "JASMINE >> \n${testTrace.trim()}"
+    println "FjageJS Test complete : ${testRes["node"].didPass && testRes["browser"].didPass ? "passed" : "failed"}."
+    if (!testRes["node"].didPass){
+      println  "JASMINE (node) >> \n${testRes["node"].trace.trim()}"
+    }
+
+    if (!testRes["browser"].didPass){
+      println  "JASMINE (browser) >> \n${testRes["browser"].trace.trim()}"
     }
     println "-------------------------------------------------------------"
     container.shutdown()
     platform.shutdown()
-    assertTrue(ret == 0 && testResult)
+    assertTrue(ret == 0 && testRes["node"].didPass && testRes["browser"].didPass)
   }
 }
 
 class TestCompleteNtf extends Message {
   boolean status
   String trace
+  String type
   TestCompleteNtf() {
     super(Performative.INFORM)
-  }
-}
-
-class SendMsgReq extends Message {
-  int num
-  int type
-}
-
-class SendMsgRsp extends Message {
-  int id
-  int type
-  SendMsgRsp(Message req) {
-    super(req, Performative.INFORM)   // create a response with inReplyTo = req
   }
 }
