@@ -315,7 +315,7 @@ public class WebServer {
    * @param rule rewrite rule.
    */
   public void addRule(Rule rule) {
-    log.info("Adding rewrite rule: "+rule);
+    log.fine("Adding rewrite rule: "+rule);
     try {
       rewrite.addRule(rule);
     } catch (Exception ex) {
