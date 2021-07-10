@@ -92,13 +92,6 @@ javadoc.doLast {
   }
 }
 
-compileJava.doLast {
-  exec {
-    workingDir 'gateways/js'
-    commandLine 'npm', 'run', 'build'
-  }
-}
-
 task jsdoc(type: Exec){
   workingDir 'gateways/js'
   executable 'npm'

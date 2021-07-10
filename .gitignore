@@ -8,7 +8,6 @@
 tmp
 logs
 build
-dist
 test_fjage
 docs/doc
 
