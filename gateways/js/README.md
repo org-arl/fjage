@@ -1,5 +1,7 @@
 # fjåge JavaScript Gateway (fjage.js)
 
+![npm](https://img.shields.io/npm/v/fjage)
+
 A fjåge Gateway implementation in JavaScript supports both browser (WebSocket) and Node.js (TCP) based connections to a fjåge [Master Container](https://fjage.readthedocs.io/en/latest/remote.html#master-and-slave-containers).
 
 ## Installation
