@@ -7,7 +7,7 @@ defaultTasks 'jars'
 
 archivesBaseName = 'fjage'
 group = 'com.github.org-arl'
-version = new File('VERSION').text.trim()
+version = new File(projectDir, 'VERSION').text.trim()
 
 // get git commit
 def stdout = new ByteArrayOutputStream()
