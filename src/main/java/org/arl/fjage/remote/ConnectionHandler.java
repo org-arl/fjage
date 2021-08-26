@@ -16,8 +16,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 import org.arl.fjage.AgentID;
-import org.arl.fjage.connectors.*;
 import org.arl.fjage.auth.*;
+import org.arl.fjage.connectors.*;
 
 /**
  * Handles a JSON/TCP connection with remote container.
@@ -58,6 +58,15 @@ class ConnectionHandler extends Thread {
     alive = false;
     keepAlive = true;
     closeOnDead = (conn instanceof TcpConnector) && (container instanceof MasterContainer);
+  }
+
+  /**
+   * Checks if the connection is alive.
+   *
+   * @return true if the connection is alive, false otherwise.
+   */
+  public boolean isConnectionAlive() {
+    return alive;
   }
 
   @Override

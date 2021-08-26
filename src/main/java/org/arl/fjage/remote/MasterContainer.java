@@ -11,10 +11,9 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.util.*;
-import java.io.IOException;
 import org.arl.fjage.*;
-import org.arl.fjage.connectors.*;
 import org.arl.fjage.auth.*;
+import org.arl.fjage.connectors.*;
 
 /**
  * Master container supporting multiple remote slave containers. Agents in linked
@@ -340,6 +339,35 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   }
 
   @Override
+  protected void initComplete() {
+    synchronized(slaves) {
+      for (ConnectionHandler slave: slaves) {
+        if (!slave.isAlive()) slave.start();
+      }
+    }
+    if (!slaves.isEmpty()) {
+      log.fine("Waiting for slaves...");
+      boolean allAlive = false;
+      // 5 second timeout for slaves to init
+      for (int i = 0; !allAlive && i < 50; i++) {
+        try {
+          Thread.sleep(100);
+        } catch(InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+        allAlive = true;
+        synchronized(slaves) {
+          for (ConnectionHandler slave: slaves) {
+            if (!slave.isConnectionAlive()) allAlive = false;
+          }
+        }
+      }
+      if (allAlive) log.fine("All slaves are alive");
+      else log.warning("Some slaves timed out!");
+    }
+  }
+
+  @Override
   public void shutdown() {
     if (!running) return;
     JsonMessage rq = new JsonMessage();
@@ -382,7 +410,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     synchronized(slaves) {
       slaves.add(t);
     }
-    t.start();
+    if (inited) t.start();
   }
 
   /////////////// Private stuff
