@@ -27,7 +27,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   ////////////// Private attributes
 
-  private static final long TIMEOUT = 1000;
+  private static final long TIMEOUT = 5000;
 
   private TcpServer listener = null;
   private List<ConnectionHandler> slaves = new ArrayList<ConnectionHandler>();
@@ -348,8 +348,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (!slaves.isEmpty()) {
       log.fine("Waiting for slaves...");
       boolean allAlive = false;
-      // 5 second timeout for slaves to init
-      for (int i = 0; !allAlive && i < 50; i++) {
+      for (int i = 0; !allAlive && i < TIMEOUT/100; i++) {
         try {
           Thread.sleep(100);
         } catch(InterruptedException e) {
@@ -358,7 +357,10 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
         allAlive = true;
         synchronized(slaves) {
           for (ConnectionHandler slave: slaves) {
-            if (!slave.isConnectionAlive()) allAlive = false;
+            if (!slave.isConnectionAlive()) {
+              log.fine("Slave "+slave.toString()+" is not alive");
+              allAlive = false;
+            }
           }
         }
       }
