@@ -357,10 +357,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
         allAlive = true;
         synchronized(slaves) {
           for (ConnectionHandler slave: slaves) {
-            if (!slave.isConnectionAlive()) {
-              log.fine("Slave "+slave.toString()+" is not alive");
-              allAlive = false;
-            }
+            if (!slave.isConnectionAlive()) allAlive = false;
           }
         }
       }
