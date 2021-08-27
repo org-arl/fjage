@@ -22,6 +22,7 @@ import org.arl.fjage.test.ParamServerAgent
 import org.arl.fjage.test.EchoServerAgent
 
 import static org.junit.Assert.assertTrue
+import static org.junit.Assert.assertEquals
 
 class fjagejsTest {
 
@@ -98,9 +99,9 @@ class fjagejsTest {
     println "-------------------------------------------------------------"
     container.shutdown()
     platform.shutdown()
-    assertTrue(ret == 0)
-    assertTrue(testRes["node"].didPass)
-    assertTrue(testRes["browser"].didPass)
+    assertEquals("`npm test` executed successfully?", ret, 0)
+    assertTrue("nodejs fjage.js test passed?", testRes["node"].didPass)
+    assertTrue("browser fjage.js test passed?", testRes["browser"].didPass)
   }
 }
 
