@@ -92,6 +92,27 @@ javadoc.doLast {
   }
 }
 
+task buildjs { 
+  doLast {
+    def result = exec {
+      ignoreExitValue = true
+      commandLine 'npm', '-v'
+      errorOutput = new ByteArrayOutputStream()
+      standardOutput = new ByteArrayOutputStream()
+    }
+    if(result.getExitValue()==0){
+      exec {
+        workingDir 'gateways/js'
+        commandLine 'npm', 'run', 'build'
+      }
+    }else{
+      project.logger.lifecycle('npm not found. Using cached fjage.js build')
+    }
+  }
+}
+
+processResources.dependsOn("buildjs")
+
 task jsdoc(type: Exec){
   workingDir 'gateways/js'
   executable 'npm'

@@ -98,7 +98,9 @@ class fjagejsTest {
     println "-------------------------------------------------------------"
     container.shutdown()
     platform.shutdown()
-    assertTrue(ret == 0 && testRes["node"].didPass && testRes["browser"].didPass)
+    assertTrue(ret == 0)
+    assertTrue(testRes["node"].didPass)
+    assertTrue(testRes["browser"].didPass)
   }
 }
 
