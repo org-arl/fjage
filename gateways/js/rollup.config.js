@@ -22,7 +22,7 @@ export default [
       esModule: false,
       exports: 'named',
       sourcemap: true,
-      banner : `/* fjage.js v${pkg.version}${commit?'/'+commit:''} ${new Date().toISOString()} */\n`
+      banner : `/* fjage.js v${pkg.version}${commit?'/'+commit:''} */\n`
     },{
       file: `dist/${pkg.name}.min.js`,
       format: 'umd',
@@ -30,7 +30,7 @@ export default [
       esModule: false,
       exports: 'named',
       sourcemap: true,
-      banner : `/* fjage.js v${pkg.version}${commit?'/'+commit:''} ${new Date().toISOString()} */\n`,
+      banner : `/* fjage.js v${pkg.version}${commit?'/'+commit:''} */\n`,
       plugins: [terser()]
     }],
   },
@@ -44,7 +44,7 @@ export default [
         exports: 'named',
         dir : 'dist/esm',
         chunkFileNames: '[name].js',
-        banner : `/* fjage.js v${pkg.version}${commit?'/'+commit:''} ${new Date().toISOString()} */\n`
+        banner : `/* fjage.js v${pkg.version}${commit?'/'+commit:''} */\n`
       },
       {
         format: 'cjs',
@@ -52,7 +52,7 @@ export default [
         dir : 'dist/cjs',
         chunkFileNames: '[name].cjs',
         entryFileNames: '[name].cjs',
-        banner : `/* fjage.js v${pkg.version}${commit?'/'+commit:''} ${new Date().toISOString()} */\n`
+        banner : `/* fjage.js v${pkg.version}${commit?'/'+commit:''} */\n`
       },
     ],
   }

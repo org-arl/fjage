@@ -103,6 +103,12 @@ task buildjs {
     if(result.getExitValue()==0){
       exec {
         workingDir 'gateways/js'
+        commandLine 'npm', 'ci'
+        errorOutput = new ByteArrayOutputStream()
+        standardOutput = new ByteArrayOutputStream()
+      }
+      exec {
+        workingDir 'gateways/js'
         commandLine 'npm', 'run', 'build'
       }
     }else{
