@@ -17,6 +17,13 @@ exec {
 }
 def commit = "$stdout".replace('\n','')
 
+boolean npmExists = false
+try {
+  def npmproc = "npm -v".execute()
+  npmproc.waitForOrKill(3000)
+  npmExists = npmproc.exitValue() == 0
+}catch (IOException ex){}
+
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
@@ -94,13 +101,7 @@ javadoc.doLast {
 
 task buildjs { 
   doLast {
-    def result = exec {
-      ignoreExitValue = true
-      commandLine 'npm', '-v'
-      errorOutput = new ByteArrayOutputStream()
-      standardOutput = new ByteArrayOutputStream()
-    }
-    if(result.getExitValue()==0){
+    if(npmExists){
       exec {
         workingDir 'gateways/js'
         commandLine 'npm', 'ci'
