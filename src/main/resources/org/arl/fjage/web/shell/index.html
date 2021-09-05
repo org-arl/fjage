@@ -27,66 +27,198 @@
       margin: 0px;
       padding: 0px;
     }
+    .container {
+      position: relative;
+    }
+    .btn-container {
+      position: absolute;
+      top: 5px;
+      right: 20px;
+      z-index: 100;
+    }
+    .tgl {
+      display: none;
+    }
+    .tgl, .tgl:after, .tgl:before, .tgl *, .tgl *:after, .tgl *:before, .tgl + .tgl-btn {
+      box-sizing: border-box;
+    }
+    .tgl::-moz-selection, .tgl:after::-moz-selection, .tgl:before::-moz-selection, .tgl *::-moz-selection, .tgl *:after::-moz-selection, .tgl *:before::-moz-selection, .tgl + .tgl-btn::-moz-selection {
+      background: none;
+    }
+    .tgl::selection, .tgl:after::selection, .tgl:before::selection, .tgl *::selection, .tgl *:after::selection, .tgl *:before::selection, .tgl + .tgl-btn::selection {
+      background: none;
+    }
+    .tgl + .tgl-btn {
+      outline: 0;
+      display: block;
+      width: 3.2em;
+      height: 1.5em;
+      position: relative;
+      cursor: pointer;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    .tgl + .tgl-btn:after, .tgl + .tgl-btn:before {
+      position: relative;
+      display: block;
+      content: "";
+      width: 40%;
+      height: 100%;
+    }
+    .tgl + .tgl-btn:after {
+      left: 0;
+    }
+    .tgl + .tgl-btn:before {
+      display: none;
+    }
+    .tgl:checked + .tgl-btn:after {
+      left: 60%;
+    }
+    
+    .tgl-flat + .tgl-btn {
+      padding: 2px;
+      transition: all 0.2s ease;
+      background: #fff;
+      border: 4px solid #dfdfdf;
+      border-radius: 2em;
+    }
+    .tgl-flat + .tgl-btn:after {
+      transition: all 0.2s ease;
+      background: #dfdfdf;
+      content: "";
+      border-radius: 1em;
+    }
+    .tgl-flat:checked + .tgl-btn {
+      border: 4px solid #8d8d8d;
+    }
+    .tgl-flat:checked + .tgl-btn:after {
+      left: 60%;
+      background: #8d8d8d;
+    }
   </style>
 </head>
 <body>
-<div id='terminal'></div>
-<script>
-  const ignoreKeys = ['Meta-R', 'Meta-Shift-R'];
-  var defaultCursorWidth;
-  function connectSocket(term, url, path){
-    const ws = new WebSocket('ws://' + url + path);
-    var attachAddon;
-    window.ws = ws;
-    ws.onerror = () => {
-      reconnectSocket(term, attachAddon, url, path ,ws);
+  <div class="container">
+    <div id='terminal'></div>
+    <div class="btn-container" title="Toggle Light/Dark ColorMode">
+      <input class="tgl tgl-flat" id="darkmode-tgl" type="checkbox" checked/>
+      <label class="tgl-btn" for="darkmode-tgl"></label>
+    </div>
+  </div>
+  <script>
+    const ignoreKeys = ['Meta-R', 'Meta-Shift-R'];
+    var defaultCursorWidth;
+    var rtime = 0;
+    var resizing = false;
+    var delta = 200;
+    var fitAddon;
+    function connectSocket(term, url, path){
+      const ws = new WebSocket('ws://' + url + path);
+      var attachAddon;
+      window.ws = ws;
+      ws.onerror = () => reconnectSocket(term, attachAddon, url, path, ws)
+      ws.onclose = () => reconnectSocket(term, attachAddon, url, path, ws)
+      ws.onopen = () => {
+        console.log('Connected to ', path);
+        attachAddon = new AttachAddon.AttachAddon(ws);
+        term.loadAddon(attachAddon);
+        // enable cursor to indicate connection is back
+        term.write("\u001B[?25h");
+        term.write('\x1b[1G\x1b[2K');
+        term.setOption('cursorBlink', true);
+      };
+    }
+    function reconnectSocket(term,attachAddon,url, path, ws){
+      disconnectSocket(term,attachAddon, ws);
+      setTimeout(() => connectSocket(term, url, path),1000);
+    }
+    function disconnectSocket(term,attachAddon, ws){
+      // disable cursor to indicate no connection
+      if (attachAddon) attachAddon.dispose();
+      term.write("\u001B[?25l");
+      term.write('\x1b[1G\x1b[2K\x1b[31m\x1b[2m(connection lost)\x1b[0m');
+      ws.onmessage = null;
+      ws.onopen = null;
+      ws.onclose = null;
+      ws.onerror = null;
+    }
+    function setTheme(term, theme){
+      if (theme == 'light'){
+        term.setOption('theme', { 
+          background: '#fdf6e3',
+          foreground: '#002B36',
+          yellow: '#b58900',
+          white: '#002B36',
+          green: '#859900',
+          blue: '#268bd2',
+          red: '#dc322f',
+          cursor: '#586e75'
+        });
+      }else if (theme == 'dark'){
+        term.setOption('theme', { 
+          background: '#000000',
+          foreground: '#ffffff',
+          yellow: '#c4a000',
+          white: '#d3d7cf',
+          green: '#4e9a06',
+          blue: '#3465a4',
+          red: '#cc0000',
+          cursor: '#ff6e75'
+        });
+      }
     };
-    ws.onclose = () => {
-      reconnectSocket(term, attachAddon, url, path,ws);
-    };
-    ws.onopen = () => {
-      console.log('Connected to ', path);
-      attachAddon = new AttachAddon.AttachAddon(ws);
-      term.loadAddon(attachAddon);
-      // enable cursor to indicate connection is back
-      term.write("\u001B[?25h");
-      term.write('\x1b[1G\x1b[2K');
-      term.setOption('cursorBlink', true);
-      term.setOption('theme', { cursor: '#ff0000'});
-    };
-  }
-  function reconnectSocket(term,attachAddon,url, path, ws){
-    disconnectSocket(term,attachAddon, ws);
-    setTimeout(() => {
+    function resizeend() {
+      if (new Date() - rtime < delta) {
+        setTimeout(resizeend, delta);
+      } else {
+        resizing = false;
+        fitAddon.fit();
+      }               
+    }
+    window.addEventListener('load', () => {
+      const darkmodeBtn = document.getElementById('darkmode-tgl');
+      var lightmode = false;
+      var userTheme = false;
+
+      const term = new Terminal();
+      fitAddon = new FitAddon.FitAddon();
+      term.loadAddon(fitAddon);
+      term.loadAddon(new WebLinksAddon.WebLinksAddon());
+
+      term.open(document.getElementById('terminal'));
+      fitAddon.fit();
+      defaultCursorWidth = term.getOption("cursorWidth");
+
+      if (window.matchMedia){
+        lightmode = !window.matchMedia('(prefers-color-scheme: dark)').matches;
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+          if (userTheme) return;
+          const newColorScheme = e.matches ? "dark" : "light";
+          darkmodeBtn.checked = !!e.matches;
+          setTheme(term, newColorScheme);
+        });
+      }
+      darkmodeBtn.checked = !lightmode;
+      setTheme(term, lightmode ? 'light' : 'dark');
+      darkmodeBtn.addEventListener('change', evt => {
+          setTheme(term, evt.target.checked ? 'dark' : 'light');
+          userTheme = true;
+      })
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const url = urlParams.get('url') || window.location.hostname + ':' + window.location.port;;
+      const path = window.location.pathname.replace(/\/[^/]*$/, '/ws/');
       connectSocket(term, url, path);
-    },1000);
-  }
-  function disconnectSocket(term,attachAddon, ws){
-    // disable cursor to indicate no connection
-    if (attachAddon) attachAddon.dispose();
-    term.write("\u001B[?25l");
-    term.write('\x1b[1G\x1b[2K\x1b[31m\x1b[2m(connection lost)\x1b[0m');
-    ws.onmessage = null;
-    ws.onopen = null;
-    ws.onclose = null;
-    ws.onerror = null;
-  }
-  window.onload = function() {
-    var term = new Terminal();
-    const fitAddon = new FitAddon.FitAddon();
-    term.loadAddon(fitAddon);
-    term.loadAddon(new WebLinksAddon.WebLinksAddon());
-
-    term.open(document.getElementById('terminal'));
-    fitAddon.fit();
-    defaultCursorWidth = term.getOption("cursorWidth");
-
-    const urlParams = new URLSearchParams(window.location.search);
-    var url = urlParams.get('url') || window.location.hostname + ':' + window.location.port;;
-    const path = window.location.pathname.replace(/\/[^/]*$/, '/ws/');
-
-    connectSocket(term, url, path);
-  };
+    });
+    window.addEventListener('resize', () => {
+      rtime = new Date();
+      if (!resizing) {
+        resizing = true;
+        setTimeout(resizeend, delta);
+      }
+    })
   </script>
 </body>
 </html>

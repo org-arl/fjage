@@ -10,23 +10,23 @@ for full license details.
 
 package org.arl.fjage.test;
 
-import org.arl.fjage.*;
-import org.arl.fjage.remote.Gateway;
-import org.arl.fjage.remote.MasterContainer;
-import org.arl.fjage.remote.SlaveContainer;
-import org.arl.fjage.persistence.Store;
-import org.arl.fjage.auth.*;
-import org.arl.fjage.shell.*;
-import org.arl.fjage.param.*;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
+import org.arl.fjage.*;
+import org.arl.fjage.auth.*;
+import org.arl.fjage.param.*;
+import org.arl.fjage.persistence.Store;
+import org.arl.fjage.remote.Gateway;
+import org.arl.fjage.remote.MasterContainer;
+import org.arl.fjage.remote.SlaveContainer;
+import org.arl.fjage.shell.*;
+import org.junit.Before;
+import org.junit.Test;
+
 
 import static org.junit.Assert.*;
 
@@ -235,6 +235,13 @@ public class BasicTests {
     ServerAgent server = new ServerAgent();
     master.add("S", server);
     platform.start();
+    while (!master.isRunning()) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException ex) {
+        // ignore
+      }
+    }
     Gateway gw = new Gateway("localhost", master.getPort());
     try {
       gw.agentForService("server");

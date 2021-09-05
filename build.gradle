@@ -7,7 +7,7 @@ defaultTasks 'jars'
 
 archivesBaseName = 'fjage'
 group = 'com.github.org-arl'
-version = new File('VERSION').text.trim()
+version = new File(projectDir, 'VERSION').text.trim()
 
 // get git commit
 def stdout = new ByteArrayOutputStream()
@@ -16,6 +16,13 @@ exec {
   standardOutput = stdout;
 }
 def commit = "$stdout".replace('\n','')
+
+boolean npmExists = false
+try {
+  def npmproc = "npm -v".execute()
+  npmproc.waitForOrKill(3000)
+  npmExists = npmproc.exitValue() == 0
+}catch (IOException ex){}
 
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
@@ -32,6 +39,7 @@ dependencies {
   compile 'uk.com.robust-it:cloning:1.9.12'
   compile 'org.eclipse.jetty:jetty-server:9.4.26.v20200117'
   compile 'org.eclipse.jetty:jetty-servlet:9.4.26.v20200117'
+  compile 'org.eclipse.jetty:jetty-rewrite:9.4.26.v20200117'
   compile 'org.eclipse.jetty.websocket:websocket-server:9.4.26.v20200117'
   compile 'com.google.code.gson:gson:2.8.5'
   compile 'com.fazecast:jSerialComm:2.5.1'
@@ -91,10 +99,50 @@ javadoc.doLast {
   }
 }
 
+task buildjs { 
+  doLast {
+    if(npmExists){
+      exec {
+        workingDir 'gateways/js'
+        commandLine 'npm', 'ci'
+        errorOutput = new ByteArrayOutputStream()
+        standardOutput = new ByteArrayOutputStream()
+      }
+      exec {
+        workingDir 'gateways/js'
+        commandLine 'npm', 'run', 'build'
+      }
+    }else{
+      project.logger.lifecycle('npm not found. Using cached fjage.js build')
+    }
+  }
+}
+
+processResources.dependsOn("buildjs")
+
 task jsdoc(type: Exec){
-  workingDir '.'
+  workingDir 'gateways/js'
   executable 'npm'
   args = ['run', 'docs']
+}
+
+task updatexterm {
+  doLast {
+    exec {
+      workingDir '.'
+      commandLine 'npm', 'install', 'xterm@4.13.0', 'xterm-addon-attach@0.6.0', 'xterm-addon-fit@0.5.0', 'xterm-addon-web-links@0.4.0'
+    }
+    copy {
+      from (['node_modules/xterm-addon-web-links/lib', 'node_modules/xterm-addon-attach/lib', 'node_modules/xterm-addon-fit/lib', 'node_modules/xterm/lib']) { 
+        include '*.js'
+      }
+      from ('node_modules/xterm/css'){
+        include 'xterm.css'
+      }
+      into 'src/main/resources/org/arl/fjage/web/shell'
+    }
+    delete "node_modules", "package.json", "package-lock.json"
+  }
 }
 
 ////// tasks for MavenCentral deployment

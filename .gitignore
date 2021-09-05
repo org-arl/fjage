@@ -8,8 +8,6 @@
 tmp
 logs
 build
-dist
 test_fjage
-node_modules
 docs/doc
 

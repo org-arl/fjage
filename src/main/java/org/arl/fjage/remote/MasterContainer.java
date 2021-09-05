@@ -11,10 +11,9 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.util.*;
-import java.io.IOException;
 import org.arl.fjage.*;
-import org.arl.fjage.connectors.*;
 import org.arl.fjage.auth.*;
+import org.arl.fjage.connectors.*;
 
 /**
  * Master container supporting multiple remote slave containers. Agents in linked
@@ -28,7 +27,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   ////////////// Private attributes
 
-  private static final long TIMEOUT = 1000;
+  private static final long TIMEOUT = 5000;
 
   private TcpServer listener = null;
   private List<ConnectionHandler> slaves = new ArrayList<ConnectionHandler>();
@@ -219,9 +218,10 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   public boolean send(Message m, boolean relay) {
     if (!running) return false;
+    boolean sent = super.send(m, false);
     AgentID aid = m.getRecipient();
     if (aid == null) return false;
-    if (super.send(m, false) && !aid.isTopic()) return true;
+    if (sent && !aid.isTopic()) return true;
     if (!relay) return false;
     JsonMessage rq = new JsonMessage();
     rq.action = Action.SEND;
@@ -339,6 +339,34 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   }
 
   @Override
+  protected void initComplete() {
+    synchronized(slaves) {
+      for (ConnectionHandler slave: slaves) {
+        if (!slave.isAlive()) slave.start();
+      }
+    }
+    if (!slaves.isEmpty()) {
+      log.fine("Waiting for slaves...");
+      boolean allAlive = false;
+      for (int i = 0; !allAlive && i < TIMEOUT/100; i++) {
+        try {
+          Thread.sleep(100);
+        } catch(InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+        allAlive = true;
+        synchronized(slaves) {
+          for (ConnectionHandler slave: slaves) {
+            if (!slave.isConnectionAlive()) allAlive = false;
+          }
+        }
+      }
+      if (allAlive) log.fine("All slaves are alive");
+      else log.warning("Some slaves timed out!");
+    }
+  }
+
+  @Override
   public void shutdown() {
     if (!running) return;
     JsonMessage rq = new JsonMessage();
@@ -381,7 +409,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     synchronized(slaves) {
       slaves.add(t);
     }
-    t.start();
+    if (inited) t.start();
   }
 
   /////////////// Private stuff

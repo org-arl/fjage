@@ -20,6 +20,8 @@ import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.rewrite.handler.RewriteHandler;
+import org.eclipse.jetty.rewrite.handler.Rule;
 
 /**
  * Web server instance manager.
@@ -125,6 +127,7 @@ public class WebServer {
 
   protected Server server;
   protected ContextHandlerCollection contexts;
+  protected RewriteHandler rewrite;
   protected Map<String,ContextHandler> staticContexts = new HashMap<String,ContextHandler>();
   protected boolean started;
   protected int port;
@@ -138,12 +141,16 @@ public class WebServer {
     server = new Server(InetSocketAddress.createUnresolved(ip, port));
     server.setStopAtShutdown(true);
     if (port > 0) servers.put(port, this);
+    rewrite = new RewriteHandler();
+    rewrite.setRewriteRequestURI(true);
+    rewrite.setRewritePathInfo(true);
     contexts = new ContextHandlerCollection();
     HandlerCollection handlerCollection = new HandlerCollection();
     GzipHandler gzipHandler = new GzipHandler();
     gzipHandler.setIncludedMimeTypes("text/html", "text/plain", "text/xml", "text/css", "application/javascript", "text/javascript");
-    handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });
-    gzipHandler.setHandler(handlerCollection);
+    handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });  
+    gzipHandler.setHandler(rewrite);
+    rewrite.setHandler(handlerCollection);
     server.setHandler(gzipHandler);
     started = false;
   }
@@ -218,7 +225,7 @@ public class WebServer {
       log.warning("Unable to stop context "+handler.getContextPath()+": "+ex.toString());
     }
     contexts.removeHandler(handler);
-    if (contexts.getHandlers().length <= staticContexts.size()) stop();
+    if (contexts.getHandlers() == null || contexts.getHandlers().length <= staticContexts.size()) stop();
   }
 
   /**
@@ -300,6 +307,20 @@ public class WebServer {
    */
   public boolean hasContext(String context) {
     return staticContexts.get(context) != null;
+  }
+
+  /**
+   * Adds a rule to rewrite handler.
+   *
+   * @param rule rewrite rule.
+   */
+  public void addRule(Rule rule) {
+    log.fine("Adding rewrite rule: "+rule);
+    try {
+      rewrite.addRule(rule);
+    } catch (Exception ex) {
+      log.warning("Unable to add rule "+rule+": "+ex.toString());
+    }
   }
 
 }

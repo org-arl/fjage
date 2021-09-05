@@ -1,0 +1,6 @@
+node_modules
+test/spec/fjageSpec.cjs
+test/spec/fjageSpec.mjs
+dist/*
+!dist/esm
+!dist/esm/fjage.js

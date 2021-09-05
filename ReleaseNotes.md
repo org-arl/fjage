@@ -1,5 +1,12 @@
 # Release Notes
 
+## v1.9.1
+
+* Bug fixes
+* Javascript nodejs support
+* Support for startup sync to remote containers
+* Improved handling of base64 encoding for arrays
+
 ## v1.9.0
 
 * Authentication framework

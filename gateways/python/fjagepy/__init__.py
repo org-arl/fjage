@@ -205,8 +205,14 @@ class AgentID:
 
 def getter(self, param):
     rsp = self.request(ParameterReq(index=self.index).get(param))
-    if (rsp is None) or (rsp.perf is not Performative.INFORM) or (rsp.__dict__.get('param') is None and rsp.__dict__.get('value') is None):
+    if rsp is None:
         return None
+    elif 'param' in rsp.__dict__:
+        if rsp.__dict__['param'] is None:
+            return None
+    elif 'value' in rsp.__dict__:
+        if rsp.__dict__['value'] is None:
+            return None
     ursp = ParameterRsp()
     ursp.__dict__.update(rsp.__dict__)
     if 'value' in list(ursp.__dict__.keys()):
@@ -223,7 +229,16 @@ def setter(self, param, value):
         self.__dict__[param] = value
         return value
     rsp = self.request(ParameterReq(index=self.index).set(param, value))
-    if (rsp is None) or (rsp.perf is not Performative.INFORM) or (rsp.__dict__.get('param') is None and rsp.__dict__.get('value') is None):
+    if rsp is None:
+        _warn('Could not set parameter ' + param)
+        return None
+    elif 'param' in rsp.__dict__:
+        if rsp.__dict__['param'] is None:
+            _warn('Could not set parameter ' + param)
+            return None
+    elif 'value' in rsp.__dict__:
+        if rsp.__dict__['value'] is None:
+            return None
         _warn('Could not set parameter ' + param)
         return None
     ursp = ParameterRsp()
@@ -518,6 +533,7 @@ class Gateway:
         self.connection = None
         self.keepalive = True
         self.logger = _log.getLogger('org.arl.fjage')
+        self.cancel = False
         try:
             self.aid = AgentID("PythonGW-" + str(_uuid.uuid4()), owner=self)
             self.q = list()
@@ -719,8 +735,7 @@ class Gateway:
             self.logger.debug(str(name[0]) + ":" + str(name[1]) + " >>> " + rq)
         except Exception as e:
             self.logger.critical("Exception: " + str(e))
-            self.keepalive = True
-            self._socket_reconnect(self.keepalive)
+            return False
         self.socket.sendall((rq + '\n').encode())
         return True
 
@@ -770,13 +785,14 @@ class Gateway:
         rmsg = self._retrieve_from_queue(filter)
         if rmsg is None and timeout != self.NON_BLOCKING:
             deadline = _current_time_millis() + timeout
-            blocking = True
-            while rmsg is None and ((timeout == self.BLOCKING and blocking == True)  or (_current_time_millis() < deadline)):
+            while (rmsg is None) and (timeout == self.BLOCKING or _current_time_millis() < deadline):
                 if timeout == self.BLOCKING:
                     self.cv.acquire()
                     self.cv.wait()
                     self.cv.release()
-                    blocking = False
+                    if self.cancel:
+                        self.cancel = False
+                        break
                 elif timeout > 0:
                     self.cv.acquire()
                     t = deadline - _current_time_millis()

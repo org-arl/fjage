@@ -166,6 +166,7 @@ public class ParameterRsp extends Message {
         for (Entry<Parameter, GenericValue> e : values.entrySet()) {
           sb.append(' ');
           sb.append(e.getKey());
+          if (isReadonly(e.getKey())) sb.append('*');
           sb.append(':');
           GenericValue gv = e.getValue();
           v = null;

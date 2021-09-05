@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <script src="node_modules/fjage/dist/fjage.min.js"></script>
+        <script>
+            (async function () {
+            const ShellExecReq = fjage.MessageClass('org.arl.fjage.shell.ShellExecReq');
+            const shell = new fjage.AgentID('shell');
+            const gw = new fjage.Gateway({
+                hostname: 'localhost',
+                port : '8080',
+                pathname: '/ws/'
+            });
+            const req = new ShellExecReq();
+            req.recipient = shell;
+            req.cmd = 'a=2; a+2;';
+            req.ans = true;
+            let rsp = await gw.request(req);
+            console.log(rsp);
+            gw.close();
+        })();
+        </script>
+    </head>
+</html>

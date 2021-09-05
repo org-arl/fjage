@@ -11,10 +11,10 @@ for full license details.
 package org.arl.fjage;
 
 import java.io.Serializable;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
-import java.lang.reflect.*;
 
 /**
  * Container to manage agent lifecycle. Agents in a container are able to
@@ -47,6 +47,7 @@ public class Container {
   protected Logger log = Logger.getLogger(getClass().getName());
   protected boolean running = false;
   protected boolean initing = false;
+  protected boolean inited = false;
   protected Object cloner;
   protected Method doClone;
   protected boolean autoclone = false;
@@ -549,8 +550,18 @@ public class Container {
         }
       } while (!isIdle());
       initing = false;
+      inited = true;
       log.info("Agents ready...");
+      initComplete();
     }
+  }
+
+  /**
+   * Called when the container is initialized.
+   * This is called after all agents have been initialized.
+   */
+  protected void initComplete() {
+    // do nothing - for subclasses to catch event
   }
 
   /**

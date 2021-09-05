@@ -16,8 +16,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 import org.arl.fjage.AgentID;
-import org.arl.fjage.connectors.*;
 import org.arl.fjage.auth.*;
+import org.arl.fjage.connectors.*;
 
 /**
  * Handles a JSON/TCP connection with remote container.
@@ -26,7 +26,7 @@ class ConnectionHandler extends Thread {
 
   private final String ALIVE = "{\"alive\": true}";
   private final String SIGN_OFF = "{\"alive\": false}";
-  private final int TIMEOUT = 5000;
+  private final int TIMEOUT = 60000;
   private final int FAILED_SIZE = 256;
 
   private Connector conn;
@@ -58,6 +58,16 @@ class ConnectionHandler extends Thread {
     alive = false;
     keepAlive = true;
     closeOnDead = (conn instanceof TcpConnector) && (container instanceof MasterContainer);
+  }
+
+  /**
+   * Checks if the connection is alive.
+   *
+   * @return true if the connection is alive, false otherwise.
+   */
+  public boolean isConnectionAlive() {
+    if (conn instanceof WebSocketConnector) return true;
+    return alive;
   }
 
   @Override
@@ -111,6 +121,7 @@ class ConnectionHandler extends Thread {
         }
       }
       // handle JSON messages
+      if (s.length() < 2) continue;
       try {
         JsonMessage rq = JsonMessage.fromJson(s);
         if (rq.action == null) {

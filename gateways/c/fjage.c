@@ -1058,13 +1058,19 @@ void fjage_msg_set_in_reply_to(fjage_msg_t msg, const char* id) {
 const char* fjage_msg_get_string(fjage_msg_t msg, const char* key) {
   if (msg == NULL) return NULL;
   _fjage_msg_t* m = msg;
+  int skip = -1;
   for (int i = 1; i < m->ntokens-1; i += 2) {
     char* t = m->data + m->tokens[i].start;
-    if (m->tokens[i].type == JSMN_STRING && (m->tokens[i+1].type == JSMN_STRING || m->tokens[i+1].type == JSMN_PRIMITIVE) && !strcmp(key, t)) {
+    if (skip <= 0 && m->tokens[i].type == JSMN_STRING && (m->tokens[i+1].type == JSMN_STRING || m->tokens[i+1].type == JSMN_PRIMITIVE) && !strcmp(key, t)) {
       t = m->data + m->tokens[i+1].start;
       t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
       if (m->tokens[i+1].type == JSMN_PRIMITIVE && !strcmp(t, "null")) t = NULL;
       return t;
+    }
+    if (skip > 0) skip--;
+    if (m->tokens[i+1].type == JSMN_OBJECT) {
+      if (skip < 0) skip = 0;
+      else skip += m->tokens[i+1].size;
     }
   }
   return NULL;
@@ -1073,22 +1079,57 @@ const char* fjage_msg_get_string(fjage_msg_t msg, const char* key) {
 static const char* fjage_msg_get_data(fjage_msg_t msg, const char* key) {
   if (msg == NULL) return NULL;
   _fjage_msg_t* m = msg;
-  int n = -1;
+  int skip = -1;
+  int acq = 0;
   for (int i = 1; i < m->ntokens-1; i += 2) {
     char* t = m->data + m->tokens[i].start;
-    if (n < 0) {
-      if (m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_OBJECT && !strcmp(t, key)) n = m->tokens[i+1].size;
-    } else {
-      n--;
-      if (n < 0) return NULL;
-      if (m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_STRING && !strcmp(t, "data")) {
-        t = m->data + m->tokens[i+1].start;
-        t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
-        return t;
-      }
+    if (!acq && skip == 0 && m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_OBJECT && !strcmp(t, key)) acq = 1;
+    else if (acq && m->tokens[i+1].type == JSMN_STRING && !strcmp(t, "data")) {
+      t = m->data + m->tokens[i+1].start;
+      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
+      if (m->tokens[i+1].type == JSMN_PRIMITIVE && !strcmp(t, "null")) t = NULL;
+      return t;
+    }
+    if (skip > 0) {
+      skip--;
+      if (skip == 0 && acq) return NULL;
+    }
+    if (m->tokens[i+1].type == JSMN_ARRAY) i += m->tokens[i+1].size;
+    else if (m->tokens[i+1].type == JSMN_OBJECT) {
+      if (skip < 0) skip = 0;
+      else skip += m->tokens[i+1].size;
     }
   }
   return NULL;
+}
+
+static const int fjage_msg_get_array(fjage_msg_t msg, const char* key, const char* format, void* value, int sz, int maxlen) {
+  if (msg == NULL) return -1;
+  _fjage_msg_t* m = msg;
+  int skip = -1;
+  for (int i = 1; i < m->ntokens-1; i += 2) {
+    char* t = m->data + m->tokens[i].start;
+    if (skip == 0 && m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_ARRAY && !strcmp(t, key)) {
+      for (int j = 0; j < m->tokens[i+1].size && j < maxlen; j++) {
+        char* tt = m->data + m->tokens[i+2+j].start;
+        if (sz > 1) sscanf(tt, format, value);
+        else {
+          int x;
+          sscanf(tt, "%d", &x);
+          *((uint8_t*)value) = (uint8_t)(x & 0xff);
+        }
+        value += sz;
+      }
+      return m->tokens[i+1].size;
+    }
+    if (skip > 0) skip--;
+    if (m->tokens[i+1].type == JSMN_ARRAY) i += m->tokens[i+1].size;
+    else if (m->tokens[i+1].type == JSMN_OBJECT) {
+      if (skip < 0) skip = 0;
+      else skip += m->tokens[i+1].size;
+    }
+  }
+  return -1;
 }
 
 int fjage_msg_get_int(fjage_msg_t msg, const char* key, int defval) {
@@ -1124,6 +1165,8 @@ bool fjage_msg_get_bool(fjage_msg_t msg, const char* key, bool defval) {
 }
 
 int fjage_msg_get_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int maxlen) {
+  int n = fjage_msg_get_array(msg, key, "%d", value, 1, maxlen);
+  if (n >= 0) return n;
   const char* s = fjage_msg_get_string(msg, key);
   if (s == NULL) s = fjage_msg_get_data(msg, key);
   if (s == NULL || strlen(s) == 0) return -1;
@@ -1136,6 +1179,8 @@ int fjage_msg_get_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, i
 }
 
 int fjage_msg_get_int_array(fjage_msg_t msg, const char* key, int32_t* value, int maxlen) {
+  int n = fjage_msg_get_array(msg, key, "%d", value, sizeof(int), maxlen);
+  if (n >= 0) return n;
   const char* s = fjage_msg_get_string(msg, key);
   if (s == NULL) s = fjage_msg_get_data(msg, key);
   if (s == NULL || strlen(s) == 0) return -1;
@@ -1148,6 +1193,8 @@ int fjage_msg_get_int_array(fjage_msg_t msg, const char* key, int32_t* value, in
 }
 
 int fjage_msg_get_float_array(fjage_msg_t msg, const char* key, float* value, int maxlen) {
+  int n = fjage_msg_get_array(msg, key, "%f", value, sizeof(float), maxlen);
+  if (n >= 0) return n;
   const char* s = fjage_msg_get_string(msg, key);
   if (s == NULL) s = fjage_msg_get_data(msg, key);
   if (s == NULL || strlen(s) == 0) return -1;
@@ -1184,24 +1231,29 @@ void fjage_msg_add_bool(fjage_msg_t msg, const char* key, bool value) {
   if (s != NULL) sprintf(s, "\"%s\": %s, ", key, value?"true":"false");
 }
 
+static void fjage_msg_add_b64(fjage_msg_t msg, const char* key, const char* value, const char* clazz) {
+  char* s = msg_append(msg, strlen(key)+strlen(clazz)+strlen(value)+32);
+  if (s != NULL) sprintf(s, "\"%s\": {\"clazz\": \"%s\", \"data\": \"%s\"}, ", key, clazz, value);
+}
+
 void fjage_msg_add_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int len) {
   char* s = b64_encode((unsigned char*)value, len);
   if (s == NULL) return;
-  fjage_msg_add_string(msg, key, s);
+  fjage_msg_add_b64(msg, key, s, "[B");
   free(s);
 }
 
 void fjage_msg_add_int_array(fjage_msg_t msg, const char* key, int32_t* value, int len) {
   char* s = b64_encode((unsigned char*)value, len*sizeof(int32_t));
   if (s == NULL) return;
-  fjage_msg_add_string(msg, key, s);
+  fjage_msg_add_b64(msg, key, s, "[I");
   free(s);
 }
 
 void fjage_msg_add_float_array(fjage_msg_t msg, const char* key, float* value, int len) {
   char* s = b64_encode((unsigned char*)value, len*sizeof(float));
   if (s == NULL) return;
-  fjage_msg_add_string(msg, key, s);
+  fjage_msg_add_b64(msg, key, s, "[F");
   free(s);
 }
 

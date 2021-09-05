@@ -10,11 +10,11 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import java.util.*;
 import java.io.IOException;
+import java.util.*;
 import org.arl.fjage.*;
-import org.arl.fjage.connectors.*;
 import org.arl.fjage.auth.AuthFailureException;
+import org.arl.fjage.connectors.*;
 
 /**
  * Slave container attached to a master container. Agents in linked
@@ -258,6 +258,19 @@ public class SlaveContainer extends RemoteContainer {
   }
 
   @Override
+  protected void initComplete() {
+    log.fine("Waiting for master...");
+    while (!quit && (master == null || !master.isConnectionAlive())) {
+      try {
+        Thread.sleep(100);
+      } catch(InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+    log.fine("Connection to master OK");
+  }
+
+  @Override
   public void shutdown() {
     quit = true;
     if (master != null) master.close();
@@ -324,7 +337,6 @@ public class SlaveContainer extends RemoteContainer {
   }
 
   private void connectToMaster() throws IOException {
-    tryConnecting();
     new Thread(getClass().getSimpleName()+">"+hostname) {
       @Override
       public void run() {
@@ -333,6 +345,7 @@ public class SlaveContainer extends RemoteContainer {
             try {
               tryConnecting();
               log.info("Connected to "+hostname+":"+(port>=0?":"+port:"@"+baud));
+              while (!quit && !inited) Thread.sleep(100);
               master.start();
               master.join();
               log.info("Connection to "+hostname+(port>=0?":"+port:"@"+baud)+" lost");
