@@ -26,7 +26,7 @@ class ConnectionHandler extends Thread {
 
   private final String ALIVE = "{\"alive\": true}";
   private final String SIGN_OFF = "{\"alive\": false}";
-  private final int TIMEOUT = 5000;
+  private final int TIMEOUT = 60000;
   private final int FAILED_SIZE = 256;
 
   private Connector conn;
