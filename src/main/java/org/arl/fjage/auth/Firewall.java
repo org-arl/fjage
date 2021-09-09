@@ -46,4 +46,10 @@ public interface Firewall {
    */
   public boolean permit(AgentID aid);
 
+  /**
+   * Called when the connection is closed.
+   * The <code>Firewall</code> instance should perform cleanup.
+   */
+  public void signoff();
+
 }

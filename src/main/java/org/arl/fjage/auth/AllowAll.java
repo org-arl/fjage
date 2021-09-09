@@ -40,4 +40,9 @@ public class AllowAll implements Firewall {
     return true;
   }
 
+  @Override
+  public void signoff() {
+    // do nothing
+  }
+
 }

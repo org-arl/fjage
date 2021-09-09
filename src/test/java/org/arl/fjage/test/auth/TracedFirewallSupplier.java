@@ -65,5 +65,11 @@ public class TracedFirewallSupplier
       log.info(String.format("[%s] permit(%s)=%s", fw, aid, permitted));
       return permitted;
     }
+
+    @Override
+    public void signoff() {
+      fw.signoff();
+      log.info(String.format("[%s] signoff()", fw));
+    }
   }
 }

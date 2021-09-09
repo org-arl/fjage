@@ -40,4 +40,9 @@ public class DenyAll implements Firewall {
     return false;
   }
 
+  @Override
+  public void signoff() {
+    // do nothing
+  }
+
 }

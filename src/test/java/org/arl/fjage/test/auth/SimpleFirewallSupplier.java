@@ -78,6 +78,11 @@ public class SimpleFirewallSupplier
     }
 
     @Override
+    public void signoff() {
+      // do nothing
+    }
+
+    @Override
     public String toString() {
       if (creds != null)  {
         return String.format("@%x/%s", hashCode(), creds);

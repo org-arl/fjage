@@ -153,6 +153,7 @@ class ConnectionHandler extends Thread {
         log.warning("Bad JSON request: "+ex.toString() + " in " + s);
       }
     }
+    fw.signoff();
     close();
     pool.shutdown();
   }

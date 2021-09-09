@@ -35,4 +35,9 @@ public class AllowAfterAuth extends AbstractFirewall {
     return auth;
   }
 
+  @Override
+  public void signoff() {
+    // do nothing
+  }
+
 }
