@@ -1,12 +1,12 @@
 /******************************************************************************
 
- Copyright (c) 2015-2019, Mandar Chitre
+Copyright (c) 2015-2019, Mandar Chitre
 
- This file is part of fjage which is released under Simplified BSD License.
- See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
- for full license details.
+This file is part of fjage which is released under Simplified BSD License.
+See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
+for full license details.
 
- ******************************************************************************/
+******************************************************************************/
 
 package org.arl.fjage.remote;
 
