@@ -95,7 +95,6 @@ class ConnectionHandler extends Thread {
         println(ALIVE);
       }
     }
-    fw.authenticate(conn, null);
     while (conn != null) {
       String s = null;
       try {
@@ -144,7 +143,7 @@ class ConnectionHandler extends Thread {
         } else {
           // new request
           if (rq.action == Action.AUTH) {
-            boolean b = fw.authenticate(conn, rq.creds);
+            boolean b = fw.authenticate(rq.creds);
             respondAuth(rq, b);
           }
           else if (fw.permit(rq)) pool.execute(new RemoteTask(rq));
@@ -154,7 +153,6 @@ class ConnectionHandler extends Thread {
         log.warning("Bad JSON request: "+ex.toString() + " in " + s);
       }
     }
-    fw.authenticate(conn, null);
     close();
     pool.shutdown();
   }

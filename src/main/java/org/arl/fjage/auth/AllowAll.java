@@ -10,18 +10,34 @@ for full license details.
 
 package org.arl.fjage.auth;
 
-import org.arl.fjage.connectors.Connector;
+import org.arl.fjage.AgentID;
+import org.arl.fjage.remote.JsonMessage;
+
+import java.util.function.Supplier;
 
 /**
  * A permissive firewall that allows all traffic to pass through.
  */
-public class AllowAll extends AbstractFirewall {
+public class AllowAll implements Firewall {
+
+  /**
+   * AllowAll supplier.
+   */
+  public static final Supplier<Firewall> SUPPLIER = AllowAll::new;
 
   @Override
-  public boolean authenticate(Connector conn, String creds) {
-    if (creds != null) log.fine("Authentication successful [AllowAll]");
-    auth = true;
-    return auth;
+  public boolean authenticate(String creds) {
+    return true;
+  }
+
+  @Override
+  public boolean permit(JsonMessage rq) {
+    return true;
+  }
+
+  @Override
+  public boolean permit(AgentID aid) {
+    return true;
   }
 
 }

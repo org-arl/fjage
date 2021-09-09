@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 import org.arl.fjage.*;
-import org.arl.fjage.auth.*;
 import org.arl.fjage.param.*;
 import org.arl.fjage.persistence.Store;
 import org.arl.fjage.remote.Gateway;
@@ -177,106 +176,6 @@ public class BasicTests {
     req = new NuisanceMessage(server.getAgentID());
     rsp = gw.request(req, 100);
     assertNull(rsp);
-    gw.close();
-    platform.shutdown();
-  }
-
-  @Test
-  public void testFirewall1() throws IOException {
-    log.info("testFirewall1");
-    Platform platform = new RealTimePlatform();
-    MasterContainer master = new MasterContainer(platform, new AllowAll());
-    ServerAgent server = new ServerAgent();
-    master.add("S", server);
-    platform.start();
-    Gateway gw = new Gateway("localhost", master.getPort());
-    AgentID s = gw.agentForService("server");
-    assertNotNull(s);
-    Message req = new RequestMessage(server.getAgentID());
-    Message rsp = gw.request(req, 1000);
-    assertNotNull(rsp);
-    gw.close();
-    platform.shutdown();
-    assertEquals(1, server.requests);
-  }
-
-  @Test
-  public void testFirewall2() throws IOException {
-    log.info("testFirewall2");
-    Platform platform = new RealTimePlatform();
-    MasterContainer master = new MasterContainer(platform, new DenyAll());
-    ServerAgent server = new ServerAgent();
-    master.add("S", server);
-    platform.start();
-    Gateway gw = new Gateway("localhost", master.getPort());
-    try {
-      gw.agentForService("server");
-      fail("Should have thrown AuthFailureException");
-    } catch (AuthFailureException ex) {
-      // all good
-    }
-    Message req = new RequestMessage(server.getAgentID());
-    try {
-      gw.request(req, 1000);
-      fail("Should have thrown AuthFailureException");
-    } catch (AuthFailureException ex) {
-      // all good
-    }
-    gw.close();
-    platform.shutdown();
-    assertEquals(0, server.requests);
-  }
-
-  @Test
-  public void testFirewall3() throws IOException {
-    log.info("testFirewall3");
-    Platform platform = new RealTimePlatform();
-    MasterContainer master = new MasterContainer(platform, new AllowAfterAuth());
-    ServerAgent server = new ServerAgent();
-    master.add("S", server);
-    platform.start();
-    while (!master.isRunning()) {
-      try {
-        Thread.sleep(100);
-      } catch (InterruptedException ex) {
-        // ignore
-      }
-    }
-    Gateway gw = new Gateway("localhost", master.getPort());
-    try {
-      gw.agentForService("server");
-      fail("Should have thrown AuthFailureException");
-    } catch (AuthFailureException ex) {
-      // all good
-    }
-    gw.authenticate("somecreds");
-    AgentID s = gw.agentForService("server");
-    assertNotNull(s);
-    Message req = new RequestMessage(server.getAgentID());
-    Message rsp = gw.request(req, 1000);
-    assertNotNull(rsp);
-    gw.close();
-    platform.shutdown();
-    assertEquals(1, server.requests);
-  }
-
-  @Test
-  public void testFirewall4() throws IOException {
-    log.info("testFirewall4");
-    Platform platform = new RealTimePlatform();
-    MasterContainer master = new MasterContainer(platform, new AllowAfterAuth());
-    platform.start();
-    Gateway gw = new Gateway("localhost", master.getPort());
-    gw.subscribe(new AgentID("test1", true));
-    master.send(new NuisanceMessage(new AgentID("test1", true)));
-    Message msg = gw.receive(1000);
-    assertNull(msg);
-    gw.authenticate("somecreds");
-    gw.subscribe(new AgentID("test1", true));
-    master.send(new NuisanceMessage(new AgentID("test1", true)));
-    msg = gw.receive(1000);
-    assertNotNull(msg);
-    assertSame(msg.getClass(), NuisanceMessage.class);
     gw.close();
     platform.shutdown();
   }

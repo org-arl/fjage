@@ -1,12 +1,12 @@
 /******************************************************************************
 
-Copyright (c) 2015-2019, Mandar Chitre
+ Copyright (c) 2015-2019, Mandar Chitre
 
-This file is part of fjage which is released under Simplified BSD License.
-See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
-for full license details.
+ This file is part of fjage which is released under Simplified BSD License.
+ See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
+ for full license details.
 
-******************************************************************************/
+ ******************************************************************************/
 
 package org.arl.fjage.remote;
 
@@ -14,6 +14,7 @@ import java.util.*;
 import org.arl.fjage.*;
 import org.arl.fjage.auth.*;
 import org.arl.fjage.connectors.*;
+import java.util.function.Supplier;
 
 /**
  * Master container supporting multiple remote slave containers. Agents in linked
@@ -32,7 +33,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private TcpServer listener = null;
   private List<ConnectionHandler> slaves = new ArrayList<ConnectionHandler>();
   private boolean needsCleanup = false;
-  private Firewall fw = new AllowAll();
+  private Supplier<Firewall> fwSupplier = AllowAll.SUPPLIER;
 
   ////////////// Constructors
 
@@ -48,14 +49,14 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   /**
    * Creates a master container, runs its TCP server on an automatically selected port,
-   * with a specified firewall.
+   * with a specified firewall supplier.
    *
    * @param platform platform on which the container runs.
-   * @param fw firewall to use.
+   * @param fwSupplier firewall supplier to use.
    */
-  public MasterContainer(Platform platform, Firewall fw) {
+  public MasterContainer(Platform platform, Supplier<Firewall> fwSupplier) {
     super(platform);
-    this.fw = fw;
+    this.fwSupplier = fwSupplier;
     openTcpServer(0);
   }
 
@@ -72,15 +73,15 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   /**
    * Creates a master container, runs its TCP server on a specified port,
-   * with a specified firewall.
+   * with a specified firewall supplier.
    *
    * @param platform platform on which the container runs.
    * @param port port on which the container's TCP server runs.
-   * @param fw firewall to use.
+   * @param fwSupplier firewall supplier to use.
    */
-  public MasterContainer(Platform platform, int port, Firewall fw) {
+  public MasterContainer(Platform platform, int port, Supplier<Firewall> fwSupplier) {
     super(platform);
-    this.fw = fw;
+    this.fwSupplier = fwSupplier;
     openTcpServer(port);
   }
 
@@ -97,15 +98,15 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   /**
    * Creates a named master container, runs its TCP server on an automatically selected port,
-   * with a specified firewall.
+   * with a specified firewall supplier.
    *
    * @param platform platform on which the container runs.
    * @param name name of the container.
-   * @param fw firewall to use.
+   * @param fwSupplier firewall supplier to use.
    */
-  public MasterContainer(Platform platform, String name, Firewall fw) {
+  public MasterContainer(Platform platform, String name, Supplier<Firewall> fwSupplier) {
     super(platform, name);
-    this.fw = fw;
+    this.fwSupplier = fwSupplier;
     openTcpServer(0);
   }
 
@@ -123,16 +124,16 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   /**
    * Creates a named master container, runs its TCP server on a specified port,
-   * with a specified firewall.
+   * with a specified firewall supplier.
    *
    * @param platform platform on which the container runs.
    * @param name of the container.
    * @param port port on which the container's TCP server runs.
-   * @param fw firewall to use.
+   * @param fwSupplier firewall supplier to use.
    */
-  public MasterContainer(Platform platform, String name, int port, Firewall fw) {
+  public MasterContainer(Platform platform, String name, int port, Supplier<Firewall> fwSupplier) {
     super(platform, name);
-    this.fw = fw;
+    this.fwSupplier = fwSupplier;
     openTcpServer(port);
   }
 
@@ -148,13 +149,13 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   /**
    * Adds a connector over which the master container listens. The connector uses
-   * any default firewall configured for the container.
+   * a firewall acquired from the firewall supplier configured for the container.
    *
    * @param conn connector.
    */
   public void addConnector(Connector conn) {
     log.info("Listening on "+conn.getName());
-    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this, fw);
+    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this, fwSupplier.get());
     synchronized(slaves) {
       slaves.add(t);
     }
@@ -405,7 +406,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   public void connected(Connector conn) {
     log.info("Incoming connection "+conn.toString());
-    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this, fw);
+    ConnectionHandler t = new ConnectionHandler(conn, MasterContainer.this, fwSupplier.get());
     synchronized(slaves) {
       slaves.add(t);
     }

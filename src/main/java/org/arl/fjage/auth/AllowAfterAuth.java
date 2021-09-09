@@ -10,7 +10,7 @@ for full license details.
 
 package org.arl.fjage.auth;
 
-import org.arl.fjage.connectors.Connector;
+import java.util.function.Supplier;
 
 /**
  * A permissive firewall that allows all traffic to pass through, but requires
@@ -20,8 +20,13 @@ import org.arl.fjage.connectors.Connector;
  */
 public class AllowAfterAuth extends AbstractFirewall {
 
+  /**
+   * AllowAfterAuth supplier.
+   */
+  public static final Supplier<Firewall> SUPPLIER = AllowAfterAuth::new;
+
   @Override
-  public boolean authenticate(Connector conn, String creds) {
+  public boolean authenticate(String creds) {
     if (creds == null) auth = false;
     else {
       log.fine("Authentication successful ["+creds+"]");
