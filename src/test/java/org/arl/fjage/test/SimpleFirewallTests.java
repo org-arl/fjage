@@ -14,7 +14,6 @@ import org.arl.fjage.*;
 import org.arl.fjage.auth.*;
 import org.arl.fjage.remote.Action;
 import org.arl.fjage.remote.JsonMessage;
-import org.arl.fjage.test.auth.SimpleFirewallSupplier;
 import org.junit.*;
 import org.junit.rules.TestName;
 
@@ -33,12 +32,16 @@ public class SimpleFirewallTests {
   public TestName testName = new TestName();
   private final Logger log = Logger.getLogger(getClass().getName());
   private final SimpleFirewallSupplier simpleFirewallSupplier = new SimpleFirewallSupplier()
-      .addUserConfiguration("credentials1", userConfiguration -> userConfiguration
+      .addPolicy("policy1", policy -> policy
           .allowedAgentNames("agent1")
       )
-      .addUserConfiguration("credentials2", userConfiguration -> userConfiguration
+      .addPolicy("policy2", policy -> policy
           .allowedAgentNames("agent2")
-      );
+      )
+      .addUser("user1", "credentials1", "policy1")
+      .addUser("user2", "credentials2", "policy2")
+      .addUser("user3", "credentials3", SimpleFirewallSupplier.POLICY_ID_ALLOW_ALL)
+      ;
 
   @Before
   public void beforeTesting() {
@@ -91,6 +94,22 @@ public class SimpleFirewallTests {
     Assert.assertEquals(false, fw.permit(newSendJsonMessage(AGENT1)));
     Assert.assertEquals(true, fw.permit(newSendJsonMessage(AGENT2)));
     Assert.assertEquals(false, fw.permit(newSendJsonMessage(AGENT3)));
+  }
+
+  @Test
+  public void allowAll() {
+    final Firewall fw = simpleFirewallSupplier.get();
+
+    // fw is not authenticated
+    Assert.assertEquals(false, fw.permit(newSendJsonMessage(AGENT1)));
+    Assert.assertEquals(false, fw.permit(newSendJsonMessage(AGENT2)));
+    Assert.assertEquals(false, fw.permit(newSendJsonMessage(AGENT3)));
+
+    // authenticate fw
+    Assert.assertEquals(true, fw.authenticate("credentials3"));
+    Assert.assertEquals(true, fw.permit(newSendJsonMessage(AGENT1)));
+    Assert.assertEquals(true, fw.permit(newSendJsonMessage(AGENT2)));
+    Assert.assertEquals(true, fw.permit(newSendJsonMessage(AGENT3)));
   }
 
   @Test
