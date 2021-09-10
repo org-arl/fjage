@@ -11,26 +11,23 @@ for full license details.
 package org.arl.fjage.auth;
 
 import org.arl.fjage.AgentID;
-import org.arl.fjage.connectors.Connector;
 import org.arl.fjage.remote.JsonMessage;
 
 /**
  * Firewall interface for API access to fjage master containers.
+ *
+ * Each connection to a master container should and will be assigned its own <code>Firewall</code> instance.
+ * <code>Firewall</code> instances should be considered stateful.
  */
 public interface Firewall {
 
   /**
    * Authenticates peer using specified credentials.
-   * <p>
-   * When a firewall is first bound to a connection handler, this method is
-   * called with null credentials to bind a connector to the firewall. The
-   * method is also called with null credentials when a connection is closed.
    *
-   * @param conn connection to peer.
    * @param creds credentials, or null if logging out.
    * @return true if authenticated successfully, false otherwise.
    */
-  public boolean authenticate(Connector conn, String creds);
+  public boolean authenticate(String creds);
 
   /**
    * Checks whether a JSON message can be accepted over this connection.
@@ -48,5 +45,11 @@ public interface Firewall {
    * @return true to permit, false to reject.
    */
   public boolean permit(AgentID aid);
+
+  /**
+   * Called when the connection is closed.
+   * The <code>Firewall</code> instance should perform cleanup.
+   */
+  public void signoff();
 
 }

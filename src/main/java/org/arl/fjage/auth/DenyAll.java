@@ -10,18 +10,39 @@ for full license details.
 
 package org.arl.fjage.auth;
 
-import org.arl.fjage.connectors.Connector;
+import org.arl.fjage.AgentID;
+import org.arl.fjage.remote.JsonMessage;
+
+import java.util.function.Supplier;
 
 /**
  * A reluctant firewall that denies all traffic to pass through.
  */
-public class DenyAll extends AbstractFirewall {
+public class DenyAll implements Firewall {
+
+  /**
+   * DenyAll supplier.
+   */
+  public static final Supplier<Firewall> SUPPLIER = DenyAll::new;
 
   @Override
-  public boolean authenticate(Connector conn, String creds) {
-    if (creds != null) log.fine("Authentication unsuccessful [DenyAll]");
-    auth = false;
-    return auth;
+  public boolean authenticate(String creds) {
+    return false;
+  }
+
+  @Override
+  public boolean permit(JsonMessage rq) {
+    return false;
+  }
+
+  @Override
+  public boolean permit(AgentID aid) {
+    return false;
+  }
+
+  @Override
+  public void signoff() {
+    // do nothing
   }
 
 }
