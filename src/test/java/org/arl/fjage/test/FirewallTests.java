@@ -15,7 +15,6 @@ import org.arl.fjage.auth.*;
 import org.arl.fjage.param.Parameter;
 import org.arl.fjage.remote.Gateway;
 import org.arl.fjage.remote.MasterContainer;
-import org.arl.fjage.test.auth.SimpleFirewallSupplier;
 import org.arl.fjage.test.auth.TracedFirewallSupplier;
 import org.junit.After;
 import org.junit.Before;
@@ -145,11 +144,12 @@ public class FirewallTests {
   @Test
   public void testSimpleFirewall1() throws IOException {
     final SimpleFirewallSupplier simpleFirewallSupplier = new SimpleFirewallSupplier()
-        .addUserConfiguration("somecreds", userConfiguration -> userConfiguration
+        .addPolicy("policy1", policy -> policy
             .allowedServiceNames("server")
             .allowedAgentNames("server1")
             .allowedTopicNames("server1__ntf")
-        );
+        )
+        .addUser("user", "somecreds", "policy1");
     final Supplier<Firewall> fwSupplier = new TracedFirewallSupplier(simpleFirewallSupplier);
 
     final Platform platform = new RealTimePlatform();
