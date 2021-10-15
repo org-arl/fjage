@@ -49,6 +49,7 @@ public class NamedParameter implements Parameter, Serializable {
    *
    * @return ordinal
    */
+  @Override
   public int ordinal() {
     return ord;
   }
@@ -67,6 +68,7 @@ public class NamedParameter implements Parameter, Serializable {
    *
    * @return name of parameter.
    */
+  @Override
   public String toString() {
     return name;
   }
@@ -76,10 +78,15 @@ public class NamedParameter implements Parameter, Serializable {
    *
    * @return true if two parameters are equal
    */
+  @Override
   public boolean equals(Object obj) {
     if (!(obj instanceof NamedParameter)) return false;
     NamedParameter p = (NamedParameter)obj;
-    if (!name.equals(p.name)) return false;
+    String name1 = name;
+    if (name1.contains(".")) name1 = name1.substring(name1.indexOf('.')+1);
+    String name2 = p.name;
+    if (name2.contains(".")) name2 = name2.substring(name2.indexOf('.')+1);
+    if (!name1.equals(name2)) return false;
     if (ord >= 0 && p.ord >= 0 && p.ord != ord) return false;
     return true;
   }
@@ -89,6 +96,7 @@ public class NamedParameter implements Parameter, Serializable {
    *
    * @return hashcode value
    */
+  @Override
   public int hashCode() {
     return name.hashCode();
   }

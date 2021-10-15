@@ -83,24 +83,40 @@ class GroovyExtensions {
       }
       List<String> out = new ArrayList<String>()
       rsp.parameters().each {
-        if (!(it instanceof NamedParameter)) {
+        if (it instanceof NamedParameter) {
+          if (it.name != 'title' && it.name != 'description') {
+            String s = "${rsp.get(it)}"
+            String p = "$it"
+            if (!p.contains('.')) p = ".$p"
+            boolean ro = rsp.isReadonly(it)
+            out.add "${p} ${ro?'⤇':'='} ${s}\n"
+          }
+        } else {
           String s = "${rsp.get(it)}"
           boolean ro = rsp.isReadonly(it)
           if (s.length() > 64) s = "${s[0..31]} ... ${s[-31..-1]}"
-          out.add "${it.class.name}#${it} ${ro?'⤇':'='} ${s}\n"
+          out.add "${it.class.name}.${it} ${ro?'⤇':'='} ${s}\n"
         }
       }
       String title = rsp.get(new NamedParameter('title'))
       String description = rsp.get(new NamedParameter('description'))
       if (title == null) title = req.recipient.name.toUpperCase()
       if (!out.isEmpty()) Collections.sort(out)
-      StringBuffer sb = new StringBuffer();
+      StringBuffer sb = new StringBuffer()
       sb.append "« ${title} »\n"
       if (description) sb.append "\n${description}\n"
       String pcls = null
       out.each {
-        def pos = it.indexOf('#')
-        if (pos >= 1) {
+        def pos = it.indexOf(' ')
+        pos = it.substring(0, pos).lastIndexOf('.')
+        if (pos <= 0) {
+          def pc = 'NamedParameter'
+          if (!pc.equals(pcls)) {
+            sb.append "\n[${pc}]\n"
+            pcls = pc
+          }
+          if (pos == 0) it = it.substring(1)
+        } else {
           def pc = it.substring(0, pos).replace('$', '.')
           if (!pc.equals(pcls)) {
             sb.append "\n[${pc}]\n"
