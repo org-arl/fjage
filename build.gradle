@@ -24,6 +24,8 @@ try {
   npmExists = npmproc.exitValue() == 0
 }catch (IOException ex){}
 
+boolean isCI = System.getenv('CI') != null
+
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
@@ -104,7 +106,7 @@ task buildjs {
     if(npmExists){
       exec {
         workingDir 'gateways/js'
-        commandLine 'npm', 'ci'
+        commandLine 'npm', isCI ? 'ci' : "install"
         errorOutput = new ByteArrayOutputStream()
         standardOutput = new ByteArrayOutputStream()
       }
