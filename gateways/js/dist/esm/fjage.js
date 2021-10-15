@@ -1,4 +1,4 @@
-/* fjage.js v1.9.1-rc5 */
+/* fjage.js v1.10.0 */
 
 /* global window self */
 
