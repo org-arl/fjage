@@ -38,6 +38,7 @@ class ConnectionHandler extends Thread {
   private boolean alive, keepAlive, closeOnDead;
   private ExecutorService pool = Executors.newSingleThreadExecutor();
   private Set<AgentID> watchList = new HashSet<>();
+  private String clientName = "-";
   private Firewall fw;
 
   public ConnectionHandler(Connector conn, RemoteContainer container) {
@@ -143,8 +144,11 @@ class ConnectionHandler extends Thread {
         } else {
           // new request
           if (rq.action == Action.AUTH) {
-            boolean b = fw.authenticate(rq.creds);
-            respondAuth(rq, b);
+            if (rq.name != null) clientName = rq.name;
+            if (rq.creds != null) {
+              boolean b = fw.authenticate(rq.creds);
+              respondAuth(rq, b);
+            }
           }
           else if (fw.permit(rq)) pool.execute(new RemoteTask(rq));
           else respondAuth(rq, false);
@@ -160,8 +164,8 @@ class ConnectionHandler extends Thread {
 
   @Override
   public String toString() {
-    if (conn == null) return super.toString();
-    return conn.toString();
+    if (conn == null) return super.toString() + " <" + clientName + ">";
+    return conn.toString() + " <" + clientName + ">";
   }
 
   private void respondAuth(JsonMessage rq, boolean auth) {
