@@ -28,7 +28,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   ////////////// Private attributes
 
-  private static final long TIMEOUT = 5000;
+  private static final long TIMEOUT = 15000;
 
   private TcpServer listener = null;
   private List<ConnectionHandler> slaves = new ArrayList<ConnectionHandler>();
