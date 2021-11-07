@@ -250,6 +250,10 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       for (ConnectionHandler slave: slaves) {
         JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
         if (rsp != null && rsp.agentIDs != null) {
+          if (rsp.agentTypes != null && rsp.agentTypes.length == rsp.agentIDs.length) {
+            for (int i = 0; i < rsp.agentIDs.length; i++)
+              rsp.agentIDs[i].setType(rsp.agentTypes[i]);
+          }
           rv.addAll(Arrays.asList(rsp.agentIDs));
         }
       }

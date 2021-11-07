@@ -200,6 +200,7 @@ public class Container {
       return null;
     }
     AgentID aid = new AgentID(name);
+    aid.setType(agent.getClass().getName());
     if (isDuplicate(aid)) {
       log.warning("Duplicate agent name: "+aid);
       return null;

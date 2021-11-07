@@ -27,6 +27,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
   private String name;
   private boolean isTopic;
   private transient Messenger owner;
+  private transient String type;
 
   /////////////// Interface methods
 
@@ -120,6 +121,26 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    */
   public Messenger getOwner() {
     return owner;
+  }
+
+  /**
+   * Gets the type of the agent, if available. For Java or Groovy agents,
+   * the type is the fully qualified class name of the agent.
+   *
+   * @return type of the agent if available, null otherwise.
+   */
+  public String getType() {
+    return type;
+  }
+
+  /**
+   * Sets the type of the agent. For Java or Groovy agents,
+   * the type is the fully qualified class name of the agent.
+   *
+   * @param type type of the agent.
+   */
+  public void setType(String type) {
+    this.type = type;
   }
 
   /////////////// Proxy interface methods

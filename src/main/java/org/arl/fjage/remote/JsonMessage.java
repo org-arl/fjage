@@ -26,6 +26,7 @@ public class JsonMessage {
   public Action inResponseTo;
   public AgentID agentID;
   public AgentID[] agentIDs;
+  public String[] agentTypes;
   public String service;
   public String[] services;
   public Boolean answer;
