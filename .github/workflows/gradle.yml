@@ -9,7 +9,7 @@ jobs:
       matrix:
         python-version: [3.5]
         node-version: [14.x]
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
     steps:
     - uses: actions/checkout@v1
     - name: Set up JDK 1.8
