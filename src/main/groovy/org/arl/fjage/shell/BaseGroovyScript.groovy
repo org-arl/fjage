@@ -119,7 +119,7 @@ abstract class BaseGroovyScript extends Script {
         if (aid.type == null) s.append('REMOTE')
         else {
           s.append(": ${aid.type}")
-          if (c.getAgent(aid) == null) s.append(' [R]')
+          if (c.getAgent(aid) == null) s.append(' [REMOTE]')
         }
         first = false
       }
