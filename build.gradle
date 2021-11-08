@@ -88,19 +88,9 @@ test {
   }
 }
 
-task jars(dependsOn: jar, type: Copy) {
+task lite(dependsOn: jar, type: Copy) {
   into "$buildDir/libs"
   from configurations.runtimeClasspath
-}
-
-jars.outputs.upToDateWhen { false }
-
-javadoc.doLast {
-  mkdir 'docs/javadoc'
-  copy {
-    from javadoc.destinationDir
-    into 'docs/javadoc'
-  }
 }
 
 task buildjs {
@@ -124,7 +114,21 @@ task buildjs {
   }
 }
 
-processResources.dependsOn("buildjs")
+task jars() {
+  dependsOn 'lite'
+  dependsOn 'buildjs'
+  tasks.findByName('buildjs').mustRunAfter 'lite'
+}
+
+jars.outputs.upToDateWhen { false }
+
+javadoc.doLast {
+  mkdir 'docs/javadoc'
+  copy {
+    from javadoc.destinationDir
+    into 'docs/javadoc'
+  }
+}
 
 task jsdoc(type: Exec){
   workingDir 'gateways/js'
