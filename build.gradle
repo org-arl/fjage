@@ -104,6 +104,8 @@ javadoc.doLast {
 }
 
 task buildjs {
+  inputs.files fileTree('gateways/js/src').include('**/*.js'), "gateways/js/package.json"
+  outputs.dir "gateways/js/dist"
   doLast {
     if (npmExists) {
       exec {
