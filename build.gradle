@@ -114,6 +114,8 @@ task buildjs {
   }
 }
 
+test.dependsOn 'buildjs'
+
 task jars() {
   dependsOn 'lite'
   dependsOn 'buildjs'
