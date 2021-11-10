@@ -32,4 +32,4 @@ jobs:
       run: npm ci
       working-directory: gateways/js
     - name: Build with Gradle
-      run: ./gradlew test
+      run: ./gradlew test -i
