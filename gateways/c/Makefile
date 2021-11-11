@@ -8,8 +8,8 @@ test:
 
 runtest:
 	./test_fjage $(DEVICE)
-	
+
 clean:
-	rm -fr libfjage.a test_fjage build
+	rm -fr libfjage.a libfjage.dylib libfjage.so test_fjage build
 
 .PHONY: all clean

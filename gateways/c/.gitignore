@@ -1,3 +1,5 @@
 build
 libfjage.a
+libfjage.dylib
+libfjage.so
 test_fjage
