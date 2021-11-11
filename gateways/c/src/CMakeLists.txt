@@ -11,8 +11,9 @@ add_compile_options(fjage -std=c99 -Wall -O2 -D_DEFAULT_SOURCE)
 target_compile_features(fjageShared PUBLIC c_std_99)
 add_compile_options(fjageShared -std=c99 -Wall -O2 -D_DEFAULT_SOURCE)
 IF (WIN32)
+    include(GenerateExportHeader)
     set_target_properties(fjageShared PROPERTIES OUTPUT_NAME "fjage" SUFFIX ".dll")
-    GENERATE_EXPORT_HEADER (fjageShared
+    GENERATE_EXPORT_HEADER(fjageShared
     BASE_NAME fjage
     EXPORT_MACRO_NAME fjage_EXPORT
     EXPORT_FILE_NAME fjage_Export.h

@@ -1,5 +1,10 @@
+
 build
+Release
+Debug
 libfjage.a
 libfjage.dylib
 libfjage.so
+fjage.lib
+fjage.dll
 test_fjage
