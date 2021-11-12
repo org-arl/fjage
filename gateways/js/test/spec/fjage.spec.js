@@ -1,6 +1,6 @@
 /* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass it expect describe spyOn beforeAll afterAll beforeEach jasmine*/
 
-const DIRNAME = '/tmp';
+const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
 const TEST_STRING = 'this is a test';
 const NEW_STRING = 'new test';
@@ -109,13 +109,13 @@ describe('A Gateway', function () {
     };
     expect(createGW).not.toThrow();
     expect(gw).toBeDefined();
-    await delay(100);
+    await delay(300);
     gw.close();
   });
 
   it('should have a successfully opened the underlying connector', async function () {
     const gw = new Gateway(gwOpts);
-    await delay(200);
+    await delay(500);
     expect([1, 'open']).toContain(gw.connector.sock.readyState);
     gw.close();
   });
@@ -125,7 +125,7 @@ describe('A Gateway', function () {
     const gw = new Gateway(gwOpts);
     const gw2 = new Gateway(gwOpts);
     expect(gw).toBe(gw2);
-    await delay(100);
+    await delay(300);
     gw.close();
   });
 
@@ -133,78 +133,78 @@ describe('A Gateway', function () {
     if (!isBrowser) return;
     var gw = new Gateway(gwOpts);
     expect(gObj.fjage.gateways).toContain(gw);
-    await delay(100);
+    await delay(300);
     gw.close();
   });
 
   it('should close the socket when close is called on it', async function () {
     const gw = new Gateway(gwOpts);
-    await delay(100);
+    await delay(300);
     gw.close();
-    await delay(100);
+    await delay(300);
     expect([gw.connector.sock.CLOSED, 'closed']).toContain(gw.connector.sock.readyState);
   });
 
   it('should remove itself from global array when closed', async function () {
     if (!isBrowser) return;
     const gw = new Gateway(gwOpts);
-    await delay(100);
+    await delay(300);
     gw.close();
-    await delay(100);
+    await delay(300);
     expect(gObj.fjage.gateways.find(el => el == gw)).toBeUndefined();
   });
 
   it('should send a message over a socket', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
-    await delay(100); // delay allow for imports
+    await delay(300); // delay allow for imports
     spyOn(gw.connector.sock, 'send').and.callThrough();
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
     req.recipient = shell;
     req.cmd = 'boo';
     gw.request(req);
-    await delay(100);
+    await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalled();
   });
 
   it('should send a socket message of valid fjage message structure', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
-    await delay(100); // delay allow for imports
+    await delay(300); // delay allow for imports
     spyOn(gw.connector.sock, 'send').and.callThrough();
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
     req.recipient = shell;
     req.cmd = 'boo';
     gw.request(req);
-    await delay(100);
+    await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(fjageMessageChecker());
   });
 
   it('should send correct ShellExecReq of valid fjage message structure', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
-    await delay(100); // delay allow for imports
+    await delay(300); // delay allow for imports
     spyOn(gw.connector.sock, 'send').and.callThrough();
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
     req.recipient = shell;
     req.cmd = 'boo';
     gw.request(req);
-    await delay(100);
+    await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
   });
 
   it('should send correct ShellExecReq of valid fjage message structure created using param constructor', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
-    await delay(100); // delay allow for imports
+    await delay(300); // delay allow for imports
     spyOn(gw.connector.sock, 'send').and.callThrough();
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq({recipient: shell, cmd: 'boo'});
     gw.request(req);
-    await delay(100);
+    await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
   });
 
@@ -220,7 +220,7 @@ describe('A Gateway', function () {
     await delay(4000);
     expect(gw.queue.length).toBeLessThanOrEqual(128);
     if (gw.queue.length == 128){
-      var ids = gw.queue.map(m => m.id).filter( id => !!id).sort();
+      var ids = gw.queue.map(m => m.id).filter( id => !!id).sort((a,b) => a-b);
       expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1);
       expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128);
     }
@@ -242,7 +242,7 @@ describe('A Gateway', function () {
     }
 
     for (type = 1; type <= NMSG; type++){
-      let m = await gw.receive(m => m instanceof SendMsgRsp,1000);
+      let m = await gw.receive(m => m instanceof SendMsgRsp,2000);
       if (m && m.type){
         rxed[m.type-1] = true;
       }else{
@@ -261,7 +261,7 @@ describe('An AgentID', function () {
   });
 
   afterAll(async () => {
-    await delay(100);
+    await delay(300);
     gw.close();
   });
 
@@ -453,7 +453,7 @@ describe('Shell GetFile/PutFile', function () {
     pfr.filename = DIRNAME + '/' + FILENAME;
     const rsp = await gw.request(pfr);
     expect(rsp).not.toBeNull();
-    await delay(100);
+    await delay(300);
     gw.close();
   });
 
@@ -701,8 +701,9 @@ describe('Shell GetFile/PutFile', function () {
 });
 
 
-function sendTestStatus(status, trace, type) {
+async function sendTestStatus(status, trace, type) {
   var gw = new Gateway(gwOpts);
+  await delay(300);
   let msg = new TestCompleteNtf();
   msg.recipient = gw.agent('test');
   msg.perf = Performative.INFORM;
@@ -719,7 +720,7 @@ const autoReporter = {
     result.status == 'failed' && failedSpecs.push(result);
   },
 
-  jasmineDone: function(result, done){
+  jasmineDone: async function(result){
     var trace = '';
     for(var i = 0; i < failedSpecs.length; i++) {
       trace += 'Failed : ' + failedSpecs[i].fullName + '\n';
@@ -736,10 +737,8 @@ const autoReporter = {
         return;
       }
     }
-    sendTestStatus(result.overallStatus == 'passed', trace, testType);
-    setTimeout(() => {
-      done();
-    },500);
+    await sendTestStatus(result.overallStatus == 'passed', trace, testType);
+    await delay(500)
   }
 };
 

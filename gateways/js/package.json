@@ -12,10 +12,11 @@
     "dist/**"
   ],
   "scripts": {
-    "build": "rm -rf dist/ && eslint src/*.js && node tools/check-version.js && rollup --silent -c rollup.config.js",
-    "test": "node test/spec/create-spec.cjs && jasmine test/spec/fjageSpec.cjs; node test/browser-test.cjs",
+    "build": "npx rimraf -rf dist/ && eslint src/*.js && node tools/check-version.js && rollup --silent -c rollup.config.js",
+    "pretest": "node test/spec/create-spec.cjs",
+    "test": "node test/run-tests.cjs",
     "docs": "documentation build src/fjage.js -f html --github --document-exported -o ../../docs/jsdoc",
-    "clean": "rm -rf dist/"
+    "clean": "npx rimraf -rf dist/"
   },
   "repository": {
     "type": "git",

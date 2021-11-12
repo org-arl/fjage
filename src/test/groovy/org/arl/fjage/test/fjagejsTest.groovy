@@ -68,11 +68,14 @@ class fjagejsTest {
       }
     })
     def ret = 0
+    def sout, serr;
     if (System.getProperty('manualJSTest') == null){
       // Run Jasmine based test in puppeteer.
       println "Running automated tests using puppeteer"
-      def proc = ['npm', '--prefix', 'gateways/js/', 'run', 'test'].execute()
-      def sout = new StringBuilder(), serr = new StringBuilder()
+      def cmd = System.properties['os.name'].toLowerCase().contains("windows") ? "npm.cmd" : "npm"
+      def proc = [cmd, '--prefix', 'gateways/js/', 'run', 'test'].execute()
+      sout = new StringBuilder() 
+      serr = new StringBuilder()
       proc.consumeProcessOutput(sout, serr)
       proc.waitFor()
       ret = proc.exitValue()
@@ -99,9 +102,9 @@ class fjagejsTest {
     println "-------------------------------------------------------------"
     container.shutdown()
     platform.shutdown()
-    assertEquals("`npm test` executed successfully?", ret, 0)
-    assertTrue("nodejs fjage.js test passed?", testRes["node"].didPass)
-    assertTrue("browser fjage.js test passed?", testRes["browser"].didPass)
+    assertEquals("npm >> " + sout.toString(), 0, ret)
+    assertTrue("JASMINE (node) >> "+testRes["node"].trace, testRes["node"].didPass)
+    assertTrue("JASMINE (browser) >> "+testRes["browser"].trace, testRes["browser"].didPass)
   }
 }
 

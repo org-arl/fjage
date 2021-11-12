@@ -854,7 +854,7 @@ public class BasicTests {
   }
 
   private class ShellTestAgent extends Agent {
-    private final String DIRNAME = "/tmp";
+    private final String DIRNAME = System.getProperty("java.io.tmpdir");
     private final String FILENAME = "fjage-test.txt";
     public boolean exec = false, put1 = false, put2 = false, put3 = false, put4 = false, get = false, get2 = false, get3 = false, get4 = false, del = false, dir = false, done = false;
     @Override

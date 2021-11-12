@@ -653,6 +653,10 @@ public class ShellAgent extends Agent {
         }
       } else {
         if (contents == null && ofs == 0) {
+          if (isCache.containsKey(filename)){
+            isCache.get(filename).is.close();
+            isCache.remove(filename);
+          }
           if (f.delete()) rsp = new Message(req, Performative.AGREE);
         } else if (contents == null) {
           os = new RandomAccessFile(f, "rw");

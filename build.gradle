@@ -1,3 +1,5 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
 plugins {
   id 'java-library'
   id 'groovy'
@@ -19,14 +21,14 @@ exec {
 }
 def commit = "$stdout".replace('\n','')
 
+// check if npm exists
+def npmcmd = Os.isFamily(Os.FAMILY_WINDOWS) ? "npm.cmd" : "npm"
 boolean npmExists = false
 try {
-  def npmproc = "npm -v".execute()
+  def npmproc = "$npmcmd -v".execute()
   npmproc.waitForOrKill(3000)
   npmExists = npmproc.exitValue() == 0
 } catch (IOException ex){}
-
-boolean isCI = System.getenv('CI') != null
 
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
@@ -77,7 +79,10 @@ tasks.withType(Javadoc) {
 
 jar {
   manifest {
-    attributes 'Build-Owner': System.getenv().USER, 'Build-Timestamp': new Date().format('d-MM-yyyy_HH:mm:ss'), 'Build-Version': "${project.version}/${commit}"
+    attributes (
+      "Build-Owner": System.getenv().USER ?: "fjage", 
+      "Build-Timestamp": new Date().format('d-MM-yyyy_HH:mm:ss'), 
+      "Build-Version": "${project.version}/${commit}")
   }
 }
 
@@ -96,17 +101,20 @@ task lite(dependsOn: jar, type: Copy) {
 task buildjs {
   inputs.files fileTree('gateways/js/src').include('**/*.js'), "gateways/js/package.json"
   outputs.dir "gateways/js/dist"
+ 
   doLast {
     if (npmExists) {
       exec {
         workingDir 'gateways/js'
-        commandLine 'npm', isCI ? 'ci' : "install"
+        executable npmcmd
+        args System.getenv('CI') != null ? 'ci' : "install"
         errorOutput = new ByteArrayOutputStream()
         standardOutput = new ByteArrayOutputStream()
       }
       exec {
         workingDir 'gateways/js'
-        commandLine 'npm', 'run', 'build'
+        executable npmcmd
+        args 'run', 'build'
       }
     } else{
       project.logger.lifecycle('npm not found. Using cached fjage.js build')
@@ -134,7 +142,7 @@ javadoc.doLast {
 
 task jsdoc(type: Exec){
   workingDir 'gateways/js'
-  executable 'npm'
+  executable npmcmd
   args = ['run', 'docs']
 }
 
@@ -142,7 +150,8 @@ task updatexterm {
   doLast {
     exec {
       workingDir '.'
-      commandLine 'npm', 'install', 'xterm@4.13.0', 'xterm-addon-attach@0.6.0', 'xterm-addon-fit@0.5.0', 'xterm-addon-web-links@0.4.0'
+      executable npmcmd
+      args ['install', 'xterm@4.13.0', 'xterm-addon-attach@0.6.0', 'xterm-addon-fit@0.5.0', 'xterm-addon-web-links@0.4.0']
     }
     copy {
       from (['node_modules/xterm-addon-web-links/lib', 'node_modules/xterm-addon-attach/lib', 'node_modules/xterm-addon-fit/lib', 'node_modules/xterm/lib']) {
