@@ -19,7 +19,7 @@ class MyWeatherStation extends Agent {
       log.info "Weather Station up and waiting for requests"
     })
 
-    add new MessageBehavior({ msg ->
+    add new MessageBehavior(GenericMessage, { msg ->
       // check for message fields
       if (msg.performative == Performative.REQUEST && msg.type == 'WeatherForecast') {
         log.info "Weather forecast request for ${msg.city}, ${msg.country}"
