@@ -513,6 +513,7 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
   u_long NONBLOCK_MODE = 1;
   ioctlsocket(fgw->sockfd, FIONBIO, &NONBLOCK_MODE);
 #else
+  signal(SIGPIPE, SIG_IGN);
   fcntl(fgw->sockfd, F_SETFL, O_NONBLOCK);
 #endif
 
