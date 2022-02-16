@@ -25,6 +25,7 @@ for full license details.
 #include <unistd.h>
 #include <netdb.h>
 #include <termios.h>
+#include <execinfo.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -72,6 +73,9 @@ for full license details.
 static fjage_msg_t fjage_msg_from_json(const char* json);
 static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg);
 static void fjage_msg_set_sender(fjage_msg_t msg, fjage_aid_t aid);
+#ifdef __GNUC__
+static void sthandler(int sig) __attribute__ ((unused));
+#endif
 
 //// utilities
 
@@ -137,6 +141,19 @@ static long get_time_ms(void) {
   gettimeofday(&tv, NULL);
   if (_t0 == 0) _t0 = tv.tv_sec;
   return (long)(tv.tv_sec-_t0)*1000 + (long)(tv.tv_usec)/1000;
+}
+
+static void sthandler(int sig) {
+  void *array[10];
+  size_t size;
+
+  // get void*'s for all entries on the stack
+  size = backtrace(array, 10);
+
+  // print out all the frames to stderr
+  fprintf(stderr, "Error: signal %d:\n", sig);
+  backtrace_symbols_fd(array, size, STDERR_FILENO);
+  exit(1);
 }
 
 //// gateway API
@@ -473,6 +490,9 @@ bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic) {
 }
 
 fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
+#if defined(DEBUG) && ! defined(_WIN32)
+  signal(SIGSEGV, sthandler);
+#endif
 #ifdef _WIN32
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) return NULL;
@@ -540,6 +560,9 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
 
 fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings) {
   if (settings != NULL && strcmp(settings, "N81")) return NULL;
+#if defined(DEBUG) && ! defined(_WIN32)
+  signal(SIGSEGV, sthandler);
+#endif
   switch (baud) {
     case 50:      baud = B50;     break;
     case 75:      baud = B75;     break;

@@ -1,5 +1,10 @@
 CFLAGS=-std=c99 -Wall -O2 -D_DEFAULT_SOURCE
 
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+    CFLAGS += -DDEBUG
+endif
+
 all: libfjage.a
 
 libfjage.a: fjage.o jsmn.o encode.o decode.o
