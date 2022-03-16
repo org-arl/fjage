@@ -649,6 +649,8 @@ int fjage_close(fjage_gw_t gw) {
 #endif
     fjage_aid_destroy(fgw->aid);
     free(fgw->buf);
+    for (int i = fgw->mqueue_tail; i != fgw->mqueue_head; i = (i + 1) % QUEUE_LEN)
+      fjage_msg_destroy(fgw->mqueue[i]);
     free(fgw);
   }
 #ifdef _WIN32
