@@ -30,7 +30,7 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
 
   public ArrayAdapterFactory() {
     bare = false;
-    threshold = 16;
+    threshold = 0;
   }
 
   public ArrayAdapterFactory(boolean bare, int threshold) {
