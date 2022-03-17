@@ -13,6 +13,7 @@ for full license details.
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <signal.h>
 
 #ifdef _WIN32
 #pragma comment(lib, "ws2_32.lib")
