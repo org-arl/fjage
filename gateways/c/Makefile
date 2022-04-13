@@ -1,9 +1,14 @@
-default: 
-	cmake -S . -B build
-	cmake --build build 
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+    CFLAGS += -DDEBUG
+endif
+
+default:
+	cmake -DCMAKE_C_FLAGS="$(CFLAGS)" -S . -B build
+	cmake --build build
 
 test:
-	cmake -S . -B build -DBUILD_TESTING=ON
+	cmake -DCMAKE_C_FLAGS="$(CFLAGS)" -S . -B build -DBUILD_TESTING=ON
 	cmake --build build
 
 runtest:
