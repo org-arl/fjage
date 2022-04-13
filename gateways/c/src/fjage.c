@@ -1145,7 +1145,11 @@ static const int fjage_msg_get_array(fjage_msg_t msg, const char* key, const cha
           sscanf(tt, "%d", &x);
           *((uint8_t*)value) = (uint8_t)(x & 0xff);
         }
+#ifdef _WIN32        
+        ((uint8_t*)value) += sz;
+#else
         value += sz;
+#endif
       }
       return m->tokens[i+1].size;
     }
