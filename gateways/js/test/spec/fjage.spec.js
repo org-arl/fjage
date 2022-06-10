@@ -20,7 +20,7 @@ var gObj = {};
 var testType;
 if (isBrowser){
   gObj = window;
-  gwOpts = { 
+  gwOpts = {
     hostname: 'localhost',
     port : '8080',
     pathname: '/ws/'
@@ -28,7 +28,7 @@ if (isBrowser){
   testType = 'browser';
 } else if (isJsDom || isNode){
   gObj = global;
-  gwOpts = { 
+  gwOpts = {
     hostname: 'localhost',
     port : '5081',
     pathname: ''
@@ -731,14 +731,14 @@ const autoReporter = {
     }
     if (isBrowser){
       const params = new URLSearchParams(window.location.search);
-      if (params && params.get('send') == 'false') return;
       if (params && params.get('refresh') == 'true' && result.overallStatus == 'passed') {
         setTimeout(() => window.location.reload(),3000);
         return;
       }
+      if (params && params.get('send') == 'false') return;
     }
     await sendTestStatus(result.overallStatus == 'passed', trace, testType);
-    await delay(500)
+    await delay(500);
   }
 };
 
