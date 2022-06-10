@@ -12,7 +12,7 @@ const __dirname = dirname(__filename);
   const fjsver = JSON.parse(await readFile(__dirname+'/../package.json','utf8')).version;
   const fver = (await readFile(__dirname+'/../../../VERSION', 'utf8')).trim();
   let d = semver.diff(fjsver, fver);
-  if (d == 'patch' || d == null || d == 'prerelease') process.exit(0);
+  if (d == 'patch' || d == 'prepatch' || d == null || d == 'prerelease') process.exit(0);
   console.log('Mismatch version of fjage.js and fjage : ', fjsver, '!~=', fver );
   process.exit(1);
 })();
