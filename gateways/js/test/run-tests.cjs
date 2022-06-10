@@ -52,15 +52,11 @@ let server = require('http').createServer(function (request, response) {
 // Helpers
 
 async function runJasmine (dir, specs) {
-  return new Promise((resolve) => {
-    let jasmine = new Jasmine();
-    jasmine.loadConfig({
-      spec_dir: dir,
-      spec_files: specs,
-    });
-    jasmine.onComplete(function(status) {
-      resolve(status);
-    });
-    jasmine.execute();
+  let jasmine = new Jasmine();
+  jasmine.loadConfig({
+    spec_dir: dir,
+    spec_files: specs,
   });
+  jasmine.exitOnCompletion = false;
+  await jasmine.execute();
 }
