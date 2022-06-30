@@ -76,7 +76,7 @@
     .tgl:checked + .tgl-btn:after {
       left: 60%;
     }
-    
+
     .tgl-flat + .tgl-btn {
       padding: 2px;
       transition: all 0.2s ease;
@@ -146,7 +146,7 @@
     }
     function setTheme(term, theme){
       if (theme == 'light'){
-        term.setOption('theme', { 
+        term.setOption('theme', {
           background: '#fdf6e3',
           foreground: '#002B36',
           yellow: '#b58900',
@@ -154,10 +154,11 @@
           green: '#859900',
           blue: '#268bd2',
           red: '#dc322f',
-          cursor: '#586e75'
+          cursor: '#586e75',
+          selection: '#d3c494'
         });
       }else if (theme == 'dark'){
-        term.setOption('theme', { 
+        term.setOption('theme', {
           background: '#000000',
           foreground: '#ffffff',
           yellow: '#c4a000',
@@ -175,7 +176,7 @@
       } else {
         resizing = false;
         fitAddon.fit();
-      }               
+      }
     }
     window.addEventListener('load', () => {
       const darkmodeBtn = document.getElementById('darkmode-tgl');

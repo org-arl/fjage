@@ -80,8 +80,8 @@ tasks.withType(Javadoc) {
 jar {
   manifest {
     attributes (
-      "Build-Owner": System.getenv().USER ?: "fjage", 
-      "Build-Timestamp": new Date().format('d-MM-yyyy_HH:mm:ss'), 
+      "Build-Owner": System.getenv().USER ?: "fjage",
+      "Build-Timestamp": new Date().format('d-MM-yyyy_HH:mm:ss'),
       "Build-Version": "${project.version}/${commit}")
   }
 }
@@ -101,7 +101,7 @@ task lite(dependsOn: jar, type: Copy) {
 task buildjs {
   inputs.files fileTree('gateways/js/src').include('**/*.js'), "gateways/js/package.json"
   outputs.dir "gateways/js/dist"
- 
+
   doLast {
     if (npmExists) {
       exec {
@@ -151,7 +151,7 @@ task updatexterm {
     exec {
       workingDir '.'
       executable npmcmd
-      args ['install', 'xterm@4.13.0', 'xterm-addon-attach@0.6.0', 'xterm-addon-fit@0.5.0', 'xterm-addon-web-links@0.4.0']
+      args 'install', 'xterm@4.19.0', 'xterm-addon-attach@0.6.0', 'xterm-addon-fit@0.5.0', 'xterm-addon-web-links@0.6.0'
     }
     copy {
       from (['node_modules/xterm-addon-web-links/lib', 'node_modules/xterm-addon-attach/lib', 'node_modules/xterm-addon-fit/lib', 'node_modules/xterm/lib']) {
