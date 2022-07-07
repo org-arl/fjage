@@ -332,7 +332,6 @@ class Message(object):
             clazz = getattr(mod, clazz)
             rv = clazz()
         except Exception as e:
-            self.logger.critical("Exception: " + str(e))
             rv = Message()
         rv.__clazz__ = qclazz
         rv._inflate(obj['data'])
