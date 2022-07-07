@@ -54,9 +54,10 @@ Try to stick to the coding style already in use in the repository. Additionally,
 
 Building:
 
-* `gradle` to build the jars
+* `gradle` to build the jars including resources (webshell, fjage.js, etc.)
+* `gradle lite` to build only the jars
 * `gradle test` to run all regression tests (automated through Github actions CI)
-* `gradle upload` to upload jars to Maven staging (requires credentials)
+* `gradle publish` to upload jars to Maven staging (requires credentials)
 * `make html` to build developer's documentation (automated through ReadTheDocs)
 * `gradle javadoc` to build the Java API documentation
 * `npm run docs` to build the Javascript API documentation

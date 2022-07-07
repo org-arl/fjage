@@ -11,7 +11,7 @@ for full license details.
 package org.arl.fjage.shell
 
 import org.arl.fjage.*
-
+import org.arl.fjage.param.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -116,9 +116,11 @@ abstract class BaseGroovyScript extends Script {
       for (AgentID aid: agentIDs) {
         if (!first) s.append('\n')
         s.append(aid)
-        Agent a1 = c.getAgent(aid)
-        if (a1) s.append(": ${a1.class.name} - ${a1.state}")
-        else s.append(': REMOTE')
+        if (aid.type == null) s.append(': REMOTE')
+        else {
+          s.append(": ${aid.type}")
+          if (c.getAgent(aid) == null) s.append(' [REMOTE]')
+        }
         first = false
       }
       return s.toString()

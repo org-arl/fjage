@@ -26,6 +26,7 @@ public class JsonMessage {
   public Action inResponseTo;
   public AgentID agentID;
   public AgentID[] agentIDs;
+  public String[] agentTypes;
   public String service;
   public String[] services;
   public Boolean answer;
@@ -33,6 +34,7 @@ public class JsonMessage {
   public Boolean relay;
   public String creds;
   public Boolean auth;
+  public String name;
 
   private static GsonBuilder gsonBuilder = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)

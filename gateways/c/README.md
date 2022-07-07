@@ -1,63 +1,71 @@
 # fjåge C gateway
 
-## Build fjåge C library
+This is a fjåge gateway implementation in C.
 
-This folder contains the files `fjage.h` and `fjage.c`. The header file includes the definition and documentation of the fjåge C APIs and the source code is provided in the `fjage.c` file.  `Makefile` is used to collate the necessary files and compile the source code and run tests.
+## Building
 
-To build fjåge C library on Linux / macOS , run:
+Prerequisites: [CMake](https://cmake.org/) ≥ 3.1
+
+For building on Linux / macOS :
+
+A Makefile is provided which will invoke CMake to build a static (`libfjage.a`) and dynamic(`libfjage.so/libfjage.dylib`) library for your platform.
 
 ```bash
 make
 ```
 
-This will generate a library (`libfjage.a`) which can be used to link against.
+For building on Windows:
 
-To build fjåge C library on Windows, run:
+- Ensure [Visual Studio Code](https://code.visualstudio.com/) or a similar IDE is installed and the CMake toolchain is set up.
+- open this directory in the IDE. It should automatically identify the CMake target and provide a option to build it, generating the static (`fjage.lib`) and dynamic (`fjage.dll`) libaries.
 
-```bash
-cl *.c /link /out:test_fjage.exe
-lib *.obj /out:fjage.lib
-```
-
-This will generate a library (`fjage.lib`) which can be used to link against.
-
-## Test fjåge C library
-
-To run the test using fjåge C APIs, follow the two steps below:
-
-1. Run a fjåge server in another terminal window at the project root folder as shown below:
-
-```bash
-./fjage.sh
-```
-
-2. Run the test program:
-
-On Linux / Max OS X:
-
-```bash
-make test
-```
-
-or on Windows:
-
-```bash
-test_fjage.exe
-```
-
-## Clean
-
-To clean all the built files on Linux / Mac OS X, run:
+### Cleaning
 
 ```bash
 make clean
 ```
 
-or to clean them on Windows:
+### Debugging
+
+A debug build is also available.
 
 ```bash
-del *.obj *.lib *.exe
+make DEBUG=1 default
 ```
+
+Current the debug build adds the following features :
+
+- adds a handler for SIGSEV (segmentation fault) to print a stack trace when the applications crashes (Linux / macOS).
+
+## Usage
+
+`fjage.h` header file includes the definition and documentation of the fjåge C APIs that can be used.
+
+## Testing
+
+A test suite is available in the `test` directory. To run the test suite, follow the two steps below:
+
+1. Run a fjåge server in another terminal window at the project root folder as shown below:
+
+    ```bash
+    # cd to the project root
+    > cd ../..
+    > ./fjage.sh
+    ```
+
+2. Run the test program:
+
+    On Linux / Max OS X:
+
+    ```bash
+    > make test runtest
+    ```
+
+    or on Windows:
+
+    ```bash
+    > test_fjage.exe
+    ```
 
 ## Documentation
 

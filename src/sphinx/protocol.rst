@@ -43,6 +43,8 @@ A JsonMessage class is defined in fjåge which support a list of attributes. The
 
 * `agentIDs`: **Array** - This attribute is populated in objects which are responses to objects requesting the IDs of agents providing a specific service with `"action" : "agentsForService"`, or objects which are responses to objects requesting a list of all agents running in a container.
 
+* `agentTypes`: **Array** - This attribute is optionally populated in objects which are responses to objects requesting a list of all agents running in a container. If populated, it contains a list of agent types running in the container, with a one-to-one mapping to the agent IDs in the `"agentIDs"` attribute.
+
 * `service` : **String** - Used in conjunction with `"action" : "agentForService"` and `"action" : "agentsForService"` to query for agent(s) providing this specific service.
 
 * `services`: **Array** - This attribute is populated in objects which are responses to objects requesting the services available with `"action" : "services"`.

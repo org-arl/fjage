@@ -201,10 +201,13 @@ class AgentID:
                     p.text('  ' + pp[-1] + ' \u2907 ' + str(params[param]) + '\n')
                 else:
                     p.text('  ' + pp[-1] + ' = ' + str(params[param]) + '\n')
+        self.index = -1
 
 
 def getter(self, param):
     rsp = self.request(ParameterReq(index=self.index).get(param))
+    if param[0] != '_':
+        self.index = -1
     if rsp is None:
         return None
     elif 'param' in rsp.__dict__:
@@ -229,6 +232,8 @@ def setter(self, param, value):
         self.__dict__[param] = value
         return value
     rsp = self.request(ParameterReq(index=self.index).set(param, value))
+    if param[0] != '_':
+        self.index = -1
     if rsp is None:
         _warn('Could not set parameter ' + param)
         return None

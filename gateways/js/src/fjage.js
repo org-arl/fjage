@@ -283,9 +283,9 @@ export class GenericMessage extends Message {
 
 /**
  * A gateway for connecting to a fjage master container. The new version of the constructor
- * uses an options object instead of individual parameters. The old version with 
- * 
- * 
+ * uses an options object instead of individual parameters. The old version with
+ *
+ *
  * @class
  * @param {Object} opts
  * @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
@@ -306,7 +306,7 @@ export class Gateway {
     if (typeof opts === 'string' || opts instanceof String){
       opts = {
         'hostname': opts,
-        'port' : port || gObj.location.port, 
+        'port' : port || gObj.location.port,
         'pathname' : pathname,
         'timeout' : timeout
       };
@@ -475,7 +475,7 @@ export class Gateway {
       return 'inReplyTo' in msg && msg.inReplyTo == filter;
     } else if (Object.prototype.hasOwnProperty.call(filter, 'msgID')) {
       return 'inReplyTo' in msg && msg.inReplyTo == filter.msgID;
-    } else if (filter.__proto__.name == 'Message') {
+    } else if (filter.__proto__.name == 'Message' || filter.__proto__.__proto__.name == 'Message') {
       return filter.__clazz__ == msg.__clazz__;
     } else if (typeof filter == 'function') {
       return filter(msg);
@@ -502,13 +502,13 @@ export class Gateway {
     if (f.length ) return f[0];
     return null;
   }
-  
+
   /** @private */
   _addGWCache(gw){
     if (!gObj.fjage || !gObj.fjage.gateways) return;
     gObj.fjage.gateways.push(gw);
   }
-  
+
   /** @private */
   _removeGWCache(gw){
     if (!gObj.fjage || !gObj.fjage.gateways) return;
@@ -711,7 +711,7 @@ export class Gateway {
   }
 
   /**
-   * Sends a request and waits for a response. This method returns a {Promise} which resolves when a response 
+   * Sends a request and waits for a response. This method returns a {Promise} which resolves when a response
    * is received or if no response is received after the timeout.
    *
    * @param {string} msg - message to send
@@ -724,10 +724,10 @@ export class Gateway {
   }
 
   /**
-   * Returns a response message received by the gateway. This method returns a {Promise} which resolves when 
+   * Returns a response message received by the gateway. This method returns a {Promise} which resolves when
    * a response is received or if no response is received after the timeout.
    *
-   * @param {function} [filter=] - original message to which a response is expected, or a MessageClass of the type 
+   * @param {function} [filter=] - original message to which a response is expected, or a MessageClass of the type
    * of message to match, or a closure to use to match against the message
    * @param {number} [timeout=0] - timeout in milliseconds
    * @returns {Promise<?Message>} - received response message, null on timeout
@@ -787,7 +787,7 @@ export const Services = {
  * @param {string} name - fully qualified name of the message class to be created
  * @param {class} [parent=Message] - class of the parent MessageClass to inherit from
  * @returns {function} - constructor for the unqualified message class
- * @example 
+ * @example
  * const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
  * let pReq = new ParameterReq()
  */
@@ -824,7 +824,7 @@ function _guid(len) {
     s += s4();
   return s;
 }
-  
+
 // convert from base 64 to array
 /** @private */
 function _b64toArray(base64, dtype, littleEndian=true) {

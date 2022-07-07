@@ -1,20 +1,20 @@
-CFLAGS=-std=c99 -Wall -O2 -D_DEFAULT_SOURCE
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+    CFLAGS += -DDEBUG
+endif
 
-all: libfjage.a
+default:
+	cmake -DCMAKE_C_FLAGS="$(CFLAGS)" -S . -B build
+	cmake --build build
 
-libfjage.a: fjage.o jsmn.o encode.o decode.o
-	$(AR) rc $@ $^
+test:
+	cmake -DCMAKE_C_FLAGS="$(CFLAGS)" -S . -B build -DBUILD_TESTING=ON
+	cmake --build build
 
-%.o: %.c fjage.h jsmn.h b64.h
-	$(CC) $(CFLAGS) -c $< -o $@
-
-test_fjage: test_fjage.o libfjage.a
-	$(CC) -o test_fjage test_fjage.o libfjage.a -lpthread
-
-test: test_fjage
+runtest:
 	./test_fjage $(DEVICE)
 
 clean:
-	rm -f libfjage.a *.o test_fjage
+	rm -fr libfjage.a libfjage.dylib libfjage.so test_fjage build
 
 .PHONY: all clean
