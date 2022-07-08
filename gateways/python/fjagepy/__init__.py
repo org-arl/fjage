@@ -429,18 +429,28 @@ class ParameterReq(_ParameterReq):
         self.index = index
         self.requests = []
         self.perf = Performative.REQUEST
+        self.param = None
+        self.value = None
         self.__dict__.update(kwargs)
 
     def get(self, param):
-        self.requests.append({'param': param})
+        if (self.param is None):
+            self.param = param
+        else:
+            self.requests.append({'param': param})
         return self
 
     def set(self, param, value):
-        self.requests.append({'param': param, 'value': value})
+        if (self.param is None) and (self.value is None):
+            self.param = param
+            self.value = value
+        else:
+            self.requests.append({'param': param, 'value': value})
         return self
 
     def __str__(self):
         p = ' '.join(
+            [_short(str(self.param)) + ':' + (str(self.value) if 'value' in self else '?')],
             [_short(str(request['param'])) + ':' + (str(request['value']) if 'value' in request else '?') for request in
              self.requests])
         return self.__class__.__name__ + ':' + self.perf + '[' + (
