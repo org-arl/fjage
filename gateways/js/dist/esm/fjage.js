@@ -1,4 +1,4 @@
-/* fjage.js v1.10.1 */
+/* fjage.js v1.10.2 */
 
 const isBrowser =
   typeof window !== "undefined" && typeof window.document !== "undefined";
@@ -679,7 +679,7 @@ class Gateway {
     this.eventListeners = {};             // external listeners wanting to listen internal events
     this.queue = [];                      // incoming message queue
     this.debug = false;                   // debug info to be logged to console?
-    this.aid = new AgentID(isBrowser ? 'WebGW-' : 'NodeGW-'+_guid(4));         // gateway agent name
+    this.aid = new AgentID((isBrowser ? 'WebGW-' : 'NodeGW-')+_guid(4));         // gateway agent name
     this.connector = this._createConnector(url);
     this._addGWCache(this);
   }
