@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage;
 
+import org.arl.fjage.remote.JsonMessage;
+
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -24,6 +26,7 @@ import java.util.UUID;
 public class Message implements Serializable {
 
   private static final long serialVersionUID = 1L;
+  private String _jsoncache = null;
 
   //////////// Private attributes
 
@@ -105,6 +108,7 @@ public class Message implements Serializable {
    */
   public void setPerformative(Performative perf) {
     this.perf = perf;
+    _jsoncache = null;
   }
 
   /**
@@ -123,6 +127,7 @@ public class Message implements Serializable {
    */
   public void setRecipient(AgentID aid) {
     recipient = aid;
+    _jsoncache = null;
   }
 
   /**
@@ -141,6 +146,7 @@ public class Message implements Serializable {
    */
   public void setSender(AgentID aid) {
     sender = aid;
+    _jsoncache = null;
   }
 
   /**
@@ -159,6 +165,7 @@ public class Message implements Serializable {
    */
   public void setMessageID(String id) {
     msgID = id;
+    _jsoncache = null;
   }
 
   /**
@@ -177,6 +184,7 @@ public class Message implements Serializable {
    */
   public void setInReplyTo(String id) {
     inReplyTo = id;
+    _jsoncache = null;
   }
 
   /**
@@ -206,6 +214,27 @@ public class Message implements Serializable {
     return sentAt;
   }
 
+  /////////////// Internal methods for JSON Serialization
+
+
+  /**
+   * Gets the Cached JSON String (if any)
+   *
+   * @return Cached JSON String representation of the message
+   */
+  public String getJsonCache() {
+    return _jsoncache;
+  }
+
+  /**
+   * Sets the Cached JSON String
+   *
+   * @param _jsoncache JSON String representation of the message
+   */
+  public void setJsonCache(String _jsoncache) {
+    this._jsoncache = _jsoncache;
+  }
+
   /////////////// Standard Java methods to customize
 
   /**
@@ -221,5 +250,4 @@ public class Message implements Serializable {
     if (cls.equals(Message.class)) return p;
     return p + ": " + cls.getSimpleName();
   }
-
 }

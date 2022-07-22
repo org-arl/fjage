@@ -58,10 +58,13 @@ public class JsonMessage {
   }
 
   public static JsonMessage fromJson(String s) {
+    JsonMessage j = gson.fromJson(s, JsonMessage.class);
+    if (j.message != null) j.message.setJsonCache(s);
     return gson.fromJson(s, JsonMessage.class);
   }
 
   public String toJson() {
+    if (this.message.getJsonCache() != null) return this.message.getJsonCache();
     return gson.toJson(this);
   }
 
