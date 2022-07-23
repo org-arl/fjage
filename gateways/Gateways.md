@@ -150,3 +150,4 @@ All fjåge Gateway implementations should implement the following classes and me
 
 - Creates a response message.
 - Commonly not used directly, but extended using the _MessageClass_ function to create custom messages.
+- Must add a `boolean` true field with a suffix `__isComplex` if the message contains any arrays of complex numbers. For example, if a field `signal` is a complex array, a field `signal__isComplex = true` is added to the JSON message. This is only applicable for languages that support complex numbers natively.
