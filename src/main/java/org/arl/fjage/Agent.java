@@ -159,6 +159,15 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   }
 
   /**
+   * Gets class name of agent.
+   *
+   * @return qualified class name
+   */
+  public String getType() {
+    return getClass().getName();
+  }
+
+  /**
    * Changes the logging level for the agent.
    *
    * @param level log level

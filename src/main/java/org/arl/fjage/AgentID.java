@@ -130,7 +130,10 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    * @return type of the agent if available, null otherwise.
    */
   public String getType() {
-    return type;
+    if (type != null) return type;
+    Object t = get(new NamedParameter("type"));
+    if (t == null) return null;
+    return t.toString();
   }
 
   /**
