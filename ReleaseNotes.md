@@ -1,5 +1,14 @@
 # Release Notes
 
+## v1.10.0
+
+* Bug fixes
+* Improved authentication API
+* Added support for naming slave containers
+* Added support for getting remote agent types
+* Improved handling of named parameters in parameter display
+* Changed default base 64 encoding threshold to 0
+
 ## v1.9.1
 
 * Bug fixes
