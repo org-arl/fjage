@@ -154,6 +154,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    * @param msg message to send.
    */
   public void send(Message msg) {
+    if (owner == null) return;
     msg.setRecipient(this);
     owner.send(msg);
   }
@@ -166,6 +167,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    * @return response.
    */
   public Message request(Message msg) {
+    if (owner == null) return null;
     msg.setRecipient(this);
     return owner.request(msg, 1000);
   }
@@ -179,6 +181,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    * @return response.
    */
   public Message request(Message msg, long timeout) {
+    if (owner == null) return null;
     msg.setRecipient(this);
     return owner.request(msg, timeout);
   }
