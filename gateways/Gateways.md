@@ -4,6 +4,18 @@ All fjåge Gateway implementations should implement the following classes and me
 
 ## Gateway Class
 
+### JSON messages
+
+A fjåge Gateway connects to a fjåge master container and sends/receives messages to/from the master container. Each Gateway contains a Gateway Agent, which handles all the messages that are sent to the Gateway. A Gateway Agent must handle messages with these actions : 
+
+- `action: agents` : reply with the information about the Gateway Agent in the format `{agentIDs: [<>], agentTypes: [<>]}`.
+- `action: agentForService` : reply if the Gateway Agent supports the service in the format `{agentID: <>}`.
+- `action: agentsForService` : reply if the Gateway Agent supports the service in the format `{agentIDs: [<>]}`.
+- `action: services` : reply with a list (empty by default) of services provided by the Gateway Agent in the format `{services: []}`
+- `action: containsAgent` : reply `true` if the Gateway Agent as the same `agentID` as in the message, in the format `{answer: <true/false>}`
+- `action: send` : parse and process the messsage as per the Gateway logic.
+- `action: shutdown` : close and stop the Gateway
+
 ### `Gateway()` :: String hostname, Int port, (String settings) -> Gateway
 
 - Creates a gateway connecting to a specified master container specified by the arguments.
