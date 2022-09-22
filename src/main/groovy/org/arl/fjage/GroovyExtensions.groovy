@@ -84,7 +84,7 @@ class GroovyExtensions {
       List<String> out = new ArrayList<String>()
       rsp.parameters().each {
         if (it instanceof NamedParameter) {
-          if (it.name != 'title' && it.name != 'description') {
+          if (it.name() != 'title' && it.name() != 'description') {
             String s = "${rsp.get(it)}"
             String p = "$it"
             if (!p.contains('.')) p = ".$p"
