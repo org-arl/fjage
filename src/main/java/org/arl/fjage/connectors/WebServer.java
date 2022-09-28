@@ -10,18 +10,23 @@ for full license details.
 
 package org.arl.fjage.connectors;
 
-import java.util.*;
-import java.io.*;
-import java.net.InetSocketAddress;
-import javax.servlet.http.*;
-import javax.servlet.ServletException;
-import org.eclipse.jetty.util.log.*;
-import org.eclipse.jetty.server.*;
-import org.eclipse.jetty.server.handler.*;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
 import org.eclipse.jetty.rewrite.handler.Rule;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.*;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.util.log.Log;
+import org.eclipse.jetty.util.log.Logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Web server instance manager.
@@ -148,7 +153,7 @@ public class WebServer {
     HandlerCollection handlerCollection = new HandlerCollection();
     GzipHandler gzipHandler = new GzipHandler();
     gzipHandler.setIncludedMimeTypes("text/html", "text/plain", "text/xml", "text/css", "application/javascript", "text/javascript");
-    handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });  
+    handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });
     gzipHandler.setHandler(rewrite);
     rewrite.setHandler(handlerCollection);
     server.setHandler(gzipHandler);
@@ -236,16 +241,25 @@ public class WebServer {
    * @param cacheControl cache control header.
    */
   public void add(String context, String resource, String cacheControl) {
-    String staticWebResDir = getClass().getResource(resource).toExternalForm();
-    ContextHandler handler = new ContextHandler(context);
-    ResourceHandler resHandler = new ResourceHandler();
-    resHandler.setResourceBase(staticWebResDir);
-    resHandler.setWelcomeFiles(new String[]{ "index.html" });
-    resHandler.setDirectoriesListed(false);
-    resHandler.setCacheControl(cacheControl);
-    handler.setHandler(resHandler);
-    staticContexts.put(context, handler);
-    add(handler);
+    if(resource.startsWith("/")) resource = resource.substring(1);
+    ArrayList<URL> res = new ArrayList<>();
+    try {
+      res = Collections.list(getClass().getClassLoader().getResources(resource));
+    }catch (IOException ex){
+      // do nothing
+    }
+    for (URL r : res){
+      String staticWebResDir = r.toExternalForm();
+      ContextHandler handler = new ContextHandler(context);
+      ResourceHandler resHandler = new ResourceHandler();
+      resHandler.setResourceBase(staticWebResDir);
+      resHandler.setWelcomeFiles(new String[]{ "index.html" });
+      resHandler.setDirectoriesListed(false);
+      resHandler.setCacheControl(cacheControl);
+      handler.setHandler(resHandler);
+      staticContexts.put(context, handler);
+      add(handler);
+    }
   }
 
   /**
