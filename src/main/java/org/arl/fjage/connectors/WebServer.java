@@ -18,6 +18,8 @@ import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.eclipse.jetty.util.thread.ThreadPool;
 
 import java.io.File;
 import java.io.IOException;
@@ -157,6 +159,8 @@ public class WebServer {
     gzipHandler.setHandler(rewrite);
     rewrite.setHandler(handlerCollection);
     server.setHandler(gzipHandler);
+    ThreadPool pool = server.getThreadPool();
+    if (pool instanceof QueuedThreadPool) ((QueuedThreadPool)pool).setDaemon(true);
     started = false;
   }
 
