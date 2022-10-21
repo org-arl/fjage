@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.10.1
+
+* Bug fix in FSM behavior reenter() handling
+* Bug fix in parameter name handling
+* Fixes to web server and web resource handling
+
 ## v1.10.0
 
 * Bug fixes
