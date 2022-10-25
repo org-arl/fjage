@@ -48,7 +48,7 @@ dependencies {
   api 'org.eclipse.jetty:jetty-rewrite:9.4.26.v20200117'
   api 'org.eclipse.jetty.websocket:websocket-server:9.4.26.v20200117'
   api 'com.google.code.gson:gson:2.8.5'
-  api 'com.fazecast:jSerialComm:2.9.2'
+  api 'com.fazecast:jSerialComm:2.5.1'
   testImplementation 'junit:junit:4.12'
   testImplementation 'net.jodah:concurrentunit:0.4.6'
 }
