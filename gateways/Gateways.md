@@ -6,7 +6,7 @@ All fjåge Gateway implementations should implement the following classes and me
 
 ### JSON messages
 
-A fjåge Gateway connects to a fjåge master container and sends/receives messages to/from the master container. Each Gateway contains a Gateway Agent, which handles all the messages that are sent to the Gateway. A Gateway Agent must handle messages with these actions : 
+A fjåge Gateway connects to a fjåge master container and sends/receives messages to/from the master container. Each Gateway contains a Gateway Agent, which handles all the messages that are sent to the Gateway. A Gateway Agent must handle messages with these actions :
 
 - `action: agents` : reply with the information about the Gateway Agent in the format `{agentIDs: [<>], agentTypes: [<>]}`.
 - `action: agentForService` : reply if the Gateway Agent supports the service in the format `{agentID: <>}`.
@@ -163,3 +163,14 @@ A fjåge Gateway connects to a fjåge master container and sends/receives messag
 - Creates a response message.
 - Commonly not used directly, but extended using the _MessageClass_ function to create custom messages.
 - Must add a `boolean` true field with a suffix `__isComplex` if the message contains any arrays of complex numbers. For example, if a field `signal` is a complex array, a field `signal__isComplex = true` is added to the JSON message. This is only applicable for languages that support complex numbers natively.
+
+## Pre-defined Messages
+
+A fjåge Gateway may export pre-defined Message Types for the Messages defined by fjåge. These are :
+
+- `org.arl.fjage.shell.ShellExecReq`
+- `org.arl.fjage.shell.GetFileReq`
+- `org.arl.fjage.shell.PutFileReq`
+- `org.arl.fjage.param.ParameterReq`
+- `org.arl.fjage.shell.GetFileRsp`
+- `org.arl.fjage.param.ParameterRsp`
