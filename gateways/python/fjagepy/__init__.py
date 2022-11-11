@@ -420,6 +420,7 @@ _ParameterRsp = MessageClass('org.arl.fjage.param.ParameterRsp')
 PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq')
 GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq')
 ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq')
+GetFileRsp = MessageClass('org.arl.fjage.shell.GetFileRsp')
 
 
 class ParameterReq(_ParameterReq):
