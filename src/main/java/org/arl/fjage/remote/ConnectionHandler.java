@@ -197,8 +197,8 @@ class ConnectionHandler extends Thread {
     rsp.inResponseTo = rq.action;
     rsp.id = rq.id;
     rsp.agentIDs = aid;
-    rsp.agentTypes = new String[aid.length];
-    for (int i = 0; i < aid.length; i++)
+    rsp.agentTypes = aid == null ? new String[0] : new String[aid.length];
+    for (int i = 0; i < rsp.agentTypes.length; i++)
       rsp.agentTypes[i] = aid[i].getType();
     println(rsp.toJson());
   }
