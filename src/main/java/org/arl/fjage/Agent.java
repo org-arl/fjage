@@ -438,8 +438,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   /**
    * Enables/disables processing of messages during a blocking receive().
    *
-   * Experimental implementation. Disabled by default for fjåge 1.7, except in the
-   * shell agent. In fjåge 1.8, we expect this functionality to be fully enabled.
+   * Experimental implementation. Disabled by default, except in the shell agent.
    *
    * @param b true to process messages while waiting, false to disable processing.
    */
