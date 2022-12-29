@@ -1,0 +1,21 @@
+{
+  "name": "fjage-log",
+  "displayName": "Fjåge log syntax",
+  "description": "Syntax highlighting for fjåge log files.",
+  "version": "0.0.1",
+  "publisher": "Mandar Chitre",
+  "engines": { "vscode": "^1.74.0" },
+  "categories": [ "Languages" ],
+  "contributes": {
+      "languages": [{
+          "id": "fjage-log",
+          "extensions": [],
+          "configuration": "./language-configuration.json"
+      }],
+      "grammars": [{
+          "language": "fjage-log",
+          "scopeName": "source.fjage-log",
+          "path": "./fjage-log.tmLanguage.json"
+      }]
+  }
+}

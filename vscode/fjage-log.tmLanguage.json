@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "fjage-log",
+  "patterns": [{  "include": "#entry" }],
+  "repository": {
+    "entry": {
+      "patterns": [{
+          "match": "^([0-9]{10})([0-9]{3})\\|([A-Z]+)\\|([^\\|]+)\\|",
+          "captures": {
+            "1": { "name": "markup.changed.fjage-log" },
+            "2": { "name": "comment.block.fjage-log" },
+            "3": { "name": "keyword.fjage-log" },
+            "4": { "name": "comment.block.fjage-log" }
+          }
+        }
+      ]
+    }
+  },
+  "scopeName": "source.fjage-log"
+}
