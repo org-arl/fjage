@@ -508,7 +508,8 @@ float fjage_param_get_float(fjage_gw_t gw, fjage_aid_t aid, const char* param, i
 bool fjage_param_get_bool(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, bool defval);
 
 /// Get a string parameter from an agent. This is a utility function that sends a ParameterReq to an
-/// agent, and returns the value from the agent's response.
+/// agent, and returns the value from the agent's response. The returned pointer should be freed by
+/// the caller after use.
 ///
 /// @param gw             Gateway
 /// @param aid            AgentID of the target agent

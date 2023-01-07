@@ -232,6 +232,7 @@ int main(int argc, char* argv[]) {
   aid = fjage_agent_for_service(gw, "org.arl.fjage.shell.Services.SHELL");
   const char* lang = fjage_param_get_string(gw, aid, "org.arl.fjage.shell.ShellParam.language", -1);
   test_assert("get param (+string)", lang != NULL && !strcmp(lang, "Groovy"));
+  free((char *)lang);
   test_assert("get param (+int)", fjage_param_get_int(gw, aid, "BLOCKING", -1, 0) == -1);
   test_assert("get param (+long)", fjage_param_get_long(gw, aid, "BLOCKING", -1, 0) == -1);
   test_assert("get param (+float)", fjage_param_get_float(gw, aid, "BLOCKING", -1, 0) == -1.0);
