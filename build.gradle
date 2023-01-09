@@ -38,18 +38,18 @@ repositories {
 }
 
 dependencies {
-  api 'org.codehaus.groovy:groovy:2.5.9'
-  api 'org.jline:jline:3.12.1'
-  api 'org.apache.commons:commons-lang3:3.9'
-  api 'commons-io:commons-io:2.6'
+  api 'org.codehaus.groovy:groovy:2.5.20'
+  api 'org.jline:jline:3.21.0'
+  api 'org.apache.commons:commons-lang3:3.12.0'
+  api 'commons-io:commons-io:2.11.0'
   api 'uk.com.robust-it:cloning:1.9.12'
-  api 'org.eclipse.jetty:jetty-server:9.4.26.v20200117'
-  api 'org.eclipse.jetty:jetty-servlet:9.4.26.v20200117'
-  api 'org.eclipse.jetty:jetty-rewrite:9.4.26.v20200117'
-  api 'org.eclipse.jetty.websocket:websocket-server:9.4.26.v20200117'
-  api 'com.google.code.gson:gson:2.8.5'
-  api 'com.fazecast:jSerialComm:2.5.1'
-  testImplementation 'junit:junit:4.12'
+  api 'org.eclipse.jetty:jetty-server:9.4.50.v20221201'
+  api 'org.eclipse.jetty:jetty-servlet:9.4.50.v20221201'
+  api 'org.eclipse.jetty:jetty-rewrite:9.4.50.v20221201'
+  api 'org.eclipse.jetty.websocket:websocket-server:9.4.50.v20221201'
+  api 'com.google.code.gson:gson:2.10'
+  api 'com.fazecast:jSerialComm:2.9.3'
+  testImplementation 'junit:junit:4.13.2'
   testImplementation 'net.jodah:concurrentunit:0.4.6'
 }
 
