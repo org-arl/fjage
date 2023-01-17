@@ -162,7 +162,48 @@ A fjåge Gateway connects to a fjåge master container and sends/receives messag
 
 - Creates a response message.
 - Commonly not used directly, but extended using the _MessageClass_ function to create custom messages.
+
+## JSON Protocol
+
+- Gateways must support encoding and decoding Messages to and from the [fjåge JSON Protocol](https://fjage.readthedocs.io/en/latest/protocol.html).
+
+### Custom JSON fields
+
 - Must add a `boolean` true field with a suffix `__isComplex` if the message contains any arrays of complex numbers. For example, if a field `signal` is a complex array, a field `signal__isComplex = true` is added to the JSON message. This is only applicable for languages that support complex numbers natively.
+
+- Numerical arrays may be encoded by Fjåge Containers in a compressed [base64](https://en.wikipedia.org/wiki/Base64) format. The Gateways must support decoding the [compressed base64 representation](https://fjage.readthedocs.io/en/latest/protocol.html#json-message-without-base64-encoding-to-transmit-a-signal) of numerical arrays. For example, a numerical array which would normally be encoded in JSON as follows :
+
+```json
+"paramValues": {
+    "org.arl.unet.nodeinfo.NodeInfoParam.location": [100, 200]
+}
+```
+
+It may be encoded using the following JSON structure :
+
+```json
+"paramValues": {
+    "org.arl.unet.nodeinfo.NodeInfoParam.location": {
+        "clazz": "[D",
+        "data": "AAAAAAAA8D8AAAAAAAAAQDMzMzMzMwtA"
+    }
+}
+```
+
+The `clazz` field should be set based on the type of the base64 array is being encoded.
+
+```
+"[B" : byte array (Int8)
+"[S" : short array (Int16)
+"[I" : integer array (Int32)
+"[J" : long array (Int64)
+"[F" : float array (Float32)
+"[D" : double array (Float64)
+```
+
+- The Gateways may support encoding numerical arrays in the compressed base64 format if required.
+
+- An `AgentID` must be encoded as a String, if the `AgentID` refers to a topic, then the string should be prefixed with a `#`. When decoding, fields like `message.sender` and `message.recipient` maybe decoded into AgentID data types if they're available in the language.
 
 ## Pre-defined Messages
 
