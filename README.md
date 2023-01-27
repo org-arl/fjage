@@ -40,7 +40,7 @@ Maven Central dependency
     <dependency>
       <groupId>com.github.org-arl</groupId>
       <artifactId>fjage</artifactId>
-      <version>1.10.2</version>
+      <version>1.10.3</version>
     </dependency>
 
 Contributing

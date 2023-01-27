@@ -1,5 +1,9 @@
 # Release Notes
 
+## v1.10.3
+
+* Bug fixes
+
 ## v1.10.2
 
 * Revert jSerialComm from v2.9.2 to v2.5.1 due to changes in JNI in jSerialComm causing difficulties in sandboxed JVMs
