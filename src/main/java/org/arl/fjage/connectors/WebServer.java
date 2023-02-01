@@ -52,7 +52,10 @@ public class WebServer {
       @Override public String getName()                         { return "[jetty]"; }
       @Override public Logger getLogger(String name)            { return this;      }
       @Override public boolean isDebugEnabled()                 { return false;     }
-      @Override public void warn(String msg, Object... args)    { log.warning(msg);          }
+      @Override public void warn(String msg, Object... args)    {
+        if (msg.contains("{}")) for (Object a: args) msg = msg.replaceFirst("\\{}", a.toString());
+        log.warning(msg);
+      }
       @Override public void warn(Throwable t)                   { log.warning(t.toString()); }
       @Override public void warn(String msg, Throwable thrown)  { log.warning(msg);          }
       @Override public void info(String msg, Object... args)    { }
