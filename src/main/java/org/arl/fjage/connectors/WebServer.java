@@ -287,15 +287,20 @@ public class WebServer {
    * @param cacheControl cache control header.
    */
   public void add(String context, File dir, String cacheControl) {
-    ContextHandler handler = new ContextHandler(context);
-    ResourceHandler resHandler = new ResourceHandler();
-    resHandler.setResourceBase(dir.getAbsolutePath());
-    resHandler.setWelcomeFiles(new String[]{ "index.html" });
-    resHandler.setDirectoriesListed(false);
-    resHandler.setCacheControl(cacheControl);
-    handler.setHandler(resHandler);
-    staticContexts.put(context, handler);
-    add(handler);
+    try {
+      ContextHandler handler = new ContextHandler(context);
+      ResourceHandler resHandler = new ResourceHandler();
+      resHandler.setResourceBase(dir.getCanonicalPath());
+      resHandler.setWelcomeFiles(new String[]{ "index.html" });
+      resHandler.setDirectoriesListed(false);
+      resHandler.setCacheControl(cacheControl);
+      handler.setHandler(resHandler);
+      staticContexts.put(context, handler);
+      add(handler);
+    }catch (IOException ex){
+      log.warning("Unable to find the directory : " + dir.toString());
+      return;
+    }
   }
 
   /**
