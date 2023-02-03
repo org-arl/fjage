@@ -64,7 +64,7 @@ public class JsonMessage {
   }
 
   public String toJson() {
-    if (this.message.getJsonCache() != null) return this.message.getJsonCache();
+    if (this.message != null && this.message.getJsonCache() != null) return this.message.getJsonCache();
     return gson.toJson(this);
   }
 
