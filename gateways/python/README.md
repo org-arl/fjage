@@ -1,10 +1,10 @@
 # fjåge Python gateway (fjagepy)
 
-## Installing via Pip
+## Requirements
 
-Python comes with an inbuilt package management system, [pip](https://pip.pypa.io/en/stable/). Pip can install, update, or delete any official package.
+- [Python3](https://www.python.org/downloads/)
 
-You can install fjagepy package via the command line by entering:
+## Installing via [Pip](https://pip.pypa.io/en/stable/)
 
 ```bash
 pip install fjagepy
@@ -12,4 +12,4 @@ pip install fjagepy
 
 ## Documentation
 
-The documentation is available at [fjagepy](https://pypi.org/project/fjagepy/).
+The documentation is available at [fjagepy](https://pypi.org/project/fjagepy/)

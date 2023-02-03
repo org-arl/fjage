@@ -718,7 +718,8 @@ class Gateway:
         try:
             self.socket.close()
         except Exception as e:
-            self.logger.critical("Exception: " + str(e))
+            if (hasattr(self, 'logger') and self.logger != None):
+                self.logger.critical("Exception: " + str(e))
 
     def close(self):
         """Closes the gateway. The gateway functionality may not longer be accessed after this method is called.

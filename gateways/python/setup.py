@@ -1,21 +1,11 @@
 from setuptools import setup, find_packages
 
-with open('../../src/sphinx/pythongw.rst') as f:
-    with open('README.rst', 'w') as f1:
-        for line in f:
-            if ".. highlight" not in line:
-                f1.write(line)
-
 with open('README.rst') as f:
     readme = f.read()
 
-# with open('../../../VERSION') as f:
-#     ver = f.read()
-#     ver = ver.split('-')[0]
-
 setup(
     name='fjagepy',
-    version='1.7.2',
+    version='1.7.4',
     description='Python Gateway',
     long_description=readme,
     author='Prasad Anjangi, Mandar Chitre, Chinmay Pendharkar, Manu Ignatius',
@@ -27,9 +17,15 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11'
     ],
-    packages=find_packages(exclude=('tests', 'docs')),
+    packages=find_packages(),
     install_requires=[
         'numpy>=1.11'
     ],
+    license_files = ('LICENSE',)
 )
