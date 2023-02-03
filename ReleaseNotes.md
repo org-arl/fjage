@@ -1,5 +1,10 @@
 # Release Notes
 
+## v1.10.4
+
+* Performance improvement for JSON conversion by adding caching
+* Bugfix: Jetty canonical path for symbol links
+
 ## v1.10.3
 
 * Bug fixes
