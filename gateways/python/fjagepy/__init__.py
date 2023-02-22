@@ -63,6 +63,8 @@ def _value(v):
                 return v['data']
             if v['clazz'] == 'java.util.ArrayList':
                 return v['data']
+            if v['clazz'] == 'org.arl.fjage.AgentID':
+                return AgentID(v['data'])
             p = _GenericObject()
             p.__dict__.update(v)
             return p
