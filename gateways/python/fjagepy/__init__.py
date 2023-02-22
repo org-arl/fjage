@@ -169,8 +169,11 @@ class AgentID:
         return self
 
     def __str__(self):
-        peer = self.owner.socket.getpeername()
-        return self.name + ' on ' + peer[0] + ':' + str(peer[1])
+        peer = self.owner.socket.getpeername() if self.owner != None else None
+        if (peer != None):
+            return self.name + ' on ' + peer[0] + ':' + str(peer[1])
+        else :
+            return self.name
 
     def _repr_pretty_(self, p, cycle):
         if cycle:
