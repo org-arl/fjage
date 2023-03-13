@@ -517,7 +517,7 @@ bool fjage_param_get_bool(fjage_gw_t gw, fjage_aid_t aid, const char* param, int
 /// @param ndx            Index of the parameter (-1 for non-indexed parameters)
 /// @param strval         Pointer to a string to receive data, or NULL
 /// @param len            Size of the buffer, or 0 if strval is NULL
-/// @return               Length of the string copied into the buffer, or -1 if an error occurred
+/// @return               Length of the string copied into the buffer, or length of the string returned by the agent if strval is NULL, or -1 on error.
 
 int fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, const char* strval, int len);
 
