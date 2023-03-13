@@ -515,9 +515,11 @@ bool fjage_param_get_bool(fjage_gw_t gw, fjage_aid_t aid, const char* param, int
 /// @param aid            AgentID of the target agent
 /// @param param          Name of the parameter
 /// @param ndx            Index of the parameter (-1 for non-indexed parameters)
-/// @return               Parameter value, NULL if unavailable
+/// @param strval         Pointer to a string to receive data, or NULL
+/// @param len            Size of the buffer, or 0 if strval is NULL
+/// @return               Length of the string copied into the buffer, or -1 if an error occurred
 
-const char* fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx);
+int fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, const char* strval, int len);
 
 /// Set an integer parameter on an agent. This is a utility function that sends a ParameterReq to an
 /// agent, and returns the value from the agent's response.
