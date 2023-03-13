@@ -232,7 +232,9 @@ int main(int argc, char* argv[]) {
   // FIXME: param tests are not perfect, since we don't have default agents with many params, but better than nothing...
   aid = fjage_agent_for_service(gw, "org.arl.fjage.shell.Services.SHELL");
   int rv = fjage_param_get_string(gw, aid, "org.arl.fjage.shell.ShellParam.language", -1, buf, sizeof(buf));
-  test_assert("get param (rv)", rv > 0);
+  test_assert("get param (+string/rv)", rv == 6);
+  rv = fjage_param_get_string(gw, aid, "org.arl.fjage.shell.ShellParam.language", -1, NULL, 0);
+  test_assert("get param (+string/bufsize)", rv == 6);
   test_assert("get param (+string)", !strcmp(buf, "Groovy"));
   test_assert("get param (+int)", fjage_param_get_int(gw, aid, "BLOCKING", -1, 0) == -1);
   test_assert("get param (+long)", fjage_param_get_long(gw, aid, "BLOCKING", -1, 0) == -1);
