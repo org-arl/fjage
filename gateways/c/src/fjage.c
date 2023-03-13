@@ -1365,7 +1365,10 @@ int fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, in
     if (fjage_msg_get_performative(msg) == FJAGE_INFORM) {
       const char* v = fjage_msg_get_string(msg, "value");
       if (v != NULL){
-        if (strval != NULL && len > 0) rv = strlcpy((char*)strval, v, len);
+        if (strval != NULL && len > 0) {
+          strncpy((char*)strval, v, len);
+          rv = strlen(v) > len ? len : strlen(v);
+        }
         else rv = strlen(v);
       }
     }
