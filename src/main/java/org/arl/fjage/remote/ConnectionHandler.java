@@ -160,6 +160,13 @@ class ConnectionHandler extends Thread {
     fw.signoff();
     close();
     pool.shutdown();
+    try {
+      if (!pool.awaitTermination(200, TimeUnit.MILLISECONDS)) {
+        pool.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      pool.shutdownNow();
+    }
   }
 
   @Override
@@ -226,7 +233,7 @@ class ConnectionHandler extends Thread {
   }
 
   void printlnQueued(String s) {
-    if (pool != null) pool.execute(() -> println(s));
+    if (pool != null && !pool.isShutdown()) pool.execute(() -> println(s));
   }
 
   JsonMessage printlnAndGetResponse(String s, String id, long timeout) {
