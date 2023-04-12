@@ -114,6 +114,7 @@
     var resizing = false;
     var delta = 200;
     var fitAddon;
+    window.shellready = false;
     function connectSocket(term, url, path){
       const ws = new WebSocket('ws://' + url + path);
       var attachAddon;
@@ -129,6 +130,7 @@
         term.write('\x1b[1G\x1b[2K');
         term.setOption('cursorBlink', true);
       };
+      ws.onmessage = () => window.shellready = true;
     }
     function reconnectSocket(term,attachAddon,url, path, ws){
       disconnectSocket(term,attachAddon, ws);
@@ -137,6 +139,7 @@
     function disconnectSocket(term,attachAddon, ws){
       // disable cursor to indicate no connection
       if (attachAddon) attachAddon.dispose();
+      window.shellready = false;
       term.write("\u001B[?25l");
       term.write('\x1b[1G\x1b[2K\x1b[31m\x1b[2m(connection lost)\x1b[0m');
       ws.onmessage = null;
