@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.11.0
+
+* Expose shellready variable in Javascript gateway
+* Bugfix: Check if executor pool is shutdown before executing
+* Bugfix: Avoid serialization of _jsoncache internal variable
+
 ## v1.10.5
 
 * Performance improvement for JSON conversion by adding caching
