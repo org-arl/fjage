@@ -637,6 +637,7 @@ class Gateway:
                         try:
                             m = Message()
                             demsg = m._deserialize(msg)
+                            demsg.__json__ = msg
                             q.append(demsg)
                         except Exception as e:
                             self.logger.critical("Exception: Class loading failed - " + str(e))
@@ -648,6 +649,7 @@ class Gateway:
                             try:
                                 m = Message()
                                 demsg = m._deserialize(msg)
+                                demsg.__json__ = msg
                                 q.append(demsg)
                             except Exception as e:
                                 self.logger.critical("Exception: Class loading failed - " + str(e))
