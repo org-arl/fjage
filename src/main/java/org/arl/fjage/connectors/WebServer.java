@@ -13,18 +13,30 @@ package org.arl.fjage.connectors;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
 import org.eclipse.jetty.rewrite.handler.Rule;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.util.IO;
+import org.eclipse.jetty.util.StringUtil;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ThreadPool;
 
-import java.io.File;
-import java.io.IOException;
+import javax.servlet.MultipartConfigElement;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -139,6 +151,7 @@ public class WebServer {
   protected ContextHandlerCollection contexts;
   protected RewriteHandler rewrite;
   protected Map<String,ContextHandler> staticContexts = new HashMap<String,ContextHandler>();
+  protected HandlerCollection handlerCollection = new HandlerCollection();
   protected boolean started;
   protected int port;
 
@@ -155,7 +168,6 @@ public class WebServer {
     rewrite.setRewriteRequestURI(true);
     rewrite.setRewritePathInfo(true);
     contexts = new ContextHandlerCollection();
-    HandlerCollection handlerCollection = new HandlerCollection();
     GzipHandler gzipHandler = new GzipHandler();
     gzipHandler.setIncludedMimeTypes("text/html", "text/plain", "text/xml", "text/css", "application/javascript", "text/javascript");
     handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });
@@ -314,6 +326,24 @@ public class WebServer {
   }
 
   /**
+   * Adds a context to upload files to.
+   *
+   * @param context context path.
+   * @param dir filesystem path of directory to upload files to.
+   */
+  public void addUpload(String context, File dir) {
+    String location = dir.getAbsolutePath();
+    long maxFileSize = 1024 * 1024 * 1024; // 1 GB
+    long maxRequestSize = 1024 * 1024 * 1024; // 1 GB
+    int fileSizeThreshold = 0;
+    MultipartConfigElement multipartConfig = new MultipartConfigElement(location, maxFileSize, maxRequestSize, fileSizeThreshold);
+    ContextHandler handler = new ContextHandler(context);
+    handler.setAllowNullPathInfo(true);
+    handler.setHandler(new UploadHandler(context, multipartConfig, dir.toPath()));
+    add(handler);
+  }
+
+  /**
    * Removes a context serving static documents.
    *
    * @param context context path.
@@ -321,6 +351,11 @@ public class WebServer {
   public void remove(String context) {
     ContextHandler handler = staticContexts.get(context);
     if (handler == null) return;
+    try {
+      handler.stop();
+    } catch (Exception e) {
+      log.warning("Unable to stop context "+context+": "+e.toString());
+    }
     staticContexts.remove(context);
     remove(handler);
   }
@@ -349,4 +384,42 @@ public class WebServer {
     }
   }
 
+  public static class UploadHandler extends AbstractHandler {
+    private final String contextPath;
+    private final MultipartConfigElement multipartConfig;
+    private final Path outputDir;
+
+    public UploadHandler(String contextPath, MultipartConfigElement multipartConfig, Path outputDir) {
+      super();
+      this.contextPath = contextPath;
+      this.multipartConfig = multipartConfig;
+      this.outputDir = outputDir;
+    }
+
+    @Override
+    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException{
+      if (!request.getMethod().equalsIgnoreCase("POST")){
+        response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+        return;
+      }
+      request.setAttribute(Request.MULTIPART_CONFIG_ELEMENT, multipartConfig);
+      response.setContentType("text/plain");
+      response.setCharacterEncoding("utf-8");
+      PrintWriter out = response.getWriter();
+      
+      for (Part part : request.getParts()) {
+        String filename = part.getSubmittedFileName();
+        if (StringUtil.isNotBlank(filename)){
+          filename = URLEncoder.encode(filename, String.valueOf(StandardCharsets.UTF_8));
+          Path outputFile = outputDir.resolve(filename);
+          try (InputStream inputStream = part.getInputStream();
+               OutputStream outputStream = Files.newOutputStream(outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+            IO.copy(inputStream, outputStream);
+            out.printf("%s%n", outputFile);
+          }
+        }
+      }
+      baseRequest.setHandled(true);
+    }
+  }
 }
