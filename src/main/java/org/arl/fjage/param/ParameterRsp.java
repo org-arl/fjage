@@ -90,9 +90,10 @@ public class ParameterRsp extends Message {
    * @return value of requested parameter
    */
   public Object get(Parameter param) {
+    if (param == null) return null;
     if (this.param == null) return null;
     Object rv = null;
-    if (this.param.equals(param)) {
+    if (param.equals(this.param)) {
       if (value == null) return null;
       rv = value.getValue();
     } else {
