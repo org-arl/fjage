@@ -209,7 +209,7 @@ public class WebServer {
 
 
   /**
-   * Adds a context handler to the server. Context handlerCollection should be added before the web
+   * Adds a context handler to the server. Context handler should be added before the web
    * server is started.
    *
    * @param handler context handler.
