@@ -74,22 +74,20 @@ public class NamedParameter implements Parameter, Serializable {
   }
 
   /**
-   * Compares if a parameter is equivalent to the named parameter.
+   * Compares if two named parameters are equal.
    *
    * @return true if two parameters are equal
    */
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof Parameter)) return false;
+    if (!(obj instanceof NamedParameter)) return false;
+    NamedParameter p = (NamedParameter)obj;
     String name1 = name;
     if (name1.contains(".")) name1 = name1.substring(name1.indexOf('.')+1);
-    String name2 = obj.toString();
+    String name2 = p.name;
     if (name2.contains(".")) name2 = name2.substring(name2.indexOf('.')+1);
     if (!name1.equals(name2)) return false;
-    if (obj instanceof NamedParameter) {
-      NamedParameter p = (NamedParameter)obj;
-      if (ord >= 0 && p.ord >= 0 && p.ord != ord) return false;
-    }
+    if (ord >= 0 && p.ord >= 0 && p.ord != ord) return false;
     return true;
   }
 
