@@ -90,10 +90,10 @@ public class ParameterRsp extends Message {
    * @return value of requested parameter
    */
   public Object get(Parameter param) {
-    if (param == null) return null;
-    if (this.param == null) return null;
+    if (this.param == null || param == null) return null;
+    param = resolve(param);
     Object rv = null;
-    if (param.equals(this.param)) {
+    if (this.param.equals(param)) {
       if (value == null) return null;
       rv = value.getValue();
     } else {
@@ -113,6 +113,8 @@ public class ParameterRsp extends Message {
    * @return true if parameter is read-only, false if read-write
    */
   public boolean isReadonly(Parameter param) {
+    if (param == null) return false;
+    param = resolve(param);
     return readonly.contains(param);
   }
 
@@ -138,6 +140,24 @@ public class ParameterRsp extends Message {
     if (param != null) map.put(param, value);
     if (values != null) map.putAll(values);
     return map;
+  }
+
+  /**
+   * Convert named parameters to qualified parameters, if they match.
+   *
+   * @param param parameter to resolve
+   * @return resolved parameter
+   */
+  protected Parameter resolve(Parameter param) {
+    if (!(param instanceof NamedParameter)) return param;
+    String p = ((NamedParameter)param).name();
+    if (this.param != null && this.param.name().equals(p)) return this.param;
+    if (values != null) {
+      for (Entry<Parameter, GenericValue> e : values.entrySet()) {
+        if (e.getKey().name().equals(p)) return e.getKey();
+      }
+    }
+    return param;
   }
 
   @Override

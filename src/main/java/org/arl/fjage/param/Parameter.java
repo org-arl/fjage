@@ -22,4 +22,11 @@ public interface Parameter {
    */
   public int ordinal();
 
+  /**
+   * Gets the parameter name.
+   *
+   * @return unqualified parameter name
+   */
+  public String name();
+
 }
