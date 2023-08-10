@@ -332,14 +332,27 @@ public class WebServer {
    * @param dir filesystem path of directory to upload files to.
    */
   public void addUpload(String context, File dir) {
-    String location = dir.getAbsolutePath();
     long maxFileSize = 1024 * 1024 * 1024; // 1 GB
     long maxRequestSize = 1024 * 1024 * 1024; // 1 GB
-    int fileSizeThreshold = 0;
+    int fileSizeThreshold = 100*1024*1024; // 100 MB
+    addUpload(context, dir, maxFileSize, maxRequestSize, fileSizeThreshold);
+  }
+
+  /**
+   * Adds a context to upload files to.
+   *
+   * @param context context path.
+   * @param dir filesystem path of directory to upload files to.
+   * @param maxFileSize maximum size of a file. @see javax.servlet.MultipartConfigElement
+   * @param maxRequestSize maximum size of a request. @see javax.servlet.MultipartConfigElement
+   * @param fileSizeThreshold size threshold after which files will be written to disk. @see javax.servlet.MultipartConfigElement
+   */
+  public void addUpload(String context, File dir, long maxFileSize, long maxRequestSize, int fileSizeThreshold) {
+    String location = dir.getAbsolutePath();
     MultipartConfigElement multipartConfig = new MultipartConfigElement(location, maxFileSize, maxRequestSize, fileSizeThreshold);
     ContextHandler handler = new ContextHandler(context);
     handler.setAllowNullPathInfo(true);
-    handler.setHandler(new UploadHandler(context, multipartConfig, dir.toPath()));
+    handler.setHandler(new UploadHandler(multipartConfig, dir.toPath()));
     add(handler);
   }
 
@@ -385,13 +398,11 @@ public class WebServer {
   }
 
   public static class UploadHandler extends AbstractHandler {
-    private final String contextPath;
     private final MultipartConfigElement multipartConfig;
     private final Path outputDir;
 
-    public UploadHandler(String contextPath, MultipartConfigElement multipartConfig, Path outputDir) {
+    public UploadHandler(MultipartConfigElement multipartConfig, Path outputDir) {
       super();
-      this.contextPath = contextPath;
       this.multipartConfig = multipartConfig;
       this.outputDir = outputDir;
     }
@@ -406,7 +417,6 @@ public class WebServer {
       response.setContentType("text/plain");
       response.setCharacterEncoding("utf-8");
       PrintWriter out = response.getWriter();
-      
       for (Part part : request.getParts()) {
         String filename = part.getSubmittedFileName();
         if (StringUtil.isNotBlank(filename)){
