@@ -1,5 +1,12 @@
 # Release Notes
 
+## v1.12.0
+
+* Allow named params to match with param enums in get()
+* Allow adding of contexts which accept file uploads
+* Enable caching of uploaded files
+* Minor documentation fixes
+
 ## v1.11.0
 
 * Expose shellready variable in Javascript gateway
