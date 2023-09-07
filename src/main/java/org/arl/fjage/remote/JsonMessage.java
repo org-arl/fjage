@@ -47,6 +47,8 @@ public class JsonMessage {
     .registerTypeAdapterFactory(new MessageAdapterFactory())
     .registerTypeAdapterFactory(new ArrayAdapterFactory())
     .registerTypeAdapterFactory(new GenericValueAdapterFactory())
+    .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+    .setNumberToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
     .serializeSpecialFloatingPointValues()
     .enableComplexMapKeySerialization();
 
