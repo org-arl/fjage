@@ -1,6 +1,8 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
-import { terser } from 'rollup-plugin-terser';
-import pkg from './package.json';
+import terser from '@rollup/plugin-terser';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const pkg = require('./package.json');
 import { spawn } from 'child_process';
 
 const ls = spawn('git', ['describe', '--always', '--abbrev=8', '--match', 'NOT A TAG', '--dirty=*']);
