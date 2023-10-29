@@ -12,10 +12,6 @@ export default [
     'rules': {
       'no-console': 0,
       'semi': 2,
-      'linebreak-style': [
-        'error',
-        'unix'
-      ],
       'quotes': [
         'error',
         'single'

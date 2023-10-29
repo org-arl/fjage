@@ -46,7 +46,7 @@ export default class TCPconnector {
       }
     }else{
       this._sockSetup(host, port);
-    }  
+    }
   }
 
   _sockSetup(host, port){
@@ -133,7 +133,7 @@ export default class TCPconnector {
    * @ignore
    * @param {string} s - incoming message string
    */
-  
+
   /**
    * Add listener for connection events
    * @param {function} listener - a listener callback that is called when the connection is opened/closed
