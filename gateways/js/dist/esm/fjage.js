@@ -357,6 +357,7 @@ class WSConnector {
 
 /* global global Buffer */
 
+
 const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
 
 /**
@@ -699,7 +700,13 @@ class Gateway {
   _sendEvent(type, val) {
     if (Array.isArray(this.eventListeners[type])) {
       this.eventListeners[type].forEach(l => {
-        l && {}.toString.call(l) === '[object Function]' && l(val);
+        if (l && {}.toString.call(l) === '[object Function]'){
+          try {
+            l(val);
+          } catch (error) {
+            console.warn('Error in event listener : ' + error);
+          }
+        }
       });
     }
   }
@@ -728,18 +735,26 @@ class Gateway {
         var consumed = false;
         if (Array.isArray(this.eventListeners['message'])){
           for (var i = 0; i < this.eventListeners['message'].length; i++) {
-            if (this.eventListeners['message'][i](msg)) {
-              consumed = true;
-              break;
+            try {
+              if (this.eventListeners['message'][i](msg)) {
+                consumed = true;
+                break;
+              }
+            } catch (error) {
+              console.warn('Error in message listener : ' + error);
             }
           }
         }
         // iterate over internal callbacks, until one consumes the message
         for (var key in this.listener){
           // callback returns true if it has consumed the message
-          if (this.listener[key](msg)) {
-            consumed = true;
-            break;
+          try {
+            if (this.listener[key](msg)) {
+              consumed = true;
+              break;
+            }
+          } catch (error) {
+            console.warn('Error in listener : ' + error);
           }
         }
         if(!consumed) {
@@ -840,7 +855,12 @@ class Gateway {
     } else if (filter.__proto__.name == 'Message' || filter.__proto__.__proto__.name == 'Message') {
       return filter.__clazz__ == msg.__clazz__;
     } else if (typeof filter == 'function') {
-      return filter(msg);
+      try {
+        return filter(msg);
+      }catch(e){
+        console.warn('Error in filter : ' + e);
+        return false;
+      }
     } else {
       return msg instanceof filter;
     }
@@ -1110,7 +1130,7 @@ class Gateway {
       let timer;
       if (timeout > 0){
         timer = setTimeout(() => {
-          delete this.listener[lid];
+          this.listener[lid] && delete this.listener[lid];
           if (this.debug) console.log('Receive Timeout : ' + filter);
           resolve();
         }, timeout);
@@ -1118,7 +1138,7 @@ class Gateway {
       this.listener[lid] = msg => {
         if (!this._matchMessage(filter, msg)) return false;
         if(timer) clearTimeout(timer);
-        delete this.listener[lid];
+        this.listener[lid] && delete this.listener[lid];
         resolve(msg);
         return true;
       };
