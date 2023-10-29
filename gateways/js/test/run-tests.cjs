@@ -31,7 +31,7 @@ let server = require('http').createServer(function (request, response) {
   // Execute Browser(MJS) test using puppteer
   console.log('Launching puppeteer..');
   startTime = new Date();
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({ headless: 'new',});
   const page = await browser.newPage();
   page.on('console', msg => {
     msg.type() == 'log' && console.log('PAGE LOG:', msg.text());
