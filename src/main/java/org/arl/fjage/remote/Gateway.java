@@ -57,7 +57,7 @@ public class Gateway implements Messenger, Closeable {
    * @param port TCP port to connect to.
    */
   public Gateway(Platform platform, String hostname, int port) throws IOException {
-    container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
+    container = new SlaveContainer(platform, "Gateway-"+hashCode(), hostname, port);
     init();
     platform.start();
   }
@@ -70,7 +70,7 @@ public class Gateway implements Messenger, Closeable {
    */
   public Gateway(String hostname, int port) throws IOException {
     Platform platform = new RealTimePlatform();
-    container = new SlaveContainer(platform, "Gateway@"+hashCode(), hostname, port);
+    container = new SlaveContainer(platform, "Gateway-"+hashCode(), hostname, port);
     init();
     platform.start();
   }
@@ -86,7 +86,7 @@ public class Gateway implements Messenger, Closeable {
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
   public Gateway(Platform platform, String devname, int baud, String settings) throws IOException {
-    container = new SlaveContainer(platform, "Gateway@"+hashCode(), devname, baud, settings);
+    container = new SlaveContainer(platform, "Gateway-"+hashCode(), devname, baud, settings);
     init();
     platform.start();
   }
@@ -100,7 +100,7 @@ public class Gateway implements Messenger, Closeable {
    */
   public Gateway(String devname, int baud, String settings) throws IOException {
     Platform platform = new RealTimePlatform();
-    container = new SlaveContainer(platform, "Gateway@"+hashCode(), devname, baud, settings);
+    container = new SlaveContainer(platform, "Gateway-"+hashCode(), devname, baud, settings);
     init();
     platform.start();
   }
@@ -443,4 +443,3 @@ public class Gateway implements Messenger, Closeable {
   }
 
 }
-
