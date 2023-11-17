@@ -569,7 +569,7 @@ public class Container {
    * Starts the container and all agents in it.
    * This should be called after init().
    */
-  void start() {
+  protected void start() {
     if (!running) {
       log.info("Starting container...");
       running = true;

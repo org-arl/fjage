@@ -304,6 +304,11 @@ public class SlaveContainer extends RemoteContainer {
     return aid;
   }
 
+  protected void start() {
+    super.start();
+    updateWatchList();
+  }
+
   public boolean kill(AgentID aid) {
     boolean rv = super.kill(aid);
     if (rv) updateWatchList();
