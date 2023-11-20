@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.12.1
+
+* Use LONG_OR_DOUBLE parsing for JSON
+* Change remote gateway naming to avoid use of "@"
+* Get slave containers to update watch list to optimize network traffic
+
 ## v1.12.0
 
 * Allow named params to match with param enums in get()
