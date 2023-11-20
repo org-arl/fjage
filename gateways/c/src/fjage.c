@@ -550,7 +550,7 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
   fgw->intr = 0;
 #endif
   char s[64];
-  sprintf(s, "CGatewayAgent@%08x", rand());
+  sprintf(s, "CGateway-%08x", rand());
   fgw->aid = fjage_aid_create(s);
   fgw->head = 0;
   update_watch(fgw);
@@ -620,7 +620,7 @@ fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings)
   fgw->intr = 0;
 #endif
   char s[64];
-  sprintf(s, "CGatewayAgent@%08x", rand());
+  sprintf(s, "CGateway-%08x", rand());
   fgw->aid = fjage_aid_create(s);
   fgw->head = 0;
   return fgw;
