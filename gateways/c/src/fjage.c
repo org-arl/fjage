@@ -401,8 +401,8 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
       }
     } else {
       char s[256];
-      sprintf(s, "{\"id\": \"%s\", \"inResponseTo\": \"%s\", \"answer\": false}\n", json_gets(json, tokens, "id"), action);
-      writes(fgw->sockfd, s);
+      int l = snprintf(s, 256, "{\"id\": \"%s\", \"inResponseTo\": \"%s\", \"answer\": false}\n", json_gets(json, tokens, "id"), action);
+      if (l < 256) writes(fgw->sockfd, s);
     }
   }
   free(tokens);
