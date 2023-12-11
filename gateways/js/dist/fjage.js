@@ -1,4 +1,4 @@
-/* fjage.js v1.11.0 */
+/* fjage.js v1.11.1 */
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -81,7 +81,7 @@
         }
       }else {
         this._sockSetup(host, port);
-      }  
+      }
     }
 
     _sockSetup(host, port){
@@ -168,7 +168,7 @@
      * @ignore
      * @param {string} s - incoming message string
      */
-    
+
     /**
      * Add listener for connection events
      * @param {function} listener - a listener callback that is called when the connection is opened/closed
@@ -848,6 +848,7 @@
           this.connector.write('{"alive": true}');
           this._update_watch();
         }
+        this._sendEvent('conn', state);
       });
       return conn;
     }

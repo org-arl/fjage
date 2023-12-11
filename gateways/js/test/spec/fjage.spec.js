@@ -251,6 +251,22 @@ describe('A Gateway', function () {
     }
     expect(rxed).not.toContain(false);
   });
+
+  it('should generate trigger connListener when the underlying transport is disconnected/reconnected', async function() {
+    const gw = new Gateway(gwOpts);
+    let spy = jasmine.createSpy('connListener');
+    gw.addConnListener(spy);
+    await delay(300);
+    spy.calls.reset();
+    gw.connector._reconnectTime = 300;
+    gw.connector.sock.close();
+    await delay(100);
+    expect(spy).toHaveBeenCalledWith(false);
+    spy.calls.reset();
+    await delay(500);
+    expect(spy).toHaveBeenCalledWith(true);
+    gw.connector._reconnectTime = 5000;
+  });
 });
 
 describe('An AgentID', function () {

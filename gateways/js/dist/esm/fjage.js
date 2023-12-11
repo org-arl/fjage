@@ -1,4 +1,4 @@
-/* fjage.js v1.11.0 */
+/* fjage.js v1.11.1 */
 
 const isBrowser =
   typeof window !== "undefined" && typeof window.document !== "undefined";
@@ -75,7 +75,7 @@ class TCPconnector {
       }
     }else {
       this._sockSetup(host, port);
-    }  
+    }
   }
 
   _sockSetup(host, port){
@@ -162,7 +162,7 @@ class TCPconnector {
    * @ignore
    * @param {string} s - incoming message string
    */
-  
+
   /**
    * Add listener for connection events
    * @param {function} listener - a listener callback that is called when the connection is opened/closed
@@ -842,6 +842,7 @@ class Gateway {
         this.connector.write('{"alive": true}');
         this._update_watch();
       }
+      this._sendEvent('conn', state);
     });
     return conn;
   }

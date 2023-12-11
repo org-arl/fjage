@@ -488,6 +488,7 @@ export class Gateway {
         this.connector.write('{"alive": true}');
         this._update_watch();
       }
+      this._sendEvent('conn', state);
     });
     return conn;
   }
