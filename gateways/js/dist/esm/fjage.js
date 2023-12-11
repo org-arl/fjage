@@ -29,6 +29,7 @@ typeof Deno !== "undefined" &&
 
 const SOCKET_OPEN = 'open';
 const SOCKET_OPENING = 'opening';
+const DEFAULT_RECONNECT_TIME$1 = 5000;       // ms, delay between retries to connect to the server.
 
 var createConnection;
 
@@ -40,17 +41,24 @@ class TCPconnector {
 
   /**
     * Create an TCPConnector to connect to a fjage master over TCP
-    * @param {Object} opts
-    * @param {String} [opts.hostname='localhost'] - ip address/hostname of the master container to connect to
-    * @param {number} opts.port - port number of the master container to connect to
+   * @param {Object} opts
+   * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
+   * @param {number} opts.port - port number of the master container to connect to
+   * @param {string} opts.pathname - path of the master container to connect to
+   * @param {boolean} opts.keepAlive - try to reconnect if the connection is lost
+   * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
     */
   constructor(opts = {}) {
     this.url = new URL('tcp://localhost');
     let host = opts.hostname || 'localhost';
     let port = opts.port || -1;
-    this.url.hostname = opts.hostname;
-    this.url.port = opts.port;
+    this.url.hostname = host;
+    this.url.port = port;
     this._buf = '';
+    this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME$1;
+    this._keepAlive = opts.keepAlive || true;
+    this._firstConn = true;               // if the Gateway has managed to connect to a server before
+    this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.connListeners = [];              // external listeners wanting to listen connection events
     this._sockInit(host, port);
@@ -94,18 +102,18 @@ class TCPconnector {
   }
 
   _sockReconnect(){
-    if (this._firstConn || !this.keepAlive || this.sock.readyState == SOCKET_OPENING || this.sock.readyState == SOCKET_OPEN) return;
+    if (this._firstConn || !this._keepAlive || this.sock.readyState == SOCKET_OPENING || this.sock.readyState == SOCKET_OPEN) return;
     if (this._firstReConn) this._sendConnEvent(false);
     this._firstReConn = false;
-    if(this.debug) console.log('Reconnecting to ', this.sock.remoteAddress + ':' + this.sock.remotePort);
     setTimeout(() => {
       this.pendingOnOpen = [];
-      this._sockSetup(this.sock.url);
+      this._sockSetup(this.url.hostname, this.url.port);
     }, this._reconnectTime);
   }
 
   _onSockOpen() {
     this._sendConnEvent(true);
+    this._firstConn = false;
     this.sock.on('close', this._sockReconnect.bind(this));
     this.sock.on('data', this._processSockData.bind(this));
     this.pendingOnOpen.forEach(cb => cb());
@@ -193,12 +201,16 @@ class TCPconnector {
     if (this.sock.readyState == SOCKET_OPENING) {
       this.pendingOnOpen.push(() => {
         this.sock.send('{"alive": false}\n');
-        this.sock.onclose = null;
+        this.sock.removeAllListeners('connect');
+        this.sock.removeAllListeners('error');
+        this.sock.removeAllListeners('close');
         this.sock.destroy();
       });
     } else if (this.sock.readyState == SOCKET_OPEN) {
       this.sock.send('{"alive": false}\n');
-      this.sock.onclose = null;
+      this.sock.removeAllListeners('connect');
+      this.sock.removeAllListeners('error');
+      this.sock.removeAllListeners('close');
       this.sock.destroy();
     }
   }
@@ -223,11 +235,11 @@ class WSConnector {
    */
   constructor(opts = {}) {
     this.url = new URL('ws://localhost');
-    this.url.hostname = opts.hostname;      
+    this.url.hostname = opts.hostname;
     this.url.port = opts.port;
     this.url.pathname = opts.pathname;
     this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
-    this._keepAlive = opts.keepAlive;
+    this._keepAlive = opts.keepAlive || true;
     this.debug = opts.debug || false;      // debug info to be logged to console?
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
@@ -313,7 +325,7 @@ class WSConnector {
    * @ignore
    * @param {string} s - incoming message string
    */
-  
+
   /**
    * Add listener for connection events
    * @param {function} listener - a listener callback that is called when the connection is opened/closed

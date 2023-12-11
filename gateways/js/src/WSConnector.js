@@ -17,11 +17,11 @@ export default class WSConnector {
    */
   constructor(opts = {}) {
     this.url = new URL('ws://localhost');
-    this.url.hostname = opts.hostname;      
+    this.url.hostname = opts.hostname;
     this.url.port = opts.port;
     this.url.pathname = opts.pathname;
     this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
-    this._keepAlive = opts.keepAlive;
+    this._keepAlive = opts.keepAlive || true;
     this.debug = opts.debug || false;      // debug info to be logged to console?
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
@@ -107,7 +107,7 @@ export default class WSConnector {
    * @ignore
    * @param {string} s - incoming message string
    */
-  
+
   /**
    * Add listener for connection events
    * @param {function} listener - a listener callback that is called when the connection is opened/closed

@@ -259,7 +259,8 @@ describe('A Gateway', function () {
     await delay(300);
     spy.calls.reset();
     gw.connector._reconnectTime = 300;
-    gw.connector.sock.close();
+    if (isBrowser) gw.connector.sock.close();
+    else gw.connector.sock.destroy();
     await delay(100);
     expect(spy).toHaveBeenCalledWith(false);
     spy.calls.reset();
