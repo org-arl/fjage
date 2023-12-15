@@ -211,6 +211,8 @@ class AgentID:
 
 def getter(self, param):
     rsp = self.request(ParameterReq(index=self.index).get(param))
+    if (rsp == None or rsp.perf == Performative.NOT_UNDERSTOOD):
+        rsp = self.request(OldParameterReq(index=self.index).get(param))
     if param[0] != '_':
         self.index = -1
     if rsp is None:
@@ -237,6 +239,8 @@ def setter(self, param, value):
         self.__dict__[param] = value
         return value
     rsp = self.request(ParameterReq(index=self.index).set(param, value))
+    if (rsp == None or rsp.perf == Performative.NOT_UNDERSTOOD):
+        rsp = self.request(OldParameterReq(index=self.index).set(param, value))
     if param[0] != '_':
         self.index = -1
     if rsp is None:
@@ -421,6 +425,11 @@ def MessageClass(name, parent=Message, perf=None):
 _ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq')
 _ParameterRsp = MessageClass('org.arl.fjage.param.ParameterRsp')
 
+# param old
+_oParameterReq = MessageClass('org.arl.unet.ParameterReq')
+_oParameterRsp = MessageClass('org.arl.unet.ParameterRsp')
+
+
 # shell
 PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq')
 GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq')
@@ -465,6 +474,42 @@ class ParameterReq(_ParameterReq):
     def _repr_pretty_(self, p, cycle):
         p.text(str(self) if not cycle else '...')
 
+class OldParameterReq(_oParameterReq):
+
+    def __init__(self, index=-1, **kwargs):
+        super().__init__()
+        self.index = index
+        self.requests = []
+        self.perf = Performative.REQUEST
+        self.param = None
+        self.value = None
+        self.__dict__.update(kwargs)
+
+    def get(self, param):
+        if (self.param is None):
+            self.param = param
+        else:
+            self.requests.append({'param': param})
+        return self
+
+    def set(self, param, value):
+        if (self.param is None) and (self.value is None):
+            self.param = param
+            self.value = value
+        else:
+            self.requests.append({'param': param, 'value': value})
+        return self
+
+    def __str__(self):
+        p = ' '.join(
+            [_short(str(self.param)) + ':' + (str(self.value) if 'value' in self else '?')],
+            [_short(str(request['param'])) + ':' + (str(request['value']) if 'value' in request else '?') for request in
+             self.requests])
+        return self.__class__.__name__ + ':' + self.perf + '[' + (
+            ('index:' + str(self.index)) if self.index > 0 else '') + p.strip() + ']'
+
+    def _repr_pretty_(self, p, cycle):
+        p.text(str(self) if not cycle else '...')
 
 class ParameterRsp(_ParameterRsp):
 
@@ -515,7 +560,6 @@ class ParameterRsp(_ParameterRsp):
 
     def _repr_pretty_(self, p, cycle):
         p.text(str(self) if not cycle else '...')
-
 
 class GenericMessage(Message):
     """A message class that can convey generic messages represented by key-value pairs.
