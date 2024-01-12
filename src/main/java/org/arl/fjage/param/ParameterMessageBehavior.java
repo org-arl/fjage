@@ -206,21 +206,23 @@ public class ParameterMessageBehavior extends MessageBehavior {
         String fldName = e.param.toString();
         String methodNameFragment = fldName.substring(0, 1).toUpperCase() + fldName.substring(1);
         Object evalue = e.getValue();
+        Object current = null;
+        try {
+          if (fldName.equals("type")) current = agent.getClass().getName(); // special automatic parameter
+          else if (ndx < 0) current =  MethodUtils.invokeMethod(agent, "get" + methodNameFragment);
+          else current = MethodUtils.invokeMethod(agent, "get" + methodNameFragment, ndx);
+        } catch (NoSuchMethodException ex) {
+          current = getParam(e.param, ndx);
+          if (current == null) {
+            if (ndx >= 0) throw ex;
+            Field f = cls.getField(fldName);
+            current = f.get(agent);
+          }
+        }
         if (evalue == null) {
           // get request
-          try {
-            if (fldName.equals("type")) rsp.set(e.param, agent.getClass().getName(), true);     // special automatic parameter
-            else if (ndx < 0) rsp.set(e.param, MethodUtils.invokeMethod(agent, "get" + methodNameFragment), isReadOnly(e.param, ndx));
-            else rsp.set(e.param, MethodUtils.invokeMethod(agent, "get" + methodNameFragment, ndx), isReadOnly(e.param, ndx));
-          } catch (NoSuchMethodException ex) {
-            Object rv = getParam(e.param, ndx);
-            if (rv != null) rsp.set(e.param, rv, isReadOnly(e.param, ndx));
-            else {
-              if (ndx >= 0) throw ex;
-              Field f = cls.getField(fldName);
-              rsp.set(e.param, f.get(agent), isReadOnly(e.param, ndx));
-            }
-          }
+            if (fldName.equals("type")) rsp.set(e.param, current, true);     // special automatic parameter
+            else rsp.set(e.param, current, isReadOnly(e.param, ndx));
         } else {
           // set request
           try {
@@ -239,13 +241,13 @@ public class ParameterMessageBehavior extends MessageBehavior {
             }
             if (sv != null) {
               rsp.set(e.param, sv, false);
-              onParamChange(e.param, ndx, sv);
+              if (sv != current) onParamChange(e.param, ndx, sv);
             }
           } catch (NoSuchMethodException ex) {
             Object rv = setParam(e.param, ndx, evalue);
             if (rv != null) {
               rsp.set(e.param, rv, isReadOnly(e.param, ndx));
-              onParamChange(e.param, ndx, rv);
+              if (rv != current) onParamChange(e.param, ndx, rv);
             } else {
               if (ndx >= 0) throw ex;
               Field f = cls.getField(fldName);
@@ -257,7 +259,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
               }
               rv = f.get(agent);
               rsp.set(e.param, rv, ro);
-              onParamChange(e.param, ndx, rv);
+              if (rv != current) onParamChange(e.param, ndx, rv);
             }
           }
         }
