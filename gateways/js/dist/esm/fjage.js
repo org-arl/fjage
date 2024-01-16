@@ -1062,6 +1062,30 @@ class Gateway {
   }
 
   /**
+   * Gets a list of all agents in the container.
+   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids when resolved
+   */
+  async agents() {
+    let rq = { action: 'agents' };
+    let rsp = await this._msgTxRx(rq);
+    if (!rsp || !Array.isArray(rsp.agentIDs)) throw new Error('Unable to get agents');
+    return rsp.agentIDs.map(aid => new AgentID(aid, false, this));
+  }
+
+  /**
+   * Check if an agent with a given name exists in the container.
+   *
+   * @param {AgentID|String} agentID - the agent id to check
+   * @returns {Promise<boolean>} - a promise which returns true if the agent exists when resolved
+   */
+  async containsAgent(agentID) {
+    let rq = { action: 'containsAgent', agentID: agentID instanceof AgentID ? agentID.getName() : agentID };
+    let rsp = await this._msgTxRx(rq);
+    if (!rsp) throw new Error('Unable to check if agent exists');
+    return !!rsp.answer;
+  }
+
+  /**
    * Finds an agent that provides a named service. If multiple agents are registered
    * to provide a given service, any of the agents' id may be returned.
    *

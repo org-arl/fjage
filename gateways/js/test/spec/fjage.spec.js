@@ -402,6 +402,24 @@ describe('An AgentID', function () {
     });
   });
 
+  it('should be able to get all the agents on the platform', async function () {
+    let val = await gw.agents();
+    let aids = val.map(a => a.name);
+    expect(aids).toContain('shell');
+    expect(aids).toContain('S');
+    expect(aids).toContain('echo');
+    expect(aids).toContain('test');
+  });
+
+  it('should be able to check if an agent exists on the container', async function () {
+    let aid = new AgentID('S', false, gw);
+    let val = await gw.containsAgent(aid);
+    expect(val).toEqual(true);
+    aid = new AgentID('T', false, gw);
+    val = await gw.containsAgent(aid);
+    expect(val).toEqual(false);
+  });
+
 });
 
 describe('An AgentID setup to reject promises', function () {
