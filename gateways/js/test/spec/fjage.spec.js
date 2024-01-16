@@ -1,4 +1,4 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass it expect describe spyOn beforeAll afterAll beforeEach jasmine*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -403,6 +403,41 @@ describe('An AgentID', function () {
   });
 
 });
+
+describe('An AgentID setup to reject promises', function () {
+  var gw;
+
+  beforeAll(() => {
+    gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnError: false}));
+  });
+
+  afterAll(async () => {
+    await delay(300);
+    gw.close();
+  });
+
+  it('should reject the promise if asked to get the value of unknown parameter', async function () {
+    const aid = new AgentID('S', false, gw);
+    await expectAsync(aid.get('k')).toBeRejected();
+  });
+
+  it('should reject the promise if asked to set the value of unknown parameter',  async function () {
+    const aid = new AgentID('S', false, gw);
+    await expectAsync(aid.set('k', 42)).toBeRejected();
+  });
+
+  it('should reject the promise if asked to get the value of unknown indexed parameter', async function () {
+    const aid = new AgentID('S', false, gw);
+    await expectAsync(aid.get('k', 1)).toBeRejected();
+  });
+
+  it('should reject the promise if asked to set the value of unknown indexed parameter', async function () {
+    const aid = new AgentID('S', false, gw);
+    await expectAsync(aid.set('k', 42, 1)).toBeRejected();
+  });
+
+});
+
 
 describe('A Message', function () {
   it('should be able to be consuctured', function () {
