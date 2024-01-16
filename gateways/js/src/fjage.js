@@ -63,7 +63,7 @@ export class AgentID {
   /**
    * Sends a message to the agent represented by this id.
    *
-   * @param {string} msg - message to send
+   * @param {Message} msg - message to send
    * @returns {void}
    */
   send(msg) {
@@ -200,11 +200,11 @@ export class AgentID {
  * Base class for messages transmitted by one agent to another. Creates an empty message.
  * @class
  * @param {Message} inReplyTo - message to which this response corresponds to
- * @param {Performative} - performative
+ * @param {Performative} perf - performative
  */
 export class Message {
 
-  constructor(inReplyTo={msgID:null, sender:null}, perf='') {
+  constructor(inReplyTo={msgID:null, sender:null}, perf=Performative.INFORM) {
     this.__clazz__ = 'org.arl.fjage.Message';
     this.msgID = _guid(8);
     this.sender = null;
@@ -245,7 +245,9 @@ export class Message {
   // convert a message into a JSON string
   // NOTE: we don't do any base64 encoding for TX as
   //       we don't know what data type is intended
-  /** @private */
+  /**
+   * @return {string} - JSON string representation of the message
+   */
   _serialize() {
     let clazz = this.__clazz__ || 'org.arl.fjage.Message';
     let data = JSON.stringify(this, (k,v) => {
@@ -263,7 +265,10 @@ export class Message {
   }
 
   // convert a dictionary (usually from decoding JSON) into a message
-  /** @private */
+  /**
+   * @param {(string|Object)} obj - JSON string or object to be converted to a message
+   * @returns {Message} - message created from the JSON string or object
+   * */
   static _deserialize(obj) {
     if (typeof obj == 'string' || obj instanceof String) {
       try {
@@ -308,36 +313,18 @@ export class GenericMessage extends Message {
  *
  * @class
  * @param {Object} opts
- * @param {string}  [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
- * @param {string}  [opts.port='1100']        - port number of the master container to connect to
- * @param {string}  [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
- * @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
- * @param {number}  [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
- * @param {number}  [opts.timeout=1000]       - timeout for fjage level messages in ms
+ * @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
+ * @param {number} [opts.port=1100]          - port number of the master container to connect to
+ * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
+ * @param {string} [opts.keepAlive=true]     - try to reconnect if the connection is lost
+ * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
+ * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
  * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
- * @param {string}  [hostname="localhost"]    - <strike>Deprecated : hostname/ip address of the master container to connect to</strike>
- * @param {number}  [port=]                   - <strike>Deprecated : port number of the master container to connect to</strike>
- * @param {string}  [pathname=="/ws/"]        - <strike>Deprecated : path of the master container to connect to (for WebSockets)</strike>
- * @param {number}  [timeout=1000]            - <strike>Deprecated : timeout for fjage level messages in ms</strike>
  */
 export class Gateway {
 
-  constructor(opts = {}, port, pathname='/ws/', timeout=1000) {
-    // Support for deprecated constructor
-    if (typeof opts === 'string' || opts instanceof String){
-      opts = {
-        'hostname': opts,
-        'port' : port,
-        'pathname' : pathname,
-        'timeout' : timeout
-      };
-      console.warn('Deprecated use of Gateway constructor');
-    }
-
-    // Set defaults
-    for (var key in GATEWAY_DEFAULTS){
-      if (opts[key] == undefined || opts[key] === '') opts[key] = GATEWAY_DEFAULTS[key];
-    }
+  constructor(opts = {}) {
+    opts = Object.assign({}, GATEWAY_DEFAULTS, opts);
     var url = DEFAULT_URL;
     url.hostname = opts.hostname;
     url.port = opts.port;
@@ -655,7 +642,7 @@ export class Gateway {
   /**
    * Gets the agent ID associated with the gateway.
    *
-   * @returns {string} - agent ID
+   * @returns {AgentID} - agent ID
    */
   getAgentID() {
     return this.aid;
@@ -696,6 +683,7 @@ export class Gateway {
     if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
     this.subscriptions[topic.toJSON()] = true;
     this._update_watch();
+    return true;
   }
 
   /**
@@ -804,7 +792,7 @@ export class Gateway {
    * Sends a request and waits for a response. This method returns a {Promise} which resolves when a response
    * is received or if no response is received after the timeout.
    *
-   * @param {string} msg - message to send
+   * @param {Message} msg - message to send
    * @param {number} [timeout=1000] - timeout in milliseconds
    * @returns {Promise<?Message>} - a promise which resolves with the received response message, null on timeout
    */
@@ -817,7 +805,7 @@ export class Gateway {
    * Returns a response message received by the gateway. This method returns a {Promise} which resolves when
    * a response is received or if no response is received after the timeout.
    *
-   * @param {function} [filter=] - original message to which a response is expected, or a MessageClass of the type
+   * @param {function|Message|typeof Message} filter - original message to which a response is expected, or a MessageClass of the type
    * of message to match, or a closure to use to match against the message
    * @param {number} [timeout=0] - timeout in milliseconds
    * @returns {Promise<?Message>} - received response message, null on timeout
@@ -875,8 +863,8 @@ export const Services = {
 /**
  * Creates a unqualified message class based on a fully qualified name.
  * @param {string} name - fully qualified name of the message class to be created
- * @param {class} [parent=Message] - class of the parent MessageClass to inherit from
- * @returns {function} - constructor for the unqualified message class
+ * @param {typeof Message} [parent=Message] - class of the parent MessageClass to inherit from
+ * @returns {Function} - constructor for the unqualified message class
  * @example
  * const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
  * let pReq = new ParameterReq()
@@ -940,7 +928,7 @@ function _b64toArray(base64, dtype, littleEndian=true) {
     break;
   case '[J': // long array
     for (i = 0; i < len; i+=8)
-      rv.push(view.getInt64(i, littleEndian));
+      rv.push(view.getBigInt64(i, littleEndian));
     break;
   case '[F': // float array
     for (i = 0; i < len; i+=4)
