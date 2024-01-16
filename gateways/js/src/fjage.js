@@ -132,14 +132,17 @@ export class AgentID {
     msg.index = Number.isInteger(index) ? index : -1;
     const rsp = await this.owner.request(msg, timeout);
     var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
-    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) return ret;
+    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) {
+      if (this.owner._returnNullOnError) return ret;
+      else throw new Error(`Unable to set ${this.name}.${params} to ${values}`);
+    }
     if (Array.isArray(params)) {
       if (!rsp.values) rsp.values = {};
       if (rsp.param) rsp.values[rsp.param] = rsp.value;
       const rvals = Object.keys(rsp.values);
       return params.map( p => {
         let f = rvals.find(rv => rv.endsWith(p));
-        return f ? rsp.values[f] : null;
+        return f ? rsp.values[f] : undefined;
       });
     } else {
       return rsp.value;
@@ -170,7 +173,10 @@ export class AgentID {
     msg.index = Number.isInteger(index) ? index : -1;
     const rsp = await this.owner.request(msg, timeout);
     var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
-    if (!rsp || rsp.perf != Performative.INFORM || (params && (!rsp.param))) return ret;
+    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) {
+      if (this.owner._returnNullOnError) return ret;
+      else throw new Error(`Unable to get ${this.name}.${params}`);
+    }
     // Request for listing of all parameters.
     if (!params) {
       if (!rsp.values) rsp.values = {};
@@ -182,7 +188,7 @@ export class AgentID {
       const rvals = Object.keys(rsp.values);
       return params.map(p => {
         let f = rvals.find(rv => rv.endsWith(p));
-        return f ? rsp.values[f] : null;
+        return f ? rsp.values[f] : undefined;
       });
     } else {
       return rsp.value;
@@ -308,6 +314,7 @@ export class GenericMessage extends Message {
  * @param {string} [opts.keepAlive=true]     - try to reconnect if the connection is lost
  * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
  * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
+ * @param {boolean} [opts.returnNullOnError=true] - return null instead of throwing an error when a parameter is not found
  * @param {string} [hostname="localhost"]    - <strike>Deprecated : hostname/ip address of the master container to connect to</strike>
  * @param {number} [port=]                   - <strike>Deprecated : port number of the master container to connect to</strike>
  * @param {string} [pathname=="/ws/"]        - <strike>Deprecated : path of the master container to connect to (for WebSockets)</strike>
@@ -336,6 +343,7 @@ export class Gateway {
     this._timeout = opts.timeout;         // timeout for fjage level messages (agentForService etc)
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
     this._queueSize = opts.queueSize;      // size of queue
+    this._returnNullOnError = opts.returnNullOnError; // null or error
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
@@ -929,7 +937,8 @@ if (isBrowser || isWebWorker){
     'pathname' : '/ws/',
     'timeout': 1000,
     'keepAlive' : true,
-    'queueSize': DEFAULT_QUEUE_SIZE
+    'queueSize': DEFAULT_QUEUE_SIZE,
+    'returnNullOnError': true
   });
   DEFAULT_URL = new URL('ws://localhost');
   // Enable caching of Gateways
@@ -943,7 +952,8 @@ if (isBrowser || isWebWorker){
     'pathname': '',
     'timeout': 1000,
     'keepAlive' : true,
-    'queueSize': DEFAULT_QUEUE_SIZE
+    'queueSize': DEFAULT_QUEUE_SIZE,
+    'returnNullOnError': true
   });
   DEFAULT_URL = new URL('tcp://localhost');
   gObj.atob = a => Buffer.from(a, 'base64').toString('binary');
