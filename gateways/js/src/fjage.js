@@ -728,7 +728,11 @@ export class Gateway {
   async agentForService(service) {
     let rq = { action: 'agentForService', service: service };
     let rsp = await this._msgTxRx(rq);
-    if (!rsp || !rsp.agentID) return;
+    if (!rsp) {
+      if (this._returnNullOnError) return null;
+      else throw new Error('Unable to get agent for service');
+    }
+    if (!rsp.agentID) return null;
     return new AgentID(rsp.agentID, false, this);
   }
 
@@ -742,7 +746,11 @@ export class Gateway {
     let rq = { action: 'agentsForService', service: service };
     let rsp = await this._msgTxRx(rq);
     let aids = [];
-    if (!rsp || !Array.isArray(rsp.agentIDs)) return aids;
+    if (!rsp) {
+      if (this._returnNullOnError) return aids;
+      else throw new Error('Unable to get agents for service');
+    }
+    if (!Array.isArray(rsp.agentIDs)) return aids;
     for (var i = 0; i < rsp.agentIDs.length; i++)
       aids.push(new AgentID(rsp.agentIDs[i], false, this));
     return aids;
