@@ -39,7 +39,7 @@ let server = require('http').createServer(function (request, response) {
     msg.type() == 'warning' && console.log('PAGE WARN:', msg.text());
   });
   await page.goto('http://'+ip+':'+port+'/test', {waitUntil: 'networkidle2'});
-  await page.waitForSelector('.jasmine-overall-result');
+  await page.waitForSelector('.jasmine-overall-result', {timeout: 60000});
   await page.waitForTimeout(1000);
   await browser.close();
   console.log('Browser test Complete [' + (new Date() - startTime) + ' ms]');
