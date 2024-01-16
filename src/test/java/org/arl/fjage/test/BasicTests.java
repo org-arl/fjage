@@ -365,14 +365,14 @@ public class BasicTests {
     assertFalse(container.removeListener(listener));
     int n1 = listener.n;
     assertTrue(n1 > 0);
-    assertTrue(n1 == server.nuisance);
-    assertTrue(n1 == client.nuisance);
+    assertEquals(n1, server.nuisance);
+    assertEquals(n1, client.nuisance);
     server.nuisance = 0;
     client.nuisance = 0;
     platform.delay(1000);
     platform.shutdown();
-    assertTrue(n1 == listener.n);
-    assertTrue(server.nuisance == client.nuisance);
+    assertEquals(n1, listener.n);
+    assertEquals(server.nuisance, client.nuisance);
   }
 
   @Test
@@ -393,13 +393,13 @@ public class BasicTests {
     assertFalse(container.removeListener(listener));
     int n1 = listener.n;
     assertTrue(n1 > 0);
-    assertTrue(n1 == client.nuisance);
-    assertTrue(server.nuisance == 0);
+    assertEquals(n1,client.nuisance);
+    assertEquals(server.nuisance,0);
     server.nuisance = 0;
     client.nuisance = 0;
     platform.delay(1000);
     platform.shutdown();
-    assertTrue(n1 == listener.n);
+    assertEquals(n1,listener.n);
     assertTrue(server.nuisance > 0);
   }
 
@@ -423,10 +423,10 @@ public class BasicTests {
     log.info("Successful: "+(client1.count + client2.count + client3.count));
     log.info("Warnings: "+(client1.warnings + client2.warnings + client3.warnings));
     log.info("Errors: "+(server.errors + client1.errors + client2.errors + client3.errors));
-    assertTrue(server.errors == 0);
-    assertTrue(client1.errors == 0);
-    assertTrue(client2.errors == 0);
-    assertTrue(client3.errors == 0);
+    assertEquals(server.errors, 0);
+    assertEquals(client1.errors, 0);
+    assertEquals(client2.errors, 0);
+    assertEquals(client3.errors, 0);
     assertTrue(client1.warnings < 3);
     assertTrue(client2.warnings < 3);
     assertTrue(client3.warnings < 3);
@@ -453,10 +453,10 @@ public class BasicTests {
     log.info("Successful: "+(client1.count + client2.count + client3.count));
     log.info("Warnings: "+(client1.warnings + client2.warnings + client3.warnings));
     log.info("Errors: "+(server.errors + client1.errors + client2.errors + client3.errors));
-    assertTrue(server.errors == 0);
-    assertTrue(client1.errors == 0);
-    assertTrue(client2.errors == 0);
-    assertTrue(client3.errors == 0);
+    assertEquals(server.errors, 0);
+    assertEquals(client1.errors, 0);
+    assertEquals(client2.errors, 0);
+    assertEquals(client3.errors, 0);
     assertTrue(client1.warnings < 3);
     assertTrue(client2.warnings < 3);
     assertTrue(client3.warnings < 3);
@@ -483,10 +483,10 @@ public class BasicTests {
     log.info("Successful: "+(client1.count + client2.count + client3.count));
     log.info("Warnings: "+(client1.warnings + client2.warnings + client3.warnings));
     log.info("Errors: "+(server.errors + client1.errors + client2.errors + client3.errors));
-    assertTrue(server.errors == 0);
-    assertTrue(client1.errors == 0);
-    assertTrue(client2.errors == 0);
-    assertTrue(client3.errors == 0);
+    assertEquals(server.errors, 0);
+    assertEquals(client1.errors, 0);
+    assertEquals(client2.errors, 0);
+    assertEquals(client3.errors, 0);
     assertTrue(client1.warnings < 3);
     assertTrue(client2.warnings < 3);
     assertTrue(client3.warnings < 3);

@@ -53,6 +53,14 @@ static void test_assert(const char* name, int pass) {
 
 static void test_summary(void) {
   printf("\n*** %d test(s) PASSED, %d test(s) FAILED ***\n\n", passed, failed);
+
+}
+
+static void send_report(fjage_gw_t gw){
+  fjage_msg_t msg = fjage_msg_create("org.arl.fjage.test.TestCompleteNtf", FJAGE_INFORM);
+  fjage_msg_set_recipient(msg, fjage_aid_create("test"));
+  fjage_msg_add_bool(msg, "status", failed == 0);
+  fjage_send(gw, msg);
 }
 
 static int error(const char* msg) {
@@ -251,6 +259,7 @@ int main(int argc, char* argv[]) {
   aid = fjage_aid_topic("mytopic");
   test_assert("set param (-string)", fjage_param_set_string(gw, aid, "dummy", "dummy", -1) < 0);
   fjage_aid_destroy(aid);
+  send_report(gw);
   test_assert("close", fjage_close(gw) == 0);
   test_summary();
   return failed;

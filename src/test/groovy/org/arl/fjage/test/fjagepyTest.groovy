@@ -34,7 +34,7 @@ class fjagepyTest {
     def st = platform.currentTimeMillis();
     if (System.getProperty('manualPyTest') == null){
       println "Running automated tests."
-      def proc = "python src/test/groovy/org/arl/fjage/test/BasicTests.py".execute()
+      def proc = "src/test/groovy/org/arl/fjage/test/BasicTests.py".execute()
       def sout = new StringBuilder(), serr = new StringBuilder()
       proc.consumeProcessOutput(sout, serr)
       proc.waitFor()
