@@ -246,6 +246,8 @@ export class Message {
   // NOTE: we don't do any base64 encoding for TX as
   //       we don't know what data type is intended
   /**
+   * @private
+   *
    * @return {string} - JSON string representation of the message
    */
   _serialize() {
@@ -266,28 +268,26 @@ export class Message {
 
   // convert a dictionary (usually from decoding JSON) into a message
   /**
-   * @param {(string|Object)} obj - JSON string or object to be converted to a message
+   * @private
+   *
+   * @param {(string|Object)} json - JSON string or object to be converted to a message
    * @returns {Message} - message created from the JSON string or object
    * */
-  static _deserialize(obj) {
-    if (typeof obj == 'string' || obj instanceof String) {
+  static _deserialize(json) {
+    let obj = null;
+    if (typeof json == 'string') {
       try {
-        obj = JSON.parse(obj);
+        obj = JSON.parse(json);
       }catch(e){
         return null;
       }
-    }
-    try {
-      let qclazz = obj.clazz;
-      let clazz = qclazz.replace(/^.*\./, '');
-      let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
-      rv.__clazz__ = qclazz;
-      rv._inflate(obj.data);
-      return rv;
-    } catch (err) {
-      console.warn('Error trying to deserialize JSON object : ', obj, err);
-      return null;
-    }
+    } else obj = json;
+    let qclazz = obj.clazz;
+    let clazz = qclazz.replace(/^.*\./, '');
+    let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
+    rv.__clazz__ = qclazz;
+    rv._inflate(obj.data);
+    return rv;
   }
 }
 
@@ -379,6 +379,7 @@ export class Gateway {
       delete this.pending[obj.id];
     } else if (obj.action == 'send') {
       // incoming message from master
+      // @ts-ignore
       let msg = Message._deserialize(obj.message);
       if (!msg) return;
       this._sendEvent('rxmsg', msg);
@@ -477,13 +478,15 @@ export class Gateway {
         'hostname':url.hostname,
         'port':url.port,
         'pathname':url.pathname,
-        'keepAlive': this._keepAlive
+        'keepAlive': this._keepAlive,
+        'debug': this.debug
       });
     }else if (url.protocol.startsWith('tcp')){
       conn = new TCPConnector({
         'hostname':url.hostname,
         'port':url.port,
-        'keepAlive': this._keepAlive
+        'keepAlive': this._keepAlive,
+        'debug': this.debug
       });
     } else return null;
     conn.setReadCallback(this._onMsgRx.bind(this));
@@ -775,6 +778,7 @@ export class Gateway {
     }
     this._sendEvent('txmsg', msg);
     let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
+    // @ts-ignore
     rq = rq.replace('"###MSG###"', msg._serialize());
     return !!this._msgTx(rq);
   }
@@ -794,7 +798,7 @@ export class Gateway {
    *
    * @param {Message} msg - message to send
    * @param {number} [timeout=1000] - timeout in milliseconds
-   * @returns {Promise<?Message>} - a promise which resolves with the received response message, null on timeout
+   * @returns {Promise<Message|void>} - a promise which resolves with the received response message, null on timeout
    */
   async request(msg, timeout=1000) {
     this.send(msg);
@@ -808,7 +812,7 @@ export class Gateway {
    * @param {function|Message|typeof Message} filter - original message to which a response is expected, or a MessageClass of the type
    * of message to match, or a closure to use to match against the message
    * @param {number} [timeout=0] - timeout in milliseconds
-   * @returns {Promise<?Message>} - received response message, null on timeout
+   * @returns {Promise<Message|void>} - received response message, null on timeout
    */
   async receive(filter, timeout=0) {
     return new Promise(resolve => {
@@ -864,7 +868,7 @@ export const Services = {
  * Creates a unqualified message class based on a fully qualified name.
  * @param {string} name - fully qualified name of the message class to be created
  * @param {typeof Message} [parent=Message] - class of the parent MessageClass to inherit from
- * @returns {Function} - constructor for the unqualified message class
+ * @constructs Message
  * @example
  * const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
  * let pReq = new ParameterReq()
@@ -873,6 +877,9 @@ export function MessageClass(name, parent=Message) {
   let sname = name.replace(/^.*\./, '');
   if (MessageClass[sname]) return MessageClass[sname];
   let cls = class extends parent {
+    /**
+     * @param {{ [x: string]: any; }} params
+     */
     constructor(params) {
       super();
       this.__clazz__ = name;
