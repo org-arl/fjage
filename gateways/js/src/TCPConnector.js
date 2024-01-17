@@ -8,7 +8,7 @@ var createConnection;
  * @class
  * @ignore
  */
-export default class TCPconnector {
+export default class TCPConnector {
 
   /**
     * Create an TCPConnector to connect to a fjage master over TCP
@@ -16,6 +16,7 @@ export default class TCPconnector {
    * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
    * @param {number} [opts.port=1100] - port number of the master container to connect to
    * @param {boolean} [opts.keepAlive=true] - try to reconnect if the connection is lost
+   * @param {boolean} [opts.debug=false] - debug info to be logged to console?
    * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
     */
   constructor(opts = {}) {
@@ -31,6 +32,7 @@ export default class TCPconnector {
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.connListeners = [];              // external listeners wanting to listen connection events
+    this.debug = false;
     this._sockInit(host, port);
   }
 
@@ -44,6 +46,7 @@ export default class TCPconnector {
   _sockInit(host, port){
     if (!createConnection){
       try {
+        // @ts-ignore
         import('net').then(module => {
           createConnection = module.createConnection;
           this._sockSetup(host, port);
