@@ -3,7 +3,7 @@
 const statik = require('node-static');
 const Jasmine = require('jasmine');
 const process = require('process');
-const { chromium } = require('playwright');
+const { chromium,  webkit, firefox} = require('playwright');
 
 const ip = 'localhost';
 const port = 8000;
@@ -30,7 +30,15 @@ let server = require('http').createServer(function (request, response) {
   // Execute Browser(MJS) test using puppteer
   console.log('Launching playright..');
   startTime = new Date();
-  const browser = await chromium.launch();
+  let browser = null;
+  // on MacOS use webkit instead of chromium
+  if (process.platform === 'darwin') {
+    browser = await webkit.launch();
+  } else if (process.platform === 'win32') {
+    browser = await chromium.launch();
+  } else {
+    browser = await firefox.launch();
+  }
   const context = await browser.newContext();
   const page = await context.newPage();
   page.on('console', msg => {
