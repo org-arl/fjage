@@ -493,6 +493,30 @@ public class BasicTests {
     assertTrue(client1.count + client2.count + client3.count > 100);
   }
 
+  @Test
+  public void testParamNtf(){
+    log.info("testParamNtf");
+    Platform platform = new RealTimePlatform();
+    Container container = new Container(platform);
+    ParamServerAgent server = new ParamServerAgent(false);
+    ParamNtfClientAgent client = new ParamNtfClientAgent();
+    container.add("S", server);
+    container.add("C", client);
+    platform.start();
+    platform.delay(2000);
+    assertEquals(server.n, 1);
+    client.zVal = 7;
+    platform.delay(2000);
+    assertEquals(server.n, 2);
+    log.info("Warnings: "+client.warnings);
+    log.info("Errors: "+(server.errors + client.errors));
+    assertEquals(server.errors, 0);
+    assertEquals(client.errors, 0);
+    assertEquals(client.warnings, 0);
+    platform.shutdown();
+    platform.delay(2000);
+  }
+
   private static class RequestMessage extends Message {
     private static final long serialVersionUID = 1L;
     public int x;
@@ -517,12 +541,14 @@ public class BasicTests {
   }
 
   public enum Params implements Parameter {
-    x, y, s
+    x, y, z, s
   }
 
   public class ParamServerAgent extends Agent {
     public int errors = 0;
     public int x = 1;
+    public int n = 0;
+    public int z = 0;
     public float getY() { return 2; }
     public String getS() { return "xxx"; }
     public int setX(int x) { return x+1; }
@@ -535,7 +561,12 @@ public class BasicTests {
     @Override
     public void init() {
       register("server");
-      add(new ParameterMessageBehavior(Params.class));
+      add(new ParameterMessageBehavior(Params.class){
+        @Override
+        protected void onParamChange(Parameter p, int ndx, Object v) {
+          n++;
+        }
+      });
       add(new MessageBehavior() {
         @Override
         public void onReceive(Message msg) {
@@ -697,6 +728,39 @@ public class BasicTests {
         }
       });
     }
+  }
+
+  private class ParamNtfClientAgent extends Agent{
+    public int zVal = 4;
+    public int errors = 0;
+    public int warnings = 0;
+    public ParamNtfClientAgent() {
+      super();
+    }
+    @Override
+    public void init(){
+      delay(200);
+
+      AgentID server = agentForService("server");
+      if (server == null) {
+        log.warning("Unable to find server");
+        errors++;
+        return;
+      }
+      add(new TickerBehavior(100) {
+        @Override
+        public void onTick() {
+          Message req = new ParameterReq().set(Params.z, zVal);
+          req.setRecipient(server);
+          Message rsp = request(req, 1000);
+          if (rsp == null) {
+            log.warning("Unable to set z to " + zVal);
+            warnings++;
+          }
+        }
+      });
+    }
+
   }
 
   private class AIDParamClientAgent extends Agent {

@@ -241,13 +241,13 @@ public class ParameterMessageBehavior extends MessageBehavior {
             }
             if (sv != null) {
               rsp.set(e.param, sv, false);
-              if (sv != current) onParamChange(e.param, ndx, sv);
+              if (!sv.equals(current)) onParamChange(e.param, ndx, sv);
             }
           } catch (NoSuchMethodException ex) {
             Object rv = setParam(e.param, ndx, evalue);
             if (rv != null) {
               rsp.set(e.param, rv, isReadOnly(e.param, ndx));
-              if (rv != current) onParamChange(e.param, ndx, rv);
+              if (!rv.equals(current)) onParamChange(e.param, ndx, rv);
             } else {
               if (ndx >= 0) throw ex;
               Field f = cls.getField(fldName);
@@ -259,7 +259,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
               }
               rv = f.get(agent);
               rsp.set(e.param, rv, ro);
-              if (rv != current) onParamChange(e.param, ndx, rv);
+              if (!rv.equals(current)) onParamChange(e.param, ndx, rv);
             }
           }
         }
