@@ -115,7 +115,7 @@ describe('A Gateway', function () {
 
   it('should have a successfully opened the underlying connector', async function () {
     const gw = new Gateway(gwOpts);
-    await delay(500);
+    await delay(700);
     expect([1, 'open']).toContain(gw.connector.sock.readyState);
     gw.close();
   });
@@ -249,22 +249,23 @@ describe('A Gateway', function () {
         console.warn('Error getting SendMsgRsp #'+type+' : ' + m);
       }
     }
-    expect(rxed).not.toContain(false);
+    expect(rxed.filter(r => !r).length).toBe(0)
   });
 
   it('should generate trigger connListener when the underlying transport is disconnected/reconnected', async function() {
     const gw = new Gateway(gwOpts);
     let spy = jasmine.createSpy('connListener');
     gw.addConnListener(spy);
-    await delay(300);
-    spy.calls.reset();
     gw.connector._reconnectTime = 300;
+    await delay(700);
+    expect([1, 'open']).toContain(gw.connector.sock.readyState);
+    spy.calls.reset();
     if (isBrowser) gw.connector.sock.close();
     else gw.connector.sock.destroy();
     await delay(100);
     expect(spy).toHaveBeenCalledWith(false);
     spy.calls.reset();
-    await delay(500);
+    await delay(1000);
     expect(spy).toHaveBeenCalledWith(true);
     gw.connector._reconnectTime = 5000;
   });
@@ -754,6 +755,7 @@ const autoReporter = {
       }
       if (params && params.get('send') == 'false') return;
     }
+    // console.log("Jasmine Result : ", result);
     await sendTestStatus(result.overallStatus == 'passed', trace, testType);
     await delay(500);
   }

@@ -13,8 +13,8 @@
   ],
   "scripts": {
     "build": "npx rimraf -rf dist/ && eslint src/*.js && rollup --silent -c rollup.config.js",
-    "pretest": "node test/spec/create-spec.cjs",
-    "test": "npx playwright install --with-deps && node test/run-tests.cjs",
+    "pretest": "npx playwright install-deps && node test/spec/create-spec.cjs",
+    "test": "node test/run-tests.cjs",
     "docs": "documentation build src/fjage.js -f html --github --document-exported -o ../../docs/jsdoc",
     "clean": "npx rimraf -rf dist/"
   },
