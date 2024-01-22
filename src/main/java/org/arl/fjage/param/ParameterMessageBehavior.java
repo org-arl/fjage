@@ -214,7 +214,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
         } catch (NoSuchMethodException ex) {
           current = getParam(e.param, ndx);
           if (current == null) {
-            if (ndx >= 0) throw ex;
+            if (ndx >= 0 && evalue == null) throw ex;
             Field f = cls.getField(fldName);
             current = f.get(agent);
           }
