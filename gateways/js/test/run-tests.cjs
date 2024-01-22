@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 
-const puppeteer = require('puppeteer');
 const statik = require('node-static');
 const Jasmine = require('jasmine');
 const process = require('process');
-
+const { chromium } = require('playwright');
 
 const ip = 'localhost';
 const port = 8000;
@@ -29,20 +28,21 @@ let server = require('http').createServer(function (request, response) {
 
 
   // Execute Browser(MJS) test using puppteer
-  console.log('Launching puppeteer..');
+  console.log('Launching playright..');
   startTime = new Date();
-  const browser = await puppeteer.launch({ headless: 'new',});
-  const page = await browser.newPage();
+  const browser = await chromium.launch();
+  const context = await browser.newContext();
+  const page = await context.newPage();
   page.on('console', msg => {
-    msg.type() == 'log' && console.log('PAGE LOG:', msg.text());
-    msg.type() == 'error' && console.log('PAGE ERR:', msg.text());
-    msg.type() == 'warning' && console.log('PAGE WARN:', msg.text());
+    if (msg.type() === 'log') console.log(`PAGE LOG: ${msg.text()}`);
+    if (msg.type() === 'error') console.log(`PAGE ERR: ${msg.text()}`);
+    if (msg.type() === 'warning') console.log(`PAGE WARN: ${msg.text()}`);
   });
-  await page.goto('http://'+ip+':'+port+'/test', {waitUntil: 'networkidle2'});
+  await page.goto(`http://${ip}:${port}/test`, {waitUntil: 'networkidle'});
   await page.waitForSelector('.jasmine-overall-result', {timeout: 60000});
   await page.waitForTimeout(1000);
   await browser.close();
-  console.log('Browser test Complete [' + (new Date() - startTime) + ' ms]');
+  console.log(`Browser test Complete [${new Date() - startTime} ms]`);
   server.close();
   console.log('Run Tests Complete!');
   process.exit(0);

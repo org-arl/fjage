@@ -14,7 +14,7 @@
   "scripts": {
     "build": "npx rimraf -rf dist/ && eslint src/*.js && rollup --silent -c rollup.config.js",
     "pretest": "node test/spec/create-spec.cjs",
-    "test": "node test/run-tests.cjs",
+    "test": "npx playwright install --with-deps && node test/run-tests.cjs",
     "docs": "documentation build src/fjage.js -f html --github --document-exported -o ../../docs/jsdoc",
     "clean": "npx rimraf -rf dist/"
   },
@@ -33,6 +33,7 @@
   "homepage": "https://github.com/org-arl/fjage#readme",
   "devDependencies": {
     "@babel/eslint-parser": "^7.23.3",
+    "@playwright/test": "^1.41.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "documentation": "^14.0.2",
@@ -40,7 +41,6 @@
     "globals": "^13.24.0",
     "jasmine": "^5.1.0",
     "node-static": "^0.7.11",
-    "puppeteer": "^21.6.0",
     "rollup": "^4.8.0"
   },
   "dependencies": {
