@@ -252,7 +252,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
           try {
             f.get(500, TimeUnit.MILLISECONDS);
           } catch (TimeoutException e){
-            log.warning("Sending timed out. Closing connection to " + session.getRemoteAddress());
+            log.fine("Sending timed out. Closing connection to " + session.getRemoteAddress());
             session.disconnect();
           } catch (Exception e){
             log.warning(e.toString());
