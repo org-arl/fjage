@@ -632,12 +632,18 @@ class Message {
         return null;
       }
     }
-    let qclazz = obj.clazz;
-    let clazz = qclazz.replace(/^.*\./, '');
-    let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
-    rv.__clazz__ = qclazz;
-    rv._inflate(obj.data);
-    return rv;
+    try {
+      let qclazz = obj.clazz;
+      let clazz = qclazz.replace(/^.*\./, '');
+      let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
+      rv.__clazz__ = qclazz;
+      rv._inflate(obj.data);
+      return rv;
+    } catch (err) {
+      console.warn('Error trying to deserialize JSON object : ', obj, err);
+      return null;
+    }
+
   }
 }
 
