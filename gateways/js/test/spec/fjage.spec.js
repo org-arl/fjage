@@ -249,7 +249,7 @@ describe('A Gateway', function () {
         console.warn('Error getting SendMsgRsp #'+type+' : ' + m);
       }
     }
-    expect(rxed.filter(r => !r).length).toBe(0)
+    expect(rxed.filter(r => !r).length).toBe(0);
   });
 
   it('should generate trigger connListener when the underlying transport is disconnected/reconnected', async function() {
@@ -426,7 +426,7 @@ describe('An AgentID setup to reject promises', function () {
   var gw;
 
   beforeAll(() => {
-    gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnError: false}));
+    gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnFailedResponse: false}));
   });
 
   afterAll(async () => {
