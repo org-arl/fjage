@@ -240,17 +240,25 @@ class ConnectionHandler extends Thread {
     if (conn == null) return null;
     if (keepAlive && !alive && container instanceof MasterContainer) return null;
     pending.put(id, id);
-    try {
-      synchronized(id) {
-        println(s);
-        id.wait(timeout);
+    long deadline = System.currentTimeMillis() + timeout;
+    synchronized(id) {
+      println(s);
+      long dt = deadline - System.currentTimeMillis();
+      while (dt > 0) {
+        try {
+          id.wait(dt);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+        Object rv = pending.get(id);
+        if (rv instanceof JsonMessage) {
+          pending.remove(id);
+          return (JsonMessage)rv;
+        }
+        dt = deadline - System.currentTimeMillis();
       }
-    } catch (InterruptedException ex) {
-      Thread.currentThread().interrupt();
     }
-    Object rv = pending.get(id);
     pending.remove(id);
-    if (rv instanceof JsonMessage) return (JsonMessage)rv;
     if (keepAlive && alive) {
       alive = false;
       log.fine("Connection dead");
