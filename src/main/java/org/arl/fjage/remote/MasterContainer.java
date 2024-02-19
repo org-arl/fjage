@@ -218,7 +218,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   @Override
   public boolean send(Message m, boolean relay) {
-    if (!running) return false;
     boolean sent = super.send(m, false);
     AgentID aid = m.getRecipient();
     if (aid == null) return false;
