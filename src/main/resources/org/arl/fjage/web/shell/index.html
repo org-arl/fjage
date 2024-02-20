@@ -1,3 +1,12 @@
+<!-- fjåge Web Shell
+
+# API
+
+- shellready : will be true when the shell is ready to accept input
+- hideModeToggle : if set to true, the darkmode toggle will be hidden
+- window.postMessage({theme: 'dark'}) : to set the theme to 'dark' mode
+
+-->
 <html>
 <head>
   <title>fjåge shell</title>
@@ -109,15 +118,16 @@
   </div>
   <script>
     const ignoreKeys = ['Meta-R', 'Meta-Shift-R'];
-    var defaultCursorWidth;
-    var rtime = 0;
-    var resizing = false;
-    var delta = 200;
-    var fitAddon;
+    let defaultCursorWidth;
+    let rtime = 0;
+    let resizing = false;
+    let delta = 200;
+    let fitAddon;
+    let hideModeToggle = !window.hideModeToggle;
     window.shellready = false;
     function connectSocket(term, url, path){
       const ws = new WebSocket('ws://' + url + path);
-      var attachAddon;
+      let attachAddon;
       window.ws = ws;
       ws.onerror = () => reconnectSocket(term, attachAddon, url, path, ws)
       ws.onclose = () => reconnectSocket(term, attachAddon, url, path, ws)
@@ -183,8 +193,8 @@
     }
     window.addEventListener('load', () => {
       const darkmodeBtn = document.getElementById('darkmode-tgl');
-      var lightmode = false;
-      var userTheme = false;
+      let lightmode = false;
+      let userTheme = false;
 
       const term = new Terminal();
       fitAddon = new FitAddon.FitAddon();
@@ -195,21 +205,30 @@
       fitAddon.fit();
       defaultCursorWidth = term.getOption("cursorWidth");
 
-      if (window.matchMedia){
-        lightmode = !window.matchMedia('(prefers-color-scheme: dark)').matches;
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-          if (userTheme) return;
-          const newColorScheme = e.matches ? "dark" : "light";
-          darkmodeBtn.checked = !!e.matches;
-          setTheme(term, newColorScheme);
+      if (hideModeToggle){
+        darkmodeBtn.parentElement.style.display = 'none';
+        window.addEventListener('message', evt => {
+          if (evt.data && evt.data.theme){
+            setTheme(term, evt.data.theme);
+          }
         });
+      }else {
+        if (window.matchMedia){
+          lightmode = !window.matchMedia('(prefers-color-scheme: dark)').matches;
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (userTheme) return;
+            const newColorScheme = e.matches ? "dark" : "light";
+            darkmodeBtn.checked = !!e.matches;
+            setTheme(term, newColorScheme);
+          });
+        }
+        darkmodeBtn.checked = !lightmode;
+        setTheme(term, lightmode ? 'light' : 'dark');
+        darkmodeBtn.addEventListener('change', evt => {
+            setTheme(term, evt.target.checked ? 'dark' : 'light');
+            userTheme = true;
+        })
       }
-      darkmodeBtn.checked = !lightmode;
-      setTheme(term, lightmode ? 'light' : 'dark');
-      darkmodeBtn.addEventListener('change', evt => {
-          setTheme(term, evt.target.checked ? 'dark' : 'light');
-          userTheme = true;
-      })
 
       const urlParams = new URLSearchParams(window.location.search);
       const url = urlParams.get('url') || window.location.hostname + ':' + window.location.port;;
