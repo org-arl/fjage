@@ -45,66 +45,13 @@
       right: 20px;
       z-index: 100;
     }
-    .tgl {
-      display: none;
-    }
-    .tgl, .tgl:after, .tgl:before, .tgl *, .tgl *:after, .tgl *:before, .tgl + .tgl-btn {
-      box-sizing: border-box;
-    }
-    .tgl::-moz-selection, .tgl:after::-moz-selection, .tgl:before::-moz-selection, .tgl *::-moz-selection, .tgl *:after::-moz-selection, .tgl *:before::-moz-selection, .tgl + .tgl-btn::-moz-selection {
-      background: none;
-    }
-    .tgl::selection, .tgl:after::selection, .tgl:before::selection, .tgl *::selection, .tgl *:after::selection, .tgl *:before::selection, .tgl + .tgl-btn::selection {
-      background: none;
-    }
-    .tgl + .tgl-btn {
-      outline: 0;
-      display: block;
-      width: 3.2em;
-      height: 1.5em;
-      position: relative;
-      cursor: pointer;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-    }
-    .tgl + .tgl-btn:after, .tgl + .tgl-btn:before {
-      position: relative;
-      display: block;
-      content: "";
-      width: 40%;
-      height: 100%;
-    }
-    .tgl + .tgl-btn:after {
-      left: 0;
-    }
-    .tgl + .tgl-btn:before {
-      display: none;
-    }
-    .tgl:checked + .tgl-btn:after {
-      left: 60%;
-    }
 
-    .tgl-flat + .tgl-btn {
-      padding: 2px;
-      transition: all 0.2s ease;
-      background: #fff;
-      border: 4px solid #dfdfdf;
-      border-radius: 2em;
-    }
-    .tgl-flat + .tgl-btn:after {
-      transition: all 0.2s ease;
-      background: #dfdfdf;
-      content: "";
-      border-radius: 1em;
-    }
-    .tgl-flat:checked + .tgl-btn {
-      border: 4px solid #8d8d8d;
-    }
-    .tgl-flat:checked + .tgl-btn:after {
-      left: 60%;
-      background: #8d8d8d;
+    button.modeToggle {
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      margin: 0;
     }
   </style>
 </head>
@@ -112,8 +59,10 @@
   <div class="container">
     <div id='terminal'></div>
     <div class="btn-container" title="Toggle Light/Dark ColorMode">
-      <input class="tgl tgl-flat" id="darkmode-tgl" type="checkbox" checked/>
-      <label class="tgl-btn" for="darkmode-tgl"></label>
+      <button class="modeToggle" id="darkmode-tgl">
+        <svg id="darkmode-dark" data-v-bd832875="" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="icon" width="24px" height="24px" viewBox="0 0 24 24"><path fill="white" d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2h.1A6.98 6.98 0 0 0 10 7m-6 5a8 8 0 0 0 15.062 3.762A9 9 0 0 1 8.238 4.938A7.999 7.999 0 0 0 4 12"></path></svg>
+        <svg id="darkmode-light" style="display: none;" data-v-bd832875="" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="icon" width="24px" height="24px" viewBox="0 0 24 24"><path fill="currentColor" d="M12 18a6 6 0 1 1 0-12a6 6 0 0 1 0 12m0-2a4 4 0 1 0 0-8a4 4 0 0 0 0 8M11 1h2v3h-2zm0 19h2v3h-2zM3.515 4.929l1.414-1.414L7.05 5.636L5.636 7.05zM16.95 18.364l1.414-1.414l2.121 2.121l-1.414 1.414zm2.121-14.85l1.414 1.415l-2.121 2.121l-1.414-1.414zM5.636 16.95l1.414 1.414l-2.121 2.121l-1.414-1.414zM23 11v2h-3v-2zM4 11v2H1v-2z"></path></svg>
+      </button>
     </div>
   </div>
   <script>
@@ -123,7 +72,9 @@
     let resizing = false;
     let delta = 200;
     let fitAddon;
-    let hideModeToggle = !window.hideModeToggle;
+    let currentTheme = 'dark';
+    // let hideModeToggle = !window.hideModeToggle;
+    let hideModeToggle = false;
     window.shellready = false;
     function connectSocket(term, url, path){
       const ws = new WebSocket('ws://' + url + path);
@@ -170,6 +121,9 @@
           cursor: '#586e75',
           selection: '#d3c494'
         });
+        document.getElementById('darkmode-dark').style.display = 'none';
+        document.getElementById('darkmode-light').style.display = 'block';
+        currentTheme = theme;
       }else if (theme == 'dark'){
         term.setOption('theme', {
           background: '#000000',
@@ -181,6 +135,9 @@
           red: '#cc0000',
           cursor: '#ff6e75'
         });
+        document.getElementById('darkmode-dark').style.display = 'block';
+        document.getElementById('darkmode-light').style.display = 'none';
+        currentTheme = theme;
       }
     };
     function resizeend() {
@@ -218,14 +175,13 @@
           window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             if (userTheme) return;
             const newColorScheme = e.matches ? "dark" : "light";
-            darkmodeBtn.checked = !!e.matches;
             setTheme(term, newColorScheme);
           });
         }
         darkmodeBtn.checked = !lightmode;
         setTheme(term, lightmode ? 'light' : 'dark');
-        darkmodeBtn.addEventListener('change', evt => {
-            setTheme(term, evt.target.checked ? 'dark' : 'light');
+        darkmodeBtn.addEventListener('click', evt => {
+            setTheme(term, currentTheme == 'dark' ? 'light' : 'dark');
             userTheme = true;
         })
       }
