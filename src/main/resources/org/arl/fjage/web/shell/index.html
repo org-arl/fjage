@@ -73,8 +73,12 @@
     let delta = 200;
     let fitAddon;
     let currentTheme = 'dark';
-    // let hideModeToggle = !window.hideModeToggle;
     let hideModeToggle = false;
+    let parentTheme = window.parent.document.documentElement.className;
+    if (parentTheme == 'light' || parentTheme == 'dark'){
+      currentTheme = parentTheme;
+      hideModeToggle = true;
+    }
     window.shellready = false;
     function connectSocket(term, url, path){
       const ws = new WebSocket('ws://' + url + path);
