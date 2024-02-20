@@ -3,6 +3,7 @@
 # API
 
 - shellready : will be true when the shell is ready to accept input
+- hideModeToggle : if true, the mode toggle button will be hidden
 - window.postMessage({theme: 'dark'}) : to set the theme to 'dark' mode
 
 -->
@@ -73,11 +74,17 @@
     let fitAddon;
     let currentTheme = null;
     let hideModeToggle = false;
-    let parentTheme = window.parent.document.documentElement.className;
-    if (parentTheme == 'light' || parentTheme == 'dark'){
+    let parentTheme = null;
+    if (window.parent.document.documentElement.classList.contains('dark')){
+      parentTheme = 'dark';
+      currentTheme = parentTheme;
+      hideModeToggle = true;
+    }else if (window.parent.document.documentElement.classList.contains('light')){
+      parentTheme = 'light';
       currentTheme = parentTheme;
       hideModeToggle = true;
     }
+    hideModeToggle = hideModeToggle || window.parent.hideModeToggle;
     window.shellready = false;
     function connectSocket(term, url, path){
       const ws = new WebSocket('ws://' + url + path);
@@ -169,7 +176,7 @@
       if (hideModeToggle){
         darkmodeBtn.parentElement.style.display = 'none';
         window.addEventListener('message', evt => {
-          if (evt.data && evt.data.theme){
+          if (evt.data && evt.data.theme){q
             setTheme(term, evt.data.theme);
           }
         });
@@ -186,7 +193,7 @@
             userTheme = true;
         })
       }
-      setTheme(term, currentTheme ? 'light' : 'dark');
+      setTheme(term, currentTheme);
 
       const urlParams = new URLSearchParams(window.location.search);
       const url = urlParams.get('url') || window.location.hostname + ':' + window.location.port;;
