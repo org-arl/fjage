@@ -71,7 +71,7 @@
     let resizing = false;
     let delta = 200;
     let fitAddon;
-    let currentTheme = 'dark';
+    let currentTheme = null;
     let hideModeToggle = false;
     let parentTheme = window.parent.document.documentElement.className;
     if (parentTheme == 'light' || parentTheme == 'dark'){
@@ -163,6 +163,8 @@
       term.open(document.getElementById('terminal'));
       fitAddon.fit();
       defaultCursorWidth = term.getOption("cursorWidth");
+
+      if (currentTheme == null && window.matchMedia) currentTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
       if (hideModeToggle){
         darkmodeBtn.parentElement.style.display = 'none';
