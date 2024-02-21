@@ -10,7 +10,7 @@ export default class WSConnector {
    * Create an WSConnector to connect to a fjage master over WebSockets
    * @param {Object} opts
    * @param {string} opts.hostname - hostname/ip address of the master container to connect to
-   * @param {number} opts.port - port number of the master container to connect to
+   * @param {string} opts.port - port number of the master container to connect to
    * @param {string} opts.pathname - path of the master container to connect to
    * @param {boolean} opts.keepAlive - try to reconnect if the connection is lost
    * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
@@ -20,8 +20,8 @@ export default class WSConnector {
     this.url.hostname = opts.hostname;
     this.url.port = opts.port;
     this.url.pathname = opts.pathname;
+    this._keepAlive = opts.keepAlive;
     this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
-    this._keepAlive = opts.keepAlive || true;
     this.debug = opts.debug || false;      // debug info to be logged to console?
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before

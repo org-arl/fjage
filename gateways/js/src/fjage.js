@@ -308,17 +308,17 @@ export class GenericMessage extends Message {
  *
  * @class
  * @param {Object} opts
- * @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
- * @param {number} [opts.port=1100]          - port number of the master container to connect to
- * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
- * @param {string} [opts.keepAlive=true]     - try to reconnect if the connection is lost
- * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
- * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
+ * @param {string}  [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
+ * @param {string}  [opts.port='1100']        - port number of the master container to connect to
+ * @param {string}  [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
+ * @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
+ * @param {number}  [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
+ * @param {number}  [opts.timeout=1000]       - timeout for fjage level messages in ms
  * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
- * @param {string} [hostname="localhost"]    - <strike>Deprecated : hostname/ip address of the master container to connect to</strike>
- * @param {number} [port=]                   - <strike>Deprecated : port number of the master container to connect to</strike>
- * @param {string} [pathname=="/ws/"]        - <strike>Deprecated : path of the master container to connect to (for WebSockets)</strike>
- * @param {number} [timeout=1000]            - <strike>Deprecated : timeout for fjage level messages in ms</strike>
+ * @param {string}  [hostname="localhost"]    - <strike>Deprecated : hostname/ip address of the master container to connect to</strike>
+ * @param {number}  [port=]                   - <strike>Deprecated : port number of the master container to connect to</strike>
+ * @param {string}  [pathname=="/ws/"]        - <strike>Deprecated : path of the master container to connect to (for WebSockets)</strike>
+ * @param {number}  [timeout=1000]            - <strike>Deprecated : timeout for fjage level messages in ms</strike>
  */
 export class Gateway {
 
@@ -327,13 +327,17 @@ export class Gateway {
     if (typeof opts === 'string' || opts instanceof String){
       opts = {
         'hostname': opts,
-        'port' : port || gObj.location.port,
+        'port' : port,
         'pathname' : pathname,
         'timeout' : timeout
       };
       console.warn('Deprecated use of Gateway constructor');
     }
-    opts = Object.assign({}, GATEWAY_DEFAULTS, opts);
+
+    // Set defaults
+    for (var key in GATEWAY_DEFAULTS){
+      if (opts[key] == undefined || opts[key] === '') opts[key] = GATEWAY_DEFAULTS[key];
+    }
     var url = DEFAULT_URL;
     url.hostname = opts.hostname;
     url.port = opts.port;
@@ -342,7 +346,7 @@ export class Gateway {
     if (existing) return existing;
     this._timeout = opts.timeout;         // timeout for fjage level messages (agentForService etc)
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
-    this._queueSize = opts.queueSize;      // size of queue
+    this._queueSize = opts.queueSize;     // size of queue
     this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.subscriptions = {};              // hashset for all topics that are subscribed

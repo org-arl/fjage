@@ -1,4 +1,4 @@
-/* fjage.js v1.12.0 */
+/* fjage.js v1.12.1 */
 
 const isBrowser =
   typeof window !== "undefined" && typeof window.document !== "undefined";
@@ -42,21 +42,20 @@ class TCPconnector {
   /**
     * Create an TCPConnector to connect to a fjage master over TCP
    * @param {Object} opts
-   * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
-   * @param {number} opts.port - port number of the master container to connect to
-   * @param {string} opts.pathname - path of the master container to connect to
+   * @param {string} opts.hostname - hostname/ip address of the master container to connect to
+   * @param {string} opts.port - port number of the master container to connect to
    * @param {boolean} opts.keepAlive - try to reconnect if the connection is lost
    * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
     */
   constructor(opts = {}) {
+    let host = opts.hostname;
+    let port = opts.port;
+    this._keepAlive = opts.keepAlive;
+    this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME$1;
     this.url = new URL('tcp://localhost');
-    let host = opts.hostname || 'localhost';
-    let port = opts.port || -1;
     this.url.hostname = host;
     this.url.port = port;
     this._buf = '';
-    this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME$1;
-    this._keepAlive = opts.keepAlive || true;
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
@@ -228,7 +227,7 @@ class WSConnector {
    * Create an WSConnector to connect to a fjage master over WebSockets
    * @param {Object} opts
    * @param {string} opts.hostname - hostname/ip address of the master container to connect to
-   * @param {number} opts.port - port number of the master container to connect to
+   * @param {string} opts.port - port number of the master container to connect to
    * @param {string} opts.pathname - path of the master container to connect to
    * @param {boolean} opts.keepAlive - try to reconnect if the connection is lost
    * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
@@ -238,8 +237,8 @@ class WSConnector {
     this.url.hostname = opts.hostname;
     this.url.port = opts.port;
     this.url.pathname = opts.pathname;
+    this._keepAlive = opts.keepAlive;
     this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
-    this._keepAlive = opts.keepAlive || true;
     this.debug = opts.debug || false;      // debug info to be logged to console?
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
@@ -674,17 +673,17 @@ class GenericMessage extends Message {
  *
  * @class
  * @param {Object} opts
- * @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
- * @param {number} [opts.port=1100]          - port number of the master container to connect to
- * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
- * @param {string} [opts.keepAlive=true]     - try to reconnect if the connection is lost
- * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
- * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
+ * @param {string}  [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
+ * @param {string}  [opts.port='1100']        - port number of the master container to connect to
+ * @param {string}  [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
+ * @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
+ * @param {number}  [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
+ * @param {number}  [opts.timeout=1000]       - timeout for fjage level messages in ms
  * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
- * @param {string} [hostname="localhost"]    - <strike>Deprecated : hostname/ip address of the master container to connect to</strike>
- * @param {number} [port=]                   - <strike>Deprecated : port number of the master container to connect to</strike>
- * @param {string} [pathname=="/ws/"]        - <strike>Deprecated : path of the master container to connect to (for WebSockets)</strike>
- * @param {number} [timeout=1000]            - <strike>Deprecated : timeout for fjage level messages in ms</strike>
+ * @param {string}  [hostname="localhost"]    - <strike>Deprecated : hostname/ip address of the master container to connect to</strike>
+ * @param {number}  [port=]                   - <strike>Deprecated : port number of the master container to connect to</strike>
+ * @param {string}  [pathname=="/ws/"]        - <strike>Deprecated : path of the master container to connect to (for WebSockets)</strike>
+ * @param {number}  [timeout=1000]            - <strike>Deprecated : timeout for fjage level messages in ms</strike>
  */
 class Gateway {
 
@@ -693,13 +692,17 @@ class Gateway {
     if (typeof opts === 'string' || opts instanceof String){
       opts = {
         'hostname': opts,
-        'port' : port || gObj.location.port,
+        'port' : port,
         'pathname' : pathname,
         'timeout' : timeout
       };
       console.warn('Deprecated use of Gateway constructor');
     }
-    opts = Object.assign({}, GATEWAY_DEFAULTS, opts);
+
+    // Set defaults
+    for (var key in GATEWAY_DEFAULTS){
+      if (opts[key] == undefined || opts[key] === '') opts[key] = GATEWAY_DEFAULTS[key];
+    }
     var url = DEFAULT_URL;
     url.hostname = opts.hostname;
     url.port = opts.port;
@@ -708,7 +711,7 @@ class Gateway {
     if (existing) return existing;
     this._timeout = opts.timeout;         // timeout for fjage level messages (agentForService etc)
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
-    this._queueSize = opts.queueSize;      // size of queue
+    this._queueSize = opts.queueSize;     // size of queue
     this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.subscriptions = {};              // hashset for all topics that are subscribed

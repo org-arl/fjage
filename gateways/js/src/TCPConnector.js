@@ -13,21 +13,20 @@ export default class TCPconnector {
   /**
     * Create an TCPConnector to connect to a fjage master over TCP
    * @param {Object} opts
-   * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
-   * @param {number} opts.port - port number of the master container to connect to
-   * @param {string} opts.pathname - path of the master container to connect to
+   * @param {string} opts.hostname - hostname/ip address of the master container to connect to
+   * @param {string} opts.port - port number of the master container to connect to
    * @param {boolean} opts.keepAlive - try to reconnect if the connection is lost
    * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
     */
   constructor(opts = {}) {
+    let host = opts.hostname;
+    let port = opts.port;
+    this._keepAlive = opts.keepAlive;
+    this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
     this.url = new URL('tcp://localhost');
-    let host = opts.hostname || 'localhost';
-    let port = opts.port || -1;
     this.url.hostname = host;
     this.url.port = port;
     this._buf = '';
-    this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
-    this._keepAlive = opts.keepAlive || true;
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
