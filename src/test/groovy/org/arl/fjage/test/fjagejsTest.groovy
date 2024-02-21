@@ -74,7 +74,7 @@ class fjagejsTest {
       println "Running automated tests using puppeteer"
       def cmd = System.properties['os.name'].toLowerCase().contains("windows") ? "npm.cmd" : "npm"
       def proc = [cmd, '--prefix', 'gateways/js/', 'run', 'test'].execute()
-      sout = new StringBuilder() 
+      sout = new StringBuilder()
       serr = new StringBuilder()
       proc.consumeProcessOutput(sout, serr)
       proc.waitFor()
