@@ -176,7 +176,7 @@
       if (hideModeToggle){
         darkmodeBtn.parentElement.style.display = 'none';
         window.addEventListener('message', evt => {
-          if (evt.data && evt.data.theme){q
+          if (evt.data && evt.data.theme){
             setTheme(term, evt.data.theme);
           }
         });
