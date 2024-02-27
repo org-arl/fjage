@@ -73,18 +73,6 @@
     let delta = 200;
     let fitAddon;
     let currentTheme = null;
-    let hideModeToggle = false;
-    let parentTheme = null;
-    if (window.parent.document.documentElement.classList.contains('dark')){
-      parentTheme = 'dark';
-      currentTheme = parentTheme;
-      hideModeToggle = true;
-    }else if (window.parent.document.documentElement.classList.contains('light')){
-      parentTheme = 'light';
-      currentTheme = parentTheme;
-      hideModeToggle = true;
-    }
-    hideModeToggle = hideModeToggle || window.parent.hideModeToggle;
     window.shellready = false;
     function connectSocket(term, url, path){
       const ws = new WebSocket('ws://' + url + path);
@@ -159,6 +147,15 @@
       }
     }
     window.addEventListener('load', () => {
+      let hideModeToggle = false;
+      if (window.parent.document.documentElement.classList.contains('dark')){
+        currentTheme = 'dark';
+        hideModeToggle = true;
+      }else if (window.parent.document.documentElement.classList.contains('light')){
+        currentTheme = 'light';
+        hideModeToggle = true;
+      }
+      hideModeToggle = hideModeToggle || window.parent.hideModeToggle;
       const darkmodeBtn = document.getElementById('darkmode-tgl');
       let userTheme = false;
 
