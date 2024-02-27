@@ -275,6 +275,7 @@ public class WebServer {
       resHandler.setWelcomeFiles(new String[]{ "index.html" });
       resHandler.setDirectoriesListed(false);
       resHandler.setCacheControl(cacheControl);
+      resHandler.setEtags(true);
       handler.setHandler(resHandler);
       staticContexts.put(context, handler);
       add(handler);
@@ -306,6 +307,7 @@ public class WebServer {
       resHandler.setWelcomeFiles(new String[]{ "index.html" });
       resHandler.setDirectoriesListed(false);
       resHandler.setCacheControl(cacheControl);
+      resHandler.setEtags(true);
       handler.setHandler(resHandler);
       staticContexts.put(context, handler);
       add(handler);
