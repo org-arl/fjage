@@ -511,6 +511,16 @@ export class Gateway {
   }
 
   /** @private */
+  _isConstructor(value) {
+    try {
+      new new Proxy(value, {construct() { return {}; }});
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  /** @private */
   _matchMessage(filter, msg){
     if (typeof filter == 'string' || filter instanceof String) {
       return 'inReplyTo' in msg && msg.inReplyTo == filter;
@@ -518,7 +528,7 @@ export class Gateway {
       return 'inReplyTo' in msg && msg.inReplyTo == filter.msgID;
     } else if (filter.__proto__.name == 'Message' || filter.__proto__.__proto__.name == 'Message') {
       return filter.__clazz__ == msg.__clazz__;
-    } else if (typeof filter == 'function') {
+    } else if (typeof filter == 'function' && !this._isConstructor(filter)) {
       try {
         return filter(msg);
       }catch(e){
