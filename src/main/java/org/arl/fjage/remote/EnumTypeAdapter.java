@@ -22,13 +22,13 @@ import com.google.gson.stream.*;
 public class EnumTypeAdapter extends TypeAdapter<Object> {
 
   private static ClassLoader classloader = null;
-  private static Logger log;
+  private static final Logger log;
 
   static {
     log = Logger.getLogger(EnumTypeAdapter.class.getName());
     try {
       Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
-      classloader = (ClassLoader)cls.newInstance();
+      classloader = (ClassLoader)cls.getDeclaredConstructor().newInstance();
       log.info("Groovy detected, using GroovyClassLoader");
     } catch (Exception ex) {
       // do nothing
@@ -86,8 +86,6 @@ public class EnumTypeAdapter extends TypeAdapter<Object> {
     String value = s.substring(pos+1);
     Class<? extends Enum> cls = enumClass(s.substring(0,pos));
     if (cls != null) return Enum.valueOf(cls, value);
-    if (value != null) return new NamedParameter(s);
-    return null;
+    return new NamedParameter(s);
   }
-
 }
