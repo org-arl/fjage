@@ -22,6 +22,7 @@ import org.arl.fjage.GenericValue;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Handles conversion of various data types to JSON.
@@ -49,7 +50,11 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
         if (Number.class.isAssignableFrom(type)) out.value((Number)((GenericValue)value).getValue());
         else if (type.equals(String.class)) out.value((String)((GenericValue)value).getValue());
         else if (type.equals(Boolean.class)) out.value((Boolean)((GenericValue)value).getValue());
-        else if (List.class.isAssignableFrom(type) || (type.isArray() && type.getComponentType().isPrimitive())) {
+        else if (
+          List.class.isAssignableFrom(type)
+          || (type.isArray() && type.getComponentType().isPrimitive())
+          || Map.class.isAssignableFrom(type)
+        ) {
           TypeAdapter delegate = gson.getAdapter(TypeToken.get(type));
           Object v = ((GenericValue)value).getValue();
           delegate.write(out, v);
