@@ -12,8 +12,10 @@ package org.arl.fjage.shell;
 
 import java.io.*;
 import java.util.logging.Logger;
+
 import org.arl.fjage.connectors.ConnectionListener;
 import org.arl.fjage.connectors.Connector;
+import org.arl.fjage.connectors.WebSocketConnector;
 import org.jline.reader.*;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
@@ -36,6 +38,9 @@ public class ConsoleShell implements Shell, ConnectionListener {
   private AttributedStyle notifyStyle = null;
   private AttributedStyle errorStyle = null;
   private Logger log = Logger.getLogger(getClass().getName());
+
+  private static final String FORCE_BRACKETED_PASTE_ON = "FORCE_BRACKETED_PASTE_ON";
+  private static final String BRACKETED_PASTE_ON = "\033[?2004h";
 
   /**
    * Create a console shell attached to the system terminal.
@@ -86,6 +91,8 @@ public class ConsoleShell implements Shell, ConnectionListener {
   public void connected(Connector connector) {
     try {
       if (console != null) {
+        // force bracketed paste mode on for websockets based shells
+        if (connector instanceof WebSocketConnector) console.callWidget(FORCE_BRACKETED_PASTE_ON);
         console.callWidget(LineReader.REDRAW_LINE);
         console.callWidget(LineReader.REDISPLAY);
       }
@@ -134,6 +141,13 @@ public class ConsoleShell implements Shell, ConnectionListener {
       console = LineReaderBuilder.builder().parser(parser).terminal(term).build();
       console.setVariable(LineReader.DISABLE_COMPLETION, true);
       console.setOpt(LineReader.Option.ERASE_LINE_ON_FINISH);
+      console.getWidgets().put(FORCE_BRACKETED_PASTE_ON, new Widget() {
+        @Override
+        public boolean apply() {
+          console.getTerminal().writer().write(BRACKETED_PASTE_ON);
+          return true;
+        }
+      });
     }
   }
 
