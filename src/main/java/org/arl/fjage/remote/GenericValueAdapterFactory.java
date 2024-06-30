@@ -21,6 +21,8 @@ import org.arl.fjage.GenericValue;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 /**
@@ -50,6 +52,11 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
         else if (type.equals(String.class)) out.value((String)((GenericValue)value).getValue());
         else if (type.equals(Boolean.class)) out.value((Boolean)((GenericValue)value).getValue());
         else if (List.class.isAssignableFrom(type) || (type.isArray() && type.getComponentType().isPrimitive())) {
+          TypeAdapter delegate = gson.getAdapter(TypeToken.get(type));
+          Object v = ((GenericValue)value).getValue();
+          delegate.write(out, v);
+        }
+        else if (Map.class.isAssignableFrom(type)) {
           TypeAdapter delegate = gson.getAdapter(TypeToken.get(type));
           Object v = ((GenericValue)value).getValue();
           delegate.write(out, v);
@@ -86,6 +93,7 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
         if (tok == JsonToken.BEGIN_OBJECT) {
           TypeToken tt = null;
           GenericValue rv = null;
+          Map<String,Object> map = new HashMap<String,Object>();
           in.beginObject();
           while (in.hasNext()) {
             String name = in.nextName();
@@ -100,9 +108,28 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
               TypeAdapter delegate = gson.getAdapter(tt);
               rv = new GenericValue(delegate.read(in));
             }
-            else in.skipValue();
+            else {
+              JsonToken tok2 = in.peek();
+              if (tok2 == JsonToken.NULL) {
+                in.nextNull();
+                map.put(name, null);
+              }
+              else if (tok2 == JsonToken.NUMBER) {
+                String s = in.nextString();
+                try {
+                  if (s.contains(".")) map.put(name, Double.parseDouble(s));
+                  else map.put(name, Long.parseLong(s));
+                } catch (NumberFormatException ex) {
+                  // ignore
+                }
+              }
+              else if (tok == JsonToken.STRING) map.put(name, in.nextString());
+              else if (tok == JsonToken.BOOLEAN) map.put(name, in.nextBoolean());
+              else in.skipValue();
+            }
           }
           in.endObject();
+          if (rv == null) rv = new GenericValue(map);
           return (T)rv;
         }
         if (tok == JsonToken.BEGIN_ARRAY) {
