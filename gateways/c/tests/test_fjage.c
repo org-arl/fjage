@@ -113,11 +113,17 @@ int main(int argc, char* argv[]) {
   fjage_aid_t aid = fjage_agent_for_service(gw, "org.arl.fjage.shell.Services.SHELL");
   test_assert("agent_for_service", aid != NULL && !strcmp(aid, "shell"));
   fjage_aid_destroy(aid);
-  aid = NULL;
   int n = fjage_agents_for_service(gw, "org.arl.fjage.shell.Services.SHELL", NULL, 0);
-  int m = fjage_agents_for_service(gw, "org.arl.fjage.shell.Services.SHELL", &aid, 1);
-  test_assert("agents_for_service", n == 1 && m == 1 && aid != NULL && !strcmp(aid, "shell"));
-  fjage_aid_destroy(aid);
+  // malloc n pointers where n = #max number of expected agents
+  fjage_aid_t *agents = malloc(sizeof(void *) * n);
+  int m = fjage_agents_for_service(gw, "org.arl.fjage.shell.Services.SHELL", agents, n);
+  test_assert("agents_for_service", n == 1 && m == 1 && agents[0] != NULL && !strcmp(agents[0], "shell"));
+  for (int i = 0; i < m; i++)
+  {
+    fjage_aid_destroy(agents[i]);
+  }
+  // clean up allocated pointers
+  free(agents);
   aid = fjage_aid_create("shell");
   test_assert("aid_create", aid != NULL && !strcmp(aid, "shell"));
   fjage_msg_t msg = fjage_receive(gw, NULL, NULL, 1000);
