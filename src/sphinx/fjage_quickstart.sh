@@ -12,7 +12,7 @@ curl -O https://repo1.maven.org/maven2/com/github/org-arl/fjage/$VERSION/fjage-$
 curl -O https://repo1.maven.org/maven2/org/codehaus/groovy/groovy/2.5.9/groovy-2.5.9.jar
 curl -O https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.9/commons-lang3-3.9.jar
 curl -O https://repo1.maven.org/maven2/org/jline/jline/3.12.1/jline-3.12.1.jar
-curl -O https://repo1.maven.org/maven2/com/google/code/gson/gson/2.8.5/gson-2.8.5.jar
+curl -O https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10.1/gson-2.10.1.jar
 curl -O https://repo1.maven.org/maven2/org/eclipse/jetty/websocket/websocket-servlet/9.4.26.v20200117/websocket-servlet-9.4.26.v20200117.jar
 cd ../..
 
