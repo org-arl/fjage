@@ -172,7 +172,10 @@
       const darkmodeBtn = document.getElementById('darkmode-tgl');
       let userTheme = false;
 
-      const term = new Terminal();
+      const term = new Terminal({
+        cols: 160,
+        rows: 50
+      });
       fitAddon = new FitAddon.FitAddon();
       term.loadAddon(fitAddon);
       term.loadAddon(new WebLinksAddon.WebLinksAddon());
