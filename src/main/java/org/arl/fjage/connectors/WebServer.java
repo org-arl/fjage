@@ -268,17 +268,7 @@ public class WebServer {
       // do nothing
     }
     for (URL r : res){
-      String staticWebResDir = r.toExternalForm();
-      ContextHandler handler = new ContextHandler(context);
-      ResourceHandler resHandler = new ResourceHandler();
-      resHandler.setResourceBase(staticWebResDir);
-      resHandler.setWelcomeFiles(new String[]{ "index.html" });
-      resHandler.setDirectoriesListed(false);
-      resHandler.setCacheControl(cacheControl);
-      resHandler.setEtags(true);
-      handler.setHandler(resHandler);
-      staticContexts.put(context, handler);
-      add(handler);
+      addStaticContextHandler(context, r.toExternalForm(), cacheControl);
     }
   }
 
@@ -301,16 +291,7 @@ public class WebServer {
    */
   public void add(String context, File dir, String cacheControl) {
     try {
-      ContextHandler handler = new ContextHandler(context);
-      ResourceHandler resHandler = new ResourceHandler();
-      resHandler.setResourceBase(dir.getCanonicalPath());
-      resHandler.setWelcomeFiles(new String[]{ "index.html" });
-      resHandler.setDirectoriesListed(false);
-      resHandler.setCacheControl(cacheControl);
-      resHandler.setEtags(true);
-      handler.setHandler(resHandler);
-      staticContexts.put(context, handler);
-      add(handler);
+      addStaticContextHandler(context, dir.getCanonicalPath(), cacheControl);
     }catch (IOException ex){
       log.warning("Unable to find the directory : " + dir.toString());
       return;
@@ -397,6 +378,20 @@ public class WebServer {
     } catch (Exception ex) {
       log.warning("Unable to add rule "+rule+": "+ex.toString());
     }
+  }
+
+  // private methods
+  private void addStaticContextHandler(String context, String resource, String cacheControl){
+    ContextHandler handler = new ContextHandler(context);
+    ResourceHandler resHandler = new ResourceHandler();
+    resHandler.setResourceBase(resource);
+    resHandler.setWelcomeFiles(new String[]{ "index.html" });
+    resHandler.setDirectoriesListed(false);
+    resHandler.setCacheControl(cacheControl);
+    resHandler.setEtags(true);
+    handler.setHandler(resHandler);
+    staticContexts.put(context, handler);
+    add(handler);
   }
 
   public static class UploadHandler extends AbstractHandler {
