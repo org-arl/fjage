@@ -80,7 +80,6 @@
   </div>
   <script>
     const ignoreKeys = ['Meta-R', 'Meta-Shift-R'];
-    let defaultCursorWidth;
     let rtime = 0;
     let resizing = false;
     let delta = 200;
@@ -160,17 +159,22 @@
       }
     }
     window.addEventListener('load', () => {
-      let hideModeToggle = false;
-      if (window.parent.document.documentElement.classList.contains('dark')){
-        currentTheme = 'dark';
-        hideModeToggle = true;
-      }else if (window.parent.document.documentElement.classList.contains('light')){
-        currentTheme = 'light';
-        hideModeToggle = true;
-      }
-      hideModeToggle = hideModeToggle || window.parent.hideModeToggle;
       const darkmodeBtn = document.getElementById('darkmode-tgl');
+      let hideModeToggle = false;
       let userTheme = false;
+
+      try{
+        if (window.parent.document.documentElement.classList.contains('dark')){
+          currentTheme = 'dark';
+          hideModeToggle = true;
+        }else if (window.parent.document.documentElement.classList.contains('light')){
+          currentTheme = 'light';
+          hideModeToggle = true;
+        }
+        hideModeToggle = hideModeToggle || window.parent.hideModeToggle;
+      }catch(e){
+        // ignore
+      }
 
       const term = new Terminal({
         cols: 160,
@@ -179,10 +183,9 @@
       fitAddon = new FitAddon.FitAddon();
       term.loadAddon(fitAddon);
       term.loadAddon(new WebLinksAddon.WebLinksAddon());
-
       term.open(document.getElementById('terminal'));
+
       fitAddon.fit();
-      defaultCursorWidth = term.getOption("cursorWidth");
 
       if (currentTheme == null && window.matchMedia) currentTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
