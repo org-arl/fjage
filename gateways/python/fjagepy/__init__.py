@@ -307,11 +307,17 @@ class Message(object):
         t = [key for key, value in self.__dict__.items() if key.startswith('__')]
         for i in t:
             m.pop(i)
-        for key, value in m.items():
+        for key, value in list(m.items()):
             if type(value) == numpy.ndarray:
                 if value.dtype == 'complex':
                     value = numpy.vstack((value.real, value.imag)).reshape((-1,), order='F')
+                    m[key + '__isComplex'] = True
                 m[key] = value.tolist()
+            elif type(value) == list and len(value) > 0:
+                if (type(value[0]) == complex):
+                    value = numpy.vstack((numpy.real(value), numpy.imag(value))).reshape((-1,), order='F')
+                    m[key + '__isComplex'] = True
+                    m[key] = value.tolist()
         data = _json.dumps(m, separators=(',', ':'), cls=_CustomEncoder)
         return '{ "clazz": "' + clazz + '", "data": ' + data + ' }'
 
