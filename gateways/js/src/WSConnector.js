@@ -66,8 +66,22 @@ export default class WSConnector {
     this.sock.onmessage = event => { if (this._onWebsockRx) this._onWebsockRx.call(this,event.data); };
     this._firstConn = false;
     this._firstReConn = true;
-    this.pendingOnOpen.forEach(cb => cb());
-    this.pendingOnOpen.length = 0;
+    this.pendingOnOpen = this.pendingOnOpen.filter(cb => !cb());
+  }
+
+  /**
+   * Converts the websocket send API to return a boolean
+   *
+   * @param {String} msg message to be sent to the server
+   * @returns {boolean} true if the message was sent successfully
+   */
+  _send(msg){
+    try {
+      this.sock.send(msg+'\n');
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   toString(){
@@ -79,16 +93,14 @@ export default class WSConnector {
   /**
    * Write a string to the connector
    * @param {string} s - string to be written out of the connector to the master
+   * @returns {boolean} - true if the string was written successfully
    */
   write(s){
     if (!this.sock || this.sock.readyState == this.sock.CONNECTING){
-      this.pendingOnOpen.push(() => {
-        this.sock.send(s+'\n');
-      });
+      this.pendingOnOpen.push(() => this._send(s));
       return true;
     } else if (this.sock.readyState == this.sock.OPEN) {
-      this.sock.send(s+'\n');
-      return true;
+      return this.sock.send(s+'\n');
     }
     return false;
   }

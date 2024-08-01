@@ -64,7 +64,7 @@ export default class TCPconnector {
       this.sock.on('connect', this._onSockOpen.bind(this));
       this.sock.on('error', this._sockReconnect.bind(this));
       this.sock.on('close', () => {this._sendConnEvent(false);});
-      this.sock.send = data => {this.sock.write(data);};
+      this.sock.send = data => this.sock.write(data);
     } catch (error) {
       if(this.debug) console.log('Connection failed to ', this.sock.host + ':' + this.sock.port);
       return;
