@@ -209,7 +209,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
         Object current = null;
         try {
           if (fldName.equals("type")) current = agent.getClass().getName(); // special automatic parameter
-          else if (ndx < 0) current =  MethodUtils.invokeMethod(agent, "get" + methodNameFragment);
+          else if (ndx < 0) current = MethodUtils.invokeMethod(agent, "get" + methodNameFragment);
           else current = MethodUtils.invokeMethod(agent, "get" + methodNameFragment, ndx);
         } catch (NoSuchMethodException ex) {
           current = getParam(e.param, ndx);
@@ -221,8 +221,8 @@ public class ParameterMessageBehavior extends MessageBehavior {
         }
         if (evalue == null) {
           // get request
-            if (fldName.equals("type")) rsp.set(e.param, current, true);     // special automatic parameter
-            else rsp.set(e.param, current, isReadOnly(e.param, ndx));
+          if (fldName.equals("type")) rsp.set(e.param, current, true);     // special automatic parameter
+          else rsp.set(e.param, current, isReadOnly(e.param, ndx));
         } else {
           // set request
           try {
@@ -263,6 +263,8 @@ public class ParameterMessageBehavior extends MessageBehavior {
             }
           }
         }
+      } catch (InvocationTargetException ex){
+        log.fine ("Error thrown while setting parameter: " + ex.getCause().getMessage());
       } catch (Exception ex) {
         // do nothing
       }
