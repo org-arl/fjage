@@ -380,13 +380,18 @@ public class ParameterMessageBehavior extends MessageBehavior {
     try {
       return MethodUtils.invokeMethod(agent, name, ndx, value);
     } catch (NoSuchMethodException ignored) {
+      // If MethodUtils.invokeMethod fails, we will try to invoke the method by
+      // getting the method and invoking it directly
+      Class<?>[] parameterTypes = new Class<?>[2];
+      parameterTypes[0] = Integer.TYPE;
+      parameterTypes[1] = value.getClass();
       try {
-        return MethodUtils.invokeMethod(agent, name, Integer.valueOf(ndx), value);
+        Method m = agent.getClass().getMethod(name, parameterTypes);
+        return m.invoke(agent, ndx, value);
       } catch (NoSuchMethodException ex) {
         nsme = ex;
       }
     }
-
     if (value instanceof Number) {
       Number nvalue = (Number) value;
       try {
