@@ -379,9 +379,14 @@ public class ParameterMessageBehavior extends MessageBehavior {
     NoSuchMethodException nsme = null;
     try {
       return MethodUtils.invokeMethod(agent, name, ndx, value);
-    } catch (NoSuchMethodException ex) {
-      nsme = ex;
+    } catch (NoSuchMethodException ignored) {
+      try {
+        return MethodUtils.invokeMethod(agent, name, Integer.valueOf(ndx), value);
+      } catch (NoSuchMethodException ex) {
+        nsme = ex;
+      }
     }
+
     if (value instanceof Number) {
       Number nvalue = (Number) value;
       try {
