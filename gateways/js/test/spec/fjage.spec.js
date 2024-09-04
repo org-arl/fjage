@@ -252,6 +252,20 @@ describe('A Gateway', function () {
     expect(rxed.filter(r => !r).length).toBe(0);
   });
 
+  it('should update the connected property when the underlying transport is disconnected/reconnected', async function() {
+    const gw = new Gateway(gwOpts);
+    gw.connector._reconnectTime = 300;
+    await delay(700);
+    expect([1, 'open']).toContain(gw.connector.sock.readyState);
+    if (isBrowser) gw.connector.sock.close();
+    else gw.connector.sock.destroy();
+    await delay(100);
+    expect(gw.connected).toBe(false);
+    await delay(1000);
+    expect(gw.connected).toBe(true);
+    gw.connector._reconnectTime = 5000;
+  });
+
   it('should generate trigger connListener when the underlying transport is disconnected/reconnected', async function() {
     const gw = new Gateway(gwOpts);
     let spy = jasmine.createSpy('connListener');

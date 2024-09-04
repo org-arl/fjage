@@ -353,6 +353,7 @@ export class Gateway {
     this.listener = {};                   // set of callbacks that want to listen to incoming messages
     this.eventListeners = {};             // external listeners wanting to listen internal events
     this.queue = [];                      // incoming message queue
+    this.connected = false;               // connection status
     this.debug = false;                   // debug info to be logged to console?
     this.aid = new AgentID((isBrowser ? 'WebGW-' : 'NodeGW-')+_guid(4));         // gateway agent name
     this.connector = this._createConnector(url);
@@ -500,6 +501,7 @@ export class Gateway {
     } else return null;
     conn.setReadCallback(this._onMsgRx.bind(this));
     conn.addConnectionListener(state => {
+      this.connected = !!state;
       if (state == true){
         this.flush();
         this.connector.write('{"alive": true}');
