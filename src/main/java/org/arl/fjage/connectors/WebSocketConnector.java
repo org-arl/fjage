@@ -250,7 +250,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
         if (session != null && session.isOpen()) {
           Future<Void> f = session.getRemote().sendStringByFuture(s);
           try {
-            f.get(500, TimeUnit.MILLISECONDS);
+            f.get(2, TimeUnit.SECONDS);
           } catch (TimeoutException e){
             log.fine("Sending timed out. Closing connection to " + session.getRemoteAddress());
             session.disconnect();
