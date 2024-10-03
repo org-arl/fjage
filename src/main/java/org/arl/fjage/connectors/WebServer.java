@@ -1,12 +1,12 @@
 /******************************************************************************
 
-Copyright (c) 2013, Mandar Chitre
+ Copyright (c) 2013, Mandar Chitre
 
-This file is part of fjage which is released under Simplified BSD License.
-See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
-for full license details.
+ This file is part of fjage which is released under Simplified BSD License.
+ See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
+ for full license details.
 
-******************************************************************************/
+ ******************************************************************************/
 
 package org.arl.fjage.connectors;
 
@@ -23,6 +23,11 @@ import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ThreadPool;
+import org.eclipse.jetty.websocket.server.WebSocketHandler;
+import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
+import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
+import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletException;
@@ -30,9 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -154,6 +157,7 @@ public class WebServer {
   protected HandlerCollection handlerCollection = new HandlerCollection();
   protected boolean started;
   protected int port;
+  protected String host;
 
   protected WebServer(int port) {
     this(port, "127.0.0.1");
@@ -176,6 +180,11 @@ public class WebServer {
     server.setHandler(gzipHandler);
     ThreadPool pool = server.getThreadPool();
     if (pool instanceof QueuedThreadPool) ((QueuedThreadPool)pool).setDaemon(true);
+    try {
+      host = InetAddress.getLocalHost().getHostAddress()+":"+port;
+    } catch (UnknownHostException ex) {
+      host = "0.0.0.0:"+port;
+    }
     started = false;
   }
 
@@ -397,6 +406,21 @@ public class WebServer {
     } catch (Exception ex) {
       log.warning("Unable to add rule "+rule+": "+ex.toString());
     }
+  }
+
+  /**
+   * Add a WebSocket context handler for a given context.
+   * @param context context path.
+   */
+  public void addWebSocketConnector(String context, ConnectionListener listener) {
+    ContextHandler handler = new ContextHandler(context);
+    handler.setHandler(new WebSocketHandler() {
+      @Override
+      public void configure(WebSocketServletFactory factory) {
+        factory.setCreator((req, resp) -> new WebSocketConnector(listener, host+context));
+      }
+    });
+    add(handler);
   }
 
   public static class UploadHandler extends AbstractHandler {

@@ -27,7 +27,7 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 /**
  * Web socket connector.
  */
-public class WebSocketHubConnector implements Connector, WebSocketCreator {
+public class WebSocketHubConnector implements Connector {
 
   protected String name;
   protected boolean linemode = false;
@@ -89,7 +89,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     handler.setHandler(new WebSocketHandler() {
       @Override
       public void configure(WebSocketServletFactory factory) {
-        factory.setCreator(WebSocketHubConnector.this);
+        factory.setCreator((req, resp) -> new WSHandler(WebSocketHubConnector.this));
         if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize(maxMsgSize);
       }
     });
@@ -97,11 +97,6 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     server.start();
     outThread = new OutputThread();
     outThread.start();
-  }
-
-  @Override
-  public Object createWebSocket(ServletUpgradeRequest req, ServletUpgradeResponse resp) {
-    return new WSHandler(this);
   }
 
   @Override
