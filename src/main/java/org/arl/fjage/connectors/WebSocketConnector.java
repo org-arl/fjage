@@ -35,7 +35,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   protected ContextHandler handler;
   protected List<WSHandler> wsHandlers = new CopyOnWriteArrayList<WSHandler>();
   protected OutputThread outThread = null;
-  protected PseudoInputStream pin = new PseudoInputStream();
+  protected final PseudoInputStream pin = new PseudoInputStream();
   protected PseudoOutputStream pout = new PseudoOutputStream();
   protected ConnectionListener listener = null;
   protected Logger log = Logger.getLogger(getClass().getName());
@@ -143,8 +143,6 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     handler = null;
     pin.close();
     pout.close();
-    pin = null;
-    pout = null;
   }
 
   @Override
@@ -197,9 +195,9 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
 
   }
 
-  // servlets to manage web socket connections
+  // POJO for each web socket connection
 
-  @WebSocket(maxIdleTime = Integer.MAX_VALUE)
+  @WebSocket(maxIdleTime = Integer.MAX_VALUE, batchMode = BatchMode.OFF)
   public class WSHandler {
 
     Session session = null;
@@ -232,12 +230,12 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     @OnWebSocketMessage
     public void onMessage(String message) {
       byte[] buf = message.getBytes();
-      synchronized (pin) {
+      synchronized (conn.pin) {
         for (int c : buf) {
           if (c < 0) c += 256;
           if (c == 4) continue;     // ignore ^D
           try {
-            pin.write(c);
+            conn.pin.write(c);
           } catch (IOException ex) {
             // do nothing
           }
