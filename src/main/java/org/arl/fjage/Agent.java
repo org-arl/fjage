@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 import java.util.TimerTask;
@@ -20,7 +21,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.arl.fjage.connectors.WebServer;
 import org.arl.fjage.persistence.Store;
+import org.arl.fjage.remote.MasterContainer;
 import org.arl.fjage.remote.SlaveContainer;
 
 /**
@@ -697,6 +701,26 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   }
 
   /**
+   * Serve the Agent's store over HTTP.
+   *
+   * @param enable true to enable, false to disable
+   * @return true if successful, false otherwise
+   */
+  public boolean serveStore(boolean enable){
+    WebServer webServer = getWebServer();
+    if (webServer != null) {
+      String path = "store/" + this.getClass().getCanonicalName().replace(".", "/");
+      if (webServer.hasContext(path) == enable) return true;
+      if (enable) webServer.add("/"+path, new File(path+"/"));
+      else webServer.remove("/"+path);
+      return true;
+    }
+    log.warning("No web server found");
+    return false;
+  }
+
+
+  /**
    * Deep clones an object. This is typically used to explicitly clone a message for
    * modification when autocloning is not enabled.
    *
@@ -843,6 +867,33 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
     AgentLocalRandom.unbind();
     container = null;
     platform = null;
+  }
+
+  /**
+   * Finds the web server that provides the websocket connection for the agent's container
+   *
+   * @return the web server that provides the websocket connection for the container
+   */
+  WebServer getWebServer() {
+    if (container instanceof MasterContainer) {
+      // look for connector that starts with ws:// and get it's port
+      // ((MasterContainer) container).getConnectors()
+      for (String connector : ((MasterContainer) container).getConnectors()) {
+        if (connector.startsWith("ws://")) {
+          // Parse a string like this and find the port "ws://127.0.0.1:8080/ws"
+          String[] parts = connector.split(":");
+          if (parts.length > 2) {
+            try {
+              int port = Integer.parseInt(parts[2].split("/")[0]);
+              return WebServer.getInstance(port);
+            } catch (NumberFormatException e) {
+              log.warning("Invalid port number in connector: "+connector);
+            }
+          }
+        }
+      }
+    }
+    return null;
   }
 
   private class InternalRequestSender
