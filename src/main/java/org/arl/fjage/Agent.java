@@ -703,16 +703,32 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   /**
    * Serve the Agent's store over HTTP.
    *
-   * @param enable true to enable, false to disable
+   * @param directoryListing true to enable directory listing, false otherwise
    * @return true if successful, false otherwise
    */
-  public boolean serveStore(boolean enable){
+  public boolean enableServeStore(boolean directoryListing){
     WebServer webServer = getWebServer();
     if (webServer != null) {
       String path = "store/" + this.getClass().getCanonicalName().replace(".", "/");
-      if (webServer.hasContext(path) == enable) return true;
-      if (enable) webServer.add("/"+path, new File(path+"/"));
-      else webServer.remove("/"+path);
+      if (webServer.hasContext(path)) return false;
+      webServer.add("/"+path, new File(path+"/"), new WebServer.WebServerOptions().directoryListed(directoryListing));
+      return true;
+    }
+    log.warning("No web server found");
+    return false;
+  }
+
+  /**
+   * Stop serving the Agent's store over HTTP.
+   *
+   * @return true if successful, false otherwise
+   */
+  public boolean disableServeStore(){
+    WebServer webServer = getWebServer();
+    if (webServer != null) {
+      String path = "store/" + this.getClass().getCanonicalName().replace(".", "/");
+      if (!webServer.hasContext(path)) return false;
+      webServer.remove("/"+path);
       return true;
     }
     log.warning("No web server found");
