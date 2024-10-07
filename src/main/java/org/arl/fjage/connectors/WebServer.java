@@ -37,10 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Web server instance manager.
@@ -54,8 +51,8 @@ public class WebServer {
 
   //////// static attributes and methods
 
-  private static Map<Integer,WebServer> servers = new HashMap<Integer,WebServer>();
-  private static java.util.logging.Logger log = java.util.logging.Logger.getLogger(WebServer.class.getName());
+  private static final Map<Integer,WebServer> servers = new HashMap<Integer,WebServer>();
+  private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(WebServer.class.getName());
 
   static {
     // disable Jetty logging (except warnings)
@@ -257,9 +254,9 @@ public class WebServer {
    *
    * @param context context path.
    * @param resource resource path.
-   * @param cacheControl cache control header.
+   * @param options WebServerOptions object.
    */
-  public void add(String context, String resource, String cacheControl) {
+  public void add(String context, String resource, WebServerOptions options) {
     if(resource.startsWith("/")) resource = resource.substring(1);
     ArrayList<URL> res = new ArrayList<>();
     try {
@@ -274,8 +271,15 @@ public class WebServer {
       resHandler.setResourceBase(staticWebResDir);
       resHandler.setWelcomeFiles(new String[]{ "index.html" });
       resHandler.setDirectoriesListed(false);
-      resHandler.setCacheControl(cacheControl);
+      resHandler.setCacheControl(options.cacheControl);
       resHandler.setEtags(true);
+      if (options.directoryListed) {
+        DirectoryHandler dirHandler = new DirectoryHandler(staticWebResDir);
+        dirHandler.setHandler(resHandler);
+        handler.setHandler(dirHandler);
+      } else{
+        handler.setHandler(resHandler);
+      }
       handler.setHandler(resHandler);
       staticContexts.put(context, handler);
       add(handler);
@@ -287,9 +291,20 @@ public class WebServer {
    *
    * @param context context path.
    * @param resource resource path.
+   * @param cacheControl cache control header.
+   */
+  public void add(String context, String resource, String cacheControl) {
+    add(context, resource, new WebServerOptions().cacheControl(cacheControl));
+  }
+
+  /**
+   * Adds a context to serve static documents.
+   *
+   * @param context context path.
+   * @param resource resource path.
    */
   public void add(String context, String resource) {
-    add(context, resource, "public, max-age=31536000");
+    add (context, resource, new WebServerOptions());
   }
 
   /**
@@ -297,18 +312,25 @@ public class WebServer {
    *
    * @param context context path.
    * @param dir filesystem path of directory to serve files from.
-   * @param cacheControl cache control header.
+   * @param options WebServerOptions object.
    */
-  public void add(String context, File dir, String cacheControl) {
+  public void add(String context, File dir, WebServerOptions options) {
     try {
       ContextHandler handler = new ContextHandler(context);
       ResourceHandler resHandler = new ResourceHandler();
       resHandler.setResourceBase(dir.getCanonicalPath());
       resHandler.setWelcomeFiles(new String[]{ "index.html" });
       resHandler.setDirectoriesListed(false);
-      resHandler.setCacheControl(cacheControl);
+      resHandler.setCacheControl(options.cacheControl);
       resHandler.setEtags(true);
       handler.setHandler(resHandler);
+      if (options.directoryListed) {
+        DirectoryHandler dirHandler = new DirectoryHandler(dir.getCanonicalPath());
+        dirHandler.setHandler(resHandler);
+        handler.setHandler(dirHandler);
+      } else{
+        handler.setHandler(resHandler);
+      }
       staticContexts.put(context, handler);
       add(handler);
     }catch (IOException ex){
@@ -322,9 +344,20 @@ public class WebServer {
    *
    * @param context context path.
    * @param dir filesystem path of directory to serve files from.
+   * @param cacheControl cache control header.
+   */
+  public void add(String context, File dir, String cacheControl) {
+    add (context, dir, new WebServerOptions().cacheControl(cacheControl));
+  }
+
+  /**
+   * Adds a context to serve static documents.
+   *
+   * @param context context path.
+   * @param dir filesystem path of directory to serve files from.
    */
   public void add(String context, File dir) {
-    add(context, dir, "public, max-age=31536000");
+    add(context, dir, new WebServerOptions());
   }
 
   /**
@@ -432,6 +465,82 @@ public class WebServer {
         }
       }
       baseRequest.setHandled(true);
+    }
+  }
+
+  /**
+   * Builder style class for configuring web server options.
+   */
+  public static class WebServerOptions {
+    protected String cacheControl = CACHE;
+    protected boolean directoryListed = false;
+
+    public WebServerOptions() {}
+
+    public WebServerOptions cacheControl(String cacheControl) {
+      this.cacheControl = cacheControl;
+      return this;
+    }
+
+    public WebServerOptions directoryListed(boolean directoryListed) {
+      this.directoryListed = directoryListed;
+      return this;
+    }
+  }
+
+  /**
+   * Context handler for serving Directory listing as plain text
+   * instead of HTML. If the request is for a directory, and the content-type
+   * is text/plain, the directory listing is returned as plain text, else the default
+   * ResourceHandler is used.
+   */
+  private static class DirectoryHandler extends ResourceHandler {
+
+    private DirectoryHandler(String resourceBase) {
+      super();
+      setResourceBase(resourceBase);
+    }
+
+    @Override
+    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+      if (baseRequest.isHandled()) return;
+      if (target.endsWith("/")) {
+        if (request.getContentType() != null && request.getContentType().equals("text/plain")) {
+          String path = request.getPathInfo();
+          if (path == null) path = "/";
+          File dir = new File(getBaseResource().getFile(), path);
+          if (dir.isDirectory()) {
+            response.setContentType("text/plain");
+            response.setStatus(HttpServletResponse.SC_OK);
+            for (File f: dir.listFiles()) {
+              if (f.isHidden()) continue;
+              response.getWriter().println(f.getName()+" "+f.length()+" "+new Date(f.lastModified()).getTime());
+            }
+            baseRequest.setHandled(true);
+            return;
+          }
+        } else if (request.getContentType() != null && request.getContentType().equals("application/json")) {
+          String path = request.getPathInfo();
+          if (path == null) path = "/";
+          File dir = new File(getBaseResource().getFile(), path);
+          if (dir.isDirectory()) {
+            response.setContentType("application/json");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().print("[");
+            boolean first = true;
+            for (File f: dir.listFiles()) {
+              if (f.isHidden()) continue;
+              if (!first) response.getWriter().print(",");
+              response.getWriter().print("{\"name\":\""+f.getName()+"\",\"size\":"+f.length()+",\"date\":"+new Date(f.lastModified()).getTime()+"}");
+              first = false;
+            }
+            response.getWriter().print("]");
+            baseRequest.setHandled(true);
+            return;
+          }
+        }
+      }
+      super.handle(target, baseRequest, request, response);
     }
   }
 }
