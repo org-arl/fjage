@@ -267,19 +267,13 @@ public class WebServer {
     for (URL r : res){
       String staticWebResDir = r.toExternalForm();
       ContextHandler handler = new ContextHandler(context);
+      if (options.directoryListed) log.warning("Directory listing is not supported for resources in jars");
       ResourceHandler resHandler = new ResourceHandler();
       resHandler.setResourceBase(staticWebResDir);
       resHandler.setWelcomeFiles(new String[]{ "index.html" });
       resHandler.setDirectoriesListed(false);
       resHandler.setCacheControl(options.cacheControl);
       resHandler.setEtags(true);
-      if (options.directoryListed) {
-        DirectoryHandler dirHandler = new DirectoryHandler(staticWebResDir);
-        dirHandler.setHandler(resHandler);
-        handler.setHandler(dirHandler);
-      } else{
-        handler.setHandler(resHandler);
-      }
       handler.setHandler(resHandler);
       staticContexts.put(context, handler);
       add(handler);
@@ -317,21 +311,12 @@ public class WebServer {
   public void add(String context, File dir, WebServerOptions options) {
     try {
       ContextHandler handler = new ContextHandler(context);
-      ResourceHandler resHandler = new ResourceHandler();
+      ResourceHandler resHandler = options.directoryListed ? new DirectoryHandler() : new ResourceHandler();
       resHandler.setResourceBase(dir.getCanonicalPath());
       resHandler.setWelcomeFiles(new String[]{ "index.html" });
-      resHandler.setDirectoriesListed(false);
       resHandler.setCacheControl(options.cacheControl);
       resHandler.setEtags(true);
       handler.setHandler(resHandler);
-      if (options.directoryListed) {
-        DirectoryHandler dirHandler = new DirectoryHandler(dir.getCanonicalPath());
-        dirHandler.setHandler(resHandler);
-        handler.setHandler(dirHandler);
-      } else{
-        handler.setHandler(resHandler);
-      }
-      staticContexts.put(context, handler);
       add(handler);
     }catch (IOException ex){
       log.warning("Unable to find the directory : " + dir.toString());
@@ -496,25 +481,21 @@ public class WebServer {
    */
   private static class DirectoryHandler extends ResourceHandler {
 
-    private DirectoryHandler(String resourceBase) {
-      super();
-      setResourceBase(resourceBase);
-    }
-
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
       if (baseRequest.isHandled()) return;
-      if (target.endsWith("/")) {
+      File base = getBaseResource().getFile();
+      if (base != null && target.endsWith("/")) {
         if (request.getContentType() != null && request.getContentType().equals("text/plain")) {
           String path = request.getPathInfo();
           if (path == null) path = "/";
-          File dir = new File(getBaseResource().getFile(), path);
+          File dir = new File(base, path);
           if (dir.isDirectory()) {
             response.setContentType("text/plain");
             response.setStatus(HttpServletResponse.SC_OK);
             for (File f: dir.listFiles()) {
               if (f.isHidden()) continue;
-              response.getWriter().println(f.getName()+" "+f.length()+" "+new Date(f.lastModified()).getTime());
+              response.getWriter().println(f.getName()+" "+f.length()+" "+f.lastModified());
             }
             baseRequest.setHandled(true);
             return;
@@ -531,7 +512,7 @@ public class WebServer {
             for (File f: dir.listFiles()) {
               if (f.isHidden()) continue;
               if (!first) response.getWriter().print(",");
-              response.getWriter().print("{\"name\":\""+f.getName()+"\",\"size\":"+f.length()+",\"date\":"+new Date(f.lastModified()).getTime()+"}");
+              response.getWriter().print("{\"name\":\""+f.getName()+"\",\"size\":"+f.length()+",\"date\":"+f.lastModified()+"}");
               first = false;
             }
             response.getWriter().print("]");
