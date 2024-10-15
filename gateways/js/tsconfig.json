@@ -1,12 +1,16 @@
 {
     "compileOnSave": false,
     "compilerOptions": {
-        "noEmit": true,
+        // "noEmit": true,
         "allowJs": true,
         "checkJs": true,
-        "target": "es6",
+        "declaration": true,
+        "target": "es2020",
         "resolveJsonModule": true,
-        "moduleResolution": "node"
+        "moduleResolution": "node",
+        "emitDeclarationOnly": true,
+        "outDir": "dist/",
+        "declarationMap": true
     },
-    "include": ["./src"]
+    "include": ["./src/*.js"]
 }

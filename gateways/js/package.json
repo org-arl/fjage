@@ -12,11 +12,11 @@
     "dist/**"
   ],
   "scripts": {
-    "build": "npx rimraf -rf dist/ && eslint src/*.js && rollup --silent -c rollup.config.js",
-    "pretest": "npx playwright install --with-deps && node test/spec/create-spec.cjs",
+    "build": "eslint src/*.js && tsc && rollup --silent -c rollup.config.js",
+    "pretest": "playwright install --with-deps && node test/spec/create-spec.cjs",
     "test": "node test/run-tests.cjs",
     "docs": "documentation build src/fjage.js -f html --github --document-exported -o ../../docs/jsdoc",
-    "clean": "npx rimraf -rf dist/"
+    "clean": "rimraf -rf dist/"
   },
   "repository": {
     "type": "git",
@@ -36,12 +36,14 @@
     "@playwright/test": "^1.41.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
+    "@types/node": "^22.7.5",
     "documentation": "^14.0.2",
     "eslint": "^8.55.0",
     "globals": "^13.24.0",
     "jasmine": "^5.1.0",
     "node-static": "^0.7.11",
-    "rollup": "^4.8.0"
+    "rollup": "^4.8.0",
+    "typescript": "^5.6.3"
   },
   "dependencies": {
     "browser-or-node": "^2.1.1"

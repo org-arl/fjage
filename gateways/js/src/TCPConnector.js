@@ -8,7 +8,7 @@ var createConnection;
  * @class
  * @ignore
  */
-export default class TCPConnector {
+class TCPConnector {
 
   /**
     * Create an TCPConnector to connect to a fjage master over TCP
@@ -131,18 +131,18 @@ export default class TCPConnector {
   }
 
   /**
+   * @callback TCPConnectorReadCallback
+   * @ignore
+   * @param {string} s - incoming message string
+   */
+
+  /**
    * Set a callback for receiving incoming strings from the connector
-   * @param {TCPConnector~ReadCallback} cb - callback that is called when the connector gets a string
+   * @param {TCPConnectorReadCallback} cb - callback that is called when the connector gets a string
    */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onSockRx = cb;
   }
-
-  /**
-   * @callback TCPConnector~ReadCallback
-   * @ignore
-   * @param {string} s - incoming message string
-   */
 
   /**
    * Add listener for connection events
@@ -188,3 +188,5 @@ export default class TCPConnector {
     }
   }
 }
+
+export default TCPConnector;

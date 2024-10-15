@@ -15,7 +15,7 @@ export default [
       'quotes': [
         'error',
         'single'
-      ]
+      ],
     }
   }
 ];

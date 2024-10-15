@@ -30,13 +30,13 @@ export const Performative = {
  * An identifier for an agent or a topic.
  * @class
  * @param {string} name - name of the agent
- * @param {boolean} topic - name of topic
- * @param {Gateway} owner - Gateway owner for this AgentID
+ * @param {boolean} [topic=false] - name of topic
+ * @param {Gateway} [owner] - Gateway owner for this AgentID
  */
 export class AgentID {
 
 
-  constructor(name, topic, owner) {
+  constructor(name, topic=false, owner) {
     this.name = name;
     this.topic = topic;
     this.owner = owner;
@@ -68,7 +68,8 @@ export class AgentID {
    */
   send(msg) {
     msg.recipient = this.toJSON();
-    this.owner.send(msg);
+    if (this.owner) this.owner.send(msg);
+    else throw new Error('Unowned AgentID cannot send messages');
   }
 
   /**
@@ -80,7 +81,8 @@ export class AgentID {
    */
   async request(msg, timeout=1000) {
     msg.recipient = this.toJSON();
-    return this.owner.request(msg, timeout);
+    if (this.owner) return this.owner.request(msg, timeout);
+    else throw new Error('Unowned AgentID cannot send messages');
   }
 
   /**
@@ -199,8 +201,8 @@ export class AgentID {
 /**
  * Base class for messages transmitted by one agent to another. Creates an empty message.
  * @class
- * @param {Message} inReplyTo - message to which this response corresponds to
- * @param {Performative} perf - performative
+ * @param {Message} [inReplyTo] - message to which this response corresponds to
+ * @param {Performative} [perf=Performative.INFORM] - performative
  */
 export class Message {
 
@@ -347,7 +349,12 @@ export class Gateway {
     this._addGWCache(this);
   }
 
-  /** @private */
+  /**
+   * Sends an event to all registered listeners of the given type.
+   * @private
+   * @param {string} type - type of event
+   * @param {Object|Message|string} val - value to be sent to the listeners
+   */
   _sendEvent(type, val) {
     if (Array.isArray(this.eventListeners[type])) {
       this.eventListeners[type].forEach(l => {
@@ -362,7 +369,11 @@ export class Gateway {
     }
   }
 
-  /** @private */
+  /**
+   * @private
+   * @param {string} data - stringfied JSON data received from the master container to be processed
+   * @returns {void}
+   */
   _onMsgRx(data) {
     var obj;
     if (this.debug) console.log('< '+data);
@@ -440,7 +451,12 @@ export class Gateway {
     }
   }
 
-  /** @private */
+  /**
+   * Sends a message out to the master container.
+   * @private
+   * @param {string|Object} s - JSON object (either stringified or not) to be sent to the master container
+   * @returns {boolean} - true if the message was sent successfully
+   */
   _msgTx(s) {
     if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
     if(this.debug) console.log('> '+s);
@@ -448,7 +464,11 @@ export class Gateway {
     return this.connector.write(s);
   }
 
-  /** @private */
+  /**
+   * @private
+   * @param {Object} rq - request to be sent to the master container as a JSON object
+   * @returns {Promise<Object>} - a promise which returns the response from the master container
+   */
   _msgTxRx(rq) {
     rq.id = _guid(8);
     return new Promise(resolve => {
@@ -470,13 +490,17 @@ export class Gateway {
     });
   }
 
-  /** @private */
+  /**
+   * @private
+   * @param {URL} url - URL object of the master container to connect to
+   * @returns {TCPConnector|WSConnector} - connector object to connect to the master container
+   */
   _createConnector(url){
     let conn;
     if (url.protocol.startsWith('ws')){
       conn =  new WSConnector({
         'hostname':url.hostname,
-        'port':url.port,
+        'port':parseInt(url.port),
         'pathname':url.pathname,
         'keepAlive': this._keepAlive,
         'debug': this.debug
@@ -484,7 +508,7 @@ export class Gateway {
     }else if (url.protocol.startsWith('tcp')){
       conn = new TCPConnector({
         'hostname':url.hostname,
-        'port':url.port,
+        'port':parseInt(url.port),
         'keepAlive': this._keepAlive,
         'debug': this.debug
       });
@@ -502,7 +526,13 @@ export class Gateway {
     return conn;
   }
 
-  /** @private */
+  /**
+   * Checks if the object is a constructor.
+   *
+   * @private
+   * @param {Object} value - an object to be checked if it is a constructor
+   * @returns {boolean} - if the object is a constructor
+   */
   _isConstructor(value) {
     try {
       new new Proxy(value, {construct() { return {}; }});
@@ -512,7 +542,13 @@ export class Gateway {
     }
   }
 
-  /** @private */
+  /**
+   * Matches a message with a filter.
+   * @private
+   * @param {string|Object|function} filter - filter to be matched
+   * @param {Message} msg - message to be matched to the filter
+   * @returns {boolean} - true if the message matches the filter
+   */
   _matchMessage(filter, msg){
     if (typeof filter == 'string' || filter instanceof String) {
       return 'inReplyTo' in msg && msg.inReplyTo == filter;
@@ -532,18 +568,25 @@ export class Gateway {
     }
   }
 
-  /** @private */
+  /**
+   * Gets the next message from the queue that matches the filter.
+   * @private
+   * @param {string|Object|function} filter - filter to be matched
+   */
   _getMessageFromQueue(filter) {
     if (!this.queue.length) return;
     if (!filter) return this.queue.shift();
-
     let matchedMsg = this.queue.find( msg => this._matchMessage(filter, msg));
     if (matchedMsg) this.queue.splice(this.queue.indexOf(matchedMsg), 1);
-
     return matchedMsg;
   }
 
-  /** @private */
+  /**
+   * Gets a cached gateway object for the given URL (if it exists).
+   * @private
+   * @param {URL} url - URL object of the master container to connect to
+   * @returns {Gateway|void} - gateway object for the given URL
+   */
   _getGWCache(url){
     if (!gObj.fjage || !gObj.fjage.gateways) return null;
     var f = gObj.fjage.gateways.filter(g => g.connector.url.toString() == url.toString());
@@ -551,13 +594,21 @@ export class Gateway {
     return null;
   }
 
-  /** @private */
+  /**
+   * Adds a gateway object to the cache if it doesn't already exist.
+   * @private
+   * @param {Gateway} gw - gateway object to be added to the cache
+   */
   _addGWCache(gw){
     if (!gObj.fjage || !gObj.fjage.gateways) return;
     gObj.fjage.gateways.push(gw);
   }
 
-  /** @private */
+  /**
+   * Removes a gateway object from the cache if it exists.
+   * @private
+   * @param {Gateway} gw - gateway object to be removed from the cache
+   */
   _removeGWCache(gw){
     if (!gObj.fjage || !gObj.fjage.gateways) return;
     var index = gObj.fjage.gateways.indexOf(gw);
@@ -867,7 +918,7 @@ export const Services = {
 /**
  * Creates a unqualified message class based on a fully qualified name.
  * @param {string} name - fully qualified name of the message class to be created
- * @param {typeof Message} [parent=Message] - class of the parent MessageClass to inherit from
+ * @param {typeof Message} [parent] - class of the parent MessageClass to inherit from
  * @constructs Message
  * @example
  * const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
@@ -970,6 +1021,8 @@ function _decodeBase64(k, d) {
 ////// global
 
 const GATEWAY_DEFAULTS = {};
+
+/** @type {Window & globalThis & Object} */
 let gObj = {};
 let DEFAULT_URL;
 if (isBrowser || isWebWorker){
@@ -986,7 +1039,7 @@ if (isBrowser || isWebWorker){
   DEFAULT_URL = new URL('ws://localhost');
   // Enable caching of Gateways
   if (typeof gObj.fjage === 'undefined') gObj.fjage = {};
-  if (typeof gObj.fjage.gateways == 'undefined')gObj.fjage.gateways = [];
+  if (typeof gObj.fjage.gateways == 'undefined') gObj.fjage.gateways = [];
 } else if (isJsDom || isNode){
   gObj = global;
   Object.assign(GATEWAY_DEFAULTS, {
@@ -1002,4 +1055,21 @@ if (isBrowser || isWebWorker){
   gObj.atob = a => Buffer.from(a, 'base64').toString('binary');
 }
 
-const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
+/**
+ * @typedef {Object} ParameterReq.Entry
+ * @property {string} param - parameter name
+ * @property {Object} value - parameter value
+ * @exports ParameterReq.Entry
+ */
+
+
+/**
+ * A message that requests one or more parameters of an agent.
+ * @typedef {Message} ParameterReq
+ * @property {string} param - parameters name to be get/set if only a single parameter is to be get/set
+ * @property {Object} value - parameters value to be set if only a single parameter is to be set
+ * @property {Array<ParameterReq.Entry>} requests - a list of multiple parameters to be get/set
+ * @property {number} [index=-1] - index of parameter(s) to be set
+ * @exports ParameterReq
+ */
+export const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
