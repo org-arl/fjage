@@ -4,7 +4,7 @@ const DEFAULT_RECONNECT_TIME = 5000;       // ms, delay between retries to conne
  * @class
  * @ignore
  */
-export default class WSConnector {
+class WSConnector {
 
   /**
    * Create an WSConnector to connect to a fjage master over WebSockets
@@ -23,6 +23,7 @@ export default class WSConnector {
     this.url.hostname = host;
     this.url.port = port.toString();
     this.url.pathname = opts.pathname || '/';
+    this._keepAlive = opts.keepAlive;
     this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
     this.debug = opts.debug || false;      // debug info to be logged to console?
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
@@ -96,19 +97,19 @@ export default class WSConnector {
   }
 
   /**
+   * @callback WSConnectorReadCallback
+   * @ignore
+   * @param {string} s - incoming message string
+   */
+
+  /**
    * Set a callback for receiving incoming strings from the connector
-   * @param {WSConnector~ReadCallback} cb - callback that is called when the connector gets a string
+   * @param {WSConnectorReadCallback} cb - callback that is called when the connector gets a string
    * @ignore
    */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onWebsockRx = cb;
   }
-
-  /**
-   * @callback WSConnector~ReadCallback
-   * @ignore
-   * @param {string} s - incoming message string
-   */
 
   /**
    * Add listener for connection events
@@ -150,3 +151,5 @@ export default class WSConnector {
     }
   }
 }
+
+export default WSConnector;

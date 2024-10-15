@@ -37,29 +37,31 @@ var createConnection;
  * @class
  * @ignore
  */
-class TCPconnector {
+class TCPConnector {
 
   /**
     * Create an TCPConnector to connect to a fjage master over TCP
    * @param {Object} opts
-   * @param {string} opts.hostname - hostname/ip address of the master container to connect to
-   * @param {string} opts.port - port number of the master container to connect to
-   * @param {boolean} opts.keepAlive - try to reconnect if the connection is lost
+   * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
+   * @param {number} [opts.port=1100] - port number of the master container to connect to
+   * @param {boolean} [opts.keepAlive=true] - try to reconnect if the connection is lost
+   * @param {boolean} [opts.debug=false] - debug info to be logged to console?
    * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
     */
   constructor(opts = {}) {
-    let host = opts.hostname;
-    let port = opts.port;
+    let host = opts.hostname || 'localhost';
+    let port = opts.port || 1100;
     this._keepAlive = opts.keepAlive;
     this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME$1;
     this.url = new URL('tcp://localhost');
     this.url.hostname = host;
-    this.url.port = port;
+    this.url.port = port.toString();
     this._buf = '';
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.connListeners = [];              // external listeners wanting to listen connection events
+    this.debug = false;
     this._sockInit(host, port);
   }
 
@@ -73,6 +75,7 @@ class TCPconnector {
   _sockInit(host, port){
     if (!createConnection){
       try {
+        // @ts-ignore
         import('net').then(module => {
           createConnection = module.createConnection;
           this._sockSetup(host, port);
@@ -157,18 +160,18 @@ class TCPconnector {
   }
 
   /**
+   * @callback TCPConnectorReadCallback
+   * @ignore
+   * @param {string} s - incoming message string
+   */
+
+  /**
    * Set a callback for receiving incoming strings from the connector
-   * @param {TCPConnector~ReadCallback} cb - callback that is called when the connector gets a string
+   * @param {TCPConnectorReadCallback} cb - callback that is called when the connector gets a string
    */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onSockRx = cb;
   }
-
-  /**
-   * @callback TCPConnector~ReadCallback
-   * @ignore
-   * @param {string} s - incoming message string
-   */
 
   /**
    * Add listener for connection events
@@ -226,17 +229,20 @@ class WSConnector {
   /**
    * Create an WSConnector to connect to a fjage master over WebSockets
    * @param {Object} opts
-   * @param {string} opts.hostname - hostname/ip address of the master container to connect to
-   * @param {string} opts.port - port number of the master container to connect to
-   * @param {string} opts.pathname - path of the master container to connect to
-   * @param {boolean} opts.keepAlive - try to reconnect if the connection is lost
+   * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
+   * @param {number} [opts.port=80] - port number of the master container to connect to
+   * @param {string} [opts.pathname="/"] - path of the master container to connect to
+   * @param {boolean} [opts.keepAlive=true] - try to reconnect if the connection is lost
+   * @param {boolean} [opts.debug=false] - debug info to be logged to console?
    * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
    */
   constructor(opts = {}) {
+    let host = opts.hostname || 'localhost';
+    let port = opts.port || 80;
     this.url = new URL('ws://localhost');
-    this.url.hostname = opts.hostname;
-    this.url.port = opts.port;
-    this.url.pathname = opts.pathname;
+    this.url.hostname = host;
+    this.url.port = port.toString();
+    this.url.pathname = opts.pathname || '/';
     this._keepAlive = opts.keepAlive;
     this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
     this.debug = opts.debug || false;      // debug info to be logged to console?
@@ -311,19 +317,19 @@ class WSConnector {
   }
 
   /**
+   * @callback WSConnectorReadCallback
+   * @ignore
+   * @param {string} s - incoming message string
+   */
+
+  /**
    * Set a callback for receiving incoming strings from the connector
-   * @param {WSConnector~ReadCallback} cb - callback that is called when the connector gets a string
+   * @param {WSConnectorReadCallback} cb - callback that is called when the connector gets a string
    * @ignore
    */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onWebsockRx = cb;
   }
-
-  /**
-   * @callback WSConnector~ReadCallback
-   * @ignore
-   * @param {string} s - incoming message string
-   */
 
   /**
    * Add listener for connection events
@@ -395,13 +401,13 @@ const Performative = {
  * An identifier for an agent or a topic.
  * @class
  * @param {string} name - name of the agent
- * @param {boolean} topic - name of topic
- * @param {Gateway} owner - Gateway owner for this AgentID
+ * @param {boolean} [topic=false] - name of topic
+ * @param {Gateway} [owner] - Gateway owner for this AgentID
  */
 class AgentID {
 
 
-  constructor(name, topic, owner) {
+  constructor(name, topic=false, owner) {
     this.name = name;
     this.topic = topic;
     this.owner = owner;
@@ -428,12 +434,13 @@ class AgentID {
   /**
    * Sends a message to the agent represented by this id.
    *
-   * @param {string} msg - message to send
+   * @param {Message} msg - message to send
    * @returns {void}
    */
   send(msg) {
     msg.recipient = this.toJSON();
-    this.owner.send(msg);
+    if (this.owner) this.owner.send(msg);
+    else throw new Error('Unowned AgentID cannot send messages');
   }
 
   /**
@@ -445,7 +452,8 @@ class AgentID {
    */
   async request(msg, timeout=1000) {
     msg.recipient = this.toJSON();
-    return this.owner.request(msg, timeout);
+    if (this.owner) return this.owner.request(msg, timeout);
+    else throw new Error('Unowned AgentID cannot send messages');
   }
 
   /**
@@ -564,12 +572,12 @@ class AgentID {
 /**
  * Base class for messages transmitted by one agent to another. Creates an empty message.
  * @class
- * @param {Message} inReplyTo - message to which this response corresponds to
- * @param {Performative} - performative
+ * @param {Message} [inReplyTo] - message to which this response corresponds to
+ * @param {Performative} [perf=Performative.INFORM] - performative
  */
 class Message {
 
-  constructor(inReplyTo={msgID:null, sender:null}, perf='') {
+  constructor(inReplyTo={msgID:null, sender:null}, perf=Performative.INFORM) {
     this.__clazz__ = 'org.arl.fjage.Message';
     this.msgID = _guid(8);
     this.sender = null;
@@ -610,7 +618,11 @@ class Message {
   // convert a message into a JSON string
   // NOTE: we don't do any base64 encoding for TX as
   //       we don't know what data type is intended
-  /** @private */
+  /**
+   * @private
+   *
+   * @return {string} - JSON string representation of the message
+   */
   _serialize() {
     let clazz = this.__clazz__ || 'org.arl.fjage.Message';
     let data = JSON.stringify(this, (k,v) => {
@@ -628,26 +640,27 @@ class Message {
   }
 
   // convert a dictionary (usually from decoding JSON) into a message
-  /** @private */
-  static _deserialize(obj) {
-    if (typeof obj == 'string' || obj instanceof String) {
+  /**
+   * @private
+   *
+   * @param {(string|Object)} json - JSON string or object to be converted to a message
+   * @returns {Message} - message created from the JSON string or object
+   * */
+  static _deserialize(json) {
+    let obj = null;
+    if (typeof json == 'string') {
       try {
-        obj = JSON.parse(obj);
+        obj = JSON.parse(json);
       }catch(e){
         return null;
       }
-    }
-    try {
-      let qclazz = obj.clazz;
-      let clazz = qclazz.replace(/^.*\./, '');
-      let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
-      rv.__clazz__ = qclazz;
-      rv._inflate(obj.data);
-      return rv;
-    } catch (err) {
-      console.warn('Error trying to deserialize JSON object : ', obj, err);
-      return null;
-    }
+    } else obj = json;
+    let qclazz = obj.clazz;
+    let clazz = qclazz.replace(/^.*\./, '');
+    let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
+    rv.__clazz__ = qclazz;
+    rv._inflate(obj.data);
+    return rv;
   }
 }
 
@@ -673,36 +686,18 @@ class GenericMessage extends Message {
  *
  * @class
  * @param {Object} opts
- * @param {string}  [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
- * @param {string}  [opts.port='1100']        - port number of the master container to connect to
- * @param {string}  [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
- * @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
- * @param {number}  [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
- * @param {number}  [opts.timeout=1000]       - timeout for fjage level messages in ms
+ * @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
+ * @param {number} [opts.port=1100]          - port number of the master container to connect to
+ * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
+ * @param {string} [opts.keepAlive=true]     - try to reconnect if the connection is lost
+ * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
+ * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
  * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
- * @param {string}  [hostname="localhost"]    - <strike>Deprecated : hostname/ip address of the master container to connect to</strike>
- * @param {number}  [port=]                   - <strike>Deprecated : port number of the master container to connect to</strike>
- * @param {string}  [pathname=="/ws/"]        - <strike>Deprecated : path of the master container to connect to (for WebSockets)</strike>
- * @param {number}  [timeout=1000]            - <strike>Deprecated : timeout for fjage level messages in ms</strike>
  */
 class Gateway {
 
-  constructor(opts = {}, port, pathname='/ws/', timeout=1000) {
-    // Support for deprecated constructor
-    if (typeof opts === 'string' || opts instanceof String){
-      opts = {
-        'hostname': opts,
-        'port' : port,
-        'pathname' : pathname,
-        'timeout' : timeout
-      };
-      console.warn('Deprecated use of Gateway constructor');
-    }
-
-    // Set defaults
-    for (var key in GATEWAY_DEFAULTS){
-      if (opts[key] == undefined || opts[key] === '') opts[key] = GATEWAY_DEFAULTS[key];
-    }
+  constructor(opts = {}) {
+    opts = Object.assign({}, GATEWAY_DEFAULTS, opts);
     var url = DEFAULT_URL;
     url.hostname = opts.hostname;
     url.port = opts.port;
@@ -725,7 +720,12 @@ class Gateway {
     this._addGWCache(this);
   }
 
-  /** @private */
+  /**
+   * Sends an event to all registered listeners of the given type.
+   * @private
+   * @param {string} type - type of event
+   * @param {Object|Message|string} val - value to be sent to the listeners
+   */
   _sendEvent(type, val) {
     if (Array.isArray(this.eventListeners[type])) {
       this.eventListeners[type].forEach(l => {
@@ -740,7 +740,11 @@ class Gateway {
     }
   }
 
-  /** @private */
+  /**
+   * @private
+   * @param {string} data - stringfied JSON data received from the master container to be processed
+   * @returns {void}
+   */
   _onMsgRx(data) {
     var obj;
     if (this.debug) console.log('< '+data);
@@ -757,6 +761,7 @@ class Gateway {
       delete this.pending[obj.id];
     } else if (obj.action == 'send') {
       // incoming message from master
+      // @ts-ignore
       let msg = Message._deserialize(obj.message);
       if (!msg) return;
       this._sendEvent('rxmsg', msg);
@@ -817,7 +822,12 @@ class Gateway {
     }
   }
 
-  /** @private */
+  /**
+   * Sends a message out to the master container.
+   * @private
+   * @param {string|Object} s - JSON object (either stringified or not) to be sent to the master container
+   * @returns {boolean} - true if the message was sent successfully
+   */
   _msgTx(s) {
     if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
     if(this.debug) console.log('> '+s);
@@ -825,7 +835,11 @@ class Gateway {
     return this.connector.write(s);
   }
 
-  /** @private */
+  /**
+   * @private
+   * @param {Object} rq - request to be sent to the master container as a JSON object
+   * @returns {Promise<Object>} - a promise which returns the response from the master container
+   */
   _msgTxRx(rq) {
     rq.id = _guid(8);
     return new Promise(resolve => {
@@ -847,21 +861,27 @@ class Gateway {
     });
   }
 
-  /** @private */
+  /**
+   * @private
+   * @param {URL} url - URL object of the master container to connect to
+   * @returns {TCPConnector|WSConnector} - connector object to connect to the master container
+   */
   _createConnector(url){
     let conn;
     if (url.protocol.startsWith('ws')){
       conn =  new WSConnector({
         'hostname':url.hostname,
-        'port':url.port,
+        'port':parseInt(url.port),
         'pathname':url.pathname,
-        'keepAlive': this._keepAlive
+        'keepAlive': this._keepAlive,
+        'debug': this.debug
       });
     }else if (url.protocol.startsWith('tcp')){
-      conn = new TCPconnector({
+      conn = new TCPConnector({
         'hostname':url.hostname,
-        'port':url.port,
-        'keepAlive': this._keepAlive
+        'port':parseInt(url.port),
+        'keepAlive': this._keepAlive,
+        'debug': this.debug
       });
     } else return null;
     conn.setReadCallback(this._onMsgRx.bind(this));
@@ -877,7 +897,13 @@ class Gateway {
     return conn;
   }
 
-  /** @private */
+  /**
+   * Checks if the object is a constructor.
+   *
+   * @private
+   * @param {Object} value - an object to be checked if it is a constructor
+   * @returns {boolean} - if the object is a constructor
+   */
   _isConstructor(value) {
     try {
       new new Proxy(value, {construct() { return {}; }});
@@ -887,7 +913,13 @@ class Gateway {
     }
   }
 
-  /** @private */
+  /**
+   * Matches a message with a filter.
+   * @private
+   * @param {string|Object|function} filter - filter to be matched
+   * @param {Message} msg - message to be matched to the filter
+   * @returns {boolean} - true if the message matches the filter
+   */
   _matchMessage(filter, msg){
     if (typeof filter == 'string' || filter instanceof String) {
       return 'inReplyTo' in msg && msg.inReplyTo == filter;
@@ -907,18 +939,25 @@ class Gateway {
     }
   }
 
-  /** @private */
+  /**
+   * Gets the next message from the queue that matches the filter.
+   * @private
+   * @param {string|Object|function} filter - filter to be matched
+   */
   _getMessageFromQueue(filter) {
     if (!this.queue.length) return;
     if (!filter) return this.queue.shift();
-
     let matchedMsg = this.queue.find( msg => this._matchMessage(filter, msg));
     if (matchedMsg) this.queue.splice(this.queue.indexOf(matchedMsg), 1);
-
     return matchedMsg;
   }
 
-  /** @private */
+  /**
+   * Gets a cached gateway object for the given URL (if it exists).
+   * @private
+   * @param {URL} url - URL object of the master container to connect to
+   * @returns {Gateway|void} - gateway object for the given URL
+   */
   _getGWCache(url){
     if (!gObj.fjage || !gObj.fjage.gateways) return null;
     var f = gObj.fjage.gateways.filter(g => g.connector.url.toString() == url.toString());
@@ -926,13 +965,21 @@ class Gateway {
     return null;
   }
 
-  /** @private */
+  /**
+   * Adds a gateway object to the cache if it doesn't already exist.
+   * @private
+   * @param {Gateway} gw - gateway object to be added to the cache
+   */
   _addGWCache(gw){
     if (!gObj.fjage || !gObj.fjage.gateways) return;
     gObj.fjage.gateways.push(gw);
   }
 
-  /** @private */
+  /**
+   * Removes a gateway object from the cache if it exists.
+   * @private
+   * @param {Gateway} gw - gateway object to be removed from the cache
+   */
   _removeGWCache(gw){
     if (!gObj.fjage || !gObj.fjage.gateways) return;
     var index = gObj.fjage.gateways.indexOf(gw);
@@ -1020,7 +1067,7 @@ class Gateway {
   /**
    * Gets the agent ID associated with the gateway.
    *
-   * @returns {string} - agent ID
+   * @returns {AgentID} - agent ID
    */
   getAgentID() {
     return this.aid;
@@ -1061,6 +1108,7 @@ class Gateway {
     if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
     this.subscriptions[topic.toJSON()] = true;
     this._update_watch();
+    return true;
   }
 
   /**
@@ -1152,6 +1200,7 @@ class Gateway {
     }
     this._sendEvent('txmsg', msg);
     let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
+    // @ts-ignore
     rq = rq.replace('"###MSG###"', msg._serialize());
     return !!this._msgTx(rq);
   }
@@ -1169,9 +1218,9 @@ class Gateway {
    * Sends a request and waits for a response. This method returns a {Promise} which resolves when a response
    * is received or if no response is received after the timeout.
    *
-   * @param {string} msg - message to send
+   * @param {Message} msg - message to send
    * @param {number} [timeout=1000] - timeout in milliseconds
-   * @returns {Promise<?Message>} - a promise which resolves with the received response message, null on timeout
+   * @returns {Promise<Message|void>} - a promise which resolves with the received response message, null on timeout
    */
   async request(msg, timeout=1000) {
     this.send(msg);
@@ -1182,10 +1231,10 @@ class Gateway {
    * Returns a response message received by the gateway. This method returns a {Promise} which resolves when
    * a response is received or if no response is received after the timeout.
    *
-   * @param {function} [filter=] - original message to which a response is expected, or a MessageClass of the type
+   * @param {function|Message|typeof Message} filter - original message to which a response is expected, or a MessageClass of the type
    * of message to match, or a closure to use to match against the message
    * @param {number} [timeout=0] - timeout in milliseconds
-   * @returns {Promise<?Message>} - received response message, null on timeout
+   * @returns {Promise<Message|void>} - received response message, null on timeout
    */
   async receive(filter, timeout=0) {
     return new Promise(resolve => {
@@ -1240,8 +1289,8 @@ const Services = {
 /**
  * Creates a unqualified message class based on a fully qualified name.
  * @param {string} name - fully qualified name of the message class to be created
- * @param {class} [parent=Message] - class of the parent MessageClass to inherit from
- * @returns {function} - constructor for the unqualified message class
+ * @param {typeof Message} [parent] - class of the parent MessageClass to inherit from
+ * @constructs Message
  * @example
  * const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
  * let pReq = new ParameterReq()
@@ -1250,6 +1299,9 @@ function MessageClass(name, parent=Message) {
   let sname = name.replace(/^.*\./, '');
   if (MessageClass[sname]) return MessageClass[sname];
   let cls = class extends parent {
+    /**
+     * @param {{ [x: string]: any; }} params
+     */
     constructor(params) {
       super();
       this.__clazz__ = name;
@@ -1305,7 +1357,7 @@ function _b64toArray(base64, dtype, littleEndian=true) {
     break;
   case '[J': // long array
     for (i = 0; i < len; i+=8)
-      rv.push(view.getInt64(i, littleEndian));
+      rv.push(view.getBigInt64(i, littleEndian));
     break;
   case '[F': // float array
     for (i = 0; i < len; i+=4)
@@ -1340,6 +1392,8 @@ function _decodeBase64(k, d) {
 ////// global
 
 const GATEWAY_DEFAULTS = {};
+
+/** @type {Window & globalThis & Object} */
 let gObj = {};
 let DEFAULT_URL;
 if (isBrowser || isWebWorker){
@@ -1356,7 +1410,7 @@ if (isBrowser || isWebWorker){
   DEFAULT_URL = new URL('ws://localhost');
   // Enable caching of Gateways
   if (typeof gObj.fjage === 'undefined') gObj.fjage = {};
-  if (typeof gObj.fjage.gateways == 'undefined')gObj.fjage.gateways = [];
+  if (typeof gObj.fjage.gateways == 'undefined') gObj.fjage.gateways = [];
 } else if (isJsDom || isNode){
   gObj = global;
   Object.assign(GATEWAY_DEFAULTS, {
@@ -1372,6 +1426,23 @@ if (isBrowser || isWebWorker){
   gObj.atob = a => Buffer.from(a, 'base64').toString('binary');
 }
 
+/**
+ * @typedef {Object} ParameterReq.Entry
+ * @property {string} param - parameter name
+ * @property {Object} value - parameter value
+ * @exports ParameterReq.Entry
+ */
+
+
+/**
+ * A message that requests one or more parameters of an agent.
+ * @typedef {Message} ParameterReq
+ * @property {string} param - parameters name to be get/set if only a single parameter is to be get/set
+ * @property {Object} value - parameters value to be set if only a single parameter is to be set
+ * @property {Array<ParameterReq.Entry>} requests - a list of multiple parameters to be get/set
+ * @property {number} [index=-1] - index of parameter(s) to be set
+ * @exports ParameterReq
+ */
 const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
 
-export { AgentID, Gateway, GenericMessage, Message, MessageClass, Performative, Services };
+export { AgentID, Gateway, GenericMessage, Message, MessageClass, ParameterReq, Performative, Services };
