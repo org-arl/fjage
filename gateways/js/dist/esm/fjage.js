@@ -1,4 +1,4 @@
-/* fjage.js v1.13.1 */
+/* fjage.js v1.13.2 */
 
 const isBrowser =
   typeof window !== "undefined" && typeof window.document !== "undefined";
