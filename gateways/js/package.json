@@ -32,20 +32,20 @@
   },
   "homepage": "https://github.com/org-arl/fjage#readme",
   "devDependencies": {
-    "@babel/eslint-parser": "^7.23.3",
-    "@playwright/test": "^1.41.0",
-    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@babel/eslint-parser": "^7.25.8",
+    "@playwright/test": "^1.48.0",
+    "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-terser": "^0.4.4",
     "@types/node": "^22.7.5",
-    "documentation": "^14.0.2",
-    "eslint": "^8.55.0",
-    "globals": "^13.24.0",
-    "jasmine": "^5.1.0",
+    "documentation": "^14.0.3",
+    "eslint": "^9.12.0",
+    "globals": "^15.11.0",
+    "jasmine": "^5.4.0",
     "node-static": "^0.7.11",
-    "rollup": "^4.8.0",
+    "rollup": "^4.24.0",
     "typescript": "^5.6.3"
   },
   "dependencies": {
-    "browser-or-node": "^2.1.1"
+    "browser-or-node": "^3.0.0"
   }
 }
