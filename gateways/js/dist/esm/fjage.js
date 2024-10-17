@@ -1,4 +1,4 @@
-/* fjage.js v1.13.3 */
+/* fjage.js v1.13.4 */
 
 const isBrowser =
   typeof window !== "undefined" && typeof window.document !== "undefined";
@@ -23,9 +23,7 @@ const isJsDom =
     (navigator.userAgent.includes("Node.js") ||
       navigator.userAgent.includes("jsdom")));
 
-typeof Deno !== "undefined" &&
-  typeof Deno.version !== "undefined" &&
-  typeof Deno.version.deno !== "undefined";
+typeof Deno !== "undefined" && typeof Deno.core !== "undefined";
 
 const SOCKET_OPEN = 'open';
 const SOCKET_OPENING = 'opening';

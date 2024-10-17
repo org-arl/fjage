@@ -16,6 +16,9 @@ export default [
         'error',
         'single'
       ],
+      'no-unused-vars': ['error', {
+        'caughtErrors': 'none',
+      }]
     }
   }
 ];

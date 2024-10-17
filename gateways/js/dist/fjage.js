@@ -1,4 +1,4 @@
-/* fjage.js v1.13.3 */
+/* fjage.js v1.13.4 */
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -29,9 +29,7 @@
       (navigator.userAgent.includes("Node.js") ||
         navigator.userAgent.includes("jsdom")));
 
-  typeof Deno !== "undefined" &&
-    typeof Deno.version !== "undefined" &&
-    typeof Deno.version.deno !== "undefined";
+  typeof Deno !== "undefined" && typeof Deno.core !== "undefined";
 
   const SOCKET_OPEN = 'open';
   const SOCKET_OPENING = 'opening';

@@ -1,6 +1,6 @@
 {
   "name": "fjage",
-  "version": "1.13.3",
+  "version": "1.13.4",
   "description": "JS Gateway for fjåge",
   "main": "./dist/cjs/fjage.cjs",
   "exports": {
@@ -46,6 +46,6 @@
     "typescript": "^5.6.3"
   },
   "dependencies": {
-    "browser-or-node": "^3.0.0"
+    "browser-or-node": "2.0.0"
   }
 }
