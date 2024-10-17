@@ -567,11 +567,23 @@ class AgentID {
   }
 }
 
+// protected String msgID = UUID.randomUUID().toString();
+// protected Performative perf;
+// protected AgentID recipient;
+// protected AgentID sender = null;
+// protected String inReplyTo = null;
+// protected Long sentAt = null;
+
 /**
  * Base class for messages transmitted by one agent to another. Creates an empty message.
  * @class
- * @param {Message} [inReplyTo] - message to which this response corresponds to
+ * @param {string} [msgID] - unique identifier for the message
  * @param {Performative} [perf=Performative.INFORM] - performative
+ * @param {AgentID} [recipient] - recipient of the message
+ * @param {AgentID} [sender] - sender of the message
+ * @param {string} [inReplyTo] - message to which this response corresponds to
+ * @param {Message} [inReplyTo] - message to which this response corresponds to
+ * @param {number} [sentAt] - time at which the message was sent
  */
 class Message {
 
@@ -1085,7 +1097,7 @@ class Gateway {
    * Returns an object representing the named topic.
    *
    * @param {string|AgentID} topic - name of the topic or AgentID
-   * @param {string} topic2 - name of the topic if the topic param is an AgentID
+   * @param {string} [topic2] - name of the topic if the topic param is an AgentID
    * @returns {AgentID} - object representing the topic
    */
   topic(topic, topic2) {
