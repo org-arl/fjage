@@ -378,7 +378,7 @@ const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages 
 /**
  * An action represented by a message. The performative actions are a subset of the
  * FIPA ACL recommendations for interagent communication.
- * @typedef {Object} Performative
+ * @enum {string}
  */
 const Performative = {
   REQUEST: 'REQUEST',               // Request an action to be performed
