@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # fjage version
-VERSION=1.13.0
+VERSION=1.14.0
 
 # create the folder structure
 mkdir -p build/libs etc logs samples

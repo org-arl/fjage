@@ -1,5 +1,12 @@
 # Release Notes
 
+## v1.14.0
+
+* Added `Gateway.connected` property
+* Added function to serve agent store and directory listing
+* Improvements to Python and JS gateways
+* Numerous bug fixes
+
 ## v1.13.0
 
 * Handle generic map objects in JSON serialization
