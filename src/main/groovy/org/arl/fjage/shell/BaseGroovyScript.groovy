@@ -495,7 +495,8 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding()
     if (binding.hasVariable('__doc__')) {
       def doc = binding.getVariable('__doc__')
-      return doc.get(obj as String)
+      Agent a = binding.hasVariable('__agent__') ? binding.getVariable('__agent__') : null
+      return doc.get(a, obj as String)
     }
     return null
   }
@@ -509,7 +510,8 @@ abstract class BaseGroovyScript extends Script {
     Binding binding = getBinding()
     if (binding.hasVariable('__doc__')) {
       def doc = binding.getVariable('__doc__')
-      return doc.get()
+      Agent a = binding.hasVariable('__agent__') ? binding.getVariable('__agent__') : null
+      return doc.get(a)
     }
     return null
   }
