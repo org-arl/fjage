@@ -22,7 +22,7 @@ public class Documentation {
   protected int staticSize = 0;
 
   protected static final Pattern heading = Pattern.compile("^#+ +([^ ]+) +-.*$");
-  protected static final Pattern section = Pattern.compile("^#+ .*$");
+  protected static final Pattern section = Pattern.compile("^#+ (.*)$");
   protected static final String crlf = "\\r?\\n";
   protected static final String header = "^#+ +";
   protected static final String gaps = "\\n+$";
@@ -70,9 +70,16 @@ public class Documentation {
     for (int i = 0; i < doc.size(); i++) {
       String s = doc.get(i);
       Matcher m = heading.matcher(s);
+      if ((m.matches() && m.group(1).equals(keyword))) {
+        extract(sb, i);
+        count++;
+        continue;
+      }
+      m = section.matcher(s);
       if (m.matches() && m.group(1).equals(keyword)) {
         extract(sb, i);
         count++;
+        continue;
       }
     }
     if (count == 0) search(sb, keyword);
