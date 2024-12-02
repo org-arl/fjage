@@ -9,7 +9,7 @@ const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
     });
     const req = new ShellExecReq();
     req.recipient = shell;
-    req.cmd = 'a=2; a+2;';
+    req.command = 'a=2; a+2;';
     req.ans = true;
     let rsp = await gw.request(req);
     console.log(rsp);
