@@ -231,7 +231,7 @@ int main(int argc, char* argv[]) {
   fjage_msg_destroy(msg);
   msg = fjage_msg_create("org.arl.fjage.shell.ShellExecReq", FJAGE_REQUEST);
   fjage_msg_set_recipient(msg, aid);
-  fjage_msg_add_string(msg, "cmd", "ps");
+  fjage_msg_add_string(msg, "command", "ps");
   msg = fjage_request(gw, msg, 1000);
   test_assert("request", msg != NULL && fjage_msg_get_performative(msg) == FJAGE_AGREE);
   fjage_msg_destroy(msg);
