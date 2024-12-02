@@ -21,12 +21,19 @@ public class GetFileRsp extends Message {
   private static final long serialVersionUID = 1L;
 
   private String filename;
-  private long ofs = 0;
+  private long offset = 0;
   private byte[] contents;
-  private boolean dir = false;
+  private boolean directory = false;
 
   /**
-   * Create a response to the ShellGetFileReq.
+   * Create an empty response.
+   */
+  public GetFileRsp() {
+    super(Performative.INFORM);
+  }
+
+    /**
+   * Create a response to the GetFileReq.
    *
    * @param inReplyTo message to which this is a response.
    */
@@ -80,7 +87,16 @@ public class GetFileRsp extends Message {
    * @return true for directory, false for ordinary file.
    */
   public boolean isDirectory() {
-    return dir;
+    return directory;
+  }
+
+  /**
+   * Checks if the file being returned is a directory.
+   *
+   * @return true for directory, false for ordinary file.
+   */
+  public boolean getDirectory() {
+    return directory;
   }
 
   /**
@@ -89,7 +105,7 @@ public class GetFileRsp extends Message {
    * @param dir true for directory, false for ordinary file.
    */
   public void setDirectory(boolean dir) {
-    this.dir = dir;
+    this.directory = dir;
   }
 
   /**
@@ -98,7 +114,7 @@ public class GetFileRsp extends Message {
    * @return start locaion in file.
    */
   public long getOffset() {
-    return ofs;
+    return offset;
   }
 
   /**
@@ -107,7 +123,7 @@ public class GetFileRsp extends Message {
    * @param ofs start location in file.
    */
   public void setOffset(long ofs) {
-    this.ofs = ofs;
+    this.offset = ofs;
   }
 
 }

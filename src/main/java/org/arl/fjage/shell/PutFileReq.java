@@ -23,7 +23,7 @@ public class PutFileReq extends Message {
 
   private String filename = null;
   private byte[] contents = null;
-  private long ofs = 0;
+  private long offset = 0;
 
   /**
    * Create an empty request for file write.
@@ -62,7 +62,7 @@ public class PutFileReq extends Message {
     super(Performative.REQUEST);
     this.filename = filename;
     this.contents = contents;
-    this.ofs = ofs;
+    this.offset = ofs;
   }
 
   /**
@@ -88,7 +88,7 @@ public class PutFileReq extends Message {
     super(to, Performative.REQUEST);
     this.filename = filename;
     this.contents = contents;
-    this.ofs = ofs;
+    this.offset = ofs;
   }
 
   /**
@@ -133,7 +133,7 @@ public class PutFileReq extends Message {
    * @return start locaion in file (negative for offset relative to end of file).
    */
   public long getOffset() {
-    return ofs;
+    return offset;
   }
 
   /**
@@ -142,7 +142,7 @@ public class PutFileReq extends Message {
    * @param ofs start location in file (negative for offset relative to end of file).
    */
   public void setOffset(long ofs) {
-    this.ofs = ofs;
+    this.offset = ofs;
   }
 
 }
