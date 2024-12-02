@@ -162,7 +162,7 @@ describe('A Gateway', function () {
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
     req.recipient = shell;
-    req.cmd = 'boo';
+    req.command = 'boo';
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalled();
@@ -176,7 +176,7 @@ describe('A Gateway', function () {
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
     req.recipient = shell;
-    req.cmd = 'boo';
+    req.command = 'boo';
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(fjageMessageChecker());
@@ -190,7 +190,7 @@ describe('A Gateway', function () {
     gw.connector.sock.send.calls.reset();
     const req = new ShellExecReq();
     req.recipient = shell;
-    req.cmd = 'boo';
+    req.command = 'boo';
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
@@ -557,7 +557,7 @@ describe('Shell GetFile/PutFile', function () {
   it('should be able to send a ShellExecReq', async function () {
     const req = new ShellExecReq();
     req.recipient = shell;
-    req.cmd = 'boo';
+    req.command = 'boo';
     const rsp = await gw.request(req);
     expect(rsp).toBeDefined();
     expect(rsp.perf).toBeDefined();
@@ -579,14 +579,14 @@ describe('Shell GetFile/PutFile', function () {
     var gfr = new GetFileReq();
     gfr.recipient = shell;
     gfr.filename = DIRNAME + '/' + FILENAME;
-    gfr.ofs = 5;
-    gfr.len = 4;
+    gfr.offset = 5;
+    gfr.length = 4;
     const rsp = await gw.request(gfr);
     expect(rsp).toBeTruthy();
     expect(rsp instanceof GetFileRsp).toBeTruthy();
     expect(rsp.contents).not.toBeUndefined();
     expect(rsp.contents.length).toBe(4);
-    expect(rsp.ofs).toBe(5);
+    expect(rsp.offset).toBe(5);
     expect(new TextDecoder('utf-8').decode(new Uint8Array(rsp.contents))).toEqual(TEST_STRING.substr(5, rsp.contents.length));
   });
 
@@ -594,14 +594,14 @@ describe('Shell GetFile/PutFile', function () {
     var gfr = new GetFileReq();
     gfr.recipient = shell;
     gfr.filename = DIRNAME + '/' + FILENAME;
-    gfr.ofs = 9;
-    gfr.len = 0;
+    gfr.offset = 9;
+    gfr.length = 0;
     const rsp = await gw.request(gfr, 3000);
     expect(rsp).toBeTruthy();
     expect(rsp instanceof GetFileRsp).toBeTruthy();
     expect(rsp.contents).not.toBeUndefined();
     expect(rsp.contents.length).toBe(TEST_STRING.length-9);
-    expect(rsp.ofs).toBe(9);
+    expect(rsp.offset).toBe(9);
     expect(new TextDecoder('utf-8').decode(new Uint8Array(rsp.contents))).toEqual(TEST_STRING.substr(9));
   });
 
@@ -609,8 +609,8 @@ describe('Shell GetFile/PutFile', function () {
     var gfr = new GetFileReq();
     gfr.recipient = shell;
     gfr.filename = DIRNAME + '/' + FILENAME;
-    gfr.ofs = 27;
-    gfr.len = 1;
+    gfr.offset = 27;
+    gfr.length = 1;
     const rsp = await gw.request(gfr, 3000);
     expect(rsp).toBeTruthy();
     expect(rsp.perf).toEqual(Performative.REFUSE);
@@ -680,7 +680,7 @@ describe('Shell GetFile/PutFile', function () {
     const pfr = new PutFileReq();
     pfr.recipient = shell;
     pfr.filename = DIRNAME + '/' + FILENAME;
-    pfr.ofs = 10;
+    pfr.offset = 10;
     pfr.contents = Array.from((new TextEncoder('utf-8').encode(TEST_STRING)));
     const rsp = await gw.request(pfr, 3000);
     expect(rsp).toBeTruthy();
@@ -698,7 +698,7 @@ describe('Shell GetFile/PutFile', function () {
     const pfr = new PutFileReq();
     pfr.recipient = shell;
     pfr.filename = DIRNAME + '/' + FILENAME;
-    pfr.ofs = -4;
+    pfr.offset = -4;
     pfr.contents = Array.from((new TextEncoder('utf-8').encode(NEW_STRING)));
     const rsp = await gw.request(pfr, 3000);
     expect(rsp).toBeTruthy();
@@ -751,7 +751,7 @@ describe('Shell GetFile/PutFile', function () {
     const pfr = new PutFileReq();
     pfr.recipient = shell;
     pfr.filename = DIRNAME + '/' + FILENAME;
-    pfr.ofs = 10;
+    pfr.offset = 10;
     pfr.contents = Array.from((new TextEncoder('utf-8').encode(TEST_STRING)));
     const rsp = await gw.request(pfr, 3000);
     expect(rsp).toBeTruthy();
@@ -769,7 +769,7 @@ describe('Shell GetFile/PutFile', function () {
     const pfr = new PutFileReq();
     pfr.recipient = shell;
     pfr.filename = DIRNAME + '/' + FILENAME;
-    pfr.ofs = -4;
+    pfr.offset = -4;
     pfr.contents = Array.from((new TextEncoder('utf-8').encode(NEW_STRING)));
     const rsp = await gw.request(pfr, 3000);
     expect(rsp).toBeTruthy();
