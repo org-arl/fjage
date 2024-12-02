@@ -28,8 +28,8 @@ public class GetFileReq extends Message {
   private static final long serialVersionUID = 1L;
 
   private String filename = null;
-  private long ofs = 0;
-  private long len = 0;
+  private long offset = 0;
+  private long length = 0;
 
   /**
    * Create an empty request for file/directory.
@@ -78,8 +78,8 @@ public class GetFileReq extends Message {
   public GetFileReq(String filename, long ofs, long len) {
     super(Performative.REQUEST);
     this.filename = filename;
-    this.ofs = ofs;
-    this.len = len;
+    this.offset = ofs;
+    this.length = len;
   }
 
   /**
@@ -93,8 +93,8 @@ public class GetFileReq extends Message {
   public GetFileReq(AgentID to, String filename, long ofs, long len) {
     super(to, Performative.REQUEST);
     this.filename = filename;
-    this.ofs = ofs;
-    this.len = len;
+    this.offset = ofs;
+    this.length = len;
   }
 
   /**
@@ -121,7 +121,7 @@ public class GetFileReq extends Message {
    * @return start locaion in file (negative for offset relative to end of file).
    */
   public long getOffset() {
-    return ofs;
+    return offset;
   }
 
   /**
@@ -130,7 +130,7 @@ public class GetFileReq extends Message {
    * @param ofs start location in file (negative for offset relative to end of file).
    */
   public void setOffset(long ofs) {
-    this.ofs = ofs;
+    this.offset = ofs;
   }
 
   /**
@@ -139,7 +139,7 @@ public class GetFileReq extends Message {
    * @return number of bytes to read, 0 for no limit.
    */
   public long getLength() {
-    return len;
+    return length;
   }
 
   /**
@@ -148,7 +148,7 @@ public class GetFileReq extends Message {
    * @param len number of bytes to read, 0 for no limit.
    */
   public void setLength(long len) {
-    this.len = len;
+    this.length = len;
   }
 
 }
