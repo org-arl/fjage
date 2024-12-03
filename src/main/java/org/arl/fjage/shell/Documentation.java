@@ -19,6 +19,7 @@ import org.arl.fjage.param.*;
 public class Documentation {
 
   protected List<String> doc = new ArrayList<String>();
+  protected Map<String,String> cache = new HashMap<String,String>();
   protected int staticSize = 0;
 
   protected static final Pattern heading = Pattern.compile("^#+ +([^ ]+) +-.*$");
@@ -155,7 +156,9 @@ public class Documentation {
   }
 
   /**
-   * Build dynamic documentation by querying agents.
+   * Build dynamic documentation by querying agents. Documentation may be
+   * cached for efficiency. If an agent wishes to avoid caching, it should
+   * return a documentation string that starts with "[no-cache]".
    *
    * @param agent agent.
    */
@@ -165,18 +168,34 @@ public class Documentation {
     Container c = agent.getContainer();
     AgentID[] agentIDs = c.getAgents();
     for (AgentID a: agentIDs) {
-      ParameterReq req = new ParameterReq();
-      req.setRecipient(a);
-      req.get(new NamedParameter("__doc__"));
-      Message rsp = agent.request(req, 1000);
-      if (rsp != null && rsp instanceof ParameterRsp) {
-        Object docstr = ((ParameterRsp)rsp).get(new NamedParameter("__doc__"));
-        if (docstr != null) {
-          String s = docstr.toString().replaceAll(placeholder, a.getName());
+      String key = a.getName();
+      if (a.getType() != null) key += "::" + a.getType();
+      if (cache.containsKey(key)) {
+        String s = cache.get(key);
+        if (s != null) {
           String[] lines = s.split(crlf);
           for (String line: lines)
             doc.add(line);
         }
+        continue;
+      }
+      ParameterReq req = new ParameterReq();
+      req.setRecipient(a);
+      req.get(new NamedParameter("__doc__"));
+      Message rsp = agent.request(req, 500);
+      if (rsp != null && rsp instanceof ParameterRsp) {
+        Object docstr = ((ParameterRsp)rsp).get(new NamedParameter("__doc__"));
+        if (docstr != null) {
+          String s = docstr.toString().replaceAll(placeholder, a.getName());
+          if (s.startsWith("[no-cache]")) s = s.substring(10);
+          else cache.put(key, s);
+          String[] lines = s.split(crlf);
+          for (String line: lines)
+            doc.add(line);
+        }
+      } else {
+        // no documentation available for agent
+        cache.put(key, null);
       }
     }
   }
