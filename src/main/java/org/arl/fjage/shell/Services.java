@@ -13,5 +13,6 @@ package org.arl.fjage.shell;
  * Services supported by fjage shell agents.
  */
 public enum Services {
-  SHELL
+  SHELL,
+  DOCUMENTATION
 }

@@ -159,6 +159,11 @@ public class Documentation {
    * Build dynamic documentation by querying agents. Documentation may be
    * cached for efficiency. If an agent wishes to avoid caching, it should
    * return a documentation string that starts with "[no-cache]".
+   * <p>
+   * Agents with names with special characters (e.g. hyphen) are not
+   * queried for documentation. This is to cater for gateway agents that do not
+   * support any requests. Such agents should always use special characters in
+   * their advertised names.
    *
    * @param agent agent.
    */
@@ -166,7 +171,7 @@ public class Documentation {
     if (agent == null) return;
     if (doc.size() > staticSize) doc.subList(staticSize, doc.size()).clear();
     Container c = agent.getContainer();
-    AgentID[] agentIDs = c.getAgents();
+    AgentID[] agentIDs = c.agentsForService("org.arl.fjage.shell.Services.DOCUMENTATION");
     for (AgentID a: agentIDs) {
       String key = a.getName();
       if (a.getType() != null) key += "::" + a.getType();
@@ -182,7 +187,7 @@ public class Documentation {
       ParameterReq req = new ParameterReq();
       req.setRecipient(a);
       req.get(new NamedParameter("__doc__"));
-      Message rsp = agent.request(req, 500);
+      Message rsp = agent.request(req, 1000);
       if (rsp != null && rsp instanceof ParameterRsp) {
         Object docstr = ((ParameterRsp)rsp).get(new NamedParameter("__doc__"));
         if (docstr != null) {
