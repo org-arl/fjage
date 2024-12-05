@@ -1,5 +1,3 @@
-![](https://github.com/org-arl/fjage/workflows/CI/badge.svg)
-
 fjåge
 =====
 **Framework for Java and Groovy Agents**
@@ -40,7 +38,7 @@ Maven Central dependency
     <dependency>
       <groupId>com.github.org-arl</groupId>
       <artifactId>fjage</artifactId>
-      <version>1.14.0</version>
+      <version>1.15.0</version>
     </dependency>
 
 Contributing
