@@ -555,7 +555,7 @@ class Gateway:
         self.logger = _log.getLogger('org.arl.fjage')
         self.cancel = False
         try:
-            self.aid = AgentID("PythonGW-" + str(_uuid.uuid4()), owner=self)
+            self.aid = AgentID("gateway-" + str(_uuid.uuid4()), owner=self)
             self.q = list()
             self.subscriptions = list()
             self.pending = dict()

@@ -14,6 +14,7 @@ import java.io.Serializable;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.regex.*;
 import java.util.logging.Logger;
 
 /**
@@ -37,6 +38,8 @@ public class Container {
   public static final String FAST_CLONER = "com.rits.cloning.Cloner";
 
   //////////// Private attributes
+
+  private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*$");
 
   protected String name;
   protected Platform platform;
@@ -189,6 +192,14 @@ public class Container {
 
   /**
    * Adds an agent to the container.
+   * <p>
+   * Agent names should only contain alphanumeric characters and underscores.
+   * The first character should not be a digit. Names with special characters
+   * such as '-', '.', '@', etc are considered reserved and should be avoided.
+   * <p>
+   * While agent names inconsistent with this guideline may not be rejected
+   * today, they may not work well on all platforms. In future, we may enforce
+   * this guideline more strictly.
    *
    * @param name name of the agent.
    * @param agent the agent object.
@@ -199,6 +210,8 @@ public class Container {
       log.warning("Undefined agent name");
       return null;
     }
+    Matcher matcher = NAME_PATTERN.matcher(name);
+    if (!matcher.matches()) log.warning("Agent name "+name+" does not meet naming guidelines and may be disallowed in future");
     AgentID aid = new AgentID(name);
     aid.setType(agent.getClass().getName());
     if (isDuplicate(aid)) {
@@ -227,7 +240,7 @@ public class Container {
    * @return an agent id if successful, null on failure.
    */
   public AgentID add(Agent agent) {
-    return add(agent.getClass().getName()+"@"+agent.hashCode(), agent);
+    return add(agent.getClass().getSimpleName()+"_"+agent.hashCode(), agent);
   }
 
   /**

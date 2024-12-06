@@ -550,7 +550,7 @@ fjage_gw_t fjage_tcp_open(const char* hostname, int port) {
   fgw->intr = 0;
 #endif
   char s[64];
-  sprintf(s, "CGateway-%08x", rand());
+  sprintf(s, "gateway-%08x", rand());
   fgw->aid = fjage_aid_create(s);
   fgw->head = 0;
   update_watch(fgw);

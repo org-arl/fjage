@@ -16,6 +16,8 @@ A fjåge Gateway connects to a fjåge master container and sends/receives messag
 - `action: send` : parse and process the messsage as per the Gateway logic.
 - `action: shutdown` : close and stop the Gateway
 
+All gateway agents should use names prefixed with `gateway-`.
+
 ### `Gateway()` :: String hostname, Int port, (String settings) -> Gateway
 
 - Creates a gateway connecting to a specified master container specified by the arguments.

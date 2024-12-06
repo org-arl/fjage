@@ -103,9 +103,10 @@ abstract class BaseGroovyScript extends Script {
   /**
    * Lists all the agents.
    *
+   * @param all true to list all agents, false to hide special agents.
    * @return a string representation of all agents.
    */
-  String ps() {
+  String ps(boolean all=false) {
     Binding binding = getBinding()
     if (binding.hasVariable('__agent__')) {
       Agent a = binding.getVariable('__agent__')
@@ -114,6 +115,7 @@ abstract class BaseGroovyScript extends Script {
       StringBuffer s = new StringBuffer()
       boolean first = true
       for (AgentID aid: agentIDs) {
+        if (!all && aid.name.contains('-')) continue  // hide gateways and other special agents
         if (!first) s.append('\n')
         s.append(aid)
         if (aid.type == null) s.append(': REMOTE')

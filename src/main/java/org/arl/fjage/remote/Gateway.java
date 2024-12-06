@@ -177,7 +177,7 @@ public class Gateway implements Messenger, Closeable {
    * @return agent ID
    */
   public AgentID getAgentID() {
-    return new AgentID("JavaGateway-"+hashCode());
+    return new AgentID("gateway-"+hashCode());
   }
 
   /**
