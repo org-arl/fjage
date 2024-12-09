@@ -162,6 +162,7 @@ public class FSMBehavior extends Behavior {
   public void setNextState(Object name) {
     State state = (name instanceof State) ? (State)name : states.get(name);
     if (state == null) throw new FjageException("Unknown state: "+name);
+    if (next == FINAL) return;
     next = state;
     restart();
   }
@@ -171,6 +172,7 @@ public class FSMBehavior extends Behavior {
    * to be exited, and re-entered.
    */
   public void reenterState() {
+    if (next == FINAL) return;
     next = REENTER;
     restart();
   }
