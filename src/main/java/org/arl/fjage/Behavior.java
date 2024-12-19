@@ -149,9 +149,13 @@ public class Behavior implements Comparable<Behavior> {
    *
    * @see #block()
    */
-  public synchronized void restart() {
+  public void restart() {
     blocked = false;
-    if (agent != null) agent.wake();
+    // Use local variable to ensure that the `!= null` and `.wake()` run on the
+    // same value. Don't use `synchronized` block as that may deadlock with the
+    // `agent` lock required for `wake()`.
+    Agent tmp = agent;
+    if (tmp != null) tmp.wake();
   }
 
   /**
@@ -249,4 +253,3 @@ public class Behavior implements Comparable<Behavior> {
   }
 
 }
-
