@@ -1,5 +1,21 @@
 # Release Notes
 
+## v1.12.4
+
+* Bugfix: Prevent setNextState() from resuscitating terminated FSMs
+* Bugfix: Fix potential deadlock when using behavior timers
+
+## v1.12.3
+
+* Javascript improvements
+* Improved darkmode support
+* Improved handling of parameter change notifications
+* Fix broken tests
+
+## v1.12.2
+
+* Gateway improvements
+
 ## v1.12.1
 
 * Use LONG_OR_DOUBLE parsing for JSON
