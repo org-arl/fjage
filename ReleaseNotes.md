@@ -1,5 +1,10 @@
 # Release Notes
 
+## v1.15.1
+
+* Bugfix: Prevent setNextState() from resuscitating terminated FSMs
+* Bugfix: Fix potential deadlock when using behavior timers
+
 ## v1.15.0
 
 * Changed names of SHELL message private attributes (breaking for JSON shell message users)
