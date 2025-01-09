@@ -251,7 +251,7 @@ public class Store implements Closeable {
     if (root == null) throw new FjageException("Store has been closed");
     try {
       return FileUtils.sizeOfDirectory(root);
-    } catch (IllegalArgumentException ex) {
+    } catch (IllegalArgumentException | UncheckedIOException ex) {
       return 0;
     }
   }
