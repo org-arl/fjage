@@ -458,7 +458,7 @@ class ParameterReq(_ParameterReq):
 
     def __str__(self):
         p = ' '.join(
-            [_short(str(self.param)) + ':' + (str(self.value) if 'value' in self else '?')],
+            [_short(str(self.param)) + ':' + (str(self.value) if self.value != None else '?')] +
             [_short(str(request['param'])) + ':' + (str(request['value']) if 'value' in request else '?') for request in
              self.requests])
         return self.__class__.__name__ + ':' + self.perf + '[' + (
