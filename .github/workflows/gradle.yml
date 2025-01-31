@@ -10,7 +10,7 @@ jobs:
       matrix:
         python-version: [3.x]
         node-version: [16.x]
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
     steps:
     - uses: actions/checkout@v3
     - name: Setup JDK 1.8
@@ -36,4 +36,4 @@ jobs:
     - name: Build and Test with Gradle
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: test -i --tests="org.arl.fjage.test.fjagejsTest"
+        arguments: test -i
