@@ -1,4 +1,4 @@
-/* fjage.js v1.13.5 */
+/* fjage.js v1.13.6 */
 
 const isBrowser =
   typeof window !== "undefined" && typeof window.document !== "undefined";
@@ -707,7 +707,10 @@ class GenericMessage extends Message {
 class Gateway {
 
   constructor(opts = {}) {
-    opts = Object.assign({}, GATEWAY_DEFAULTS, opts);
+    // Similar to Object.assign but also overwrites `undefined` and empty strings with defaults
+    for (var key in GATEWAY_DEFAULTS){
+      if (opts[key] == undefined || opts[key] === '') opts[key] = GATEWAY_DEFAULTS[key];
+    }
     var url = DEFAULT_URL;
     url.hostname = opts.hostname;
     url.port = opts.port;
@@ -725,7 +728,7 @@ class Gateway {
     this.queue = [];                      // incoming message queue
     this.connected = false;               // connection status
     this.debug = false;                   // debug info to be logged to console?
-    this.aid = new AgentID((isBrowser ? 'WebGW-' : 'NodeGW-')+_guid(4));         // gateway agent name
+    this.aid = new AgentID('gateway-'+_guid(4));         // gateway agent name
     this.connector = this._createConnector(url);
     this._addGWCache(this);
   }
