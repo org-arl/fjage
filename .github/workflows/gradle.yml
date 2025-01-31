@@ -5,6 +5,7 @@ on: [push]
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     strategy:
       matrix:
         python-version: [3.x]
@@ -17,6 +18,7 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: 8
+        cache: 'gradle'
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -29,6 +31,8 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: gateways/js
     - name: Build and Test with Gradle
       uses: gradle/gradle-build-action@v2
       with:
