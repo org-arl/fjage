@@ -450,7 +450,14 @@ describe('An AgentID setup to reject promises', function () {
 
   it('should reject the promise if asked to get the value of unknown parameter', async function () {
     const aid = new AgentID('S', false, gw);
-    await expectAsync(aid.get('k')).toBeRejected();
+    let p = aid.get('k');
+    console.log(p);
+    p.then(v => {
+      console.log(`Resolved: ${v}`);
+    }, err => {
+      console.log(`Rejected: ${err}`);
+    });
+    return expectAsync(aid.get('k')).toBeRejected();
   });
 
   it('should reject the promise if asked to set the value of unknown parameter',  async function () {
