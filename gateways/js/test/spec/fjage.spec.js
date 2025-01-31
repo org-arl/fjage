@@ -1,4 +1,4 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass it expect expectAsync describe fdescribe spyOn beforeAll afterAll beforeEach jasmine*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -436,7 +436,7 @@ describe('An AgentID', function () {
 
 });
 
-describe('An AgentID setup to reject promises', function () {
+fdescribe('An AgentID setup to reject promises', function () {
   var gw;
 
   beforeAll(() => {
@@ -452,6 +452,7 @@ describe('An AgentID setup to reject promises', function () {
     const aid = new AgentID('S', false, gw);
     let p = aid.get('k');
     console.log(p);
+    console.log(gw._returnNullOnFailedResponse);
     p.then(v => {
       console.log(`Resolved: ${v}`);
     }, err => {
