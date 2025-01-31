@@ -166,6 +166,8 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalled();
+    await delay(300);
+    gw.close();
   });
 
   it('should send a socket message of valid fjage message structure', async function() {
@@ -180,6 +182,8 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(fjageMessageChecker());
+    await delay(300);
+    gw.close();
   });
 
   it('should send correct ShellExecReq of valid fjage message structure', async function() {
@@ -194,6 +198,8 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
+    await delay(300);
+    gw.close();
   });
 
   it('should send correct ShellExecReq of valid fjage message structure created using param constructor', async function() {
@@ -206,6 +212,8 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
+    await delay(300);
+    gw.close();
   });
 
   it('should only store the latest 128 messages in the receive queue', async function() {
@@ -224,6 +232,8 @@ describe('A Gateway', function () {
       expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1);
       expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128);
     }
+    await delay(300);
+    gw.close();
   });
 
   it('should be able to send and receive many messages asynchronously', async function() {
@@ -250,6 +260,8 @@ describe('A Gateway', function () {
       }
     }
     expect(rxed.filter(r => !r).length).toBe(0);
+    await delay(300);
+    gw.close();
   });
 
   it('should update the connected property when the underlying transport is disconnected/reconnected', async function() {
@@ -264,6 +276,8 @@ describe('A Gateway', function () {
     await delay(1000);
     expect(gw.connected).toBe(true);
     gw.connector._reconnectTime = 5000;
+    await delay(300);
+    gw.close();
   });
 
   it('should generate trigger connListener when the underlying transport is disconnected/reconnected', async function() {
@@ -282,6 +296,8 @@ describe('A Gateway', function () {
     await delay(1000);
     expect(spy).toHaveBeenCalledWith(true);
     gw.connector._reconnectTime = 5000;
+    await delay(300);
+    gw.close();
   });
 });
 
@@ -450,14 +466,6 @@ describe('An AgentID setup to reject promises', function () {
 
   it('should reject the promise if asked to get the value of unknown parameter', async function () {
     const aid = new AgentID('S', false, gw);
-    // let p = aid.get('k');
-    // console.log(p);
-    // console.log(gw._returnNullOnFailedResponse);
-    // p.then(v => {
-    //   console.log(`Resolved: ${v}`);
-    // }, err => {
-    //   console.log(`Rejected: ${err}`);
-    // });
     return expectAsync(aid.get('k')).toBeRejected();
   });
 
