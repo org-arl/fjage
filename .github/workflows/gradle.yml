@@ -19,21 +19,21 @@ jobs:
         distribution: 'temurin'
         java-version: 8
         cache: 'gradle'
-    # - name: Setup Python ${{ matrix.python-version }}
-    #   uses: actions/setup-python@v4
-    #   with:
-    #     python-version: ${{ matrix.python-version }}
-    # - name: Install Python dependencies
-    #   run: |
-    #     python -m pip install --upgrade pip
-    #     pip install numpy nose
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install numpy nose
     - name: Setup Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
         cache-dependency-path: gateways/js
-    - name: Build and Test with Gradle
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: test -i
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+    - name: Test with Gradle
+      run: ./gradlew -i test --tests="org.arl.fjage.test.fjagejsTest"
