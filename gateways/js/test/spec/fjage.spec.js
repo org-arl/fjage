@@ -537,6 +537,13 @@ describe('A MessageClass', function () {
       expect(nm instanceof ParentMessage).toBeTruthy();
     }).not.toThrow();
   });
+
+  it('should make sure that a MessageClass name that ends with Req has a perf of REQUEST', function () {
+    let msgName = 'NewReq';
+    const NewReq = MessageClass(msgName);
+    let nr = new NewReq();
+    expect(nr.perf).toEqual(Performative.REQUEST);
+  });
 });
 
 describe('Shell GetFile/PutFile', function () {

@@ -955,6 +955,7 @@ export function MessageClass(name, parent=Message) {
           this[k] = params[k];
         }
       }
+      if (name.endsWith('Req')) this.perf = Performative.REQUEST;
     }
   };
   cls.__clazz__ = name;
