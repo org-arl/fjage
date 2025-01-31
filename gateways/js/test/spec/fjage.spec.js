@@ -806,14 +806,15 @@ const autoReporter = {
   },
 
   jasmineDone: async function(result){
-    var trace = '';
-    for(var i = 0; i < failedSpecs.length; i++) {
-      trace += 'Failed : ' + failedSpecs[i].fullName + '\n';
-      for (var j = 0; j < failedSpecs[i].failedExpectations.length; j++){
-        trace += failedSpecs[i].failedExpectations[j].stack + '\n';
-      }
-      trace += '\n';
-    }
+    let trace = `# ${failedSpecs.length} test(s) failed ${result.order && result.order.random ? '- with seed ' + result.order.seed : ''}\n`;
+    failedSpecs.forEach(f =>{
+      trace += `## ${f.fullName}\n`;
+      f.failedExpectations.forEach(e => {
+        trace += `### ${e.message}\n`;
+        trace += e.stack;
+        trace += '\n';
+      });
+    });
     if (isBrowser){
       const params = new URLSearchParams(window.location.search);
       if (params && params.get('refresh') == 'true' && result.overallStatus == 'passed') {
