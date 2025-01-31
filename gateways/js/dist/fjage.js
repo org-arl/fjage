@@ -1,4 +1,4 @@
-/* fjage.js v1.13.6 */
+/* fjage.js v1.13.7 */
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -1330,6 +1330,7 @@
             this[k] = params[k];
           }
         }
+        if (name.endsWith('Req')) this.perf = Performative.REQUEST;
       }
     };
     cls.__clazz__ = name;

@@ -1,4 +1,4 @@
-/* fjage.js v1.13.6 */
+/* fjage.js v1.13.7 */
 
 const isBrowser =
   typeof window !== "undefined" && typeof window.document !== "undefined";
@@ -1324,6 +1324,7 @@ function MessageClass(name, parent=Message) {
           this[k] = params[k];
         }
       }
+      if (name.endsWith('Req')) this.perf = Performative.REQUEST;
     }
   };
   cls.__clazz__ = name;
