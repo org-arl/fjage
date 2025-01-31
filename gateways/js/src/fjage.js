@@ -338,7 +338,10 @@ export class GenericMessage extends Message {
 export class Gateway {
 
   constructor(opts = {}) {
-    opts = Object.assign({}, GATEWAY_DEFAULTS, opts);
+    // Similar to Object.assign but also overwrites `undefined` and empty strings with defaults
+    for (var key in GATEWAY_DEFAULTS){
+      if (opts[key] == undefined || opts[key] === '') opts[key] = GATEWAY_DEFAULTS[key];
+    }
     var url = DEFAULT_URL;
     url.hostname = opts.hostname;
     url.port = opts.port;
