@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 set(SOURCE_FILES fjage.c jsmn.c encode.c decode.c fjage.h jsmn.h)
 
