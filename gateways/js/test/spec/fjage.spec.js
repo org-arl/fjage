@@ -436,7 +436,7 @@ describe('An AgentID', function () {
 
 });
 
-fdescribe('An AgentID setup to reject promises', function () {
+describe('An AgentID setup to reject promises', function () {
   var gw;
 
   beforeAll(() => {
@@ -832,8 +832,8 @@ const autoReporter = {
       if (params && params.get('send') == 'false') return;
     }
     // console.log("Jasmine Result : ", result);
-    let passed = result.overallStatus == 'passed' || result.overallStatus == 'incomplete';
-    // let passed = result.overallStatus == 'passed';
+    // let passed = result.overallStatus == 'passed' || result.overallStatus == 'incomplete';
+    let passed = result.overallStatus == 'passed';
     await sendTestStatus(passed, trace, testType);
     await delay(500);
   }
