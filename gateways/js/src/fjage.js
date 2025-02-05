@@ -1085,14 +1085,9 @@ if (isBrowser || isWebWorker){
  * @exports ParameterReq.Entry
  */
 
+import { MessageClass, Message, GenericMessage, ParameterReq } from './Message.js';
+import { Gateway } from './Gateway.js';
+import { AgentID } from './AgentID.js';
+import { Services } from './Services.js';
 
-/**
- * A message that requests one or more parameters of an agent.
- * @typedef {Message} ParameterReq
- * @property {string} param - parameters name to be get/set if only a single parameter is to be get/set
- * @property {Object} value - parameters value to be set if only a single parameter is to be set
- * @property {Array<ParameterReq.Entry>} requests - a list of multiple parameters to be get/set
- * @property {number} [index=-1] - index of parameter(s) to be set
- * @exports ParameterReq
- */
-export const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
+export { Gateway, AgentID, Message, MessageClass, GenericMessage, Services, ParameterReq};

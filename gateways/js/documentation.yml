@@ -1,0 +1,16 @@
+toc:
+  - name : Gateway
+    description: |
+      The Gateway is a JavaScript object that provides a way to interact with the
+      Fjåge Containers
+  - name : AgentID
+    description: |
+      The AgentID is a JavaScript object that represents the unique identifier of an agent
+  - name : Message
+    description: |
+      The Message is a JavaScript object that represents a message that can be sent to an agent
+  - MessageClass
+  - Services
+  - Performative
+  - ParameterReq
+  - ParameterReq.Entry
