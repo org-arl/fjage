@@ -15,7 +15,7 @@
     "build": "eslint src/*.js && tsc && rollup --silent -c rollup.config.js",
     "pretest": "playwright install --with-deps && node test/spec/create-spec.cjs",
     "test": "node test/run-tests.cjs",
-    "docs": "documentation build src/Gateway.js src/Message.js src/AgentID.js src/Performative.js src/Services.js --config documentation.yml -f html --github --document-exported -o ../../docs/jsdoc",
+    "docs": "documentation build src/gateway.js src/message.js src/agentID.js src/performative.js src/services.js --config documentation.yml -f html --github --document-exported -o ../../docs/jsdoc",
     "clean": "rimraf -rf dist/"
   },
   "repository": {

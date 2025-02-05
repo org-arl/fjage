@@ -1,21 +1,21 @@
 const DEFAULT_RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
 
 /**
- * @class
- * @ignore
- */
+* @class
+* @ignore
+*/
 class WSConnector {
 
   /**
-   * Create an WSConnector to connect to a fjage master over WebSockets
-   * @param {Object} opts
-   * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
-   * @param {number} [opts.port=80] - port number of the master container to connect to
-   * @param {string} [opts.pathname="/"] - path of the master container to connect to
-   * @param {boolean} [opts.keepAlive=true] - try to reconnect if the connection is lost
-   * @param {boolean} [opts.debug=false] - debug info to be logged to console?
-   * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
-   */
+  * Create an WSConnector to connect to a fjage master over WebSockets
+  * @param {Object} opts
+  * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
+  * @param {number} [opts.port=80] - port number of the master container to connect to
+  * @param {string} [opts.pathname="/"] - path of the master container to connect to
+  * @param {boolean} [opts.keepAlive=true] - try to reconnect if the connection is lost
+  * @param {boolean} [opts.debug=false] - debug info to be logged to console?
+  * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
+  */
   constructor(opts = {}) {
     let host = opts.hostname || 'localhost';
     let port = opts.port || 80;
@@ -80,9 +80,9 @@ class WSConnector {
   }
 
   /**
-   * Write a string to the connector
-   * @param {string} s - string to be written out of the connector to the master
-   */
+  * Write a string to the connector
+  * @param {string} s - string to be written out of the connector to the master
+  */
   write(s){
     if (!this.sock || this.sock.readyState == this.sock.CONNECTING){
       this.pendingOnOpen.push(() => {
@@ -97,33 +97,33 @@ class WSConnector {
   }
 
   /**
-   * @callback WSConnectorReadCallback
-   * @ignore
-   * @param {string} s - incoming message string
-   */
+  * @callback WSConnectorReadCallback
+  * @ignore
+  * @param {string} s - incoming message string
+  */
 
   /**
-   * Set a callback for receiving incoming strings from the connector
-   * @param {WSConnectorReadCallback} cb - callback that is called when the connector gets a string
-   * @ignore
-   */
+  * Set a callback for receiving incoming strings from the connector
+  * @param {WSConnectorReadCallback} cb - callback that is called when the connector gets a string
+  * @ignore
+  */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onWebsockRx = cb;
   }
 
   /**
-   * Add listener for connection events
-   * @param {function} listener - a listener callback that is called when the connection is opened/closed
-   */
+  * Add listener for connection events
+  * @param {function} listener - a listener callback that is called when the connection is opened/closed
+  */
   addConnectionListener(listener){
     this.connListeners.push(listener);
   }
 
   /**
-   * Remove listener for connection events
-   * @param {function} listener - remove the listener for connection
-   * @return {boolean} - true if the listner was removed successfully
-   */
+  * Remove listener for connection events
+  * @param {function} listener - remove the listener for connection
+  * @return {boolean} - true if the listner was removed successfully
+  */
   removeConnectionListener(listener) {
     let ndx = this.connListeners.indexOf(listener);
     if (ndx >= 0) {
@@ -134,8 +134,8 @@ class WSConnector {
   }
 
   /**
-   * Close the connector
-   */
+  * Close the connector
+  */
   close(){
     if (!this.sock) return;
     if (this.sock.readyState == this.sock.CONNECTING) {
