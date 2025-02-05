@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset='utf-8'>
-  <title>fjage 1.13.5 | Documentation</title>
+  <title>fjage 1.13.7 | Documentation</title>
   <meta name='description' content='JS Gateway for fjåge'>
   <meta name='viewport' content='width=device-width,initial-scale=1'>
   <link href='assets/bass.css' rel='stylesheet'>
@@ -15,7 +15,7 @@
       <div id='split-left' class='overflow-auto fs0 height-viewport-100'>
         <div class='py1 px2'>
           <h3 class='mb0 no-anchor'>fjage</h3>
-          <div class='mb1'><code>1.13.5</code></div>
+          <div class='mb1'><code>1.13.7</code></div>
           <input
             placeholder='Filter'
             id='filter-input'
@@ -26,6 +26,524 @@
             type='text' />
           <div id='toc'>
             <ul class='list-reset h5 py1-ul'>
+              
+                
+                <li><a
+                  href='#gateway'
+                  class="h5 bold black caps toggle-sibling">
+                  Gateway
+                  <span class='icon'>▸</span>
+                </a>
+                
+                <div class='toggle-target display-none'>
+                  
+                  
+                    <ul class='list-reset py1-ul pl1'>
+                      <li class='h5'><span>Instance members</span></li>
+                      
+                      <li><a
+                        href='#addeventlistener'
+                        class='regular pre-open'>
+                        #addEventListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#removeeventlistener'
+                        class='regular pre-open'>
+                        #removeEventListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#addmessagelistener'
+                        class='regular pre-open'>
+                        #addMessageListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#removemessagelistener'
+                        class='regular pre-open'>
+                        #removeMessageListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#addconnlistener'
+                        class='regular pre-open'>
+                        #addConnListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#removeconnlistener'
+                        class='regular pre-open'>
+                        #removeConnListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#getagentid'
+                        class='regular pre-open'>
+                        #getAgentID
+                      </a></li>
+                      
+                      <li><a
+                        href='#agent'
+                        class='regular pre-open'>
+                        #agent
+                      </a></li>
+                      
+                      <li><a
+                        href='#topic'
+                        class='regular pre-open'>
+                        #topic
+                      </a></li>
+                      
+                      <li><a
+                        href='#subscribe'
+                        class='regular pre-open'>
+                        #subscribe
+                      </a></li>
+                      
+                      <li><a
+                        href='#unsubscribe'
+                        class='regular pre-open'>
+                        #unsubscribe
+                      </a></li>
+                      
+                      <li><a
+                        href='#agents'
+                        class='regular pre-open'>
+                        #agents
+                      </a></li>
+                      
+                      <li><a
+                        href='#containsagent'
+                        class='regular pre-open'>
+                        #containsAgent
+                      </a></li>
+                      
+                      <li><a
+                        href='#agentforservice'
+                        class='regular pre-open'>
+                        #agentForService
+                      </a></li>
+                      
+                      <li><a
+                        href='#agentsforservice'
+                        class='regular pre-open'>
+                        #agentsForService
+                      </a></li>
+                      
+                      <li><a
+                        href='#send'
+                        class='regular pre-open'>
+                        #send
+                      </a></li>
+                      
+                      <li><a
+                        href='#flush'
+                        class='regular pre-open'>
+                        #flush
+                      </a></li>
+                      
+                      <li><a
+                        href='#request'
+                        class='regular pre-open'>
+                        #request
+                      </a></li>
+                      
+                      <li><a
+                        href='#receive'
+                        class='regular pre-open'>
+                        #receive
+                      </a></li>
+                      
+                      <li><a
+                        href='#close'
+                        class='regular pre-open'>
+                        #close
+                      </a></li>
+                      
+                    </ul>
+                  
+                  
+                  
+                </div>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#gateway'
+                  class=" toggle-sibling">
+                  Gateway
+                  <span class='icon'>▸</span>
+                </a>
+                
+                <div class='toggle-target display-none'>
+                  
+                  
+                    <ul class='list-reset py1-ul pl1'>
+                      <li class='h5'><span>Instance members</span></li>
+                      
+                      <li><a
+                        href='#addeventlistener'
+                        class='regular pre-open'>
+                        #addEventListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#removeeventlistener'
+                        class='regular pre-open'>
+                        #removeEventListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#addmessagelistener'
+                        class='regular pre-open'>
+                        #addMessageListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#removemessagelistener'
+                        class='regular pre-open'>
+                        #removeMessageListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#addconnlistener'
+                        class='regular pre-open'>
+                        #addConnListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#removeconnlistener'
+                        class='regular pre-open'>
+                        #removeConnListener
+                      </a></li>
+                      
+                      <li><a
+                        href='#getagentid'
+                        class='regular pre-open'>
+                        #getAgentID
+                      </a></li>
+                      
+                      <li><a
+                        href='#agent'
+                        class='regular pre-open'>
+                        #agent
+                      </a></li>
+                      
+                      <li><a
+                        href='#topic'
+                        class='regular pre-open'>
+                        #topic
+                      </a></li>
+                      
+                      <li><a
+                        href='#subscribe'
+                        class='regular pre-open'>
+                        #subscribe
+                      </a></li>
+                      
+                      <li><a
+                        href='#unsubscribe'
+                        class='regular pre-open'>
+                        #unsubscribe
+                      </a></li>
+                      
+                      <li><a
+                        href='#agents'
+                        class='regular pre-open'>
+                        #agents
+                      </a></li>
+                      
+                      <li><a
+                        href='#containsagent'
+                        class='regular pre-open'>
+                        #containsAgent
+                      </a></li>
+                      
+                      <li><a
+                        href='#agentforservice'
+                        class='regular pre-open'>
+                        #agentForService
+                      </a></li>
+                      
+                      <li><a
+                        href='#agentsforservice'
+                        class='regular pre-open'>
+                        #agentsForService
+                      </a></li>
+                      
+                      <li><a
+                        href='#send'
+                        class='regular pre-open'>
+                        #send
+                      </a></li>
+                      
+                      <li><a
+                        href='#flush'
+                        class='regular pre-open'>
+                        #flush
+                      </a></li>
+                      
+                      <li><a
+                        href='#request'
+                        class='regular pre-open'>
+                        #request
+                      </a></li>
+                      
+                      <li><a
+                        href='#receive'
+                        class='regular pre-open'>
+                        #receive
+                      </a></li>
+                      
+                      <li><a
+                        href='#close'
+                        class='regular pre-open'>
+                        #close
+                      </a></li>
+                      
+                    </ul>
+                  
+                  
+                  
+                </div>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#agentid'
+                  class="h5 bold black caps toggle-sibling">
+                  AgentID
+                  <span class='icon'>▸</span>
+                </a>
+                
+                <div class='toggle-target display-none'>
+                  
+                  
+                    <ul class='list-reset py1-ul pl1'>
+                      <li class='h5'><span>Instance members</span></li>
+                      
+                      <li><a
+                        href='#getname'
+                        class='regular pre-open'>
+                        #getName
+                      </a></li>
+                      
+                      <li><a
+                        href='#istopic'
+                        class='regular pre-open'>
+                        #isTopic
+                      </a></li>
+                      
+                      <li><a
+                        href='#send'
+                        class='regular pre-open'>
+                        #send
+                      </a></li>
+                      
+                      <li><a
+                        href='#request'
+                        class='regular pre-open'>
+                        #request
+                      </a></li>
+                      
+                      <li><a
+                        href='#tostring'
+                        class='regular pre-open'>
+                        #toString
+                      </a></li>
+                      
+                      <li><a
+                        href='#tojson'
+                        class='regular pre-open'>
+                        #toJSON
+                      </a></li>
+                      
+                      <li><a
+                        href='#set'
+                        class='regular pre-open'>
+                        #set
+                      </a></li>
+                      
+                      <li><a
+                        href='#get'
+                        class='regular pre-open'>
+                        #get
+                      </a></li>
+                      
+                    </ul>
+                  
+                  
+                  
+                </div>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#agentid'
+                  class=" toggle-sibling">
+                  AgentID
+                  <span class='icon'>▸</span>
+                </a>
+                
+                <div class='toggle-target display-none'>
+                  
+                  
+                    <ul class='list-reset py1-ul pl1'>
+                      <li class='h5'><span>Instance members</span></li>
+                      
+                      <li><a
+                        href='#getname'
+                        class='regular pre-open'>
+                        #getName
+                      </a></li>
+                      
+                      <li><a
+                        href='#istopic'
+                        class='regular pre-open'>
+                        #isTopic
+                      </a></li>
+                      
+                      <li><a
+                        href='#send'
+                        class='regular pre-open'>
+                        #send
+                      </a></li>
+                      
+                      <li><a
+                        href='#request'
+                        class='regular pre-open'>
+                        #request
+                      </a></li>
+                      
+                      <li><a
+                        href='#tostring'
+                        class='regular pre-open'>
+                        #toString
+                      </a></li>
+                      
+                      <li><a
+                        href='#tojson'
+                        class='regular pre-open'>
+                        #toJSON
+                      </a></li>
+                      
+                      <li><a
+                        href='#set'
+                        class='regular pre-open'>
+                        #set
+                      </a></li>
+                      
+                      <li><a
+                        href='#get'
+                        class='regular pre-open'>
+                        #get
+                      </a></li>
+                      
+                    </ul>
+                  
+                  
+                  
+                </div>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#message'
+                  class="h5 bold black caps toggle-sibling">
+                  Message
+                  <span class='icon'>▸</span>
+                </a>
+                
+                <div class='toggle-target display-none'>
+                  
+                  
+                    <ul class='list-reset py1-ul pl1'>
+                      <li class='h5'><span>Instance members</span></li>
+                      
+                      <li><a
+                        href='#tostring'
+                        class='regular pre-open'>
+                        #toString
+                      </a></li>
+                      
+                    </ul>
+                  
+                  
+                  
+                </div>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#message'
+                  class=" toggle-sibling">
+                  Message
+                  <span class='icon'>▸</span>
+                </a>
+                
+                <div class='toggle-target display-none'>
+                  
+                  
+                    <ul class='list-reset py1-ul pl1'>
+                      <li class='h5'><span>Instance members</span></li>
+                      
+                      <li><a
+                        href='#tostring'
+                        class='regular pre-open'>
+                        #toString
+                      </a></li>
+                      
+                    </ul>
+                  
+                  
+                  
+                </div>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#messageclass'
+                  class="">
+                  MessageClass
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#services'
+                  class=" toggle-sibling">
+                  Services
+                  <span class='icon'>▸</span>
+                </a>
+                
+                <div class='toggle-target display-none'>
+                  
+                  <ul class='list-reset py1-ul pl1'>
+                    <li class='h5'><span>Static members</span></li>
+                    
+                      <li><a
+                        href='#servicesshell'
+                        class='regular pre-open'>
+                        .SHELL
+                      </a></li>
+                    
+                    </ul>
+                  
+                  
+                  
+                  
+                </div>
+                
+                </li>
               
                 
                 <li><a
@@ -123,287 +641,9 @@
               
                 
                 <li><a
-                  href='#agentid'
-                  class=" toggle-sibling">
-                  AgentID
-                  <span class='icon'>▸</span>
-                </a>
-                
-                <div class='toggle-target display-none'>
-                  
-                  
-                    <ul class='list-reset py1-ul pl1'>
-                      <li class='h5'><span>Instance members</span></li>
-                      
-                      <li><a
-                        href='#agentidgetname'
-                        class='regular pre-open'>
-                        #getName
-                      </a></li>
-                      
-                      <li><a
-                        href='#agentidistopic'
-                        class='regular pre-open'>
-                        #isTopic
-                      </a></li>
-                      
-                      <li><a
-                        href='#agentidsend'
-                        class='regular pre-open'>
-                        #send
-                      </a></li>
-                      
-                      <li><a
-                        href='#agentidrequest'
-                        class='regular pre-open'>
-                        #request
-                      </a></li>
-                      
-                      <li><a
-                        href='#agentidtostring'
-                        class='regular pre-open'>
-                        #toString
-                      </a></li>
-                      
-                      <li><a
-                        href='#agentidtojson'
-                        class='regular pre-open'>
-                        #toJSON
-                      </a></li>
-                      
-                      <li><a
-                        href='#agentidset'
-                        class='regular pre-open'>
-                        #set
-                      </a></li>
-                      
-                      <li><a
-                        href='#agentidget'
-                        class='regular pre-open'>
-                        #get
-                      </a></li>
-                      
-                    </ul>
-                  
-                  
-                  
-                </div>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#message'
-                  class=" toggle-sibling">
-                  Message
-                  <span class='icon'>▸</span>
-                </a>
-                
-                <div class='toggle-target display-none'>
-                  
-                  
-                    <ul class='list-reset py1-ul pl1'>
-                      <li class='h5'><span>Instance members</span></li>
-                      
-                      <li><a
-                        href='#messagetostring'
-                        class='regular pre-open'>
-                        #toString
-                      </a></li>
-                      
-                    </ul>
-                  
-                  
-                  
-                </div>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#genericmessage'
+                  href='#parameterreq'
                   class="">
-                  GenericMessage
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#gateway'
-                  class=" toggle-sibling">
-                  Gateway
-                  <span class='icon'>▸</span>
-                </a>
-                
-                <div class='toggle-target display-none'>
-                  
-                  
-                    <ul class='list-reset py1-ul pl1'>
-                      <li class='h5'><span>Instance members</span></li>
-                      
-                      <li><a
-                        href='#gatewayaddeventlistener'
-                        class='regular pre-open'>
-                        #addEventListener
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayremoveeventlistener'
-                        class='regular pre-open'>
-                        #removeEventListener
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayaddmessagelistener'
-                        class='regular pre-open'>
-                        #addMessageListener
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayremovemessagelistener'
-                        class='regular pre-open'>
-                        #removeMessageListener
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayaddconnlistener'
-                        class='regular pre-open'>
-                        #addConnListener
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayremoveconnlistener'
-                        class='regular pre-open'>
-                        #removeConnListener
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewaygetagentid'
-                        class='regular pre-open'>
-                        #getAgentID
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayagent'
-                        class='regular pre-open'>
-                        #agent
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewaytopic'
-                        class='regular pre-open'>
-                        #topic
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewaysubscribe'
-                        class='regular pre-open'>
-                        #subscribe
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayunsubscribe'
-                        class='regular pre-open'>
-                        #unsubscribe
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayagents'
-                        class='regular pre-open'>
-                        #agents
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewaycontainsagent'
-                        class='regular pre-open'>
-                        #containsAgent
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayagentforservice'
-                        class='regular pre-open'>
-                        #agentForService
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayagentsforservice'
-                        class='regular pre-open'>
-                        #agentsForService
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewaysend'
-                        class='regular pre-open'>
-                        #send
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayflush'
-                        class='regular pre-open'>
-                        #flush
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayrequest'
-                        class='regular pre-open'>
-                        #request
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayreceive'
-                        class='regular pre-open'>
-                        #receive
-                      </a></li>
-                      
-                      <li><a
-                        href='#gatewayclose'
-                        class='regular pre-open'>
-                        #close
-                      </a></li>
-                      
-                    </ul>
-                  
-                  
-                  
-                </div>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#services'
-                  class=" toggle-sibling">
-                  Services
-                  <span class='icon'>▸</span>
-                </a>
-                
-                <div class='toggle-target display-none'>
-                  
-                  <ul class='list-reset py1-ul pl1'>
-                    <li class='h5'><span>Static members</span></li>
-                    
-                      <li><a
-                        href='#servicesshell'
-                        class='regular pre-open'>
-                        .SHELL
-                      </a></li>
-                    
-                    </ul>
-                  
-                  
-                  
-                  
-                </div>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#messageclass'
-                  class="">
-                  MessageClass
+                  ParameterReq
                   
                 </a>
                 
@@ -421,9 +661,19 @@
               
                 
                 <li><a
-                  href='#parameterreq'
+                  href='#genericmessage'
                   class="">
-                  ParameterReq
+                  GenericMessage
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#createjsonmessage'
+                  class="">
+                  createJSONMessage
                   
                 </a>
                 
@@ -439,1691 +689,18 @@
       <div id='split-right' class='relative overflow-auto height-viewport-100'>
         
           
-          <section class='p2 mb2 clearfix bg-white minishadow'>
+            <div class='keyline-top-not py2'><section class='py2 clearfix'>
 
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='performative'>
-      Performative
-    </h3>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L14-L27'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>An action represented by a message. The performative actions are a subset of the
-FIPA ACL recommendations for interagent communication.</p>
-
-    <div class='pre p1 fill-light mt0'>Performative</div>
-  
-    <p>
-      Type:
-      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>
-    </p>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Static Members</div>
-    <div class="clearfix">
-  
-    <div class='border-bottom' id='performativerequest'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>REQUEST</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L15-L15'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>REQUEST</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='performativeagree'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>AGREE</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L16-L16'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>AGREE</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='performativerefuse'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>REFUSE</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L17-L17'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>REFUSE</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='performativefailure'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>FAILURE</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L18-L18'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>FAILURE</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='performativeinform'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>INFORM</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L19-L19'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>INFORM</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='performativeconfirm'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>CONFIRM</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L20-L20'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>CONFIRM</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='performativedisconfirm'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>DISCONFIRM</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L21-L21'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>DISCONFIRM</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='performativequery_if'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>QUERY_IF</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L22-L22'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>QUERY_IF</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='performativenot_understood'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>NOT_UNDERSTOOD</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L23-L23'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>NOT_UNDERSTOOD</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='performativecfp'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>CFP</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L24-L24'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>CFP</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='performativepropose'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>PROPOSE</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L25-L25'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>PROPOSE</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='performativecancel'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>CANCEL</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L26-L26'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>CANCEL</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-</div>
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-          <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='agentid'>
-      AgentID
-    </h3>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L36-L199'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>An identifier for an agent or a topic.</p>
-
-    <div class='pre p1 fill-light mt0'>new AgentID(name: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, topic: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>, owner: <a href="#gateway">Gateway</a>?)</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>name</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-	    name of the agent
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>topic</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>
-            = <code>false</code>)</code>
-	    name of topic
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>owner</span> <code class='quiet'>(<a href="#gateway">Gateway</a>?)</code>
-	    Gateway owner for this AgentID
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
-    <div class="clearfix">
-  
-    <div class='border-bottom' id='agentidgetname'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getName()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L50-L52'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>Gets the name of the agent or topic.</p>
-
-    <div class='pre p1 fill-light mt0'>getName(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>:
-        name of agent or topic
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='agentidistopic'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>isTopic()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L59-L61'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>Returns true if the agent id represents a topic.</p>
-
-    <div class='pre p1 fill-light mt0'>isTopic(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>:
-        true if the agent id represents a topic, false if it represents an agent
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='agentidsend'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>send(msg)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L69-L73'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>Sends a message to the agent represented by this id.</p>
-
-    <div class='pre p1 fill-light mt0'>send(msg: <a href="#message">Message</a>): void</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>msg</span> <code class='quiet'>(<a href="#message">Message</a>)</code>
-	    message to send
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>void</code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='agentidrequest'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>request(msg, timeout)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L82-L86'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>Sends a request to the agent represented by this id and waits for a reponse.</p>
-
-    <div class='pre p1 fill-light mt0'>request(msg: <a href="#message">Message</a>, timeout: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="#message">Message</a>></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>msg</span> <code class='quiet'>(<a href="#message">Message</a>)</code>
-	    request to send
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>timeout</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>
-            = <code>1000</code>)</code>
-	    timeout in milliseconds
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="#message">Message</a>></code>:
-        response
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='agentidtostring'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>toString()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L93-L95'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>Gets a string representation of the agent id.</p>
-
-    <div class='pre p1 fill-light mt0'>toString(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>:
-        string representation of the agent id
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='agentidtojson'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>toJSON()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L102-L104'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>Gets a JSON string representation of the agent id.</p>
-
-    <div class='pre p1 fill-light mt0'>toJSON(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>:
-        JSON string representation of the agent id
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='agentidset'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>set(params, values, index, timeout)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L115-L152'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>Sets parameter(s) on the Agent referred to by this AgentID.</p>
-
-    <div class='pre p1 fill-light mt0'>set(params: (<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>>), values: (<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>>), index: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, timeout: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>>)></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>params</span> <code class='quiet'>((<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>>))</code>
-	    parameters name(s) to be set
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>values</span> <code class='quiet'>((<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>>))</code>
-	    parameters value(s) to be set
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>index</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>
-            = <code>-1</code>)</code>
-	    index of parameter(s) to be set
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>timeout</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>
-            = <code>5000</code>)</code>
-	    timeout for the response
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>>)></code>:
-        a promise which returns the new value(s) of the parameters
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='agentidget'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>get(params, index, timeout)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L163-L198'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>Gets parameter(s) on the Agent referred to by this AgentID.</p>
-
-    <div class='pre p1 fill-light mt0'>get(params: any, index: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, timeout: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>params</span> <code class='quiet'>(any)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>index</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>
-            = <code>-1</code>)</code>
-	    index of parameter(s) to be get
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>timeout</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>
-            = <code>5000</code>)</code>
-	    timeout for the response
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-</div>
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-          <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='message'>
-      Message
-    </h3>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L207-L294'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>Base class for messages transmitted by one agent to another. Creates an empty message.</p>
-
-    <div class='pre p1 fill-light mt0'>new Message(inReplyTo: <a href="#message">Message</a>?, perf: <a href="#performative">Performative</a>)</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>inReplyTo</span> <code class='quiet'>(<a href="#message">Message</a>?
-            = <code>{msgID:null,sender:null}</code>)</code>
-	    message to which this response corresponds to
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>perf</span> <code class='quiet'>(<a href="#performative">Performative</a>
-            = <code>Performative.INFORM</code>)</code>
-	    performative
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
-    <div class="clearfix">
-  
-    <div class='border-bottom' id='messagetostring'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>toString()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L223-L245'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>Gets a string representation of the message.</p>
-
-    <div class='pre p1 fill-light mt0'>toString(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>:
-        string representation
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-</div>
-
-  
-
-  
-
-  
-</section>
+  <h2 id='gateway' class='mt0'>
+    Gateway
+  </h2>
 
-          
-        
-          
-          <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='genericmessage'>
-      GenericMessage
-    </h3>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L301-L309'>
-      <span>gateways/js/src/fjage.js</span>
-      </a>
-    
-  </div>
-  
-
-  <p>A message class that can convey generic messages represented by key-value pairs.</p>
-
-    <div class='pre p1 fill-light mt0'>new GenericMessage()</div>
-  
-  
-    <p>
-      Extends
-      
-        <a href="#message">Message</a>
-      
-    </p>
-  
-
-  
-  
-  
-  
-  
-  
-
   
+    <p>The Gateway is a JavaScript object that provides a way to interact with the
+Fjåge Containers</p>
 
   
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
+</section></div>
           
         
           
@@ -2137,15 +714,15 @@ FIPA ACL recommendations for interagent communication.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L326-L909'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L70-L656'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
   
 
   <p>A gateway for connecting to a fjage master container. The new version of the constructor
-uses an options object instead of individual parameters. The old version with</p>
+uses an options object instead of individual parameters.</p>
 
     <div class='pre p1 fill-light mt0'>new Gateway(opts: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</div>
   
@@ -2276,6 +853,17 @@ uses an options object instead of individual parameters. The old version with</p
   
 
   
+    <div class='py1 quiet mt1 prose-big'>Example</div>
+    
+      <p><p>Connects to the localhost:1100</p>
+</p>
+      <pre class='p1 overflow-auto round fill-light'><span class="hljs-keyword">const</span> gw = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Gateway</span>({ <span class="hljs-attr">hostname</span>: <span class="hljs-string">&#x27;localhost&#x27;</span>, <span class="hljs-attr">port</span>: <span class="hljs-number">1100</span> });</pre>
+    
+      <p><p>Connects to the origin</p>
+</p>
+      <pre class='p1 overflow-auto round fill-light'><span class="hljs-keyword">const</span> gw = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Gateway</span>();</pre>
+    
+  
 
   
 
@@ -2283,7 +871,7 @@ uses an options object instead of individual parameters. The old version with</p
     <div class='py1 quiet mt1 prose-big'>Instance Members</div>
     <div class="clearfix">
   
-    <div class='border-bottom' id='gatewayaddeventlistener'>
+    <div class='border-bottom' id='addeventlistener'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -2297,8 +885,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L636-L641'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L383-L388'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -2371,7 +959,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayremoveeventlistener'>
+    <div class='border-bottom' id='removeeventlistener'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -2385,8 +973,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L650-L654'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L397-L401'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -2459,7 +1047,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayaddmessagelistener'>
+    <div class='border-bottom' id='addmessagelistener'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -2473,8 +1061,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L662-L664'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L409-L411'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -2538,7 +1126,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayremovemessagelistener'>
+    <div class='border-bottom' id='removemessagelistener'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -2552,8 +1140,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L672-L674'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L419-L421'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -2617,7 +1205,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayaddconnlistener'>
+    <div class='border-bottom' id='addconnlistener'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -2631,8 +1219,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L682-L684'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L429-L431'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -2696,7 +1284,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayremoveconnlistener'>
+    <div class='border-bottom' id='removeconnlistener'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -2710,8 +1298,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L692-L694'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L439-L441'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -2775,7 +1363,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewaygetagentid'>
+    <div class='border-bottom' id='getagentid'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -2789,8 +1377,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L701-L703'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L448-L450'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -2841,7 +1429,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayagent'>
+    <div class='border-bottom' id='agent'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -2855,8 +1443,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L711-L713'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L458-L460'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -2921,11 +1509,11 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewaytopic'>
+    <div class='border-bottom' id='topic'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>topic(topic, topic2)</span>
+            <span class='code strong strong truncate'>topic(topic, topic2?)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -2935,8 +1523,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L722-L728'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L469-L475'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -2944,7 +1532,7 @@ uses an options object instead of individual parameters. The old version with</p
 
   <p>Returns an object representing the named topic.</p>
 
-    <div class='pre p1 fill-light mt0'>topic(topic: (<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a> | <a href="#agentid">AgentID</a>), topic2: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): <a href="#agentid">AgentID</a></div>
+    <div class='pre p1 fill-light mt0'>topic(topic: (<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a> | <a href="#agentid">AgentID</a>), topic2: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?): <a href="#agentid">AgentID</a></div>
   
   
 
@@ -2970,7 +1558,7 @@ uses an options object instead of individual parameters. The old version with</p
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>topic2</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+            <span class='code bold'>topic2</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
 	    name of the topic if the topic param is an AgentID
 
           </div>
@@ -3010,7 +1598,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewaysubscribe'>
+    <div class='border-bottom' id='subscribe'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -3024,8 +1612,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L736-L741'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L483-L488'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -3090,7 +1678,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayunsubscribe'>
+    <div class='border-bottom' id='unsubscribe'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -3104,8 +1692,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L749-L753'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L496-L500'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -3169,7 +1757,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayagents'>
+    <div class='border-bottom' id='agents'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -3183,8 +1771,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L759-L764'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L506-L511'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -3235,7 +1823,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewaycontainsagent'>
+    <div class='border-bottom' id='containsagent'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -3249,8 +1837,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L772-L777'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L519-L524'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -3315,7 +1903,7 @@ uses an options object instead of individual parameters. The old version with</p
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayagentforservice'>
+    <div class='border-bottom' id='agentforservice'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -3329,8 +1917,8 @@ uses an options object instead of individual parameters. The old version with</p
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L786-L795'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L533-L542'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -3396,7 +1984,7 @@ to provide a given service, any of the agents' id may be returned.</p>
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayagentsforservice'>
+    <div class='border-bottom' id='agentsforservice'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -3410,8 +1998,8 @@ to provide a given service, any of the agents' id may be returned.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L803-L815'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L550-L562'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -3468,7 +2056,7 @@ to provide a given service, any of the agents' id may be returned.</p>
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewaysend'>
+    <div class='border-bottom' id='send'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -3482,8 +2070,8 @@ to provide a given service, any of the agents' id may be returned.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L824-L835'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L571-L582'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -3549,7 +2137,7 @@ may be an agent or a topic.</p>
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayflush'>
+    <div class='border-bottom' id='flush'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -3563,8 +2151,8 @@ may be an agent or a topic.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L842-L844'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L589-L591'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -3614,7 +2202,7 @@ may be an agent or a topic.</p>
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayrequest'>
+    <div class='border-bottom' id='request'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -3628,8 +2216,8 @@ may be an agent or a topic.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L854-L857'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L601-L604'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -3705,7 +2293,7 @@ is received or if no response is received after the timeout.</p>
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayreceive'>
+    <div class='border-bottom' id='receive'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -3719,8 +2307,8 @@ is received or if no response is received after the timeout.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L868-L897'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L615-L644'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -3795,7 +2383,7 @@ a response is received or if no response is received after the timeout.</p>
       </div>
     </div>
   
-    <div class='border-bottom' id='gatewayclose'>
+    <div class='border-bottom' id='close'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -3809,8 +2397,8 @@ a response is received or if no response is received after the timeout.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L904-L907'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Gateway.js#L651-L654'>
+      <span>gateways/js/src/Gateway.js</span>
       </a>
     
   </div>
@@ -3873,38 +2461,83 @@ this method is called.</p>
           
         
           
+            <div class='keyline-top-not py2'><section class='py2 clearfix'>
+
+  <h2 id='agentid' class='mt0'>
+    AgentID
+  </h2>
+
+  
+    <p>The AgentID is a JavaScript object that represents the unique identifier of an agent</p>
+
+  
+</section></div>
+          
+        
+          
           <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
   <div class='clearfix'>
     
-    <h3 class='fl m0' id='services'>
-      Services
+    <h3 class='fl m0' id='agentid'>
+      AgentID
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L914-L916'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/AgentID.js#L12-L174'>
+      <span>gateways/js/src/AgentID.js</span>
       </a>
     
   </div>
   
 
-  <p>Services supported by fjage agents.</p>
+  <p>An identifier for an agent or a topic.</p>
 
-    <div class='pre p1 fill-light mt0'>Services</div>
-  
-  
-
-  
-  
-  
-  
+    <div class='pre p1 fill-light mt0'>new AgentID(name: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, topic: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>, owner: <a href="#gateway">Gateway</a>?)</div>
   
   
 
   
+  
+  
+  
+  
+  
 
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>name</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    name of the agent
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>topic</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>
+            = <code>false</code>)</code>
+	    name of topic
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>owner</span> <code class='quiet'>(<a href="#gateway">Gateway</a>?)</code>
+	    Gateway owner for this AgentID
+
+          </div>
+          
+        </div>
+      
+    </div>
   
 
   
@@ -3916,14 +2549,18 @@ this method is called.</p>
   
 
   
-    <div class='py1 quiet mt1 prose-big'>Static Members</div>
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
     <div class="clearfix">
   
-    <div class='border-bottom' id='servicesshell'>
+    <div class='border-bottom' id='getname'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>SHELL</span>
+            <span class='code strong strong truncate'>getName()</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -3933,15 +2570,16 @@ this method is called.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L915-L915'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/AgentID.js#L25-L27'>
+      <span>gateways/js/src/AgentID.js</span>
       </a>
     
   </div>
   
 
-  
-    <div class='pre p1 fill-light mt0'>SHELL</div>
+  <p>Gets the name of the agent or topic.</p>
+
+    <div class='pre p1 fill-light mt0'>getName(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></div>
   
   
 
@@ -3952,6 +2590,581 @@ this method is called.</p>
   
   
 
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>:
+        name of agent or topic
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='istopic'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>isTopic()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/AgentID.js#L34-L36'>
+      <span>gateways/js/src/AgentID.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Returns true if the agent id represents a topic.</p>
+
+    <div class='pre p1 fill-light mt0'>isTopic(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>:
+        true if the agent id represents a topic, false if it represents an agent
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='send'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>send(msg)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/AgentID.js#L44-L48'>
+      <span>gateways/js/src/AgentID.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Sends a message to the agent represented by this id.</p>
+
+    <div class='pre p1 fill-light mt0'>send(msg: <a href="#message">Message</a>): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>msg</span> <code class='quiet'>(<a href="#message">Message</a>)</code>
+	    message to send
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>:
+        
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='request'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>request(msg, timeout)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/AgentID.js#L57-L61'>
+      <span>gateways/js/src/AgentID.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Sends a request to the agent represented by this id and waits for a reponse.</p>
+
+    <div class='pre p1 fill-light mt0'>request(msg: <a href="#message">Message</a>, timeout: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="#message">Message</a>></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>msg</span> <code class='quiet'>(<a href="#message">Message</a>)</code>
+	    request to send
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>timeout</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>
+            = <code>1000</code>)</code>
+	    timeout in milliseconds
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="#message">Message</a>></code>:
+        response
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='tostring'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>toString()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/AgentID.js#L68-L70'>
+      <span>gateways/js/src/AgentID.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Gets a string representation of the agent id.</p>
+
+    <div class='pre p1 fill-light mt0'>toString(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>:
+        string representation of the agent id
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='tojson'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>toJSON()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/AgentID.js#L77-L79'>
+      <span>gateways/js/src/AgentID.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Gets a JSON string representation of the agent id.</p>
+
+    <div class='pre p1 fill-light mt0'>toJSON(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>:
+        JSON string representation of the agent id
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='set'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>set(params, values, index, timeout)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/AgentID.js#L90-L127'>
+      <span>gateways/js/src/AgentID.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Sets parameter(s) on the Agent referred to by this AgentID.</p>
+
+    <div class='pre p1 fill-light mt0'>set(params: (<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>>), values: (<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>>), index: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, timeout: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>>)></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>params</span> <code class='quiet'>((<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>>))</code>
+	    parameters name(s) to be set
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>values</span> <code class='quiet'>((<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>>))</code>
+	    parameters value(s) to be set
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>index</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>
+            = <code>-1</code>)</code>
+	    index of parameter(s) to be set
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>timeout</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>
+            = <code>5000</code>)</code>
+	    timeout for the response
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>>)></code>:
+        a promise which returns the new value(s) of the parameters
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='get'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>get(params, index, timeout)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/AgentID.js#L138-L173'>
+      <span>gateways/js/src/AgentID.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Gets parameter(s) on the Agent referred to by this AgentID.</p>
+
+    <div class='pre p1 fill-light mt0'>get(params: any, index: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, timeout: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>params</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>index</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>
+            = <code>-1</code>)</code>
+	    index of parameter(s) to be get
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>timeout</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>
+            = <code>5000</code>)</code>
+	    timeout for the response
+
+          </div>
+          
+        </div>
+      
+    </div>
   
 
   
@@ -3983,6 +3196,205 @@ this method is called.</p>
   
 
   
+</section>
+
+          
+        
+          
+            <div class='keyline-top-not py2'><section class='py2 clearfix'>
+
+  <h2 id='message' class='mt0'>
+    Message
+  </h2>
+
+  
+    <p>The Message is a JavaScript object that represents a message that can be sent to an agent</p>
+
+  
+</section></div>
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='message'>
+      Message
+    </h3>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Message.js#L16-L103'>
+      <span>gateways/js/src/Message.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Base class for messages transmitted by one agent to another. Creates an empty message.</p>
+
+    <div class='pre p1 fill-light mt0'>new Message(inReplyTo: <a href="#message">Message</a>?, perf: <a href="#performative">Performative</a>, msgID: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?, recipient: <a href="#agentid">AgentID</a>?, sender: <a href="#agentid">AgentID</a>?, sentAt: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>inReplyTo</span> <code class='quiet'>(<a href="#message">Message</a>?
+            = <code>{msgID:null,sender:null}</code>)</code>
+	    message to which this response corresponds to
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>perf</span> <code class='quiet'>(<a href="#performative">Performative</a>
+            = <code>Performative.INFORM</code>)</code>
+	    performative
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>msgID</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
+	    unique identifier for the message
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>recipient</span> <code class='quiet'>(<a href="#agentid">AgentID</a>?)</code>
+	    recipient of the message
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>sender</span> <code class='quiet'>(<a href="#agentid">AgentID</a>?)</code>
+	    sender of the message
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>sentAt</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</code>
+	    time at which the message was sent
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
+    <div class="clearfix">
+  
+    <div class='border-bottom' id='tostring'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>toString()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Message.js#L32-L54'>
+      <span>gateways/js/src/Message.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Gets a string representation of the message.</p>
+
+    <div class='pre p1 fill-light mt0'>toString(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>:
+        string representation
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+</div>
+
+  
+
+  
 
   
 </section>
@@ -4000,8 +3412,8 @@ this method is called.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L927-L948'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Message.js#L129-L151'>
+      <span>gateways/js/src/Message.js</span>
       </a>
     
   </div>
@@ -4079,13 +3491,988 @@ this method is called.</p>
   
   <div class='clearfix'>
     
+    <h3 class='fl m0' id='services'>
+      Services
+    </h3>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Services.js#L4-L6'>
+      <span>gateways/js/src/Services.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Services supported by fjage agents.</p>
+
+    <div class='pre p1 fill-light mt0'>Services</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Static Members</div>
+    <div class="clearfix">
+  
+    <div class='border-bottom' id='servicesshell'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>SHELL</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Services.js#L5-L5'>
+      <span>gateways/js/src/Services.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>SHELL</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+</div>
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='performative'>
+      Performative
+    </h3>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L6-L19'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>An action represented by a message. The performative actions are a subset of the
+FIPA ACL recommendations for interagent communication.</p>
+
+    <div class='pre p1 fill-light mt0'>Performative</div>
+  
+    <p>
+      Type:
+      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>
+    </p>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Static Members</div>
+    <div class="clearfix">
+  
+    <div class='border-bottom' id='performativerequest'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>REQUEST</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L7-L7'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>REQUEST</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='performativeagree'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>AGREE</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L8-L8'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>AGREE</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='performativerefuse'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>REFUSE</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L9-L9'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>REFUSE</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='performativefailure'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>FAILURE</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L10-L10'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>FAILURE</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='performativeinform'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>INFORM</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L11-L11'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>INFORM</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='performativeconfirm'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>CONFIRM</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L12-L12'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>CONFIRM</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='performativedisconfirm'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>DISCONFIRM</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L13-L13'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>DISCONFIRM</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='performativequery_if'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>QUERY_IF</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L14-L14'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>QUERY_IF</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='performativenot_understood'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>NOT_UNDERSTOOD</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L15-L15'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>NOT_UNDERSTOOD</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='performativecfp'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>CFP</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L16-L16'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>CFP</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='performativepropose'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>PROPOSE</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L17-L17'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>PROPOSE</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='performativecancel'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>CANCEL</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Performative.js#L18-L18'>
+      <span>gateways/js/src/Performative.js</span>
+      </a>
+    
+  </div>
+  
+
+  
+    <div class='pre p1 fill-light mt0'>CANCEL</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+</div>
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='parameterreq'>
+      ParameterReq
+    </h3>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Message.js#L193-L213'>
+      <span>gateways/js/src/Message.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>A message that requests one or more parameters of an agent.</p>
+
+    <div class='pre p1 fill-light mt0'>ParameterReq</div>
+  
+    <p>
+      Type:
+      <a href="#message">Message</a>
+    </p>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Properties</div>
+    <div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>param</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+          : parameters name to be get/set if only a single parameter is to be get/set
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>value</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+          : parameters value to be set if only a single parameter is to be set
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>requests</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#parameterreqentry">ParameterReq.Entry</a>>)</code>
+          : a list of multiple parameters to be get/set
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>index</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</code>
+          : index of parameter(s) to be set
+
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Example</div>
+    
+      <p><p>Setting a parameter myAgent.x to 42</p>
+</p>
+      <pre class='p1 overflow-auto round fill-light'><span class="hljs-keyword">let</span> msg = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ParameterReq</span>({
+ <span class="hljs-attr">recipient</span>: myAgentId,
+ <span class="hljs-attr">param</span>: <span class="hljs-string">&#x27;x&#x27;</span>,
+ <span class="hljs-attr">value</span>: <span class="hljs-number">42</span>});</pre>
+    
+      <p><p>Getting the value of myAgent.x</p>
+</p>
+      <pre class='p1 overflow-auto round fill-light'><span class="hljs-keyword">let</span> msg = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ParameterReq</span>({
+<span class="hljs-attr">recipient</span>: myAgentId,
+<span class="hljs-attr">param</span>: <span class="hljs-string">&#x27;x&#x27;</span>});</pre>
+    
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
     <h3 class='fl m0' id='parameterreqentry'>
       ParameterReq.Entry
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L1058-L1063'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Message.js#L186-L191'>
+      <span>gateways/js/src/Message.js</span>
       </a>
     
   </div>
@@ -4156,28 +4543,30 @@ this method is called.</p>
   
   <div class='clearfix'>
     
-    <h3 class='fl m0' id='parameterreq'>
-      ParameterReq
+    <h3 class='fl m0' id='genericmessage'>
+      GenericMessage
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/8ef1244fbb43ddddf8fce14713d04a9fa00b72c0/gateways/js/src/fjage.js#L1066-L1074'>
-      <span>gateways/js/src/fjage.js</span>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Message.js#L110-L118'>
+      <span>gateways/js/src/Message.js</span>
       </a>
     
   </div>
   
 
-  <p>A message that requests one or more parameters of an agent.</p>
+  <p>A message class that can convey generic messages represented by key-value pairs.</p>
 
-    <div class='pre p1 fill-light mt0'>ParameterReq</div>
+    <div class='pre p1 fill-light mt0'>new GenericMessage()</div>
+  
   
     <p>
-      Type:
-      <a href="#message">Message</a>
+      Extends
+      
+        <a href="#message">Message</a>
+      
     </p>
   
-  
 
   
   
@@ -4189,40 +4578,84 @@ this method is called.</p>
   
 
   
-    <div class='py1 quiet mt1 prose-big'>Properties</div>
-    <div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>param</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-          : parameters name to be get/set if only a single parameter is to be get/set
 
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>value</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
-          : parameters value to be set if only a single parameter is to be set
+  
 
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>requests</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#parameterreqentry">ParameterReq.Entry</a>>)</code>
-          : a list of multiple parameters to be get/set
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
 
           
-        </div>
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='createjsonmessage'>
+      createJSONMessage
+    </h3>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/41f11b9781c2a530587633044e096a53c6d05993/gateways/js/src/Message.js#L182-L184'>
+      <span>gateways/js/src/Message.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Parses a string representation of a message into a JavaScript object
+using a custom base64 decoder.</p>
+
+    <div class='pre p1 fill-light mt0'>createJSONMessage(json: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
       
         <div class='space-bottom0'>
-          <span class='code bold'>index</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</code>
-          : index of parameter(s) to be set
+          <div>
+            <span class='code bold'>json</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    JSON string representation of the message
 
+          </div>
           
         </div>
       
     </div>
   
 
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></code>:
+        JavaScript object created from the JSON string
+
+      
+    
   
 
   
