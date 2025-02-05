@@ -1,14 +1,14 @@
-import { Gateway } from './Gateway.js';
-import { Performative } from './Performative.js';
-import { Message, ParameterReq  } from './Message.js';
+import { Gateway } from './gateway.js';
+import { Performative } from './performative.js';
+import { Message, ParameterReq  } from './message.js';
 
 /**
- * An identifier for an agent or a topic.
- * @class
- * @param {string} name - name of the agent
- * @param {boolean} [topic=false] - name of topic
- * @param {Gateway} [owner] - Gateway owner for this AgentID
- */
+* An identifier for an agent or a topic.
+* @class
+* @param {string} name - name of the agent
+* @param {boolean} [topic=false] - name of topic
+* @param {Gateway} [owner] - Gateway owner for this AgentID
+*/
 export class AgentID {
 
   constructor(name, topic=false, owner) {
@@ -18,29 +18,29 @@ export class AgentID {
   }
 
   /**
-   * Gets the name of the agent or topic.
-   *
-   * @returns {string} - name of agent or topic
-   */
+  * Gets the name of the agent or topic.
+  *
+  * @returns {string} - name of agent or topic
+  */
   getName() {
     return this.name;
   }
 
   /**
-   * Returns true if the agent id represents a topic.
-   *
-   * @returns {boolean} - true if the agent id represents a topic, false if it represents an agent
-   */
+  * Returns true if the agent id represents a topic.
+  *
+  * @returns {boolean} - true if the agent id represents a topic, false if it represents an agent
+  */
   isTopic() {
     return this.topic;
   }
 
   /**
-   * Sends a message to the agent represented by this id.
-   *
-   * @param {Message} msg - message to send
-   * @returns {void}
-   */
+  * Sends a message to the agent represented by this id.
+  *
+  * @param {Message} msg - message to send
+  * @returns {void}
+  */
   send(msg) {
     msg.recipient = this.toJSON();
     if (this.owner) this.owner.send(msg);
@@ -48,12 +48,12 @@ export class AgentID {
   }
 
   /**
-   * Sends a request to the agent represented by this id and waits for a reponse.
-   *
-   * @param {Message} msg - request to send
-   * @param {number} [timeout=1000] - timeout in milliseconds
-   * @returns {Promise<Message>} - response
-   */
+  * Sends a request to the agent represented by this id and waits for a reponse.
+  *
+  * @param {Message} msg - request to send
+  * @param {number} [timeout=1000] - timeout in milliseconds
+  * @returns {Promise<Message>} - response
+  */
   async request(msg, timeout=1000) {
     msg.recipient = this.toJSON();
     if (this.owner) return this.owner.request(msg, timeout);
@@ -61,32 +61,32 @@ export class AgentID {
   }
 
   /**
-   * Gets a string representation of the agent id.
-   *
-   * @returns {string} - string representation of the agent id
-   */
+  * Gets a string representation of the agent id.
+  *
+  * @returns {string} - string representation of the agent id
+  */
   toString() {
     return this.toJSON() + ((this.owner && this.owner.connector) ? ` on ${this.owner.connector.url}` : '');
   }
 
   /**
-   * Gets a JSON string representation of the agent id.
-   *
-   * @returns {string} - JSON string representation of the agent id
-   */
+  * Gets a JSON string representation of the agent id.
+  *
+  * @returns {string} - JSON string representation of the agent id
+  */
   toJSON() {
     return (this.topic ? '#' : '') + this.name;
   }
 
   /**
-   * Sets parameter(s) on the Agent referred to by this AgentID.
-   *
-   * @param {(string|string[])} params - parameters name(s) to be set
-   * @param {(Object|Object[])} values - parameters value(s) to be set
-   * @param {number} [index=-1] - index of parameter(s) to be set
-   * @param {number} [timeout=5000] - timeout for the response
-   * @returns {Promise<(Object|Object[])>} - a promise which returns the new value(s) of the parameters
-   */
+  * Sets parameter(s) on the Agent referred to by this AgentID.
+  *
+  * @param {(string|string[])} params - parameters name(s) to be set
+  * @param {(Object|Object[])} values - parameters value(s) to be set
+  * @param {number} [index=-1] - index of parameter(s) to be set
+  * @param {number} [timeout=5000] - timeout for the response
+  * @returns {Promise<(Object|Object[])>} - a promise which returns the new value(s) of the parameters
+  */
   async set (params, values, index=-1, timeout=5000) {
     if (!params) return null;
     let msg = new ParameterReq();
@@ -128,13 +128,13 @@ export class AgentID {
 
 
   /**
-   * Gets parameter(s) on the Agent referred to by this AgentID.
-   *
-   * @param {(?string|?string[])} params - parameters name(s) to be get, null implies get value of all parameters on the Agent
-   * @param {number} [index=-1] - index of parameter(s) to be get
-   * @param {number} [timeout=5000] - timeout for the response
-   * @returns {Promise<(?Object|?Object[])>} - a promise which returns the value(s) of the parameters
-   */
+  * Gets parameter(s) on the Agent referred to by this AgentID.
+  *
+  * @param {(?string|?string[])} params - parameters name(s) to be get, null implies get value of all parameters on the Agent
+  * @param {number} [index=-1] - index of parameter(s) to be get
+  * @param {number} [timeout=5000] - timeout for the response
+  * @returns {Promise<(?Object|?Object[])>} - a promise which returns the value(s) of the parameters
+  */
   async get(params, index=-1, timeout=5000) {
     let msg = new ParameterReq();
     msg.recipient = this.name;
