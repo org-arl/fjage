@@ -20,7 +20,6 @@ const cjs_includes = [
 const esm_includes = [
   'import { Performative, AgentID, Message, Gateway, MessageClass, GenericMessage } from \'../../dist/esm/fjage.js\';',
   'import { isBrowser, isNode, isJsDom } from \'../../node_modules/browser-or-node/dist/index.mjs\';',
-
   ''
 ];
 

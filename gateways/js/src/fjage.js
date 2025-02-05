@@ -1085,9 +1085,12 @@ if (isBrowser || isWebWorker){
  * @exports ParameterReq.Entry
  */
 
-import { MessageClass, Message, GenericMessage, ParameterReq } from './Message.js';
-import { Gateway } from './Gateway.js';
-import { AgentID } from './AgentID.js';
-import { Services } from './Services.js';
+import { MessageClass, Message, GenericMessage, ParameterReq } from './message.js';
+import { Gateway, init} from './gateway.js';
+import { AgentID } from './agentid.js';
+import { Services } from './services.js';
+import { Performative } from './performative.js';
 
-export { Gateway, AgentID, Message, MessageClass, GenericMessage, Services, ParameterReq};
+init();
+
+export { Gateway, AgentID, Message, MessageClass, GenericMessage, Services, ParameterReq, Performative};
