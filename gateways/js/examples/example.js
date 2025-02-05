@@ -14,6 +14,6 @@ const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
     let rsp = await gw.request(req);
     console.log(rsp);
     gw.close();
-})()
+})();
 
 

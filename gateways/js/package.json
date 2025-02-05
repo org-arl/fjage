@@ -1,6 +1,6 @@
 {
   "name": "fjage",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "JS Gateway for fjåge",
   "main": "./dist/cjs/fjage.cjs",
   "types": "./dist/esm/fjage.d.ts",
@@ -16,7 +16,7 @@
     "build": "npx eslint src/*.js && tsc && rollup --silent -c rollup.config.js",
     "pretest": "playwright install --with-deps && node test/spec/create-spec.cjs",
     "test": "node test/run-tests.cjs",
-    "docs": "npx documentation build src/fjage.js -f html --github --document-exported -o ../../docs/jsdoc",
+    "docs": "documentation build src/gateway.js src/message.js src/agentid.js src/performative.js src/services.js --config documentation.yml -f html --github --document-exported -o ../../docs/jsdoc",
     "clean": "npx rimraf -rf dist/"
   },
   "repository": {
