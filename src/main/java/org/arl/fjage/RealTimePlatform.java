@@ -34,7 +34,7 @@ public final class RealTimePlatform extends Platform {
 
   /////////// Private attributes
 
-  private Timer timer = new Timer("fjage-timer", true);
+  private final Timer timer = new Timer("fjage-timer", true);
 
   /////////// Implementation methods
 

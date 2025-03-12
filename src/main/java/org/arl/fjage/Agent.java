@@ -437,7 +437,6 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
 
   /**
    * Enables/disables processing of messages during a blocking receive().
-   *
    * Experimental implementation. Disabled by default, except in the shell agent.
    *
    * @param b true to process messages while waiting, false to disable processing.
@@ -503,7 +502,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
 
   @Override
   public Message receive(final Class<?> cls, long timeout) {
-    return receive(m -> cls.isInstance(m), timeout);
+    return receive(cls::isInstance, timeout);
   }
 
   @Override
@@ -516,7 +515,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
     if (container instanceof SlaveContainer)
       ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
     Message rsp = receive(new MessageFilter() {
-      private String mid = m.getMessageID();
+      private final String mid = m.getMessageID();
       @Override
       public boolean matches(Message m) {
         String s = m.getInReplyTo();
@@ -801,7 +800,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       else throw(ex);
     }
     synchronized (this) {
-      return (newBehaviors.size() > 0);
+      return (!newBehaviors.isEmpty());
     }
   }
 

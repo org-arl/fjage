@@ -36,7 +36,7 @@ public class JsonMessage {
   public Boolean auth;
   public String name;
 
-  private static GsonBuilder gsonBuilder = new GsonBuilder()
+  private static final GsonBuilder gsonBuilder = new GsonBuilder()
     .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
     .registerTypeAdapter(Float.class, (JsonSerializer<Float>) (value, type, jsonSerializationContext) -> value.isNaN()?null:new JsonPrimitive(value))
     .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (value, type, jsonSerializationContext) -> value.isNaN()?null:new JsonPrimitive(value))

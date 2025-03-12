@@ -18,7 +18,6 @@ import java.util.logging.Logger;
 
 /**
  * Utility class for random number generation in simulations.
- *
  * This should be used in preference to java.util.Random to ensure that
  * simulations are repeatable by setting a random number seed.
  */

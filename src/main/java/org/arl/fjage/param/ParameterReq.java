@@ -125,7 +125,7 @@ public class ParameterReq extends Message {
 
   @Override
   public String toString() {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append(getClass().getSimpleName());
     sb.append('[');
     if (index >= 0) {
@@ -155,7 +155,7 @@ public class ParameterReq extends Message {
    * Representation for parameter and value.
    *
    */
-  public class Entry implements Serializable {
+  public static class Entry implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

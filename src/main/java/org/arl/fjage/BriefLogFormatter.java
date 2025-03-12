@@ -24,16 +24,16 @@ public class BriefLogFormatter extends Formatter {
    */
   @Override
   public String format(LogRecord record) {
-    StringBuffer s = new StringBuffer();
-    s.append("\033[31m");                   // terminal code for RED color
-    s.append(record.getLevel());
-    s.append(": ");
-    s.append(record.getLoggerName());
-    s.append(" > ");
-    s.append(record.getMessage());
-    s.append("\033[0m");                    // RESET terminal
-    s.append('\n');
-    return s.toString();
+      // terminal code for RED color
+      // RESET terminal
+      return "\033[31m" +                   // terminal code for RED color
+              record.getLevel() +
+              ": " +
+              record.getLoggerName() +
+              " > " +
+              record.getMessage() +
+              "\033[0m" +                    // RESET terminal
+              '\n';
   }
 
 }

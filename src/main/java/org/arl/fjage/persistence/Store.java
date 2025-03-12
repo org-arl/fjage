@@ -18,12 +18,12 @@ public class Store implements Closeable {
 
   protected static File storeRoot = new File(FileUtils.getUserDirectory(), ".fjstore");
   protected static ClassLoader defaultClazzLoader = null;
-  protected static Map<String,Store> instances = new HashMap<>();
+  protected static final Map<String,Store> instances = new HashMap<>();
 
   protected File root;
   protected String clazz;
   protected ClassLoader clazzLoader;
-  private MessageDigest md;
+  private final MessageDigest md;
 
   protected Store(String clazz) {
     this.clazz = clazz;
@@ -109,7 +109,7 @@ public class Store implements Closeable {
   public void put(Serializable obj) {
     if (root == null) throw new FjageException("Store has been closed");
     File d = new File(root, obj.getClass().getName());
-    d.mkdirs();
+    if (!d.mkdirs()) throw new FjageException("Cannot create directory "+d);
     File f = new File(d, getId(obj));
     FileOutputStream fout = null;
     ObjectOutputStream out = null;

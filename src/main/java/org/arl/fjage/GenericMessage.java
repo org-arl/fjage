@@ -23,7 +23,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
 
   //////////// Private attributes
 
-  private Map<Object,GenericValue> map = new HashMap<Object,GenericValue>();
+  private final Map<Object,GenericValue> map = new HashMap<Object,GenericValue>();
 
   //////////// Interface methods
 

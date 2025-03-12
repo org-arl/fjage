@@ -31,7 +31,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private static final long TIMEOUT = 15000;
 
   private TcpServer listener = null;
-  private List<ConnectionHandler> slaves = new ArrayList<ConnectionHandler>();
+  private final List<ConnectionHandler> slaves = new ArrayList<ConnectionHandler>();
   private boolean needsCleanup = false;
   private Supplier<Firewall> fwSupplier = AllowAll.SUPPLIER;
 
@@ -293,7 +293,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
         JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
-        if (rsp != null && rsp.agentID != null && rsp.agentID.getName().length() > 0) return rsp.agentID;
+        if (rsp != null && rsp.agentID != null && !rsp.agentID.getName().isEmpty()) return rsp.agentID;
       }
     }
     return null;

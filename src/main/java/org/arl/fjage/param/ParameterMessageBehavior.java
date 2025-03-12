@@ -29,7 +29,7 @@ import org.apache.commons.lang3.reflect.MethodUtils;
  */
 public class ParameterMessageBehavior extends MessageBehavior {
 
-  private List<? extends Parameter> params;
+  private final List<? extends Parameter> params;
 
   /**
    * Creates a parameter message behavior with no parameters.
@@ -54,8 +54,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
   public ParameterMessageBehavior(Class ... paramEnumClasses) {
     super(ParameterReq.class);
     params = new ArrayList<Parameter>();
-    for (int i = 0; i < paramEnumClasses.length; i++)
-      params.addAll(EnumSet.allOf(paramEnumClasses[i]));
+      for (Class paramEnumClass : paramEnumClasses) params.addAll(EnumSet.allOf(paramEnumClass));
   }
 
   @Override
@@ -165,8 +164,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected static List<? extends Parameter> allOf(Class ... paramEnumClasses) {
     List<? extends Parameter> p = new ArrayList<Parameter>();
-    for (int i = 0; i < paramEnumClasses.length; i++)
-      p.addAll(EnumSet.allOf(paramEnumClasses[i]));
+      for (Class paramEnumClass : paramEnumClasses) p.addAll(EnumSet.allOf(paramEnumClass));
     return p;
   }
 

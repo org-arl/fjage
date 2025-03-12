@@ -123,8 +123,8 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
                   // ignore
                 }
               }
-              else if (tok == JsonToken.STRING) map.put(name, in.nextString());
-              else if (tok == JsonToken.BOOLEAN) map.put(name, in.nextBoolean());
+              else if (tok2 == JsonToken.STRING) map.put(name, in.nextString());
+              else if (tok2 == JsonToken.BOOLEAN) map.put(name, in.nextBoolean());
               else in.skipValue();
             }
           }

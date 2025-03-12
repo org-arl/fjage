@@ -39,8 +39,8 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   /////////// Private attributes
 
   private volatile long time = 0;
-  private Queue<DiscreteEvent> events = new PriorityBlockingQueue<DiscreteEvent>();
-  private Logger log = Logger.getLogger(getClass().getName());
+  private final Queue<DiscreteEvent> events = new PriorityBlockingQueue<DiscreteEvent>();
+  private final Logger log = Logger.getLogger(getClass().getName());
   private Thread thread = null;
   private float speed = Float.NaN;
 
@@ -147,7 +147,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
         while (e != null && e.time <= time) {
           log.fine("Fire "+e);
           synchronized (events) {
-            if (events.size() > 0) events.poll().task.run();
+            if (!events.isEmpty()) events.poll().task.run();
           }
           e = events.peek();
         }
@@ -181,7 +181,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
         }
       }
     } catch (Exception ex) {
-      log.log(Level.SEVERE, "Exception: ", ex);
+      log.log(Level.SEVERE, "Simulator error", ex);
     }
     log.info("Simulator shutdown");
   }

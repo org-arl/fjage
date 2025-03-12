@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 public class LogFormatter extends Formatter {
 
   // list of packages to ignore in stack trace display
-  private static String[] ignorePkgList = {
+  private static final String[] ignorePkgList = {
     "org.codehaus.groovy.",
     "java.",
     "groovy.",

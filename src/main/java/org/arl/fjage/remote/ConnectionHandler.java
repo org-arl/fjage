@@ -31,15 +31,17 @@ class ConnectionHandler extends Thread {
 
   private Connector conn;
   private DataOutputStream out;
-  private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
-  private Deque<String> failed = new ArrayDeque<String>(FAILED_SIZE);
-  private Logger log = Logger.getLogger(getClass().getName());
-  private RemoteContainer container;
-  private boolean alive, keepAlive, closeOnDead;
-  private ExecutorService pool = Executors.newSingleThreadExecutor();
-  private Set<AgentID> watchList = new HashSet<>();
+  private final Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
+  private final Deque<String> failed = new ArrayDeque<String>(FAILED_SIZE);
+  private final Logger log = Logger.getLogger(getClass().getName());
+  private final RemoteContainer container;
+  private boolean alive;
+  private final boolean keepAlive;
+  private final boolean closeOnDead;
+  private final ExecutorService pool = Executors.newSingleThreadExecutor();
+  private final Set<AgentID> watchList = new HashSet<>();
   private String clientName = "-";
-  private Firewall fw;
+  private final Firewall fw;
 
   public ConnectionHandler(Connector conn, RemoteContainer container) {
     this.conn = conn;
@@ -298,7 +300,7 @@ class ConnectionHandler extends Thread {
 
   private class RemoteTask implements Runnable {
 
-    private JsonMessage rq;
+    private final JsonMessage rq;
 
     RemoteTask(JsonMessage rq) {
       this.rq = rq;
@@ -332,8 +334,7 @@ class ConnectionHandler extends Thread {
         case WANTS_MESSAGES_FOR:
           synchronized(watchList) {
             watchList.clear();
-            for (AgentID aid: rq.agentIDs)
-              watchList.add(aid);
+              watchList.addAll(Arrays.asList(rq.agentIDs));
           }
           break;
       }

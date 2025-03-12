@@ -85,7 +85,7 @@ public class GroovyBoot {
             InputStream inp = GroovyBoot.class.getResourceAsStream(a.substring(5));
             if (inp == null) throw new FileNotFoundException(a+" not found");
             engine.exec(new InputStreamReader(inp), a, arglist);
-            if (arglist.size() > 0) arglist = new ArrayList<String>();
+            if (!arglist.isEmpty()) arglist = new ArrayList<String>();
           } else if (a.startsWith("cls://")) {
             // execute pre-compiled script from class file
             Class<?> cls = Class.forName(a.substring(6));
@@ -93,7 +93,7 @@ public class GroovyBoot {
           } else {
             // execute script from file
             engine.exec(new File(a), arglist);
-            if (arglist.size() > 0) arglist = new ArrayList<String>();
+            if (!arglist.isEmpty()) arglist = new ArrayList<String>();
           }
         }
       }
@@ -101,7 +101,7 @@ public class GroovyBoot {
 
     } catch (Throwable ex) {
       if (log == null) ex.printStackTrace(System.err);
-      else log.severe(ex.toString());
+      else log.log(Level.SEVERE, "", ex);
     }
   }
 

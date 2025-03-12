@@ -54,8 +54,8 @@ public class Container {
   protected Object cloner;
   protected Method doClone;
   protected boolean autoclone = false;
-  protected Set<AgentID> idle = new HashSet<AgentID>();
-  protected Set<MessageListener> listeners = new HashSet<MessageListener>();
+  protected final Set<AgentID> idle = new HashSet<AgentID>();
+  protected final Set<MessageListener> listeners = new HashSet<MessageListener>();
 
   //////////// Interface methods
 
@@ -206,7 +206,7 @@ public class Container {
    * @return an agent id if successful, null on failure.
    */
   public AgentID add(String name, Agent agent) {
-    if (name == null || name.length() == 0) {
+    if (name == null || name.isEmpty()) {
       log.warning("Undefined agent name");
       return null;
     }
@@ -400,12 +400,8 @@ public class Container {
       log.warning("Unable to subscribe unknown agent "+aid+" to topic "+topic);
       return false;
     }
-    Set<Agent> subscribers = topics.get(topic);
-    if (subscribers == null) {
-      subscribers = new HashSet<Agent>();
-      topics.put(topic, subscribers);
-    }
-    subscribers.add(agent);
+      Set<Agent> subscribers = topics.computeIfAbsent(topic, k -> new HashSet<Agent>());
+      subscribers.add(agent);
     return true;
   }
 
@@ -447,12 +443,8 @@ public class Container {
    * @return true on success, false on failure.
    */
   public synchronized boolean register(AgentID aid, String service) {
-    Set<AgentID> providers = services.get(service);
-    if (providers == null) {
-      providers = new HashSet<AgentID>();
-      services.put(service, providers);
-    }
-    providers.add(aid);
+      Set<AgentID> providers = services.computeIfAbsent(service, k -> new HashSet<AgentID>());
+      providers.add(aid);
     return true;
   }
 
@@ -474,7 +466,7 @@ public class Container {
    */
   public synchronized AgentID agentForService(String service) {
     Set<AgentID> providers = services.get(service);
-    if (providers == null || providers.size() == 0) return null;
+    if (providers == null || providers.isEmpty()) return null;
     return providers.iterator().next();
   }
 
@@ -486,7 +478,7 @@ public class Container {
    */
   public synchronized AgentID[] agentsForService(String service) {
     Set<AgentID> providers = services.get(service);
-    if (providers == null || providers.size() == 0) return null;
+    if (providers == null || providers.isEmpty()) return null;
     return providers.toArray(new AgentID[0]);
   }
 
@@ -545,7 +537,7 @@ public class Container {
           initing = false;
           return;
         }
-        if (agentsToAdd.size() > 0) {
+        if (!agentsToAdd.isEmpty()) {
           synchronized (agents) {
             agents.putAll(agentsToAdd);
             SortedSet<AgentID> keys = new TreeSet<AgentID>(agentsToAdd.keySet());
