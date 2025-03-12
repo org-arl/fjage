@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * Web server instance manager.
@@ -65,8 +66,8 @@ public class WebServer {
         if (msg.contains("{}")) for (Object a: args) msg = msg.replaceFirst("\\{}", a.toString());
         log.warning(msg);
       }
-      @Override public void warn(Throwable t)                   { log.warning(t.toString()); }
-      @Override public void warn(String msg, Throwable thrown)  { log.warning(msg);          }
+      @Override public void warn(Throwable t)                   { log.log(Level.WARNING, "", t); }
+      @Override public void warn(String msg, Throwable thrown)  { log.log(Level.WARNING, msg, thrown); }
       @Override public void info(String msg, Object... args)    { }
       @Override public void info(Throwable thrown)              { }
       @Override public void info(String msg, Throwable thrown)  { }
@@ -195,7 +196,7 @@ public class WebServer {
       log.info("Started web server on port "+port);
       started = true;
     } catch (Exception ex) {
-      log.warning(ex.toString());
+      log.log(Level.WARNING, "Unable to start web server on port "+port, ex);
     }
   }
 
@@ -209,7 +210,7 @@ public class WebServer {
       server.stop();
       started = false;
     } catch (Exception ex) {
-      log.warning(ex.toString());
+      log.log(Level.WARNING, "Unable to stop web server", ex);
     }
     server = null;
     contexts = null;
@@ -229,7 +230,7 @@ public class WebServer {
     try {
       handler.start();
     } catch (Exception ex) {
-      log.warning("Unable to start context "+handler.getContextPath()+": "+ex.toString());
+      log.log(Level.WARNING, "Unable to start context "+handler.getContextPath(), ex);
     }
   }
 
@@ -243,7 +244,7 @@ public class WebServer {
     try {
       handler.stop();
     } catch (Exception ex) {
-      log.warning("Unable to stop context "+handler.getContextPath()+": "+ex.toString());
+      log.log(Level.WARNING, "Unable to stop context "+handler.getContextPath(), ex);
     }
     contexts.removeHandler(handler);
     if (contexts.getHandlers() == null || contexts.getHandlers().length <= staticContexts.size()) stop();
@@ -319,7 +320,7 @@ public class WebServer {
       handler.setHandler(resHandler);
       add(handler);
     }catch (IOException ex){
-      log.warning("Unable to find the directory : " + dir.toString());
+      log.log(Level.WARNING, "Unable to add context : " + context, ex);
       return;
     }
   }
@@ -387,7 +388,7 @@ public class WebServer {
     try {
       handler.stop();
     } catch (Exception e) {
-      log.warning("Unable to stop context "+context+": "+e.toString());
+      log.log(Level.WARNING, "Unable to stop context "+context, e);
     }
     staticContexts.remove(context);
     remove(handler);
@@ -413,7 +414,7 @@ public class WebServer {
     try {
       rewrite.addRule(rule);
     } catch (Exception ex) {
-      log.warning("Unable to add rule "+rule+": "+ex.toString());
+      log.log(Level.WARNING, "Unable to add rewrite rule", ex);
     }
   }
 
@@ -428,7 +429,7 @@ public class WebServer {
         try {
           Files.createDirectories(outputDir);
         }catch (IOException ex){
-          log.warning("Unable to create directory : " + outputDir.toString());
+          log.log(Level.WARNING, "Unable to create output directory : " + outputDir, ex);
         }
       }
       this.outputDir = outputDir;
@@ -458,7 +459,7 @@ public class WebServer {
             outputStream.getFD().sync();
             out.printf("%s%n", outputFile);
           }catch (Throwable ex){
-            log.warning("Unable to save file : " + filename + " : " + ex.toString());
+            log.log(Level.WARNING, "Unable to save file : " + filename, ex);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             baseRequest.setHandled(true);
             return;
