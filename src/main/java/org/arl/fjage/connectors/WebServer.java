@@ -424,6 +424,13 @@ public class WebServer {
     public UploadHandler(MultipartConfigElement multipartConfig, Path outputDir) {
       super();
       this.multipartConfig = multipartConfig;
+      if (!Files.exists(outputDir)){
+        try {
+          Files.createDirectories(outputDir);
+        }catch (IOException ex){
+          log.warning("Unable to create directory : " + outputDir.toString());
+        }
+      }
       this.outputDir = outputDir;
     }
 
@@ -443,9 +450,18 @@ public class WebServer {
           filename = URLEncoder.encode(filename, String.valueOf(StandardCharsets.UTF_8));
           Path outputFile = outputDir.resolve(filename);
           try (InputStream inputStream = part.getInputStream();
-               OutputStream outputStream = Files.newOutputStream(outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+               FileOutputStream outputStream = new FileOutputStream(outputFile.toFile())) {
             IO.copy(inputStream, outputStream);
+            // Force data and metadata to disk
+            outputStream.getChannel().force(true);
+            // Ensure lowest-level disk synchronization
+            outputStream.getFD().sync();
             out.printf("%s%n", outputFile);
+          }catch (Throwable ex){
+            log.warning("Unable to save file : " + filename + " : " + ex.toString());
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            baseRequest.setHandled(true);
+            return;
           }
         }
       }
