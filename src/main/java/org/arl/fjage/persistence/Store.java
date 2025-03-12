@@ -109,7 +109,7 @@ public class Store implements Closeable {
   public void put(Serializable obj) {
     if (root == null) throw new FjageException("Store has been closed");
     File d = new File(root, obj.getClass().getName());
-    if (!d.mkdirs()) throw new FjageException("Cannot create directory "+d);
+    if (!d.exists() && !d.mkdirs()) throw new FjageException("Cannot create directory: "+d);
     File f = new File(d, getId(obj));
     FileOutputStream fout = null;
     ObjectOutputStream out = null;
