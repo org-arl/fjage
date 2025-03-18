@@ -1,5 +1,9 @@
 # Release Notes
 
+## v1.15.2
+
+* Bugfix: Force webserver to sync files after writing
+
 ## v1.15.1
 
 * Bugfix: Prevent setNextState() from resuscitating terminated FSMs
