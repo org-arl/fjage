@@ -1,5 +1,10 @@
 # Release Notes
 
+## v1.14.1
+
+* Backported fixes from v1.15.1 for FSM threading issue https://github.com/org-arl/fjage/issues/324
+* Backported fixes from v1.15.2 for forcing FS sync on WebServer upload https://github.com/org-arl/fjage/pull/344
+
 ## v1.14.0
 
 * Added `Gateway.connected` property
