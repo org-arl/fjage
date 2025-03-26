@@ -14,6 +14,7 @@ import java.util.*;
 import java.lang.reflect.*;
 import org.arl.fjage.*;
 import org.apache.commons.lang3.reflect.MethodUtils;
+import java.util.logging.Level;
 
 /**
  * Behavior to handle parameter messages. To enable parameters on an agent,
@@ -264,7 +265,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
           }
         }
       } catch (InvocationTargetException ex){
-        log.fine ("Error thrown while setting parameter: " + ex.getCause().getMessage());
+        log.log(Level.FINE, "Error thrown while accessing parameter", ex.getCause());
       } catch (Exception ex) {
         // do nothing
       }
