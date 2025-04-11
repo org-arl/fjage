@@ -22,6 +22,7 @@ import com.fazecast.jSerialComm.SerialPort;
 public class SerialPortConnector implements Connector {
 
   protected SerialPort com;
+  private String devname;
 
   /**
    * Open a serial port.
@@ -38,6 +39,7 @@ public class SerialPortConnector implements Connector {
         c.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
         c.openPort();
         c.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+        this.devname = devname;
         return c;
       }
     });
@@ -51,9 +53,13 @@ public class SerialPortConnector implements Connector {
   }
 
   @Override
+  /**
+   * Get the name of the connector in the form "serial://<devname>:<baud>,<settings>".
+   * @ return the name of the connector.
+   */
   public String getName() {
     if (com == null) return "serial://[closed]";
-    return "serial://"+com.getDescriptivePortName();
+    return "serial://"+this.devname+":"+com.getBaudRate()+",8N1";
   }
 
   @Override
