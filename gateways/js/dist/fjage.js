@@ -1,4 +1,4 @@
-/* fjage.js v1.13.7 */
+/* fjage.js v1.13.8 */
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -516,9 +516,10 @@
       if (Array.isArray(params)) {
         if (!rsp.values) rsp.values = {};
         if (rsp.param) rsp.values[rsp.param] = rsp.value;
-        const rvals = Object.keys(rsp.values);
+        const rkeys = Object.keys(rsp.values);
         return params.map( p => {
-          let f = rvals.find(rv => rv.endsWith(p));
+          if (p.includes('.')) p = p.split('.').pop();
+          let f = rkeys.find(k => (k.includes('.') ? k.split('.').pop() : k) == p);
           return f ? rsp.values[f] : undefined;
         });
       } else {
