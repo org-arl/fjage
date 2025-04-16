@@ -53,7 +53,7 @@ public class SerialPortConnector implements Connector {
   @Override
   public String getName() {
     if (com == null) return "serial://[closed]";
-    return "serial://"+com.getDescriptivePortName();
+    return "serial://"+com.getSystemPortName();
   }
 
   @Override
@@ -98,6 +98,11 @@ public class SerialPortConnector implements Connector {
       }
     }
     return true;
+  }
+
+  @Override
+  public String[] connections() {
+    return new String[] { "?" };
   }
 
   @Override

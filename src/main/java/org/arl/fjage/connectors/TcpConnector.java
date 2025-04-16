@@ -92,6 +92,15 @@ public class TcpConnector implements Connector {
   }
 
   @Override
+  public String[] connections() {
+      if (sock == null || sock.isClosed()){
+        return new String[0];
+      }else {
+        return new String[] { sock.getInetAddress().getHostAddress()+":"+sock.getPort() };
+      }
+  }
+
+  @Override
   public String toString() {
     return getName();
   }

@@ -165,6 +165,14 @@ public class TcpHubConnector extends Thread implements Connector {
   }
 
   @Override
+  public String[] connections() {
+    // return all active (check if sock.isClosed) connections in the format "ip:port"
+    return clientThreads.stream().map(t -> t.client).filter(s -> s != null && !s.isClosed())
+        .map(s -> s.getInetAddress().getHostAddress()+":"+s.getPort())
+        .toArray(String[]::new);
+  }
+
+  @Override
   public String toString() {
     return getName();
   }

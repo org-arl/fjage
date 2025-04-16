@@ -55,10 +55,20 @@ public interface Connector extends Closeable {
    */
   public void setConnectionListener(ConnectionListener listener);
 
+
+  /**
+   * Gets a list of all known active connections
+   *
+   * @return an array of all known active connections
+   */
+  public String[] connections();
+
   /**
    * Close the connection.
    */
   @Override
   public void close();
+
+
 
 }

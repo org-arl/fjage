@@ -135,6 +135,14 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   }
 
   @Override
+  public String[] connections() {
+    // return all active connections in the format "ip:port"
+    return wsHandlers.stream()
+        .map(h -> h.session.getRemoteAddress().getAddress().getHostAddress()+":"+h.session.getRemoteAddress().getPort())
+        .toArray(String[]::new);
+  }
+
+  @Override
   public void close() {
     outThread.close();
     outThread = null;
