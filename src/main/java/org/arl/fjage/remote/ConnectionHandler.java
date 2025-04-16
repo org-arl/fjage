@@ -67,7 +67,7 @@ class ConnectionHandler extends Thread {
    * @return true if the connection is alive, false otherwise.
    */
   public boolean isConnectionAlive() {
-    if (conn instanceof WebSocketConnector) return true;
+    if (conn instanceof WebSocketHubConnector) return true;
     return alive;
   }
 
