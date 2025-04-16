@@ -3,7 +3,7 @@
 Connectors are used by Fjåge container to connect to using various data transport service. It's an abstraction layer that allows Fjåge to be used with different transport services easily.
 
 ## Uses
-Currenly Fjåge connectors are used for
+Currently Fjåge connectors are used for
 
 - [MasterContainer](../MasterContainer.java) to receive connections from Slave/Gateway containers.
 - [ShellAgents](../shell/ShellAgent.java) to receive connections for remote shell access.
