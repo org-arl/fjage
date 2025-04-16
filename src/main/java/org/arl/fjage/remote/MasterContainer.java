@@ -30,7 +30,8 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   private static final long TIMEOUT = 15000;
 
-  private TcpServer listener = null;
+  private TcpServer tcpListener = null;
+  private WebSocketServer websocketListener = null;
   private List<ConnectionHandler> slaves = new ArrayList<ConnectionHandler>();
   private boolean needsCleanup = false;
   private Supplier<Firewall> fwSupplier = AllowAll.SUPPLIER;
@@ -143,8 +144,8 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    * @return port on which the container's TCP server runs, -1 if none.
    */
   public int getPort() {
-    if (listener == null) return -1;
-    return listener.getPort();
+    if (tcpListener == null) return -1;
+    return tcpListener.getPort();
   }
 
   /**
@@ -184,7 +185,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   public String[] getConnectors() {
     synchronized(slaves) {
       String[] url = new String[1+slaves.size()];
-      url[0] = listener.toString();
+      url[0] = tcpListener.toString();
       for (int i = 0; i < slaves.size(); i++)
         url[i+1] = slaves.get(i).toString();
       return url;
@@ -384,9 +385,9 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       slaves.clear();
       needsCleanup = false;
     }
-    if (listener != null) {
-      listener.close();
-      listener = null;
+    if (tcpListener != null) {
+      tcpListener.close();
+      tcpListener = null;
     }
     super.shutdown();
   }
@@ -404,6 +405,26 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     needsCleanup = true;
   }
 
+  public boolean openWebSocketServer( int port, String context) {
+    if (websocketListener != null) {
+      log.warning("WebSocket server already running at :"+websocketListener.getPort() + websocketListener.getContext());
+      return false;
+    }
+    websocketListener = new WebSocketServer(port, context, this);
+    log.info("WebSocketServer running at :"+websocketListener.getPort() + websocketListener.getContext());
+    return true;
+  }
+
+  public boolean closeWebSocketServer() {
+    if (websocketListener == null) {
+      log.warning("WebSocket server not running");
+      return false;
+    }
+    websocketListener.close();
+    websocketListener = null;
+    return true;
+  }
+
   /////////////// ConnectionListener interface method
 
   @Override
@@ -419,8 +440,8 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   /////////////// Private stuff
 
   private void openTcpServer(int port) {
-    listener = new TcpServer(port, this);
-    log.info("Listening on port "+listener.getPort());
+    tcpListener = new TcpServer(port, this);
+    log.info("Listening on port "+ tcpListener.getPort());
   }
 
   private void cleanupSlaves() {

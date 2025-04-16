@@ -25,9 +25,9 @@ container = new MasterContainer(platform, port)
 if (devname != null)  container.addConnector(new SerialPortConnector(devname, baud, 'N81'))
 if (web) {
   WebServer.getInstance(8080).add("/", "/org/arl/fjage/web")
-  Connector conn = new WebSocketConnector(8080, "/shell/ws")
+  Connector conn = new WebSocketHubConnector(8080, "/shell/ws")
   shell = new ShellAgent(new ConsoleShell(conn), new GroovyScriptEngine())
-  container.addConnector(new WebSocketConnector(8080, "/ws", true))
+  container.openWebSocketServer(8080, "/ws")
 } else {
   shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
 }
