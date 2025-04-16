@@ -192,6 +192,15 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     }
   }
 
+  /**
+   * Gets a list of connection handlers for the slaves connected to this master container.
+   *
+   * @return array of connection handlers.
+   */
+  public ConnectionHandler[] getConnectionHandlers(){
+    return slaves.toArray(new ConnectionHandler[0]);
+  }
+
   /////////////// Container interface methods to override
 
   @Override
