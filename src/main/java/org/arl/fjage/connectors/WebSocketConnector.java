@@ -144,7 +144,6 @@ public class WebSocketConnector implements Connector{
                 Thread.currentThread().interrupt();
             }
         }
-
     }
 
     private void write(String s){
