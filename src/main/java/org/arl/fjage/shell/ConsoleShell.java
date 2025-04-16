@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 import org.arl.fjage.connectors.ConnectionListener;
 import org.arl.fjage.connectors.Connector;
-import org.arl.fjage.connectors.WebSocketConnector;
+import org.arl.fjage.connectors.WebSocketHubConnector;
 import org.jline.reader.*;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
@@ -92,7 +92,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
     try {
       if (console != null) {
         // force bracketed paste mode on for websockets based shells
-        if (connector instanceof WebSocketConnector) console.callWidget(FORCE_BRACKETED_PASTE_ON);
+        if (connector instanceof WebSocketHubConnector) console.callWidget(FORCE_BRACKETED_PASTE_ON);
         console.callWidget(LineReader.REDRAW_LINE);
         console.callWidget(LineReader.REDISPLAY);
       }
