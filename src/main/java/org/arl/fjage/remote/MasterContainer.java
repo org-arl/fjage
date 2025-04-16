@@ -389,6 +389,10 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       tcpListener.close();
       tcpListener = null;
     }
+    if (websocketListener != null){
+      websocketListener.close();
+      websocketListener = null;
+    }
     super.shutdown();
   }
 
@@ -407,11 +411,11 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   public boolean openWebSocketServer( int port, String context) {
     if (websocketListener != null) {
-      log.warning("WebSocket server already running at :"+websocketListener.getPort() + websocketListener.getContext());
+      log.warning("WebSocket server already running at :" + websocketListener.getPort() + websocketListener.getContext());
       return false;
     }
     websocketListener = new WebSocketServer(port, context, this);
-    log.info("WebSocketServer running at :"+websocketListener.getPort() + websocketListener.getContext());
+    log.info("WebSocketServer running at :" + websocketListener.getPort() + websocketListener.getContext());
     return true;
   }
 
