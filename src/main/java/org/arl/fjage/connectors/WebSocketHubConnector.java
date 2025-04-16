@@ -17,6 +17,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jetty.websocket.api.*;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
@@ -86,6 +87,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     }
     server = WebServer.getInstance(port);
     handler = new ContextHandler(context);
+    log.info ("Adding WebSocket handler to context "+context+" on port "+port);
     handler.setHandler(new WebSocketHandler() {
       @Override
       public void configure(WebSocketServletFactory factory) {
@@ -253,14 +255,12 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
             log.fine("Sending timed out. Closing connection to " + session.getRemoteAddress());
             session.disconnect();
           } catch (Exception e){
-            log.warning(e.toString());
+            log.log(Level.WARNING, "Error sending websocket message: ", e);
           }
         }
       } catch (Exception e) {
-        log.warning(e.toString());
+        log.log(Level.WARNING, "Error sending websocket message: ", e);
       }
     }
-
   }
-
 }
