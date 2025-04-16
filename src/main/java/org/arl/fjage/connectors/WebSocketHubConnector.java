@@ -27,7 +27,7 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 /**
  * Web socket connector.
  */
-public class WebSocketConnector implements Connector, WebSocketCreator {
+public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
   protected String name;
   protected boolean linemode = false;
@@ -45,7 +45,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
    * given port. If a web server isn't already created, this will start the
    * web server.
    */
-  public WebSocketConnector(int port, String context) {
+  public WebSocketHubConnector(int port, String context) {
     init(port, context, -1);
   }
 
@@ -54,7 +54,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
    * given port. If a web server isn't already created, this will start the
    * web server.
    */
-  public WebSocketConnector(int port, String context, boolean linemode) {
+  public WebSocketHubConnector(int port, String context, boolean linemode) {
     init(port, context, -1);
     this.linemode = linemode;
   }
@@ -64,7 +64,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
    * given port. If a web server isn't already created, this will start the
    * web server.
    */
-  public WebSocketConnector(int port, String context, int maxMsgSize) {
+  public WebSocketHubConnector(int port, String context, int maxMsgSize) {
     init(port, context, maxMsgSize);
   }
 
@@ -73,7 +73,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
    * given port. If a web server isn't already created, this will start the
    * web server.
    */
-  public WebSocketConnector(int port, String context, boolean linemode, int maxMsgSize) {
+  public WebSocketHubConnector(int port, String context, boolean linemode, int maxMsgSize) {
     init(port, context, maxMsgSize);
     this.linemode = linemode;
   }
@@ -89,7 +89,7 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
     handler.setHandler(new WebSocketHandler() {
       @Override
       public void configure(WebSocketServletFactory factory) {
-        factory.setCreator(WebSocketConnector.this);
+        factory.setCreator(WebSocketHubConnector.this);
         if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize(maxMsgSize);
       }
     });
@@ -201,9 +201,9 @@ public class WebSocketConnector implements Connector, WebSocketCreator {
   public class WSHandler {
 
     Session session = null;
-    WebSocketConnector conn;
+    WebSocketHubConnector conn;
 
-    public WSHandler(WebSocketConnector conn) {
+    public WSHandler(WebSocketHubConnector conn) {
       this.conn = conn;
     }
 
