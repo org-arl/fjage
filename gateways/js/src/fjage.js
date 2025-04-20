@@ -634,13 +634,10 @@ export class Gateway {
 
   /** @private */
   _update_watch() {
-    // FIXME : Turning off wantsMessagesFor in fjagejs for now as it breaks multiple browser
-    // windows connecting to the same master container.
-    //
-    // let watch = Object.keys(this.subscriptions);
-    // watch.push(this.aid.getName());
-    // let rq = { action: 'wantsMessagesFor', agentIDs: watch };
-    // this._msgTx(rq);
+    let watch = Object.keys(this.subscriptions);
+    watch.push(this.aid.getName());
+    let rq = { action: 'wantsMessagesFor', agentIDs: watch };
+    this._msgTx(rq);
   }
 
   /**
