@@ -18,6 +18,32 @@ Key Features
 * APIs for access from Java, Groovy, Python, C, Julia, and Javascript
 * JSON-based protocol to interface with external applications
 
+Versions
+-------------
+
+fjåge follows [Semantic Versioning](http://semver.org/). The current major version is 2.x.y.
+
+The main changes in the version 2.0.0 compared to the previous 1.x series are:
+
+* The `WebSocketConnector` class was renamed to `WebSocketHubConnector` to accurately reflect it being an aggregator of multiple WebSocket connections, mainly to be used for Shells.
+* A new `WebSocketConnector` class was added to provide a direct WebSocket connection to a fjåge agent for use with `fjage.js` Gateways.
+* `Shell` agent messages `PutFileReq` and `GetFileReq` messages [had their parameter names changed](https://github.com/org-arl/fjage/commit/a3314d557109c1a77b4cd95f8514a3f0c6cf0950) to be more consistent with the rest of the API.
+
+Since these changes are not backward compatible, the version number was incremented to 2.0.0.
+
+The last stable release of the 1.x series is 1.14. The patch branch [patch-1.14.x](https://github.com/org-arl/fjage/commits/patch-v1.14.x/) is maintained for bug fixes and minor improvements.
+
+If you want to keep using fjåge 1.x, you can use the latest 1.14.x release.
+
+## fjåge.js 2.0.0
+
+With the update of `WebSocketConnector` to be a direct (non-aggregated) connection to a fjåge agent, the `fjage.js` library was also updated to support watching for specific topics as per the fjåge Gateway specification. This allows for a more efficient use of the WebSocket connection and reduces the amount of data sent over the network.
+
+## Releases 1.15.x
+
+The 1.15.x releases 1.15.0, 1.15.1, and 1.15.2 have some of the breaking changes (specifically the changed parameter names) but didn't increment the major version number. This was a oversight and the 1.15.x releases are not backward compatible with the 1.14.x releases. The 1.15.x releases are not maintained anymore and **should not be used**.
+
+
 Documentation
 -------------
 
