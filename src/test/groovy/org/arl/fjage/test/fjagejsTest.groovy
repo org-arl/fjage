@@ -44,6 +44,7 @@ class fjagejsTest {
     platform.start()
     container.add('echo', new EchoServerAgent())
     container.add("S", new ParamServerAgent())
+    container.add("pub", new PublishServerAgent())
     container.add('test', new Agent(){
       @Override
       protected void init() {

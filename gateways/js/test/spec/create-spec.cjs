@@ -9,7 +9,7 @@ const fs = require('fs');
 const { exit } = require('process');
 
 const cjs_includes = [
-  'const { Performative, AgentID, Message, Gateway, MessageClass } = require(\'../../dist/cjs/fjage.cjs\');',
+  'const { Performative, AgentID, Message, Gateway, MessageClass, GenericMessage } = require(\'../../dist/cjs/fjage.cjs\');',
   'const { isBrowser, isJsDom, isNode } = require(\'../../node_modules/browser-or-node/lib/index.js\');',
   'const dns = require(\'dns\');',
   'dns.setDefaultResultOrder(\'ipv4first\');',
@@ -18,7 +18,7 @@ const cjs_includes = [
 
 
 const esm_includes = [
-  'import { Performative, AgentID, Message, Gateway, MessageClass } from \'../../dist/esm/fjage.js\';',
+  'import { Performative, AgentID, Message, Gateway, MessageClass, GenericMessage } from \'../../dist/esm/fjage.js\';',
   'import { isBrowser, isNode, isJsDom } from \'../../node_modules/browser-or-node/src/index.js\';',
   ''
 ];
