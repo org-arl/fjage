@@ -1,4 +1,4 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass it expect expectAsync describe fdescribe spyOn beforeAll afterAll beforeEach jasmine*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass GenericMessage it expect expectAsync describe fdescribe spyOn beforeAll afterAll beforeEach jasmine*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -297,6 +297,33 @@ describe('A Gateway', function () {
     expect(spy).toHaveBeenCalledWith(true);
     gw.connector._reconnectTime = 5000;
     await delay(300);
+    gw.close();
+  });
+
+  it('should be able to subscribe to topics', async function() {
+    const gw = new Gateway(gwOpts);
+    const pub = gw.agent('pub');
+    let pubCount = 0;
+    gw.addMessageListener(m => {
+      if (m.__clazz__ == 'org.arl.fjage.GenericMessage' && m.sender == 'pub') {
+        pubCount++;
+      }
+    });
+    await delay(500);
+    expect(pubCount).toBe(0);
+    // Enable publishing
+    pub.set('tick', true);
+    await delay(1000);
+    // Since we're not subscribing to any topics, we should not receive any messages
+    expect(pubCount).toBe(0);
+    // Subscribe to the topic
+    gw.subscribe(gw.topic('test-topic'));
+    await delay(1000);
+    // We should receive messages now
+    expect(pubCount).toBeGreaterThan(0);
+    // Unsubscribe from the topic
+    gw.unsubscribe(gw.topic('test-topic'));
+    pub.set('tick', false);
     gw.close();
   });
 });

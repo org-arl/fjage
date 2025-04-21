@@ -1,7 +1,6 @@
 package org.arl.fjage.test
 
 import org.arl.fjage.*
-import org.arl.fjage.param.*;
 
 public class EchoServerAgent extends Agent {
     @Override

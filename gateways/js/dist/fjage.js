@@ -1,4 +1,4 @@
-/* fjage.js v1.13.9 */
+/* fjage.js v2.0.0 */
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -1009,13 +1009,10 @@
 
     /** @private */
     _update_watch() {
-      // FIXME : Turning off wantsMessagesFor in fjagejs for now as it breaks multiple browser
-      // windows connecting to the same master container.
-      //
-      // let watch = Object.keys(this.subscriptions);
-      // watch.push(this.aid.getName());
-      // let rq = { action: 'wantsMessagesFor', agentIDs: watch };
-      // this._msgTx(rq);
+      let watch = Object.keys(this.subscriptions);
+      watch.push(this.aid.getName());
+      let rq = { action: 'wantsMessagesFor', agentIDs: watch };
+      this._msgTx(rq);
     }
 
     /**
