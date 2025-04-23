@@ -37,7 +37,6 @@ class fjagecTest {
     })
     platform.start()
     Thread.sleep(5)
-    println "Starting C tests... ${System.getProperty('manualCTest')}"
     def ret = 0
     if (System.getProperty('manualCTest') == null){
       println "Running automated tests."
