@@ -5,6 +5,7 @@ plugins {
   id 'groovy'
   id 'maven-publish'
   id 'signing'
+  id "com.github.ben-manes.versions" version "0.46.0"
 }
 
 defaultTasks 'jars'
@@ -38,16 +39,16 @@ repositories {
 }
 
 dependencies {
-  api 'org.codehaus.groovy:groovy:2.5.20'
-  api 'org.jline:jline:3.21.0'
-  api 'org.apache.commons:commons-lang3:3.12.0'
-  api 'commons-io:commons-io:2.11.0'
+  api 'org.codehaus.groovy:groovy:2.5.23'
+  api 'org.jline:jline:3.29.0'
+  api 'org.apache.commons:commons-lang3:3.17.0'
+  api 'commons-io:commons-io:2.19.0'
   api 'uk.com.robust-it:cloning:1.9.12'
-  api 'org.eclipse.jetty:jetty-server:9.4.50.v20221201'
-  api 'org.eclipse.jetty:jetty-servlet:9.4.50.v20221201'
-  api 'org.eclipse.jetty:jetty-rewrite:9.4.50.v20221201'
-  api 'org.eclipse.jetty.websocket:websocket-server:9.4.50.v20221201'
-  api 'com.google.code.gson:gson:2.10'
+  api 'org.eclipse.jetty:jetty-server:9.4.57.v20241219'
+  api 'org.eclipse.jetty:jetty-servlet:9.4.57.v20241219'
+  api 'org.eclipse.jetty:jetty-rewrite:9.4.57.v20241219'
+  api 'org.eclipse.jetty.websocket:websocket-server:9.4.57.v20241219'
+  api 'com.google.code.gson:gson:2.13.0'
   api 'com.fazecast:jSerialComm:2.9.3'
   testImplementation 'junit:junit:4.13.2'
   testImplementation 'net.jodah:concurrentunit:0.4.6'
@@ -222,4 +223,12 @@ publishing {
 
 signing {
   sign publishing.publications.mavenJava
+}
+
+tasks.named("dependencyUpdates").configure {
+  rejectVersionIf {
+//    println "Checking ${it.candidate} vs ${it.currentVersion}"
+    println "Comparing ${it.candidate } vs ${it.currentVersion}"
+    return it.candidate.version.split('\\.')[0] != it.currentVersion.split('\\.')[0]
+  }
 }
