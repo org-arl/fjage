@@ -18,12 +18,12 @@ public class Store implements Closeable {
 
   protected static File storeRoot = new File(FileUtils.getUserDirectory(), ".fjstore");
   protected static ClassLoader defaultClazzLoader = null;
-  protected static Map<String,Store> instances = new HashMap<>();
+  protected static final Map<String,Store> instances = new HashMap<>();
 
   protected File root;
   protected String clazz;
   protected ClassLoader clazzLoader;
-  private MessageDigest md;
+  private final MessageDigest md;
 
   protected Store(String clazz) {
     this.clazz = clazz;
@@ -109,7 +109,7 @@ public class Store implements Closeable {
   public void put(Serializable obj) {
     if (root == null) throw new FjageException("Store has been closed");
     File d = new File(root, obj.getClass().getName());
-    d.mkdirs();
+    if (!d.exists() && !d.mkdirs()) throw new FjageException("Cannot create directory " + d);
     File f = new File(d, getId(obj));
     FileOutputStream fout = null;
     ObjectOutputStream out = null;
@@ -139,9 +139,7 @@ public class Store implements Closeable {
       else in = new ObjectInputStream(fin) {
         @Override
         protected Class<?> resolveClass(ObjectStreamClass objectStreamClass) throws IOException, ClassNotFoundException {
-          Class<?> clazz = Class.forName(objectStreamClass.getName(), false, clazzLoader);
-          if (clazz != null) return clazz;
-          return super.resolveClass(objectStreamClass);
+            return Class.forName(objectStreamClass.getName(), false, clazzLoader);
         }
       };
       @SuppressWarnings("unchecked")
@@ -181,9 +179,9 @@ public class Store implements Closeable {
     List<T> out = new ArrayList<T>();
     File[] list = new File(root, type.getName()).listFiles();
     if (list == null) return out;
-    for (int i = 0; i < list.length; i++) {
-      T obj = load(type, list[i]);
-      if (obj != null) out.add(obj);
+    for (File file : list) {
+        T obj = load(type, file);
+        if (obj != null) out.add(obj);
     }
     return out;
   }
@@ -251,7 +249,7 @@ public class Store implements Closeable {
     if (root == null) throw new FjageException("Store has been closed");
     try {
       return FileUtils.sizeOfDirectory(root);
-    } catch (IllegalArgumentException ex) {
+    } catch (IllegalArgumentException | UncheckedIOException ex) {
       return 0;
     }
   }
