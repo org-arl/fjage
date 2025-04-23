@@ -57,5 +57,4 @@ class fjagecTest {
     platform.shutdown()
     assertEquals(ret,0)
   }
-
 }
