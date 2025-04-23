@@ -36,7 +36,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -148,8 +147,6 @@ public class WebServer {
   protected Server server;
   protected ContextHandlerCollection contexts;
   protected RewriteHandler rewrite;
-  protected Map<String,ContextHandler> staticContexts = new HashMap<String,ContextHandler>();
-  protected HandlerCollection handlerCollection = new HandlerCollection();
   protected boolean started;
   protected int port;
 
@@ -157,6 +154,20 @@ public class WebServer {
     this(port, "127.0.0.1");
   }
 
+
+  /**
+   * Creates a new web server instance.
+   *
+   * The Jetty based WebServer has a set of handlers that are initialized
+   * and more handlers can be added to it. The default handler stack is
+   *
+   * <code> GzipHandler -> RewriteHandler -> ContextHandlerCollection[ contexts[] , DefaultHandler] </code>
+   *
+   * Any new handlers added to the server will be added to the list of ContextHandlers (contexts).
+   *
+   * @param port HTTP port number.
+   * @param ip IP address to bind HTTP server to.
+   */
   protected WebServer(int port, String ip) {
     this.port = port;
     server = new Server(InetSocketAddress.createUnresolved(ip, port));
@@ -168,6 +179,7 @@ public class WebServer {
     contexts = new ContextHandlerCollection();
     GzipHandler gzipHandler = new GzipHandler();
     gzipHandler.setIncludedMimeTypes("text/html", "text/plain", "text/xml", "text/css", "application/javascript", "text/javascript");
+    HandlerCollection handlerCollection = new HandlerCollection();
     handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });
     gzipHandler.setHandler(rewrite);
     rewrite.setHandler(handlerCollection);
@@ -217,39 +229,6 @@ public class WebServer {
     if (port > 0) servers.remove(port);
   }
 
-
-  /**
-   * Adds a context handler to the server. Context handler should be added before the web
-   * server is started.
-   *
-   * @param handler context handler.
-   */
-  public void add(ContextHandler handler) {
-    log.info("Adding web context: "+handler.getContextPath());
-    contexts.addHandler(handler);
-    try {
-      handler.start();
-    } catch (Exception ex) {
-      log.log(Level.WARNING, "Unable to start context "+handler.getContextPath(), ex);
-    }
-  }
-
-  /**
-   * Removes a context handler.
-   *
-   * @param handler context handler to remove.
-   */
-  public void remove(ContextHandler handler) {
-    log.info("Removing web context: "+handler.getContextPath());
-    try {
-      handler.stop();
-    } catch (Exception ex) {
-      log.log(Level.WARNING, "Unable to stop context "+handler.getContextPath(), ex);
-    }
-    contexts.removeHandler(handler);
-    if (contexts.getHandlers() == null || contexts.getHandlers().length <= staticContexts.size()) stop();
-  }
-
   /**
    * Adds a context to serve static documents.
    *
@@ -257,7 +236,9 @@ public class WebServer {
    * @param resource resource path.
    * @param options WebServerOptions object.
    */
-  public void add(String context, String resource, WebServerOptions options) {
+  public ArrayList<ContextHandler> addStatic(String context, String resource, WebServerOptions options) {
+    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
+    if (resource == null || resource.isEmpty()) throw new IllegalArgumentException("Resource cannot be null or empty");
     if(resource.startsWith("/")) resource = resource.substring(1);
     ArrayList<URL> res = new ArrayList<>();
     try {
@@ -265,6 +246,7 @@ public class WebServer {
     }catch (IOException ex){
       // do nothing
     }
+    ArrayList<ContextHandler> handlers = new ArrayList<>();
     for (URL r : res){
       String staticWebResDir = r.toExternalForm();
       ContextHandler handler = new ContextHandler(context);
@@ -276,9 +258,10 @@ public class WebServer {
       resHandler.setCacheControl(options.cacheControl);
       resHandler.setEtags(true);
       handler.setHandler(resHandler);
-      staticContexts.put(context, handler);
+      handlers.add(handler);
       add(handler);
     }
+    return handlers;
   }
 
   /**
@@ -288,8 +271,8 @@ public class WebServer {
    * @param resource resource path.
    * @param cacheControl cache control header.
    */
-  public void add(String context, String resource, String cacheControl) {
-    add(context, resource, new WebServerOptions().cacheControl(cacheControl));
+  public ArrayList<ContextHandler> addStatic(String context, String resource, String cacheControl) {
+    return addStatic(context, resource, new WebServerOptions().cacheControl(cacheControl));
   }
 
   /**
@@ -298,8 +281,8 @@ public class WebServer {
    * @param context context path.
    * @param resource resource path.
    */
-  public void add(String context, String resource) {
-    add (context, resource, new WebServerOptions());
+  public ArrayList<ContextHandler> addStatic(String context, String resource) {
+    return addStatic (context, resource, new WebServerOptions());
   }
 
   /**
@@ -309,7 +292,9 @@ public class WebServer {
    * @param dir filesystem path of directory to serve files from.
    * @param options WebServerOptions object.
    */
-  public void add(String context, File dir, WebServerOptions options) {
+  public ContextHandler addStatic(String context, File dir, WebServerOptions options) {
+    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
+    if (dir == null || !dir.exists()) throw new IllegalArgumentException("Directory cannot be null or empty");
     try {
       ContextHandler handler = new ContextHandler(context);
       ResourceHandler resHandler = options.directoryListed ? new DirectoryHandler() : new ResourceHandler();
@@ -319,9 +304,10 @@ public class WebServer {
       resHandler.setEtags(true);
       handler.setHandler(resHandler);
       add(handler);
+      return handler;
     }catch (IOException ex){
       log.log(Level.WARNING, "Unable to add context : " + context, ex);
-      return;
+      return null;
     }
   }
 
@@ -332,8 +318,8 @@ public class WebServer {
    * @param dir filesystem path of directory to serve files from.
    * @param cacheControl cache control header.
    */
-  public void add(String context, File dir, String cacheControl) {
-    add (context, dir, new WebServerOptions().cacheControl(cacheControl));
+  public ContextHandler addStatic(String context, File dir, String cacheControl) {
+    return addStatic (context, dir, new WebServerOptions().cacheControl(cacheControl));
   }
 
   /**
@@ -342,8 +328,27 @@ public class WebServer {
    * @param context context path.
    * @param dir filesystem path of directory to serve files from.
    */
-  public void add(String context, File dir) {
-    add(context, dir, new WebServerOptions());
+  public ContextHandler addStatic(String context, File dir) {
+    return addStatic(context, dir, new WebServerOptions());
+  }
+
+  /**
+   * Removes a context serving static documents.
+   *
+   * @param handler context handler to remove.
+   */
+  public boolean removeStatic(ContextHandler handler) {
+    return removeHandler(handler);
+  }
+
+  /**
+   * Checks is there's already a context serving static documents.
+   *
+   * @param context context path.
+   * @return true if configured, false otherwise
+   */
+  public boolean hasStatic(String context) {
+    return hasHandler(context);
   }
 
   /**
@@ -378,34 +383,46 @@ public class WebServer {
   }
 
   /**
-   * Removes a context serving static documents.
+   * Add a generic handler to the server at the specified context.
    *
    * @param context context path.
+   * @param handler handler to add.
    */
-  public void remove(String context) {
-    ContextHandler handler = staticContexts.get(context);
-    if (handler == null) return;
-    try {
-      handler.stop();
-    } catch (Exception e) {
-      log.log(Level.WARNING, "Unable to stop context "+context, e);
-    }
-    staticContexts.remove(context);
-    remove(handler);
+  public ContextHandler addHandler(String context, AbstractHandler handler) {
+    if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
+    ContextHandler c = new ContextHandler(context);
+    c.setHandler(handler);
+    if (add(c)) return c;
+    return null;
   }
 
   /**
-   * Checks if a context is already configured to serve documents.
+   * Checks if a handler is already registered for the specified context.
    *
    * @param context context path.
-   * @return true if configured, false otherwise
+   * @return
    */
-  public boolean hasContext(String context) {
-    return staticContexts.get(context) != null;
+  public boolean hasHandler(String context) {
+    // find any handler in contexts.getHandlers() that has getContextPath() == context
+    return Arrays.stream(contexts.getHandlers())
+            .filter(h -> h instanceof ContextHandler)
+            .map(h -> (ContextHandler) h)
+            .anyMatch(h -> h.getContextPath().equals(context));
+  }
+
+  /**
+   * Removes a handler from the server.
+   *
+   * @param handler handler to remove.
+   */
+  public boolean removeHandler(ContextHandler handler) {
+    if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
+    return remove(handler);
   }
 
   /**
    * Adds a rule to rewrite handler.
+   * NOTE: Rules cannot be added after the server is started.
    *
    * @param rule rewrite rule.
    */
@@ -418,7 +435,69 @@ public class WebServer {
     }
   }
 
-  public static class UploadHandler extends AbstractHandler {
+  /**
+   * Builder style class for configuring web server options.
+   */
+  public static class WebServerOptions {
+    protected String cacheControl = CACHE;
+    protected boolean directoryListed = false;
+
+    public WebServerOptions() {}
+
+    public WebServerOptions cacheControl(String cacheControl) {
+      this.cacheControl = cacheControl;
+      return this;
+    }
+
+    public WebServerOptions directoryListed(boolean directoryListed) {
+      this.directoryListed = directoryListed;
+      return this;
+    }
+  }
+
+  //////// private methods
+
+  /**
+   * Adds a context handler to the server. Context handler should be added before the web
+   * server is started.
+   *
+   * @param handler context handler.
+   */
+  private boolean add(ContextHandler handler) {
+    log.info("Adding web context: "+handler.getContextPath());
+    contexts.addHandler(handler);
+    try {
+      handler.start();
+    } catch (Exception ex) {
+      log.log(Level.WARNING, "Unable to start context "+handler.getContextPath(), ex);
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Removes a context handler.
+   *
+   * @param handler context handler to remove.
+   */
+  private boolean remove(ContextHandler handler) {
+    log.info("Removing web context: "+handler.getContextPath());
+    try {
+      handler.stop();
+    } catch (Exception ex) {
+      log.log(Level.WARNING, "Unable to stop context "+handler.getContextPath(), ex);
+      return false;
+    }
+    contexts.removeHandler(handler);
+    return true;
+  }
+
+
+
+  /**
+   * Handler for uploading files to the server
+   */
+  private static class UploadHandler extends AbstractHandler {
     private final MultipartConfigElement multipartConfig;
     private final Path outputDir;
 
@@ -467,26 +546,6 @@ public class WebServer {
         }
       }
       baseRequest.setHandled(true);
-    }
-  }
-
-  /**
-   * Builder style class for configuring web server options.
-   */
-  public static class WebServerOptions {
-    protected String cacheControl = CACHE;
-    protected boolean directoryListed = false;
-
-    public WebServerOptions() {}
-
-    public WebServerOptions cacheControl(String cacheControl) {
-      this.cacheControl = cacheControl;
-      return this;
-    }
-
-    public WebServerOptions directoryListed(boolean directoryListed) {
-      this.directoryListed = directoryListed;
-      return this;
     }
   }
 
