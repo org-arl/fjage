@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals
 
 class fjagejsTest {
 
-
   @Test
   void fjageJSTest() {
     def testRes = [
