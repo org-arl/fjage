@@ -235,7 +235,7 @@ public class WebServer {
    * @param context context path.
    * @param resource resource path.
    * @param options WebServerOptions object.
-   * @return an ArrayList of ContextHandler objects if added, null otherwise.
+   * @return an ArrayList of ContextHandler objects. The list will be empty if no handlers are added.
    */
   public ArrayList<ContextHandler> addStatic(String context, String resource, WebServerOptions options) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
