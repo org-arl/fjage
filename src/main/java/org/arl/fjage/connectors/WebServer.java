@@ -1,12 +1,12 @@
 /******************************************************************************
 
-Copyright (c) 2013, Mandar Chitre
+ Copyright (c) 2013, Mandar Chitre
 
-This file is part of fjage which is released under Simplified BSD License.
-See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
-for full license details.
+ This file is part of fjage which is released under Simplified BSD License.
+ See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
+ for full license details.
 
-******************************************************************************/
+ ******************************************************************************/
 
 package org.arl.fjage.connectors;
 
@@ -51,7 +51,7 @@ public class WebServer {
 
   //////// static attributes and methods
 
-  private static final Map<Integer,WebServer> servers = new HashMap<Integer,WebServer>();
+  private static final Map<Integer,WebServer> servers = new HashMap<>();
   private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(WebServer.class.getName());
 
   static {
@@ -157,12 +157,12 @@ public class WebServer {
 
   /**
    * Creates a new web server instance.
-   *
+   * <br>
    * The Jetty based WebServer has a set of handlers that are initialized
-   * and more handlers can be added to it. The default handler stack is
-   *
+   * and more handlers can be added to it. The handler stack setup is
+   * <p>
    * <code> GzipHandler -> RewriteHandler -> ContextHandlerCollection[ contexts[] , DefaultHandler] </code>
-   *
+   * </p>
    * Any new handlers added to the server will be added to the list of ContextHandlers (contexts).
    *
    * @param port HTTP port number.
@@ -235,6 +235,7 @@ public class WebServer {
    * @param context context path.
    * @param resource resource path.
    * @param options WebServerOptions object.
+   * @return an ArrayList of ContextHandler objects if added, null otherwise.
    */
   public ArrayList<ContextHandler> addStatic(String context, String resource, WebServerOptions options) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
@@ -270,6 +271,7 @@ public class WebServer {
    * @param context context path.
    * @param resource resource path.
    * @param cacheControl cache control header.
+   * @return an ArrayList of ContextHandler objects if added, null otherwise.
    */
   public ArrayList<ContextHandler> addStatic(String context, String resource, String cacheControl) {
     return addStatic(context, resource, new WebServerOptions().cacheControl(cacheControl));
@@ -280,6 +282,7 @@ public class WebServer {
    *
    * @param context context path.
    * @param resource resource path.
+   * @return an ArrayList of ContextHandler objects if added, null otherwise.
    */
   public ArrayList<ContextHandler> addStatic(String context, String resource) {
     return addStatic (context, resource, new WebServerOptions());
@@ -291,6 +294,7 @@ public class WebServer {
    * @param context context path.
    * @param dir filesystem path of directory to serve files from.
    * @param options WebServerOptions object.
+   * @return ContextHandler object if added, null otherwise.
    */
   public ContextHandler addStatic(String context, File dir, WebServerOptions options) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
@@ -317,6 +321,7 @@ public class WebServer {
    * @param context context path.
    * @param dir filesystem path of directory to serve files from.
    * @param cacheControl cache control header.
+   * @return ContextHandler object if added, null otherwise.
    */
   public ContextHandler addStatic(String context, File dir, String cacheControl) {
     return addStatic (context, dir, new WebServerOptions().cacheControl(cacheControl));
@@ -327,6 +332,7 @@ public class WebServer {
    *
    * @param context context path.
    * @param dir filesystem path of directory to serve files from.
+   * @return ContextHandler object if added, null otherwise.
    */
   public ContextHandler addStatic(String context, File dir) {
     return addStatic(context, dir, new WebServerOptions());
@@ -336,6 +342,7 @@ public class WebServer {
    * Removes a context serving static documents.
    *
    * @param handler context handler to remove.
+   * @return true if removed, false otherwise.
    */
   public boolean removeStatic(ContextHandler handler) {
     return removeHandler(handler);
@@ -345,7 +352,7 @@ public class WebServer {
    * Checks is there's already a context serving static documents.
    *
    * @param context context path.
-   * @return true if configured, false otherwise
+   * @return true if configured, false otherwise.
    */
   public boolean hasStatic(String context) {
     return hasHandler(context);
@@ -356,12 +363,13 @@ public class WebServer {
    *
    * @param context context path.
    * @param dir filesystem path of directory to upload files to.
+   * @return true if added, false otherwise.
    */
-  public void addUpload(String context, File dir) {
+  public boolean addUpload(String context, File dir) {
     long maxFileSize = 1024 * 1024 * 1024; // 1 GB
     long maxRequestSize = 1024 * 1024 * 1024; // 1 GB
     int fileSizeThreshold = 100*1024*1024; // 100 MB
-    addUpload(context, dir, maxFileSize, maxRequestSize, fileSizeThreshold);
+    return addUpload(context, dir, maxFileSize, maxRequestSize, fileSizeThreshold);
   }
 
   /**
@@ -372,21 +380,23 @@ public class WebServer {
    * @param maxFileSize maximum size of a file. @see javax.servlet.MultipartConfigElement
    * @param maxRequestSize maximum size of a request. @see javax.servlet.MultipartConfigElement
    * @param fileSizeThreshold size threshold after which files will be written to disk. @see javax.servlet.MultipartConfigElement
+   * @return true if added, false otherwise.
    */
-  public void addUpload(String context, File dir, long maxFileSize, long maxRequestSize, int fileSizeThreshold) {
+  public boolean addUpload(String context, File dir, long maxFileSize, long maxRequestSize, int fileSizeThreshold) {
     String location = dir.getAbsolutePath();
     MultipartConfigElement multipartConfig = new MultipartConfigElement(location, maxFileSize, maxRequestSize, fileSizeThreshold);
     ContextHandler handler = new ContextHandler(context);
     handler.setAllowNullPathInfo(true);
     handler.setHandler(new UploadHandler(multipartConfig, dir.toPath()));
-    add(handler);
+    return add(handler);
   }
 
   /**
-   * Add a generic handler to the server at the specified context.
+   * Add a handler to the server at the specified context.
    *
    * @param context context path.
    * @param handler handler to add.
+   * @return ContextHandler object if added, null otherwise.
    */
   public ContextHandler addHandler(String context, AbstractHandler handler) {
     if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
@@ -400,20 +410,21 @@ public class WebServer {
    * Checks if a handler is already registered for the specified context.
    *
    * @param context context path.
-   * @return
+   * @return true if a handler is already registered, false otherwise.
    */
   public boolean hasHandler(String context) {
     // find any handler in contexts.getHandlers() that has getContextPath() == context
     return Arrays.stream(contexts.getHandlers())
-            .filter(h -> h instanceof ContextHandler)
-            .map(h -> (ContextHandler) h)
-            .anyMatch(h -> h.getContextPath().equals(context));
+        .filter(h -> h instanceof ContextHandler)
+        .map(h -> (ContextHandler) h)
+        .anyMatch(h -> h.getContextPath().equals(context));
   }
 
   /**
-   * Removes a handler from the server.
+   * Removes a ContextHandler from the server.
    *
    * @param handler handler to remove.
+   * @return true if removed, false otherwise.
    */
   public boolean removeHandler(ContextHandler handler) {
     if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
@@ -422,17 +433,21 @@ public class WebServer {
 
   /**
    * Adds a rule to rewrite handler.
+   * <p>
    * NOTE: Rules cannot be added after the server is started.
-   *
+   * </p>
    * @param rule rewrite rule.
+   * @return true if added, false otherwise.
    */
-  public void addRule(Rule rule) {
+  public boolean addRule(Rule rule) {
     log.fine("Adding rewrite rule: "+rule);
     try {
       rewrite.addRule(rule);
+      return true;
     } catch (Exception ex) {
       log.log(Level.WARNING, "Unable to add rewrite rule", ex);
     }
+    return false;
   }
 
   /**
@@ -461,7 +476,8 @@ public class WebServer {
    * Adds a context handler to the server. Context handler should be added before the web
    * server is started.
    *
-   * @param handler context handler.
+   * @param handler context handler
+   * @return true if added, false otherwise.
    */
   private boolean add(ContextHandler handler) {
     log.info("Adding web context: "+handler.getContextPath());
@@ -495,7 +511,7 @@ public class WebServer {
 
 
   /**
-   * Handler for uploading files to the server
+   * Handler for uploading files to the server.
    */
   private static class UploadHandler extends AbstractHandler {
     private final MultipartConfigElement multipartConfig;
