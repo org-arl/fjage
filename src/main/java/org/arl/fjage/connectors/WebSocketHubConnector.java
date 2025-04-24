@@ -86,16 +86,14 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
       name = "ws://0.0.0.0:"+port+context;
     }
     server = WebServer.getInstance(port);
-    handler = new ContextHandler(context);
     log.info ("Adding WebSocket handler to context "+context+" on port "+port);
-    handler.setHandler(new WebSocketHandler() {
+    handler = server.addHandler(context, new WebSocketHandler() {
       @Override
       public void configure(WebSocketServletFactory factory) {
         factory.setCreator(WebSocketHubConnector.this);
         if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize(maxMsgSize);
       }
     });
-    server.add(handler);
     server.start();
     outThread = new OutputThread();
     outThread.start();
@@ -140,7 +138,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
   public void close() {
     outThread.close();
     outThread = null;
-    server.remove(handler);
+    server.removeHandler(handler);
     server = null;
     handler = null;
     pin.close();
