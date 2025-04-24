@@ -17,7 +17,7 @@ class fjagecTest {
     def testPending = true
     def platform = new RealTimePlatform()
     def container = new MasterContainer(platform, 5081)
-    WebServer.getInstance(8080).add("/", "/org/arl/fjage/web")
+    WebServer.getInstance(8080).addStatic("/", "/org/arl/fjage/web")
     Connector conn = new WebSocketHubConnector(8080, "/shell/ws")
     def shell = new ShellAgent(new ConsoleShell(conn), new GroovyScriptEngine())
     container.addConnector(new WebSocketHubConnector(8080, "/ws", true))

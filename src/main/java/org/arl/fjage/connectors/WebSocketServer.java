@@ -32,15 +32,13 @@ public class WebSocketServer implements WebSocketCreator {
         this.port = port;
         this.listener = listener;
         server = WebServer.getInstance(port);
-        handler = new ContextHandler(context);
-        handler.setHandler(new WebSocketHandler() {
+        handler = server.addHandler(context, new WebSocketHandler() {
             @Override
             public void configure(WebSocketServletFactory factory) {
                 if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize(maxMsgSize);
                 factory.setCreator(WebSocketServer.this);
             }
         });
-        server.add(handler);
         server.start();
     }
 
@@ -64,7 +62,7 @@ public class WebSocketServer implements WebSocketCreator {
     }
 
     public void close() {
-        server.remove(handler);
+        server.removeHandler(handler);
         handler = null;
         server = null;
     }

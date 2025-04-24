@@ -17,8 +17,8 @@ import org.arl.fjage.shell.EchoScriptEngine
 import org.arl.fjage.shell.ShellAgent
 import org.junit.Test
 
-import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
 
 class fjagejsTest {
 
