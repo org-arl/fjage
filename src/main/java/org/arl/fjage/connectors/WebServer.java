@@ -235,9 +235,9 @@ public class WebServer {
    * @param context context path.
    * @param resource resource path.
    * @param options WebServerOptions object.
-   * @return an ArrayList of ContextHandler objects. The list will be empty if no handlers are added.
+   * @return a List of ContextHandler objects if added.
    */
-  public ArrayList<ContextHandler> addStatic(String context, String resource, WebServerOptions options) {
+  public List<ContextHandler> addStatic(String context, String resource, WebServerOptions options) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
     if (resource == null || resource.isEmpty()) throw new IllegalArgumentException("Resource cannot be null or empty");
     if(resource.startsWith("/")) resource = resource.substring(1);
@@ -247,7 +247,7 @@ public class WebServer {
     }catch (IOException ex){
       // do nothing
     }
-    ArrayList<ContextHandler> handlers = new ArrayList<>();
+    List<ContextHandler> handlers = new ArrayList<>();
     for (URL r : res){
       String staticWebResDir = r.toExternalForm();
       ContextHandler handler = new ContextHandler(context);
@@ -259,8 +259,7 @@ public class WebServer {
       resHandler.setCacheControl(options.cacheControl);
       resHandler.setEtags(true);
       handler.setHandler(resHandler);
-      handlers.add(handler);
-      add(handler);
+      if (add(handler)) handlers.add(handler);
     }
     return handlers;
   }
@@ -271,9 +270,9 @@ public class WebServer {
    * @param context context path.
    * @param resource resource path.
    * @param cacheControl cache control header.
-   * @return an ArrayList of ContextHandler objects if added, null otherwise.
+   * @return a List of ContextHandler objects if added.
    */
-  public ArrayList<ContextHandler> addStatic(String context, String resource, String cacheControl) {
+  public List<ContextHandler> addStatic(String context, String resource, String cacheControl) {
     return addStatic(context, resource, new WebServerOptions().cacheControl(cacheControl));
   }
 
@@ -282,9 +281,9 @@ public class WebServer {
    *
    * @param context context path.
    * @param resource resource path.
-   * @return an ArrayList of ContextHandler objects if added, null otherwise.
+   * @return a List of ContextHandler objects if added.
    */
-  public ArrayList<ContextHandler> addStatic(String context, String resource) {
+  public List<ContextHandler> addStatic(String context, String resource) {
     return addStatic (context, resource, new WebServerOptions());
   }
 
@@ -294,9 +293,9 @@ public class WebServer {
    * @param context context path.
    * @param dir filesystem path of directory to serve files from.
    * @param options WebServerOptions object.
-   * @return ContextHandler object if added, null otherwise.
+   * @return a List of ContextHandler objects if added.
    */
-  public ContextHandler addStatic(String context, File dir, WebServerOptions options) {
+  public List<ContextHandler> addStatic(String context, File dir, WebServerOptions options) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
     if (dir == null || !dir.exists()) throw new IllegalArgumentException("Directory cannot be null or empty");
     try {
@@ -307,12 +306,11 @@ public class WebServer {
       resHandler.setCacheControl(options.cacheControl);
       resHandler.setEtags(true);
       handler.setHandler(resHandler);
-      add(handler);
-      return handler;
+      if (add(handler)) return Collections.singletonList(handler);
     }catch (IOException ex){
       log.log(Level.WARNING, "Unable to add context : " + context, ex);
-      return null;
     }
+    return Collections.emptyList();
   }
 
   /**
@@ -323,7 +321,7 @@ public class WebServer {
    * @param cacheControl cache control header.
    * @return ContextHandler object if added, null otherwise.
    */
-  public ContextHandler addStatic(String context, File dir, String cacheControl) {
+  public List<ContextHandler> addStatic(String context, File dir, String cacheControl) {
     return addStatic (context, dir, new WebServerOptions().cacheControl(cacheControl));
   }
 
@@ -334,7 +332,7 @@ public class WebServer {
    * @param dir filesystem path of directory to serve files from.
    * @return ContextHandler object if added, null otherwise.
    */
-  public ContextHandler addStatic(String context, File dir) {
+  public List<ContextHandler> addStatic(String context, File dir) {
     return addStatic(context, dir, new WebServerOptions());
   }
 
