@@ -397,6 +397,7 @@ public class WebServer {
    * @return ContextHandler object if added, null otherwise.
    */
   public ContextHandler addHandler(String context, AbstractHandler handler) {
+    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
     if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
     ContextHandler c = new ContextHandler(context);
     c.setHandler(handler);
