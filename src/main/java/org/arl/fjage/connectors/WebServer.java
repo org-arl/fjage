@@ -297,7 +297,7 @@ public class WebServer {
    */
   public List<ContextHandler> addStatic(String context, File dir, WebServerOptions options) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (dir == null || !dir.exists()) throw new IllegalArgumentException("Directory cannot be null or empty");
+    if (dir == null || !dir.exists()) throw new IllegalArgumentException("Directory cannot be null and must exist");
     try {
       ContextHandler handler = new ContextHandler(context);
       ResourceHandler resHandler = options.directoryListed ? new DirectoryHandler() : new ResourceHandler();
