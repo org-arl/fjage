@@ -1,4 +1,4 @@
-/* fjage.js v1.13.9 */
+/* fjage.js v2.0.0 */
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
