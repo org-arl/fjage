@@ -1,5 +1,12 @@
 # Release Notes
 
+## v2.0.0
+
+* Changed `WebSocketConnector` to `WebSocketHubConnector`
+* Added `WebSocketConnector` for direct WebSocket connections
+* Changed names of SHELL message private attributes
+* Changed `WebServer.add` methods to `WebServer.addStatic` and `WebServer.addHandler`
+
 ## ~~v1.15.2~~ (deprecated)
 
 * Bugfix: Force webserver to sync files after writing
