@@ -98,6 +98,12 @@ public class WebSocketConnector implements Connector{
     }
 
     @Override
+    public String[] connections() {
+        if (session == null || !session.isOpen()) return new String[]{};
+        return new String[] { session.getRemoteAddress().getHostName()+":"+session.getRemoteAddress().getPort() };
+    }
+
+    @Override
     public void close() {
         if (this.session != null && this.session.isOpen()) this.session.close();
         pin.close();
