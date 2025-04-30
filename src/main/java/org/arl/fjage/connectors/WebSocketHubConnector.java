@@ -86,7 +86,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
       name = "ws://0.0.0.0:"+port+context;
     }
     server = WebServer.getInstance(port);
-    log.info ("Adding WebSocket handler to context "+context+" on port "+port);
+    log.info ("Adding WebSocket handler at :"+port + context);
     handler = server.addHandler(context, new WebSocketHandler() {
       @Override
       public void configure(WebSocketServletFactory factory) {

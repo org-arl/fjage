@@ -261,6 +261,7 @@ public class WebServer {
       handler.setHandler(resHandler);
       if (add(handler)) handlers.add(handler);
     }
+    if(!handlers.isEmpty()) log.info("Adding static handler at "+context+" -> :"+resource);
     return handlers;
   }
 
@@ -306,7 +307,10 @@ public class WebServer {
       resHandler.setCacheControl(options.cacheControl);
       resHandler.setEtags(true);
       handler.setHandler(resHandler);
-      if (add(handler)) return Collections.singletonList(handler);
+      if (add(handler)) {
+        log.info("Adding static handler at "+context+" -> "+dir);
+        return Collections.singletonList(handler);
+      }
     }catch (IOException ex){
       log.log(Level.WARNING, "Unable to add context : " + context, ex);
     }
@@ -386,7 +390,11 @@ public class WebServer {
     ContextHandler handler = new ContextHandler(context);
     handler.setAllowNullPathInfo(true);
     handler.setHandler(new UploadHandler(multipartConfig, dir.toPath()));
-    return add(handler);
+    if (add(handler)) {
+      log.info("Adding upload handler at " + context + " -> " + dir.getPath());
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -427,7 +435,11 @@ public class WebServer {
    */
   public boolean removeHandler(ContextHandler handler) {
     if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
-    return remove(handler);
+    if (remove(handler)) {
+      log.info("Removing handler for "+handler.getContextPath());
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -479,7 +491,6 @@ public class WebServer {
    * @return true if added, false otherwise.
    */
   private boolean add(ContextHandler handler) {
-    log.info("Adding web context: "+handler.getContextPath());
     contexts.addHandler(handler);
     try {
       handler.start();
@@ -496,7 +507,6 @@ public class WebServer {
    * @param handler context handler to remove.
    */
   private boolean remove(ContextHandler handler) {
-    log.info("Removing web context: "+handler.getContextPath());
     try {
       handler.stop();
     } catch (Exception ex) {
