@@ -8,8 +8,11 @@ A fjåge Gateway implementation in JavaScript supports both browser (WebSocket) 
 
 fjage.js is included as a part of the [fjage.jar](https://search.maven.org/artifact/com.github.org-arl/fjage) package and also available seperately as a [npm package](https://www.npmjs.com/package/fjage.js).
 
-> Note: The latest version of fjage.jar, 1.9.1 is bundled with a fjage.js versioned as 1.9.1-rc5 because of some issues in publishing. The future versions of fjage.jar will contain the same version of fjage.js. Due to this publishing issue as well, fjage.js 1.9.1 is unavailable and fjage.js 1.9.1-rc6 should instead.
+### fjage.js v2.0.0
 
+fjage.js v2.0.0 enables automatic registration of subscriptions with the master container using `WANTS_MESSAGES_FOR` action. This is done everytime a fjage.js client subscribes to a topic. A change in fjåge to support a non-aggregating `WebSocketConnector` enable  this performance improvement in fjage.js. This is a breaking change from fjage.js v1.x.x, where all messages were sent to all fjage.js clients.
+
+The change doesn't affect the usage of fjage.js in the browser, but it does make **fjage.js ≥2.0.0 incompatible with fjåge < 2.0.0**.
 
 ## Installation
 
