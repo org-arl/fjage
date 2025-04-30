@@ -22,7 +22,7 @@ import org.arl.fjage.connectors.*;
 /**
  * Handles a JSON/TCP connection with remote container.
  */
-class ConnectionHandler extends Thread {
+public class ConnectionHandler extends Thread {
 
   private final String ALIVE = "{\"alive\": true}";
   private final String SIGN_OFF = "{\"alive\": false}";
