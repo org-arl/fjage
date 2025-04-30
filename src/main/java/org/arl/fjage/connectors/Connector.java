@@ -54,8 +54,7 @@ public interface Connector extends Closeable {
    *                 or null to disable listener.
    */
   public void setConnectionListener(ConnectionListener listener);
-
-
+  
   /**
    * Gets a list of all known active connections
    *
@@ -68,7 +67,5 @@ public interface Connector extends Closeable {
    */
   @Override
   public void close();
-
-
 
 }
