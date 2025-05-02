@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 public class WebSocketConnector implements Connector{
 
     private String name = "ws://[closed]";
+    private final String context;
     private Session session;
     private RemoteEndpoint remote;
     private ConnectionListener listener;
@@ -25,6 +26,10 @@ public class WebSocketConnector implements Connector{
     private final PseudoInputStream pin = new PseudoInputStream();
     private final PseudoOutputStream pout = new PseudoOutputStream();
     private OutputThread outThread = null;
+
+    public WebSocketConnector(String context) {
+        this.context = context;
+    }
 
     @OnWebSocketClose
     public void onWebSocketClose(int statusCode, String reason)  {
@@ -42,7 +47,7 @@ public class WebSocketConnector implements Connector{
         this.session = session;
         this.remote = this.session.getRemote();
         log.finer("WebSocket Connector connected: " + session.getRemoteAddress().getHostName() + ":" + session.getRemoteAddress().getPort());
-        name = "ws://" + this.remote.getInetSocketAddress().getAddress().getHostAddress() + ":" + this.remote.getInetSocketAddress().getPort();
+        name = "ws://" + this.remote.getInetSocketAddress().getAddress().getHostAddress() + context + ":" + this.remote.getInetSocketAddress().getPort();
         if (listener != null) listener.connected(this);
         outThread = new OutputThread();
         outThread.start();

@@ -423,6 +423,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       log.warning("WebSocket server already running at :" + websocketListener.getPort() + websocketListener.getContext());
       return false;
     }
+    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     websocketListener = new WebSocketServer(port, context, this);
     log.info("WebSocketServer running at :" + websocketListener.getPort() + websocketListener.getContext());
     return true;
