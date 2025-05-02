@@ -239,6 +239,7 @@ public class WebServer {
    */
   public List<ContextHandler> addStatic(String context, String resource, WebServerOptions options) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
+    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     if (resource == null || resource.isEmpty()) throw new IllegalArgumentException("Resource cannot be null or empty");
     if(resource.startsWith("/")) resource = resource.substring(1);
     ArrayList<URL> res = new ArrayList<>();
@@ -298,6 +299,7 @@ public class WebServer {
    */
   public List<ContextHandler> addStatic(String context, File dir, WebServerOptions options) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
+    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     if (dir == null || !dir.exists()) throw new IllegalArgumentException("Directory cannot be null and must exist");
     try {
       ContextHandler handler = new ContextHandler(context);
@@ -368,6 +370,8 @@ public class WebServer {
    * @return true if added, false otherwise.
    */
   public boolean addUpload(String context, File dir) {
+    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
+    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     long maxFileSize = 1024 * 1024 * 1024; // 1 GB
     long maxRequestSize = 1024 * 1024 * 1024; // 1 GB
     int fileSizeThreshold = 100*1024*1024; // 100 MB
@@ -385,6 +389,7 @@ public class WebServer {
    * @return true if added, false otherwise.
    */
   public boolean addUpload(String context, File dir, long maxFileSize, long maxRequestSize, int fileSizeThreshold) {
+    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     String location = dir.getAbsolutePath();
     MultipartConfigElement multipartConfig = new MultipartConfigElement(location, maxFileSize, maxRequestSize, fileSizeThreshold);
     ContextHandler handler = new ContextHandler(context);
@@ -406,6 +411,7 @@ public class WebServer {
    */
   public ContextHandler addHandler(String context, AbstractHandler handler) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
+    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
     ContextHandler c = new ContextHandler(context);
     c.setHandler(handler);

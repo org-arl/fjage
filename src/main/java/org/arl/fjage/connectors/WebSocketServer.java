@@ -48,7 +48,7 @@ public class WebSocketServer implements WebSocketCreator {
 
     @Override
     public Object createWebSocket(ServletUpgradeRequest servletUpgradeRequest, ServletUpgradeResponse servletUpgradeResponse) {
-        WebSocketConnector ws = new WebSocketConnector();
+        WebSocketConnector ws = new WebSocketConnector(context);
         ws.setConnectionListener(listener);
         return ws;
     }
