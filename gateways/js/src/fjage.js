@@ -533,8 +533,6 @@ export class Gateway {
         this.flush();
         this.connector.write('{"alive": true}');
         this._update_watch();
-      }else{
-        // TODO: remove all pending messages
       }
       this._sendEvent('conn', state);
     });
