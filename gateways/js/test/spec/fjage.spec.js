@@ -326,6 +326,17 @@ describe('A Gateway', function () {
     pub.set('tick', false);
     gw.close();
   });
+
+  it('should be able to cancel all requests', async function() {
+    const gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnFailedResponse: false}));
+    const shell = gw.agent('shell');
+    expectAsync(shell.get('language'))
+    .toBeRejectedWithError();
+    gw.cancelAll();
+    await delay(100);
+    gw.close();
+  });
+
 });
 
 describe('An AgentID', function () {
