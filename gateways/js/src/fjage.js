@@ -487,7 +487,7 @@ export class Gateway {
     return new Promise(resolve => {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
-        if (this.debug) console.log('Receive Timeout : ' + rq);
+        if (this.debug) console.log('Receive Timeout : ' + JSON.stringify(rq));
         resolve();
       }, 8*this._timeout);
       this.pending[rq.id] = rsp => {
@@ -497,7 +497,7 @@ export class Gateway {
       if (!this._msgTx.call(this,rq)) {
         clearTimeout(timer);
         delete this.pending[rq.id];
-        if (this.debug) console.log('Transmit Timeout : ' + rq);
+        if (this.debug) console.log('Transmit Timeout : ' +  JSON.stringify(rq));
         resolve();
       }
     });
