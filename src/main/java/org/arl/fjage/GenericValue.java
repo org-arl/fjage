@@ -10,8 +10,11 @@ for full license details.
 
 package org.arl.fjage;
 
-final public class GenericValue {
+import java.io.Serializable;
 
+final public class GenericValue implements Serializable {
+
+  private static final long serialVersionUID = 1L;
   final private Object data;
 
   public GenericValue(Object value) {
