@@ -328,7 +328,7 @@ describe('A Gateway', function () {
   });
 
   it('should cancel requests when disconnected', async function() {
-    const gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnFailedResponse: false, cancellPendingOnDisconnect: true}));
+    const gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnFailedResponse: false, cancelPendingOnDisconnect: true}));
     const shell = gw.agent('shell');
     expectAsync(shell.get('language'))
     .toBeRejectedWithError();

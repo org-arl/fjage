@@ -336,7 +336,7 @@ export class GenericMessage extends Message {
  * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
  * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
  * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
- * @param {boolean} [opts.cancellPendingOnDisconnect=true] - cancel pending requests on disconnect
+ * @param {boolean} [opts.cancelPendingOnDisconnect=true] - cancel pending requests on disconnect
  */
 export class Gateway {
 
@@ -355,7 +355,7 @@ export class Gateway {
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
     this._queueSize = opts.queueSize;     // size of queue
     this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
-    this._cancellPendingOnDisconnect = opts.cancellPendingOnDisconnect; // cancel pending requests on disconnect
+    this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect; // cancel pending requests on disconnect
     this.pending = {};                    // msgid to callback mapping for pending requests to server
     this.subscriptions = {};              // hashset for all topics that are subscribed
     this.listeners = {};                  // list of callbacks that want to listen to incoming messages
@@ -536,7 +536,7 @@ export class Gateway {
         this.connector.write('{"alive": true}');
         this._update_watch();
       } else{
-        if (this._cancellPendingOnDisconnect) {
+        if (this._cancelPendingOnDisconnect) {
           this._sendReceivers(null);
           this.flush();
         }
@@ -1056,7 +1056,7 @@ if (isBrowser || isWebWorker){
     'keepAlive' : true,
     'queueSize': DEFAULT_QUEUE_SIZE,
     'returnNullOnFailedResponse': true,
-    'cancellPendingOnDisconnect': false
+    'cancelPendingOnDisconnect': false
   });
   DEFAULT_URL = new URL('ws://localhost');
   // Enable caching of Gateways
@@ -1072,7 +1072,7 @@ if (isBrowser || isWebWorker){
     'keepAlive' : true,
     'queueSize': DEFAULT_QUEUE_SIZE,
     'returnNullOnFailedResponse': true,
-    'cancellPendingOnDisconnect': false
+    'cancelPendingOnDisconnect': false
   });
   DEFAULT_URL = new URL('tcp://localhost');
   gObj.atob = a => Buffer.from(a, 'base64').toString('binary');
