@@ -336,7 +336,7 @@ export class GenericMessage extends Message {
  * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
  * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
  * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
- * @param {boolean} [opts.cancelPendingOnDisconnect=true] - cancel pending requests on disconnect
+ * @param {boolean} [opts.cancelPendingOnDisconnect=false] - cancel pending requests on disconnect
  */
 export class Gateway {
 
