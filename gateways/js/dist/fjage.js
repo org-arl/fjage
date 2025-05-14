@@ -711,6 +711,7 @@
    * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
    * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
    * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
+   * @param {boolean} [opts.cancellPendingOnDisconnect=true] - cancel pending requests on disconnect
    */
   class Gateway {
 
@@ -729,6 +730,7 @@
       this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
       this._queueSize = opts.queueSize;     // size of queue
       this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
+      this._cancellPendingOnDisconnect = opts.cancellPendingOnDisconnect; // cancel pending requests on disconnect
       this.pending = {};                    // msgid to callback mapping for pending requests to server
       this.subscriptions = {};              // hashset for all topics that are subscribed
       this.listeners = {};                  // list of callbacks that want to listen to incoming messages
@@ -862,7 +864,7 @@
       return new Promise(resolve => {
         let timer = setTimeout(() => {
           delete this.pending[rq.id];
-          if (this.debug) console.log('Receive Timeout : ' + rq);
+          if (this.debug) console.log('Receive Timeout : ' + JSON.stringify(rq));
           resolve();
         }, 8*this._timeout);
         this.pending[rq.id] = rsp => {
@@ -872,7 +874,7 @@
         if (!this._msgTx.call(this,rq)) {
           clearTimeout(timer);
           delete this.pending[rq.id];
-          if (this.debug) console.log('Transmit Timeout : ' + rq);
+          if (this.debug) console.log('Transmit Timeout : ' +  JSON.stringify(rq));
           resolve();
         }
       });
@@ -908,6 +910,11 @@
           this.flush();
           this.connector.write('{"alive": true}');
           this._update_watch();
+        } else {
+          if (this._cancellPendingOnDisconnect) {
+            this._sendReceivers(null);
+            this.flush();
+          }
         }
         this._sendEvent('conn', state);
       });
@@ -1229,17 +1236,6 @@
     }
 
     /**
-     * Cancels all pending receive requests. The listener callbacks are called with `null` as the argument and
-     * then removed from the listener list.
-     *
-     * @returns {void}
-     */
-    cancelAll() {
-      this._sendReceivers(null);
-    }
-
-
-    /**
      * Sends a request and waits for a response. This method returns a {Promise} which resolves when a response
      * is received or if no response is received after the timeout.
      *
@@ -1434,7 +1430,8 @@
       'timeout': 1000,
       'keepAlive' : true,
       'queueSize': DEFAULT_QUEUE_SIZE,
-      'returnNullOnFailedResponse': true
+      'returnNullOnFailedResponse': true,
+      'cancellPendingOnDisconnect': false
     });
     DEFAULT_URL = new URL('ws://localhost');
     // Enable caching of Gateways
@@ -1449,7 +1446,8 @@
       'timeout': 1000,
       'keepAlive' : true,
       'queueSize': DEFAULT_QUEUE_SIZE,
-      'returnNullOnFailedResponse': true
+      'returnNullOnFailedResponse': true,
+      'cancellPendingOnDisconnect': false
     });
     DEFAULT_URL = new URL('tcp://localhost');
     gObj.atob = a => Buffer.from(a, 'base64').toString('binary');
