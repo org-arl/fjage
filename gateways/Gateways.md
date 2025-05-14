@@ -98,10 +98,6 @@ All gateway agents should use names prefixed with `gateway-`.
 
 - Flushes the incoming queue in the `Gateway`.
 
-### `cancellAll()` :: Void -> Void
-
-- Immediately cancells all pending receives on a `Gateway`.
-
 ## AgentID Class
 
 ### `AgentID()` :: String name, (Boolean isTopic) -> AgentID

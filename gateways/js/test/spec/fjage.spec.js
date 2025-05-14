@@ -327,12 +327,13 @@ describe('A Gateway', function () {
     gw.close();
   });
 
-  it('should be able to cancel all requests', async function() {
-    const gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnFailedResponse: false}));
+  it('should cancel requests when disconnected', async function() {
+    const gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnFailedResponse: false, cancellPendingOnDisconnect: true}));
     const shell = gw.agent('shell');
     expectAsync(shell.get('language'))
     .toBeRejectedWithError();
-    gw.cancelAll();
+    if (isBrowser) gw.connector.sock.close();
+    else gw.connector.sock.destroy();
     await delay(100);
     gw.close();
   });
