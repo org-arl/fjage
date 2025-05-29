@@ -147,7 +147,7 @@ export function MessageClass(name, parent=Message) {
   return cls;
 }
 
-// bash64 JSON decoder
+// base64 JSON decoder
 /**
 * @private
 *
