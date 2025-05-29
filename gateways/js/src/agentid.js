@@ -1,6 +1,7 @@
-import { Gateway } from './gateway.js';
 import { Performative } from './performative.js';
-import { Message, ParameterReq  } from './message.js';
+import { ParameterReq  } from './message.js';
+import { Gateway } from './gateway.js';  // import Gateway class for type checking. Remove if not needed.
+import { Message } from './message.js';  // import Message class for type checking. Remove if not needed.
 
 /**
 * An identifier for an agent or a topic.
@@ -116,9 +117,10 @@ export class AgentID {
     if (Array.isArray(params)) {
       if (!rsp.values) rsp.values = {};
       if (rsp.param) rsp.values[rsp.param] = rsp.value;
-      const rvals = Object.keys(rsp.values);
+      const rkeys = Object.keys(rsp.values);
       return params.map( p => {
-        let f = rvals.find(rv => rv.endsWith(p));
+        if (p.includes('.')) p = p.split('.').pop();
+        let f = rkeys.find(k => (k.includes('.') ? k.split('.').pop() : k) == p);
         return f ? rsp.values[f] : undefined;
       });
     } else {
@@ -162,9 +164,10 @@ export class AgentID {
     } else if (Array.isArray(params)) {
       if (!rsp.values) rsp.values = {};
       if (rsp.param) rsp.values[rsp.param] = rsp.value;
-      const rvals = Object.keys(rsp.values);
-      return params.map(p => {
-        let f = rvals.find(rv => rv.endsWith(p));
+      const rkeys = Object.keys(rsp.values);
+      return params.map( p => {
+        if (p.includes('.')) p = p.split('.').pop();
+        let f = rkeys.find(k => (k.includes('.') ? k.split('.').pop() : k) == p);
         return f ? rsp.values[f] : undefined;
       });
     } else {

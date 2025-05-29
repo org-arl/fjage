@@ -11,7 +11,6 @@
         "emitDeclarationOnly": true,
         "outDir": "dist/esm",
         "declarationMap": true,
-        "skipLibCheck": true,
         "types": ["node"]
     },
     "include": ["./src/*.js"]
