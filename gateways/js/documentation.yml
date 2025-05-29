@@ -7,3 +7,4 @@ toc:
   - MessageClass
   - ParameterReq
   - ParameterReq.Entry
+  - GenericMessage

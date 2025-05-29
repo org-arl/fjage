@@ -1,6 +1,6 @@
 import { Performative } from './performative.js';
 import { _guid, _atob } from './utils.js';
-import { AgentID } from './agentid.js';
+import { AgentID } from './agentid.js';  // import AgentID class for type checking. Remove if not needed.
 
 /**
 * Base class for messages transmitted by one agent to another. Creates an empty message.

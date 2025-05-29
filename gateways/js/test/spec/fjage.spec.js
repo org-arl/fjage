@@ -1,4 +1,4 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass GenericMessage it expect expectAsync describe fdescribe spyOn beforeAll afterAll beforeEach jasmine*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -225,13 +225,11 @@ describe('A Gateway', function () {
     smr.perf = Performative.REQUEST;
     smr.recipient = gw.agent('echo');
     gw.send(smr);
-    await delay(4000);
-    expect(gw.queue.length).toBeLessThanOrEqual(128);
-    if (gw.queue.length == 128){
-      var ids = gw.queue.map(m => m.id).filter( id => !!id).sort((a,b) => a-b);
-      expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1);
-      expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128);
-    }
+    await delay(3800);
+    expect(gw.queue.length).toBe(128);
+    var ids = gw.queue.map(m => m.id).filter( id => !!id).sort((a,b) => a-b);
+    expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1);
+    expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128);
     await delay(300);
     gw.close();
   });
@@ -330,8 +328,7 @@ describe('A Gateway', function () {
   it('should cancel requests when disconnected', async function() {
     const gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnFailedResponse: false, cancelPendingOnDisconnect: true}));
     const shell = gw.agent('shell');
-    expectAsync(shell.get('language'))
-    .toBeRejectedWithError();
+    expectAsync(shell.get('language')).toBeRejectedWithError();
     if (isBrowser) gw.connector.sock.close();
     else gw.connector.sock.destroy();
     await delay(100);
