@@ -1163,16 +1163,17 @@
       let msg = new ParameterReq();
       msg.recipient = this.name;
       if (Array.isArray(params)){
-        msg.param = params.shift();
-        msg.value = values.shift();
-        msg.requests = params.map((p, i) => {
+        if (params.length != values.length) throw new Error(`Parameters and values arrays must have the same length: ${params.length} != ${values.length}`);
+        const clonedParams = params.slice(); // Clone the array to avoid side effects
+        const clonedValues = values.slice(); // Clone the values array
+        msg.param = clonedParams.shift();
+        msg.value = clonedValues.shift();
+        msg.requests = clonedParams.map((p, i) => {
           return {
             'param': p,
-            'value': values[i]
+            'value': clonedValues[i]
           };
         });
-        // Add back for generating a response
-        params.unshift(msg.param);
       } else {
         msg.param = params;
         msg.value = values;
@@ -1212,10 +1213,9 @@
       msg.recipient = this.name;
       if (params){
         if (Array.isArray(params)) {
-          msg.param = params.shift();
-          msg.requests = params.map(p => {return {'param': p};});
-          // Add back for generating a response
-          params.unshift(msg.param);
+          const clonedParams = params.slice(); // Clone the array to avoid side effects
+          msg.param = clonedParams.shift();
+          msg.requests = clonedParams.map(p => {return {'param': p};});
         }
         else msg.param = params;
       }
@@ -1391,7 +1391,7 @@
     return cls;
   }
 
-  // bash64 JSON decoder
+  // base64 JSON decoder
   /**
   * @private
   *
