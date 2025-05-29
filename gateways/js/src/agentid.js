@@ -93,16 +93,16 @@ export class AgentID {
     let msg = new ParameterReq();
     msg.recipient = this.name;
     if (Array.isArray(params)){
-      msg.param = params.shift();
+      const clonedParams = params.slice(); // Clone the array to avoid side effects
+      msg.param = clonedParams.shift();
       msg.value = values.shift();
-      msg.requests = params.map((p, i) => {
+      msg.requests = clonedParams.map((p, i) => {
         return {
           'param': p,
           'value': values[i]
         };
       });
-      // Add back for generating a response
-      params.unshift(msg.param);
+      // No need to restore the original array since clonedParams is used
     } else {
       msg.param = params;
       msg.value = values;
