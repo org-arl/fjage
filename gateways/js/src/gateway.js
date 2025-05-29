@@ -1,13 +1,13 @@
 /* global global */
 
-import { isBrowser, isNode, isJsDom, isWebWorker } from '../node_modules/browser-or-node/src/index.js';
-import { AgentID } from './agentID.js';
+import { isBrowser, isNode, isJsDom, isWebWorker } from 'browser-or-node';
+import { AgentID } from './agentid.js';
 import { Message, createJSONMessage } from './message.js';
 import { Performative } from './performative.js';
 import { _guid } from './utils.js';
 
-import TCPConnector from './TCPconnector.js';
-import WSConnector from './WSconnector.js';
+import TCPConnector from './tcpconnector.js';
+import WSConnector from './wsconnector.js';
 
 const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
 const GATEWAY_DEFAULTS = {
@@ -20,6 +20,15 @@ const GATEWAY_DEFAULTS = {
 let DEFAULT_URL;
 let gObj = {};
 
+/**
+ *
+ * @private
+ *
+ * Initializes the Gateway module. This function should be called before using the Gateway class.
+ * It sets up the default values for the Gateway and initializes the global object.
+ * It also sets up the default URL for the Gateway based on the environment (browser, Node.js, etc.).
+ * @returns {void}
+ */
 export function init(){
   /** @type {Window & globalThis & Object} */
   if (isBrowser || isWebWorker){
@@ -512,7 +521,7 @@ export class Gateway {
   /**
   * Check if an agent with a given name exists in the container.
   *
-  * @param {AgentID|String} agentID - the agent id to check
+  * @param {AgentID|string} agentID - the agent id to check
   * @returns {Promise<boolean>} - a promise which returns true if the agent exists when resolved
   */
   async containsAgent(agentID) {
