@@ -1,17 +1,14 @@
 import { Performative } from './performative.js';
 import { _guid, _atob } from './utils.js';
-import { AgentID } from './agentID.js';
+import { AgentID } from './agentid.js';
 
 /**
 * Base class for messages transmitted by one agent to another. Creates an empty message.
 * @class
-* @param {string} [msgID] - unique identifier for the message
+* @param {Object} inReplyTo
+* @param {string} [inReplyTo.msgID] - ID of the message to which this message response corresponds to
+* @param {AgentID} [inReplyTo.sender] - AgentID of the sender of the message to which this message response corresponds to
 * @param {Performative} [perf=Performative.INFORM] - performative
-* @param {AgentID} [recipient] - recipient of the message
-* @param {AgentID} [sender] - sender of the message
-* @param {string} [inReplyTo] - message to which this response corresponds to
-* @param {Message} [inReplyTo] - message to which this response corresponds to
-* @param {number} [sentAt] - time at which the message was sent
 */
 export class Message {
 
@@ -175,6 +172,7 @@ function _decodeBase64(k, d) {
 /**
 * Parses a string representation of a message into a JavaScript object
 * using a custom base64 decoder.
+* @private
 *
 * @param {string} json - JSON string representation of the message
 * @returns {Object} - JavaScript object created from the JSON string
@@ -194,15 +192,17 @@ export function createJSONMessage(json) {
 * A message that requests one or more parameters of an agent.
 *
 * @example <caption>Setting a parameter myAgent.x to 42</caption>
-* let msg = new ParameterReq({
+* let req = new ParameterReq({
 *  recipient: myAgentId,
 *  param: 'x',
-*  value: 42});
+*  value: 42
+* });
 *
 * @example <caption>Getting the value of myAgent.x</caption>
-* let msg = new ParameterReq({
+* let req = new ParameterReq({
 * recipient: myAgentId,
-* param: 'x'});
+* param: 'x'
+* });
 *
 * @typedef {Message} ParameterReq
 * @property {string} param - parameters name to be get/set if only a single parameter is to be get/set
