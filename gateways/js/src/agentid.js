@@ -4,7 +4,9 @@ import { Gateway } from './gateway.js';  // import Gateway class for type checki
 import { Message } from './message.js';  // import Message class for type checking. Remove if not needed.
 
 /**
-* An identifier for an agent or a topic.
+* An identifier for an agent or a topic. This can be to send, receive messages, and set or get parameters
+* on an agent or topic on the fjåge master container.
+*
 * @class
 * @param {string} name - name of the agent
 * @param {boolean} [topic=false] - name of topic
@@ -43,7 +45,7 @@ export class AgentID {
   * @returns {void}
   */
   send(msg) {
-    msg.recipient = this.toJSON();
+    msg.recipient = this;
     if (this.owner) this.owner.send(msg);
     else throw new Error('Unowned AgentID cannot send messages');
   }
@@ -56,7 +58,7 @@ export class AgentID {
   * @returns {Promise<Message>} - response
   */
   async request(msg, timeout=1000) {
-    msg.recipient = this.toJSON();
+    msg.recipient = this;
     if (this.owner) return this.owner.request(msg, timeout);
     else throw new Error('Unowned AgentID cannot send messages');
   }
@@ -77,6 +79,24 @@ export class AgentID {
   */
   toJSON() {
     return (this.topic ? '#' : '') + this.name;
+  }
+
+  /**
+   * Inflate the AgentID from a JSON string or object.
+   *
+   * @param {string} json - JSON string or object to be converted to an AgentID
+   * @returns {AgentID} - AgentID created from the JSON string or object
+   */
+  static fromJSON(json) {
+    if (typeof json !== 'string') {
+      throw new Error('Invalid JSON for AgentID');
+    }
+    json = json.trim();
+    if (json.startsWith('#')) {
+      return new AgentID(json.substring(1), true);
+    } else {
+      return new AgentID(json, false);
+    }
   }
 
   /**

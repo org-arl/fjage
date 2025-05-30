@@ -20,6 +20,19 @@ const Performative = {
   CANCEL: 'CANCEL'                  // Cancel pending request
 };
 
+////// common utilities
+
+// generate random ID with length 4*len characters
+/**
+ *
+ * @private
+ * @param {number} len
+ */
+function _guid(len) {
+  const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  return Array.from({ length: len }, s4).join('');
+}
+
 // src/index.ts
 var isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
 var isNode = (
@@ -37,32 +50,6 @@ var isJsDom = typeof window !== "undefined" && window.name === "nodejs" || typeo
   typeof Deno.version.deno !== "undefined"
 );
 typeof process !== "undefined" && process.versions != null && process.versions.bun != null;
-
-/* global Buffer */
-
-
-////// private utilities
-
-// generate random ID with length 4*len characters
-/**
- *
- * @private
- * @param {number} len
- */
-function _guid(len) {
-  const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-  return Array.from({ length: len }, s4).join('');
-}
-
-// node.js safe atob function
-/**
- * @private
- * @param {string} a
- */
-function _atob(a){
-  if (isBrowser || isWebWorker) return window.atob(a);
-  else if (isJsDom || isNode) return Buffer.from(a, 'base64').toString('binary');
-}
 
 const SOCKET_OPEN = 'open';
 const SOCKET_OPENING = 'opening';
@@ -409,6 +396,314 @@ class WSConnector {
   }
 }
 
+/* global Buffer */
+
+/**
+* Class representing a fjage's on-the-wire JSON message. A JSONMessage object
+* contains all the fields that can be a part of a fjage JSON message. The class
+* provides methods to create JSONMessage objects from raw strings and to
+* convert JSONMessage objects to JSON strings in the format of the fjage on-the-wire
+* protocol. See {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation}
+* for more details on the JSON message format.
+*
+* Most users will not need to create JSONMessage objects directly, but rather use the Gateway and Message classes
+* to send and receive messages. However, this class can be useful for low-level access to the fjage protocol
+* or for generating/consuming the fjåge protocol messages without having them be transmitted over a network.
+*
+* @example
+* const jsonMsg = new JSONMessage();
+* jsonMsg.action = 'send';
+* jsonMsg.message = new Message();
+* jsonMsg.message.sender = new AgentID('agent1');
+* jsonMsg.message.recipient = new AgentID('agent2');
+* jsonMsg.message.perf = Performative.INFORM;
+* jsonMsg.toJSON(); // Converts to JSON string in the fjage on-the-wire protocol format
+*
+* @example
+* const jsonString = '{"id":"1234",...}'; // JSON string representation of a JSONMessage
+* const jsonMsg = new JSONMessage(jsonString); // Parses the JSON string into a JSONMessage object
+* jsonMsg.message; // Access the Message object contained in the JSONMessage
+*
+* @class
+* @property {string} [id] - A UUID assigned to each JSONMessage object.
+* @property {string} [action] - Denotes the main action the object is supposed to perform.
+* @property {string} [inResponseTo] - This attribute contains the action to which this object is a response to.
+* @property {AgentID} [agentID] - An AgentID. This attribute is populated in objects which are responses to objects requesting the ID of an agent providing a specific service.
+* @property {Array<AgentID>} [agentIDs] - This attribute is populated in objects which are responses to objects requesting the IDs of agents providing a specific service, or objects which are responses to objects requesting a list of all agents running in a container.
+* @property {Array<string>} [agentTypes] - This attribute is optionally populated in objects which are responses to objects requesting a list of all agents running in a container. If populated, it contains a list of agent types running in the container, with a one-to-one mapping to the agent IDs in the "agentIDs" attribute.
+* @property {string} [service] - Used in conjunction with "action" : "agentForService" and "action" : "agentsForService" to query for agent(s) providing this specific service.
+* @property {Array<string>} [services] - This attribute is populated in objects which are responses to objects requesting the services available with "action" : "services".
+* @property {boolean} [answer] - This attribute is populated in objects which are responses to query objects with "action" : "containsAgent".
+* @property {Message} [message] - This holds the main payload of the message. The structure and format of this object is discussed in the {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation}.
+* @property {boolean} [relay] - This attribute defines if the target container should relay (forward) the message to other containers it is connected to or not.
+* @property {Object} [creds] - Credentials to be used for authentication.
+* @property {Object} [auth] - Authentication information to be used for the message.
+*
+*
+*/
+class JSONMessage {
+
+  /**
+   * @param {String} [jsonString] - JSON string to be parsed into a JSONMessage object.
+   */
+  constructor(jsonString) {
+    this.id =  _guid(8); // unique JSON message ID
+    this.action =  null;
+    this.inResponseTo =  null;
+    this.agentID = null;
+    this.agentIDs = null;
+    this.agentTypes = null;
+    this.service =  null;
+    this.services = null;
+    this.answer =  null;
+    this.message = null;
+    this.relay =  null;
+    this.creds =  null;
+    this.auth =  null;
+    this.name =  null;
+    if (jsonString && typeof jsonString === 'string') {
+      try {
+        const parsed = JSON.parse(jsonString, _decodeBase64);
+        if (parsed.message) parsed.message = Message.fromJSON(parsed.message);
+        if (parsed.agentID) parsed.agentID = AgentID.fromJSON(parsed.agentID);
+        if (parsed.agentIDs) parsed.agentIDs = parsed.agentIDs.map(id => AgentID.fromJSON(id));
+        Object.assign(this, parsed);
+      } catch (e) {
+        throw new Error('Invalid JSON string: ' + e.message);
+      }
+    }  }
+
+  /**
+  * Creates a JSONMessage object to send a message.
+  *
+  * @param {Message} msg
+  * @param {boolean} [relay=false] - whether to relay the message
+  * @returns {JSONMessage} - JSONMessage object with request to send a message
+  */
+  static createSend(msg, relay=false){
+    if (!(msg instanceof Message)) {
+      throw new Error('Invalid message type');
+    }
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.SEND;
+    jsonMsg.relay = relay;
+    jsonMsg.message = msg;
+    return jsonMsg;
+  }
+
+  /**
+  * Creates a JSONMessage object to update WantsMessagesFor list.
+  *
+  * @param {Array<AgentID>} agentIDs - array of AgentID objects for which the gateway wants messages
+  * @returns {JSONMessage} - JSONMessage object with request to update WantsMessagesFor list
+  */
+  static createWantsMessagesFor(agentIDs) {
+    if (!Array.isArray(agentIDs) || agentIDs.length === 0) {
+      throw new Error('agentIDNames must be a non-empty array');
+    }
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.WANTS_MESSAGES_FOR;
+    jsonMsg.agentIDs = agentIDs;
+    return jsonMsg;
+  }
+
+  /**
+  * Creates a JSONMessage object to request the list of agents.
+  *
+  * @returns {JSONMessage} - JSONMessage object with request for the list of agents
+  */
+  static createAgents(){
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.AGENTS;
+    jsonMsg.id = _guid(8); // unique JSON message ID
+    return jsonMsg;
+  }
+
+  /**
+  * Creates a JSONMessage object to check if an agent is contained
+  *
+  * @param {AgentID} agentID - AgentID of the agent to check
+  * @returns {JSONMessage} - JSONMessage object with request to check if the agent is contained
+  */
+  static createContainsAgent(agentID) {
+    if (!(agentID instanceof AgentID)) {
+      throw new Error('agentID must be an instance of AgentID');
+    }
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.CONTAINS_AGENT;
+    jsonMsg.id = _guid(8); // unique JSON message ID
+    jsonMsg.agentID = agentID;
+    return jsonMsg;
+  }
+
+  /**
+  * Creates a JSONMessage object to get an agent for a service.
+  *
+  * @param {string} service - service which the agent must provide
+  * @returns {JSONMessage} - JSONMessage object with request for an agent providing the service
+  */
+  static createAgentForService(service) {
+    if (typeof service !== 'string' || service.length === 0) {
+      throw new Error('service must be a non-empty string');
+    }
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.AGENT_FOR_SERVICE;
+    jsonMsg.id = _guid(8); // unique JSON message ID
+    jsonMsg.service = service;
+    return jsonMsg;
+  }
+
+  /**
+  * Creates a JSONMessage object to get all agents for a service.
+  *
+  * @param {string} service - service which the agents must provide
+  * @returns {JSONMessage} - JSONMessage object with request for all agent providing the service
+  */
+  static createAgentsForService(service) {
+    if (typeof service !== 'string' || service.length === 0) {
+      throw new Error('service must be a non-empty string');
+    }
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.AGENTS_FOR_SERVICE;
+    jsonMsg.id = _guid(8); // unique JSON message ID
+    jsonMsg.service = service;
+    return jsonMsg;
+  }
+
+  /**
+  * Converts the JSONMessage object to a JSON string in the format of the
+  * fjage on-the-wire protocol. If the JSONMessage contains a Message or
+  * AgentID objects, they will be serialized as per the fjåge protocol.
+  *
+  * @returns {string} - JSON string representation of the message
+  */
+  toJSON() {
+    if (!this.action && !this.id) {
+      throw new Error('Neither action nor id is set. Cannot serialize JSONMessage.');
+    }
+    const jsonObj = {};
+    // Add property if not null or undefined
+    if (this.id) jsonObj.id = this.id;
+    if (this.action) jsonObj.action = this.action;
+    if (this.inResponseTo) jsonObj.inResponseTo = this.inResponseTo;
+    if (this.agentID) jsonObj.agentID = this.agentID.toJSON();
+    if (this.agentIDs) {
+      jsonObj.agentIDs = this.agentIDs.map(id => id.toJSON());
+      if (jsonObj.agentIDs.length === 0) delete jsonObj.agentIDs; // remove empty array
+    }
+    if (this.service) jsonObj.service = this.service;
+    if (this.services) {
+      jsonObj.services = this.services;
+      if (jsonObj.services.length === 0) delete jsonObj.services; // remove empty array
+    }
+    if (this.answer) jsonObj.answer = this.answer;
+    if (this.message) jsonObj.message = this.message;
+    if (this.relay) jsonObj.relay = this.relay;
+    if (this.creds) jsonObj.creds = this.creds;
+    if (this.auth) jsonObj.auth = this.auth;
+    if (this.name) jsonObj.name = this.name;
+    return JSON.stringify(jsonObj);
+  }
+
+  toString() {
+    return this.toJSON();
+  }
+}
+
+
+/**
+ * Actions supported by the fjåge JSON message protocol. See
+ * {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation} for more details.
+ *
+ * @enum {string} Actions
+ */
+const Actions = {
+  AGENTS : 'agents',
+  CONTAINS_AGENT : 'containsAgent',
+  AGENT_FOR_SERVICE : 'agentForService',
+  AGENTS_FOR_SERVICE : 'agentsForService',
+  SEND : 'send',
+  WANTS_MESSAGES_FOR : 'wantsMessagesFor'};
+
+////// private utilities
+
+
+// base64 JSON decoder
+/**
+* @private
+*
+* @param {string} k - key
+* @param {any} d - data
+* @returns {Array} - decoded data in array format
+* */
+function _decodeBase64(k, d) {
+  if (d === null) return null;
+  if (typeof d == 'object' && 'clazz' in d) {
+    if (d.clazz.startsWith('[') && d.clazz.length == 2 && 'data' in d) {
+      let x = _b64toArray(d.data, d.clazz);
+      if (x) d = x;
+    }
+  }
+  return d;
+}
+
+// convert from base 64 to numeric array
+/**
+* @private
+*
+* @param {string} base64 - base64 encoded string
+* @param {string} dtype - data type, e.g. '[B' for byte array, '[S' for short array, etc.
+* @param {boolean} [littleEndian=true] - whether to use little-endian byte order
+*/
+function _b64toArray(base64, dtype, littleEndian=true) {
+  let s = _atob(base64);
+  let len = s.length;
+  let bytes = new Uint8Array(len);
+  for (var i = 0; i < len; i++)
+    bytes[i] = s.charCodeAt(i);
+  let rv = [];
+  let view = new DataView(bytes.buffer);
+  switch (dtype) {
+    case '[B': // byte array
+    for (i = 0; i < len; i++)
+      rv.push(view.getUint8(i));
+    break;
+    case '[S': // short array
+    for (i = 0; i < len; i+=2)
+      rv.push(view.getInt16(i, littleEndian));
+    break;
+    case '[I': // integer array
+    for (i = 0; i < len; i+=4)
+      rv.push(view.getInt32(i, littleEndian));
+    break;
+    case '[J': // long array
+    for (i = 0; i < len; i+=8)
+      rv.push(view.getBigInt64(i, littleEndian));
+    break;
+    case '[F': // float array
+    for (i = 0; i < len; i+=4)
+      rv.push(view.getFloat32(i, littleEndian));
+    break;
+    case '[D': // double array
+    for (i = 0; i < len; i+=8)
+      rv.push(view.getFloat64(i, littleEndian));
+    break;
+    default:
+    return;
+  }
+  return rv;
+}
+
+// node.js safe atob function
+/**
+* @private
+* @param {string} a
+*/
+function _atob(a){
+  if (isBrowser || isWebWorker) return window.atob(a);
+  else if (isJsDom || isNode) return Buffer.from(a, 'base64').toString('binary');
+}
+
 /* global global */
 
 
@@ -457,8 +752,9 @@ function init(){
 }
 
 /**
-* A gateway for connecting to a fjage master container. The new version of the constructor
-* uses an options object instead of individual parameters.
+* A gateway for connecting to a fjage master container. This class provides methods to
+* send and receive messages, subscribe to topics, and manage connections to the master container.
+* It can be used to connect to a fjage master container over WebSockets or TCP.
 *
 * @example <caption>Connects to the localhost:1100</caption>
 * const gw = new Gateway({ hostname: 'localhost', port: 1100 });
@@ -467,11 +763,16 @@ function init(){
 * const gw = new Gateway();
 *
 * @class
+* @property {AgentID} aid - agent id of the gateway
+* @property {boolean} connected - true if the gateway is connected to the master container
+* @property {boolean} debug - true if debug messages should be logged to the console
+*
+* Constructor arguments:
 * @param {Object} opts
 * @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
 * @param {number} [opts.port=1100]          - port number of the master container to connect to
 * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
-* @param {string} [opts.keepAlive=true]     - try to reconnect if the connection is lost
+* @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
 * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
 * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
 * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
@@ -496,7 +797,7 @@ class Gateway {
     this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
     this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect; // cancel pending requests on disconnect
     this.pending = {};                    // msgid to callback mapping for pending requests to server
-    this.subscriptions = {};              // hashset for all topics that are subscribed
+    this.subscriptions = {};       // map for all topics that are subscribed
     this.listeners = {};                  // list of callbacks that want to listen to incoming messages
     this.eventListeners = {};             // external listeners wanting to listen internal events
     this.queue = [];                      // incoming message queue
@@ -551,26 +852,25 @@ class Gateway {
   * @returns {void}
   */
   _onMsgRx(data) {
-        var jsonMsg;
+    var jsonMsg;
     if (this.debug) console.log('< '+data);
     this._sendEvent('rx', data);
     try {
-      jsonMsg = createJSONMessage(data);
+      jsonMsg = new JSONMessage(data);
     }catch(e){
       return;
     }
     this._sendEvent('rxp', jsonMsg);
-    if ('id' in jsonMsg && jsonMsg.id in this.pending) {
+    if (jsonMsg.id && jsonMsg.id in this.pending) {
       // response to a pending request to master
       this.pending[jsonMsg.id](jsonMsg);
       delete this.pending[jsonMsg.id];
-    } else if (jsonMsg.action == 'send') {
+    } else if (jsonMsg.action == Actions.SEND) {
       // incoming message from master
-      // @ts-ignore
-      let msg = Message._deserialize(jsonMsg.message);
+      const msg = jsonMsg.message;
       if (!msg) return;
       this._sendEvent('rxmsg', msg);
-      if ((msg.recipient == this.aid.toJSON() )|| this.subscriptions[msg.recipient]) {
+      if ((msg.recipient.toJSON() == this.aid.toJSON())|| this.subscriptions[msg.recipient.toJSON()]) {
         // send to any "message" listeners
         this._sendEvent('message', msg);
         // send message to receivers, if not consumed, add to queue
@@ -580,14 +880,16 @@ class Gateway {
         }
       }
     } else {
-      // respond to standard requests that every container must
-      let rsp = { id: jsonMsg.id, inResponseTo: jsonMsg.action };
+      // respond to standard requests that every gateway must
+      let rsp = new JSONMessage();
+      rsp.id = jsonMsg.id;
+      rsp.inResponseTo = jsonMsg.action;
       switch (jsonMsg.action) {
         case 'agents':
-        rsp.agentIDs = [this.aid.getName()];
+        rsp.agentIDs = [this.aid];
         break;
         case 'containsAgent':
-        rsp.answer = (jsonMsg.agentID == this.aid.getName());
+        rsp.answer = (jsonMsg.agentID.toJSON() == this.aid.toJSON());
         break;
         case 'services':
         rsp.services = [];
@@ -608,11 +910,11 @@ class Gateway {
   /**
   * Sends a message out to the master container.
   * @private
-  * @param {string|Object} s - JSON object (either stringified or not) to be sent to the master container
+  * @param {JSONMessage} msg - JSONMessage to be sent to the master container
   * @returns {boolean} - true if the message was sent successfully
   */
-  _msgTx(s) {
-    if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
+  _msgTx(msg) {
+    const s = msg.toJSON();
     if(this.debug) console.log('> '+s);
     this._sendEvent('tx', s);
     return this.connector.write(s);
@@ -620,7 +922,7 @@ class Gateway {
 
   /**
   * @private
-  * @param {Object} rq - request to be sent to the master container as a JSON object
+  * @param {JSONMessage} rq - JSONMessage to be sent to the master container
   * @returns {Promise<Object>} - a promise which returns the response from the master container
   */
   _msgTxRx(rq) {
@@ -777,9 +1079,9 @@ class Gateway {
   /** @private */
   _update_watch() {
     let watch = Object.keys(this.subscriptions);
-    watch.push(this.aid.getName());
-    let rq = { action: 'wantsMessagesFor', agentIDs: watch };
-    this._msgTx(rq);
+    watch.push(this.aid.toJSON());
+    const jsonMsg = JSONMessage.createWantsMessagesFor(watch.map(id => AgentID.fromJSON(id)));
+    this._msgTx(jsonMsg);
   }
 
   /**
@@ -913,10 +1215,10 @@ class Gateway {
   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids when resolved
   */
   async agents() {
-    let rq = { action: 'agents' };
-    let rsp = await this._msgTxRx(rq);
+    let jsonMsg = JSONMessage.createAgents();
+    let rsp = await this._msgTxRx(jsonMsg);
     if (!rsp || !Array.isArray(rsp.agentIDs)) throw new Error('Unable to get agents');
-    return rsp.agentIDs.map(aid => new AgentID(aid, false, this));
+    return rsp.agentIDs;
   }
 
   /**
@@ -926,9 +1228,12 @@ class Gateway {
   * @returns {Promise<boolean>} - a promise which returns true if the agent exists when resolved
   */
   async containsAgent(agentID) {
-    let rq = { action: 'containsAgent', agentID: agentID instanceof AgentID ? agentID.getName() : agentID };
-    let rsp = await this._msgTxRx(rq);
-    if (!rsp) throw new Error('Unable to check if agent exists');
+    let jsonMsg = JSONMessage.createContainsAgent(agentID instanceof AgentID ? agentID : new AgentID(agentID));
+    let rsp = await this._msgTxRx(jsonMsg);
+    if (!rsp) {
+       if (this._returnNullOnFailedResponse) return null;
+       else throw new Error('Unable to check if agent exists');
+    }
     return !!rsp.answer;
   }
 
@@ -940,14 +1245,13 @@ class Gateway {
   * @returns {Promise<?AgentID>} - a promise which returns an agent id for an agent that provides the service when resolved
   */
   async agentForService(service) {
-    let rq = { action: 'agentForService', service: service };
-    let rsp = await this._msgTxRx(rq);
+    let jsonMsg = JSONMessage.createAgentForService(service);
+    let rsp = await this._msgTxRx(jsonMsg);
     if (!rsp) {
       if (this._returnNullOnFailedResponse) return null;
       else throw new Error('Unable to get agent for service');
     }
-    if (!rsp.agentID) return null;
-    return new AgentID(rsp.agentID, false, this);
+    return rsp.agentID;
   }
 
   /**
@@ -957,17 +1261,13 @@ class Gateway {
   * @returns {Promise<?AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
   */
   async agentsForService(service) {
-    let rq = { action: 'agentsForService', service: service };
-    let rsp = await this._msgTxRx(rq);
-    let aids = [];
+    let jsonMsg = JSONMessage.createAgentsForService(service);
+    let rsp = await this._msgTxRx(jsonMsg);
     if (!rsp) {
-      if (this._returnNullOnFailedResponse) return aids;
+      if (this._returnNullOnFailedResponse) return null;
       else throw new Error('Unable to get agents for service');
     }
-    if (!Array.isArray(rsp.agentIDs)) return aids;
-    for (var i = 0; i < rsp.agentIDs.length; i++)
-      aids.push(new AgentID(rsp.agentIDs[i], false, this));
-    return aids;
+    return rsp.agentIDs || [];
   }
 
   /**
@@ -978,16 +1278,10 @@ class Gateway {
   * @returns {boolean} - if sending was successful
   */
   send(msg) {
-    msg.sender = this.aid.toJSON();
-    if (msg.perf == '') {
-      if (msg.__clazz__.endsWith('Req')) msg.perf = Performative.REQUEST;
-      else msg.perf = Performative.INFORM;
-    }
+    msg.sender = this.aid;
     this._sendEvent('txmsg', msg);
-    let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
-    // @ts-ignore
-    rq = rq.replace('"###MSG###"', msg._serialize());
-    return !!this._msgTx(rq);
+    const jsonMsg = JSONMessage.createSend(msg, true);
+    return !!this._msgTx(jsonMsg);
   }
 
   /**
@@ -1068,7 +1362,9 @@ class Gateway {
 }
 
 /**
-* An identifier for an agent or a topic.
+* An identifier for an agent or a topic. This can be to send, receive messages, and set or get parameters
+* on an agent or topic on the fjåge master container.
+*
 * @class
 * @param {string} name - name of the agent
 * @param {boolean} [topic=false] - name of topic
@@ -1107,7 +1403,7 @@ class AgentID {
   * @returns {void}
   */
   send(msg) {
-    msg.recipient = this.toJSON();
+    msg.recipient = this;
     if (this.owner) this.owner.send(msg);
     else throw new Error('Unowned AgentID cannot send messages');
   }
@@ -1120,7 +1416,7 @@ class AgentID {
   * @returns {Promise<Message>} - response
   */
   async request(msg, timeout=1000) {
-    msg.recipient = this.toJSON();
+    msg.recipient = this;
     if (this.owner) return this.owner.request(msg, timeout);
     else throw new Error('Unowned AgentID cannot send messages');
   }
@@ -1141,6 +1437,24 @@ class AgentID {
   */
   toJSON() {
     return (this.topic ? '#' : '') + this.name;
+  }
+
+  /**
+   * Inflate the AgentID from a JSON string or object.
+   *
+   * @param {string} json - JSON string or object to be converted to an AgentID
+   * @returns {AgentID} - AgentID created from the JSON string or object
+   */
+  static fromJSON(json) {
+    if (typeof json !== 'string') {
+      throw new Error('Invalid JSON for AgentID');
+    }
+    json = json.trim();
+    if (json.startsWith('#')) {
+      return new AgentID(json.substring(1), true);
+    } else {
+      return new AgentID(json, false);
+    }
   }
 
   /**
@@ -1243,20 +1557,27 @@ class AgentID {
 /**
 * Base class for messages transmitted by one agent to another. Creates an empty message.
 * @class
-* @param {Object} inReplyTo
-* @param {string} [inReplyTo.msgID] - ID of the message to which this message response corresponds to
-* @param {AgentID} [inReplyTo.sender] - AgentID of the sender of the message to which this message response corresponds to
-* @param {Performative} [perf=Performative.INFORM] - performative
+*
+* @property {string} msgID - unique message ID
+* @property {Performative} perf - performative of the message
+* @property {AgentID} [sender] - AgentID of the sender of the message
+* @property {AgentID} [recipient] - AgentID of the recipient of the message
+* @property {string} [inReplyTo] - ID of the message to which this message is a response
+* @property {number} [sentAt] - timestamp when the message was sent
 */
 class Message {
 
-  constructor(inReplyTo={msgID:null, sender:null}, perf=Performative.INFORM) {
+  /**
+  * @param {Message} [inReplyToMsg] - message to which this message is a response
+  * @param {Performative} [perf=Performative.INFORM] - performative of the message
+  */
+  constructor(inReplyToMsg, perf=Performative.INFORM) {
     this.__clazz__ = 'org.arl.fjage.Message';
     this.msgID = _guid(8);
-    this.sender = null;
-    this.recipient = inReplyTo.sender;
     this.perf = perf;
-    this.inReplyTo = inReplyTo.msgID || null;
+    this.sender = null;
+    this.recipient = inReplyToMsg ? inReplyToMsg.sender : null;
+    this.inReplyTo = inReplyToMsg ? inReplyToMsg.msgID : null;
   }
 
   /**
@@ -1265,74 +1586,52 @@ class Message {
   * @returns {string} - string representation
   */
   toString() {
-    let s = '';
-    let suffix = '';
-    if (!this.__clazz__) return '';
-    let clazz = this.__clazz__;
-    clazz = clazz.replace(/^.*\./, '');
-    let perf = this.perf;
-    for (var k in this) {
-      if (k.startsWith('__')) continue;
-      if (k == 'sender') continue;
-      if (k == 'recipient') continue;
-      if (k == 'msgID') continue;
-      if (k == 'perf') continue;
-      if (k == 'inReplyTo') continue;
-      if (typeof this[k] == 'object') {
-        suffix = ' ...';
-        continue;
-      }
-      s += ' ' + k + ':' + this[k];
-    }
-    s += suffix;
-    return clazz+':'+perf+'['+s.replace(/^ /, '')+']';
+    let p = this.perf ? this.perf.toString() : 'MESSAGE';
+    if (this.__clazz__ == 'org.arl.fjage.Message') return p;
+    return p + ': ' + this.__clazz__.replace(/^.*\./, '');
   }
 
-  // convert a message into a JSON string
-  // NOTE: we don't do any base64 encoding for TX as
-  //       we don't know what data type is intended
-  /**
-  * @private
+  /** Convert a message into a object for JSON serialization.
   *
-  * @return {string} - JSON string representation of the message
+  * NOTE: we don't do any base64 encoding for TX as
+  *       we don't know what data type is intended
+  *
+  * @return {Object} - JSON string representation of the message
   */
-  _serialize() {
-    let clazz = this.__clazz__ || 'org.arl.fjage.Message';
-    let data = JSON.stringify(this, (k,v) => {
-      if (k.startsWith('__')) return;
-      return v;
-    });
-    return '{ "clazz": "'+clazz+'", "data": '+data+' }';
+  toJSON() {
+    let props = {};
+    for (let key in this) {
+      if (key.startsWith('_')) continue; // skip private properties
+      // @ts-ignore
+      props[key] = this[key];
+    }
+    return { 'clazz': this.__clazz__, 'data': props };
   }
 
-  // add all keys from an Object to the message
-  /** @private */
-  _assign(data) {
-    for (var key in data)
-      this[key] = data[key];
-  }
 
-  // convert a dictionary (usually from decoding JSON) into a message
   /**
-  * @private
+  * Create a message fron a object parsed from the JSON representation of the message.
   *
-  * @param {(string|Object)} json - JSON string or object to be converted to a message
-  * @returns {Message} - message created from the JSON string or object
-  * */
-  static _deserialize(json) {
-    let obj = null;
-    if (typeof json == 'string') {
-      try {
-        obj = JSON.parse(json);
-      }catch(e){
-        return null;
-      }
-    } else obj = json;
-    let qclazz = obj.clazz;
+  * @param {Object} jsonObj - Object containing all the properties of the message
+  * @returns {Message} - A message created from the Object
+  *
+  */
+  static fromJSON(jsonObj) {
+    if (!( 'clazz' in jsonObj) || !( 'data' in jsonObj)) {
+      throw new Error(`Invalid Object for Message : ${jsonObj}`);
+    }
+    let qclazz = jsonObj.clazz;
     let clazz = qclazz.replace(/^.*\./, '');
     let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
     rv.__clazz__ = qclazz;
-    rv._assign(obj.data);
+    // copy all properties from the data object
+    for (var key in jsonObj.data){
+      if (key === 'sender' || key === 'recipient') {
+        if (jsonObj.data[key] && typeof jsonObj.data[key] === 'string') {
+          rv[key] = AgentID.fromJSON(jsonObj.data[key]);
+        }
+      } else rv[key] = jsonObj.data[key];
+    }
     return rv;
   }
 }
@@ -1385,40 +1684,6 @@ function MessageClass(name, parent=Message) {
   return cls;
 }
 
-// base64 JSON decoder
-/**
-* @private
-*
-* @param {string} k - key
-* @param {any} d - data
-* @returns {Array} - decoded data in array format
-* */
-function _decodeBase64(k, d) {
-  if (d === null) {
-    return null;
-  }
-  if (typeof d == 'object' && 'clazz' in d) {
-    let clazz = d.clazz;
-    if (clazz.startsWith('[') && clazz.length == 2 && 'data' in d) {
-      let x = _b64toArray(d.data, d.clazz);
-      if (x) d = x;
-    }
-  }
-  return d;
-}
-
-/**
-* Parses a string representation of a message into a JavaScript object
-* using a custom base64 decoder.
-* @private
-*
-* @param {string} json - JSON string representation of the message
-* @returns {Object} - JavaScript object created from the JSON string
-*/
-function createJSONMessage(json) {
-  return JSON.parse(json, _decodeBase64);
-}
-
 /**
 * @typedef {Object} ParameterReq.Entry
 * @property {string} param - parameter name
@@ -1446,53 +1711,31 @@ function createJSONMessage(json) {
 * @property {string} param - parameters name to be get/set if only a single parameter is to be get/set
 * @property {Object} value - parameters value to be set if only a single parameter is to be set
 * @property {Array<ParameterReq.Entry>} requests - a list of multiple parameters to be get/set
-* @property {number} [index=-1] - index of parameter(s) to be set
+* @property {number} [index=-1] - index of parameter(s) to be set*
 * @exports ParameterReq
 */
 const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
 
-////// private utilities
-
-// convert from base 64 to array
-/** @private */
-function _b64toArray(base64, dtype, littleEndian=true) {
-  let s = _atob(base64);
-  let len = s.length;
-  let bytes = new Uint8Array(len);
-  for (var i = 0; i < len; i++)
-    bytes[i] = s.charCodeAt(i);
-  let rv = [];
-  let view = new DataView(bytes.buffer);
-  switch (dtype) {
-    case '[B': // byte array
-    for (i = 0; i < len; i++)
-      rv.push(view.getUint8(i));
-    break;
-    case '[S': // short array
-    for (i = 0; i < len; i+=2)
-      rv.push(view.getInt16(i, littleEndian));
-    break;
-    case '[I': // integer array
-    for (i = 0; i < len; i+=4)
-      rv.push(view.getInt32(i, littleEndian));
-    break;
-    case '[J': // long array
-    for (i = 0; i < len; i+=8)
-      rv.push(view.getBigInt64(i, littleEndian));
-    break;
-    case '[F': // float array
-    for (i = 0; i < len; i+=4)
-      rv.push(view.getFloat32(i, littleEndian));
-    break;
-    case '[D': // double array
-    for (i = 0; i < len; i+=8)
-      rv.push(view.getFloat64(i, littleEndian));
-    break;
-    default:
-    return;
-  }
-  return rv;
-}
+/**
+* A message that is a response to a {@link ParameterReq} message.
+*
+* @example <caption>Receiving a parameter from myAgent</caption>
+* let rsp = gw.receive(ParameterRsp)
+* rsp.sender // = myAgentId; sender of the message
+* rsp.param  // = 'x'; parameter name that was get/set
+* rsp.value  // = 42;  value of the parameter that was set
+* rsp.readonly // = [false]; indicates if the parameter is read-only
+*
+*
+* @typedef {Message} ParameterRsp
+* @property {string} param - parameters name if only a single parameter value was requested
+* @property {Object} value - parameters value if only a single parameter was requested
+* @property {Map<string, Object>} values - a map of multiple parameter names and their values if multiple parameters were requested
+* @property {Array<boolean>} readonly - a list of booleans indicating if the parameters are read-only
+* @property {number} [index=-1] - index of parameter(s) being returned
+* @exports ParameterReq
+*/
+const ParameterRsp = MessageClass('org.arl.fjage.param.ParameterRsp');
 
 /**
 * Services supported by fjage agents.
@@ -1503,4 +1746,4 @@ const Services = {
 
 init();
 
-export { AgentID, Gateway, GenericMessage, Message, MessageClass, ParameterReq, Performative, Services };
+export { AgentID, Gateway, GenericMessage, JSONMessage, Message, MessageClass, ParameterReq, ParameterRsp, Performative, Services };
