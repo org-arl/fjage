@@ -111,7 +111,7 @@ export class AgentID {
   async set (params, values, index=-1, timeout=5000) {
     if (!params) return null;
     let msg = new ParameterReq();
-    msg.recipient = this.toJSON();
+    msg.recipient = this;
     if (Array.isArray(params)){
       if (params.length != values.length) throw new Error(`Parameters and values arrays must have the same length: ${params.length} != ${values.length}`);
       const clonedParams = params.slice(); // Clone the array to avoid side effects
