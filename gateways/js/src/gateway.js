@@ -2,12 +2,12 @@
 
 import { isBrowser, isNode, isJsDom, isWebWorker } from 'browser-or-node';
 import { AgentID } from './agentid.js';
-import { Message, createJSONMessage } from './message.js';
-import { Performative } from './performative.js';
+import { Message} from './message.js';
 import { _guid } from './utils.js';
 
 import TCPConnector from './tcpconnector.js';
 import WSConnector from './wsconnector.js';
+import { JSONMessage, Actions } from './jsonmessage.js';
 
 const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
 const GATEWAY_DEFAULTS = {
@@ -54,8 +54,9 @@ export function init(){
 }
 
 /**
-* A gateway for connecting to a fjage master container. The new version of the constructor
-* uses an options object instead of individual parameters.
+* A gateway for connecting to a fjage master container. This class provides methods to
+* send and receive messages, subscribe to topics, and manage connections to the master container.
+* It can be used to connect to a fjage master container over WebSockets or TCP.
 *
 * @example <caption>Connects to the localhost:1100</caption>
 * const gw = new Gateway({ hostname: 'localhost', port: 1100 });
@@ -64,11 +65,16 @@ export function init(){
 * const gw = new Gateway();
 *
 * @class
+* @property {AgentID} aid - agent id of the gateway
+* @property {boolean} connected - true if the gateway is connected to the master container
+* @property {boolean} debug - true if debug messages should be logged to the console
+*
+* Constructor arguments:
 * @param {Object} opts
 * @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
 * @param {number} [opts.port=1100]          - port number of the master container to connect to
 * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
-* @param {string} [opts.keepAlive=true]     - try to reconnect if the connection is lost
+* @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
 * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
 * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
 * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
@@ -93,7 +99,7 @@ export class Gateway {
     this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
     this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect; // cancel pending requests on disconnect
     this.pending = {};                    // msgid to callback mapping for pending requests to server
-    this.subscriptions = {};              // hashset for all topics that are subscribed
+    this.subscriptions = {};       // map for all topics that are subscribed
     this.listeners = {};                  // list of callbacks that want to listen to incoming messages
     this.eventListeners = {};             // external listeners wanting to listen internal events
     this.queue = [];                      // incoming message queue
@@ -148,26 +154,25 @@ export class Gateway {
   * @returns {void}
   */
   _onMsgRx(data) {
-        var jsonMsg;
+    var jsonMsg;
     if (this.debug) console.log('< '+data);
     this._sendEvent('rx', data);
     try {
-      jsonMsg = createJSONMessage(data);
+      jsonMsg = new JSONMessage(data);
     }catch(e){
       return;
     }
     this._sendEvent('rxp', jsonMsg);
-    if ('id' in jsonMsg && jsonMsg.id in this.pending) {
+    if (jsonMsg.id && jsonMsg.id in this.pending) {
       // response to a pending request to master
       this.pending[jsonMsg.id](jsonMsg);
       delete this.pending[jsonMsg.id];
-    } else if (jsonMsg.action == 'send') {
+    } else if (jsonMsg.action == Actions.SEND) {
       // incoming message from master
-      // @ts-ignore
-      let msg = Message._deserialize(jsonMsg.message);
+      const msg = jsonMsg.message;
       if (!msg) return;
       this._sendEvent('rxmsg', msg);
-      if ((msg.recipient == this.aid.toJSON() )|| this.subscriptions[msg.recipient]) {
+      if ((msg.recipient.toJSON() == this.aid.toJSON())|| this.subscriptions[msg.recipient.toJSON()]) {
         // send to any "message" listeners
         this._sendEvent('message', msg);
         // send message to receivers, if not consumed, add to queue
@@ -177,14 +182,16 @@ export class Gateway {
         }
       }
     } else {
-      // respond to standard requests that every container must
-      let rsp = { id: jsonMsg.id, inResponseTo: jsonMsg.action };
+      // respond to standard requests that every gateway must
+      let rsp = new JSONMessage();
+      rsp.id = jsonMsg.id;
+      rsp.inResponseTo = jsonMsg.action;
       switch (jsonMsg.action) {
         case 'agents':
-        rsp.agentIDs = [this.aid.getName()];
+        rsp.agentIDs = [this.aid];
         break;
         case 'containsAgent':
-        rsp.answer = (jsonMsg.agentID == this.aid.getName());
+        rsp.answer = (jsonMsg.agentID.toJSON() == this.aid.toJSON());
         break;
         case 'services':
         rsp.services = [];
@@ -205,11 +212,11 @@ export class Gateway {
   /**
   * Sends a message out to the master container.
   * @private
-  * @param {string|Object} s - JSON object (either stringified or not) to be sent to the master container
+  * @param {JSONMessage} msg - JSONMessage to be sent to the master container
   * @returns {boolean} - true if the message was sent successfully
   */
-  _msgTx(s) {
-    if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
+  _msgTx(msg) {
+    const s = msg.toJSON();
     if(this.debug) console.log('> '+s);
     this._sendEvent('tx', s);
     return this.connector.write(s);
@@ -217,7 +224,7 @@ export class Gateway {
 
   /**
   * @private
-  * @param {Object} rq - request to be sent to the master container as a JSON object
+  * @param {JSONMessage} rq - JSONMessage to be sent to the master container
   * @returns {Promise<Object>} - a promise which returns the response from the master container
   */
   _msgTxRx(rq) {
@@ -374,9 +381,9 @@ export class Gateway {
   /** @private */
   _update_watch() {
     let watch = Object.keys(this.subscriptions);
-    watch.push(this.aid.getName());
-    let rq = { action: 'wantsMessagesFor', agentIDs: watch };
-    this._msgTx(rq);
+    watch.push(this.aid.toJSON());
+    const jsonMsg = JSONMessage.createWantsMessagesFor(watch.map(id => AgentID.fromJSON(id)));
+    this._msgTx(jsonMsg);
   }
 
   /**
@@ -510,10 +517,10 @@ export class Gateway {
   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids when resolved
   */
   async agents() {
-    let rq = { action: 'agents' };
-    let rsp = await this._msgTxRx(rq);
+    let jsonMsg = JSONMessage.createAgents();
+    let rsp = await this._msgTxRx(jsonMsg);
     if (!rsp || !Array.isArray(rsp.agentIDs)) throw new Error('Unable to get agents');
-    return rsp.agentIDs.map(aid => new AgentID(aid, false, this));
+    return rsp.agentIDs;
   }
 
   /**
@@ -523,9 +530,12 @@ export class Gateway {
   * @returns {Promise<boolean>} - a promise which returns true if the agent exists when resolved
   */
   async containsAgent(agentID) {
-    let rq = { action: 'containsAgent', agentID: agentID instanceof AgentID ? agentID.getName() : agentID };
-    let rsp = await this._msgTxRx(rq);
-    if (!rsp) throw new Error('Unable to check if agent exists');
+    let jsonMsg = JSONMessage.createContainsAgent(agentID instanceof AgentID ? agentID : new AgentID(agentID));
+    let rsp = await this._msgTxRx(jsonMsg);
+    if (!rsp) {
+       if (this._returnNullOnFailedResponse) return null;
+       else throw new Error('Unable to check if agent exists');
+    }
     return !!rsp.answer;
   }
 
@@ -537,14 +547,13 @@ export class Gateway {
   * @returns {Promise<?AgentID>} - a promise which returns an agent id for an agent that provides the service when resolved
   */
   async agentForService(service) {
-    let rq = { action: 'agentForService', service: service };
-    let rsp = await this._msgTxRx(rq);
+    let jsonMsg = JSONMessage.createAgentForService(service);
+    let rsp = await this._msgTxRx(jsonMsg);
     if (!rsp) {
       if (this._returnNullOnFailedResponse) return null;
       else throw new Error('Unable to get agent for service');
     }
-    if (!rsp.agentID) return null;
-    return new AgentID(rsp.agentID, false, this);
+    return rsp.agentID;
   }
 
   /**
@@ -554,17 +563,13 @@ export class Gateway {
   * @returns {Promise<?AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
   */
   async agentsForService(service) {
-    let rq = { action: 'agentsForService', service: service };
-    let rsp = await this._msgTxRx(rq);
-    let aids = [];
+    let jsonMsg = JSONMessage.createAgentsForService(service);
+    let rsp = await this._msgTxRx(jsonMsg);
     if (!rsp) {
-      if (this._returnNullOnFailedResponse) return aids;
+      if (this._returnNullOnFailedResponse) return null;
       else throw new Error('Unable to get agents for service');
     }
-    if (!Array.isArray(rsp.agentIDs)) return aids;
-    for (var i = 0; i < rsp.agentIDs.length; i++)
-      aids.push(new AgentID(rsp.agentIDs[i], false, this));
-    return aids;
+    return rsp.agentIDs || [];
   }
 
   /**
@@ -575,16 +580,10 @@ export class Gateway {
   * @returns {boolean} - if sending was successful
   */
   send(msg) {
-    msg.sender = this.aid.toJSON();
-    if (msg.perf == '') {
-      if (msg.__clazz__.endsWith('Req')) msg.perf = Performative.REQUEST;
-      else msg.perf = Performative.INFORM;
-    }
+    msg.sender = this.aid;
     this._sendEvent('txmsg', msg);
-    let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
-    // @ts-ignore
-    rq = rq.replace('"###MSG###"', msg._serialize());
-    return !!this._msgTx(rq);
+    const jsonMsg = JSONMessage.createSend(msg, true);
+    return !!this._msgTx(jsonMsg);
   }
 
   /**

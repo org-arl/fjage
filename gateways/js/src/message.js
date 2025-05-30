@@ -1,24 +1,31 @@
 import { Performative } from './performative.js';
-import { _guid, _atob } from './utils.js';
+import { _guid } from './utils.js';
 import { AgentID } from './agentid.js';  // import AgentID class for type checking. Remove if not needed.
 
 /**
 * Base class for messages transmitted by one agent to another. Creates an empty message.
 * @class
-* @param {Object} inReplyTo
-* @param {string} [inReplyTo.msgID] - ID of the message to which this message response corresponds to
-* @param {AgentID} [inReplyTo.sender] - AgentID of the sender of the message to which this message response corresponds to
-* @param {Performative} [perf=Performative.INFORM] - performative
+*
+* @property {string} msgID - unique message ID
+* @property {Performative} perf - performative of the message
+* @property {AgentID} [sender] - AgentID of the sender of the message
+* @property {AgentID} [recipient] - AgentID of the recipient of the message
+* @property {string} [inReplyTo] - ID of the message to which this message is a response
+* @property {number} [sentAt] - timestamp when the message was sent
 */
 export class Message {
 
-  constructor(inReplyTo={msgID:null, sender:null}, perf=Performative.INFORM) {
+  /**
+  * @param {Message} [inReplyToMsg] - message to which this message is a response
+  * @param {Performative} [perf=Performative.INFORM] - performative of the message
+  */
+  constructor(inReplyToMsg, perf=Performative.INFORM) {
     this.__clazz__ = 'org.arl.fjage.Message';
     this.msgID = _guid(8);
-    this.sender = null;
-    this.recipient = inReplyTo.sender;
     this.perf = perf;
-    this.inReplyTo = inReplyTo.msgID || null;
+    this.sender = null;
+    this.recipient = inReplyToMsg ? inReplyToMsg.sender : null;
+    this.inReplyTo = inReplyToMsg ? inReplyToMsg.msgID : null;
   }
 
   /**
@@ -27,74 +34,52 @@ export class Message {
   * @returns {string} - string representation
   */
   toString() {
-    let s = '';
-    let suffix = '';
-    if (!this.__clazz__) return'';
-    let clazz = this.__clazz__;
-    clazz = clazz.replace(/^.*\./, '');
-    let perf = this.perf;
-    for (var k in this) {
-      if (k.startsWith('__')) continue;
-      if (k == 'sender') continue;
-      if (k == 'recipient') continue;
-      if (k == 'msgID') continue;
-      if (k == 'perf') continue;
-      if (k == 'inReplyTo') continue;
-      if (typeof this[k] == 'object') {
-        suffix = ' ...';
-        continue;
-      }
-      s += ' ' + k + ':' + this[k];
-    }
-    s += suffix;
-    return clazz+':'+perf+'['+s.replace(/^ /, '')+']';
+    let p = this.perf ? this.perf.toString() : 'MESSAGE';
+    if (this.__clazz__ == 'org.arl.fjage.Message') return p;
+    return p + ': ' + this.__clazz__.replace(/^.*\./, '');
   }
 
-  // convert a message into a JSON string
-  // NOTE: we don't do any base64 encoding for TX as
-  //       we don't know what data type is intended
-  /**
-  * @private
+  /** Convert a message into a object for JSON serialization.
   *
-  * @return {string} - JSON string representation of the message
+  * NOTE: we don't do any base64 encoding for TX as
+  *       we don't know what data type is intended
+  *
+  * @return {Object} - JSON string representation of the message
   */
-  _serialize() {
-    let clazz = this.__clazz__ || 'org.arl.fjage.Message';
-    let data = JSON.stringify(this, (k,v) => {
-      if (k.startsWith('__')) return;
-      return v;
-    });
-    return '{ "clazz": "'+clazz+'", "data": '+data+' }';
+  toJSON() {
+    let props = {};
+    for (let key in this) {
+      if (key.startsWith('_')) continue; // skip private properties
+      // @ts-ignore
+      props[key] = this[key];
+    }
+    return { 'clazz': this.__clazz__, 'data': props };
   }
 
-  // add all keys from an Object to the message
-  /** @private */
-  _assign(data) {
-    for (var key in data)
-      this[key] = data[key];
-  }
 
-  // convert a dictionary (usually from decoding JSON) into a message
   /**
-  * @private
+  * Create a message from a object parsed from the JSON representation of the message.
   *
-  * @param {(string|Object)} json - JSON string or object to be converted to a message
-  * @returns {Message} - message created from the JSON string or object
-  * */
-  static _deserialize(json) {
-    let obj = null;
-    if (typeof json == 'string') {
-      try {
-        obj = JSON.parse(json);
-      }catch(e){
-        return null;
-      }
-    } else obj = json;
-    let qclazz = obj.clazz;
+  * @param {Object} jsonObj - Object containing all the properties of the message
+  * @returns {Message} - A message created from the Object
+  *
+  */
+  static fromJSON(jsonObj) {
+    if (!( 'clazz' in jsonObj) || !( 'data' in jsonObj)) {
+      throw new Error(`Invalid Object for Message : ${jsonObj}`);
+    }
+    let qclazz = jsonObj.clazz;
     let clazz = qclazz.replace(/^.*\./, '');
     let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
     rv.__clazz__ = qclazz;
-    rv._assign(obj.data);
+    // copy all properties from the data object
+    for (var key in jsonObj.data){
+      if (key === 'sender' || key === 'recipient') {
+        if (jsonObj.data[key] && typeof jsonObj.data[key] === 'string') {
+          rv[key] = AgentID.fromJSON(jsonObj.data[key]);
+        }
+      } else rv[key] = jsonObj.data[key];
+    }
     return rv;
   }
 }
@@ -147,40 +132,6 @@ export function MessageClass(name, parent=Message) {
   return cls;
 }
 
-// base64 JSON decoder
-/**
-* @private
-*
-* @param {string} k - key
-* @param {any} d - data
-* @returns {Array} - decoded data in array format
-* */
-function _decodeBase64(k, d) {
-  if (d === null) {
-    return null;
-  }
-  if (typeof d == 'object' && 'clazz' in d) {
-    let clazz = d.clazz;
-    if (clazz.startsWith('[') && clazz.length == 2 && 'data' in d) {
-      let x = _b64toArray(d.data, d.clazz);
-      if (x) d = x;
-    }
-  }
-  return d;
-}
-
-/**
-* Parses a string representation of a message into a JavaScript object
-* using a custom base64 decoder.
-* @private
-*
-* @param {string} json - JSON string representation of the message
-* @returns {Object} - JavaScript object created from the JSON string
-*/
-export function createJSONMessage(json) {
-  return JSON.parse(json, _decodeBase64);
-}
-
 /**
 * @typedef {Object} ParameterReq.Entry
 * @property {string} param - parameter name
@@ -208,50 +159,28 @@ export function createJSONMessage(json) {
 * @property {string} param - parameters name to be get/set if only a single parameter is to be get/set
 * @property {Object} value - parameters value to be set if only a single parameter is to be set
 * @property {Array<ParameterReq.Entry>} requests - a list of multiple parameters to be get/set
-* @property {number} [index=-1] - index of parameter(s) to be set
+* @property {number} [index=-1] - index of parameter(s) to be set*
 * @exports ParameterReq
 */
 export const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
 
-////// private utilities
-
-// convert from base 64 to array
-/** @private */
-function _b64toArray(base64, dtype, littleEndian=true) {
-  let s = _atob(base64);
-  let len = s.length;
-  let bytes = new Uint8Array(len);
-  for (var i = 0; i < len; i++)
-    bytes[i] = s.charCodeAt(i);
-  let rv = [];
-  let view = new DataView(bytes.buffer);
-  switch (dtype) {
-    case '[B': // byte array
-    for (i = 0; i < len; i++)
-      rv.push(view.getUint8(i));
-    break;
-    case '[S': // short array
-    for (i = 0; i < len; i+=2)
-      rv.push(view.getInt16(i, littleEndian));
-    break;
-    case '[I': // integer array
-    for (i = 0; i < len; i+=4)
-      rv.push(view.getInt32(i, littleEndian));
-    break;
-    case '[J': // long array
-    for (i = 0; i < len; i+=8)
-      rv.push(view.getBigInt64(i, littleEndian));
-    break;
-    case '[F': // float array
-    for (i = 0; i < len; i+=4)
-      rv.push(view.getFloat32(i, littleEndian));
-    break;
-    case '[D': // double array
-    for (i = 0; i < len; i+=8)
-      rv.push(view.getFloat64(i, littleEndian));
-    break;
-    default:
-    return;
-  }
-  return rv;
-}
+/**
+* A message that is a response to a {@link ParameterReq} message.
+*
+* @example <caption>Receiving a parameter from myAgent</caption>
+* let rsp = gw.receive(ParameterRsp)
+* rsp.sender // = myAgentId; sender of the message
+* rsp.param  // = 'x'; parameter name that was get/set
+* rsp.value  // = 42;  value of the parameter that was set
+* rsp.readonly // = [false]; indicates if the parameter is read-only
+*
+*
+* @typedef {Message} ParameterRsp
+* @property {string} param - parameters name if only a single parameter value was requested
+* @property {Object} value - parameters value if only a single parameter was requested
+* @property {Map<string, Object>} values - a map of multiple parameter names and their values if multiple parameters were requested
+* @property {Array<boolean>} readonly - a list of booleans indicating if the parameters are read-only
+* @property {number} [index=-1] - index of parameter(s) being returned
+* @exports ParameterReq
+*/
+export const ParameterRsp = MessageClass('org.arl.fjage.param.ParameterRsp');
