@@ -1,4 +1,4 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -522,6 +522,31 @@ describe('An AgentID setup to reject promises', function () {
 
 });
 
+describe('A JSONMessage', function () {
+  it('should serialise and deserialise correctly', function () {
+    const TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq');
+    const txMsg = new TxFrameReq();
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = 'send';
+    jsonMsg.relay = false;
+    jsonMsg.message = txMsg;
+    const raw = jsonMsg.toJSON();
+    const parsedJsonMsg = new JSONMessage(raw);
+    expect(parsedJsonMsg.action).toEqual('send');
+    expect(parsedJsonMsg.message instanceof TxFrameReq).toBeTruthy();
+    expect(parsedJsonMsg.message.msgID).toEqual(txMsg.msgID);
+    expect(parsedJsonMsg.message.perf).toEqual(txMsg.perf);
+  });
+
+  it('should be able to deserialise base64 encoded numeric arrays', function () {
+    const DATA_ARRAY = [72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33];
+    const str = '{"action":"send","relay":false,"message":{"clazz":"org.arl.fjage.test.TestMessage","data":{"msgID":"12345678901234567890123456789012","sender":"test","recipient":"echo","perf":"REQUEST","data":{"clazz":"[B","data":"SGVsbG8sIFdvcmxkIQ=="}}}}';
+    const jsonMsg = new JSONMessage(str);
+    expect(jsonMsg.message.data).toEqual(DATA_ARRAY);
+  });
+});
+
+
 
 describe('A Message', function () {
   it('should be able to be consuctured', function () {
@@ -541,11 +566,11 @@ describe('A Message', function () {
 
   it('should serialise and deserialise correctly', function () {
     const msg1 = new Message();
-    const msg2 = Message._deserialize(msg1._serialize());
+    const msg2 = Message.fromJSON(msg1.toJSON());
     const TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq');
     const txMsg = new TxFrameReq();
     expect(msg1).toEqual(msg2);
-    expect(Message._deserialize(txMsg._serialize())).toEqual(txMsg);
+    expect(Message.fromJSON(txMsg.toJSON())).toEqual(txMsg);
   });
 });
 

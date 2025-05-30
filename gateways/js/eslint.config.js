@@ -18,7 +18,7 @@ export default [
           'caughtErrors': 'none',
         }
       ],
-      "jsdoc/no-undefined-types": 'warn'
+      'jsdoc/no-undefined-types': 'warn'
     },
     plugins : {
       jsdoc,
