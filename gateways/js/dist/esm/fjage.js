@@ -1,4 +1,4 @@
-/* fjage.js v2.1.1 */
+/* fjage.js v2.2.0 */
 
 /**
 * An action represented by a message. The performative actions are a subset of the
