@@ -58,7 +58,7 @@ export class Message {
 
 
   /**
-  * Create a message fron a object parsed from the JSON representation of the message.
+  * Create a message from a object parsed from the JSON representation of the message.
   *
   * @param {Object} jsonObj - Object containing all the properties of the message
   * @returns {Message} - A message created from the Object
