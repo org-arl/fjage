@@ -179,6 +179,17 @@
                 
                 <div class='toggle-target display-none'>
                   
+                  <ul class='list-reset py1-ul pl1'>
+                    <li class='h5'><span>Static members</span></li>
+                    
+                      <li><a
+                        href='#agentidfromjson'
+                        class='regular pre-open'>
+                        .fromJSON
+                      </a></li>
+                    
+                    </ul>
+                  
                   
                     <ul class='list-reset py1-ul pl1'>
                       <li class='h5'><span>Instance members</span></li>
@@ -371,6 +382,17 @@
                 
                 <div class='toggle-target display-none'>
                   
+                  <ul class='list-reset py1-ul pl1'>
+                    <li class='h5'><span>Static members</span></li>
+                    
+                      <li><a
+                        href='#messagefromjson'
+                        class='regular pre-open'>
+                        .fromJSON
+                      </a></li>
+                    
+                    </ul>
+                  
                   
                     <ul class='list-reset py1-ul pl1'>
                       <li class='h5'><span>Instance members</span></li>
@@ -379,6 +401,12 @@
                         href='#messagetostring'
                         class='regular pre-open'>
                         #toString
+                      </a></li>
+                      
+                      <li><a
+                        href='#messagetojson'
+                        class='regular pre-open'>
+                        #toJSON
                       </a></li>
                       
                     </ul>
@@ -429,6 +457,161 @@
                 
                 </li>
               
+                
+                <li><a
+                  href='#jsonmessage'
+                  class=" toggle-sibling">
+                  JSONMessage
+                  <span class='icon'>▸</span>
+                </a>
+                
+                <div class='toggle-target display-none'>
+                  
+                  <ul class='list-reset py1-ul pl1'>
+                    <li class='h5'><span>Static members</span></li>
+                    
+                      <li><a
+                        href='#jsonmessagecreatesend'
+                        class='regular pre-open'>
+                        .createSend
+                      </a></li>
+                    
+                      <li><a
+                        href='#jsonmessagecreatewantsmessagesfor'
+                        class='regular pre-open'>
+                        .createWantsMessagesFor
+                      </a></li>
+                    
+                      <li><a
+                        href='#jsonmessagecreateagents'
+                        class='regular pre-open'>
+                        .createAgents
+                      </a></li>
+                    
+                      <li><a
+                        href='#jsonmessagecreatecontainsagent'
+                        class='regular pre-open'>
+                        .createContainsAgent
+                      </a></li>
+                    
+                      <li><a
+                        href='#jsonmessagecreateagentforservice'
+                        class='regular pre-open'>
+                        .createAgentForService
+                      </a></li>
+                    
+                      <li><a
+                        href='#jsonmessagecreateagentsforservice'
+                        class='regular pre-open'>
+                        .createAgentsForService
+                      </a></li>
+                    
+                    </ul>
+                  
+                  
+                    <ul class='list-reset py1-ul pl1'>
+                      <li class='h5'><span>Instance members</span></li>
+                      
+                      <li><a
+                        href='#jsonmessagetojson'
+                        class='regular pre-open'>
+                        #toJSON
+                      </a></li>
+                      
+                      <li><a
+                        href='#jsonmessagetostring'
+                        class='regular pre-open'>
+                        #toString
+                      </a></li>
+                      
+                    </ul>
+                  
+                  
+                  
+                </div>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#parameterrsp'
+                  class="">
+                  ParameterRsp
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#actions'
+                  class=" toggle-sibling">
+                  Actions
+                  <span class='icon'>▸</span>
+                </a>
+                
+                <div class='toggle-target display-none'>
+                  
+                  <ul class='list-reset py1-ul pl1'>
+                    <li class='h5'><span>Static members</span></li>
+                    
+                      <li><a
+                        href='#actionsagents'
+                        class='regular pre-open'>
+                        .AGENTS
+                      </a></li>
+                    
+                      <li><a
+                        href='#actionscontains_agent'
+                        class='regular pre-open'>
+                        .CONTAINS_AGENT
+                      </a></li>
+                    
+                      <li><a
+                        href='#actionsservices'
+                        class='regular pre-open'>
+                        .SERVICES
+                      </a></li>
+                    
+                      <li><a
+                        href='#actionsagent_for_service'
+                        class='regular pre-open'>
+                        .AGENT_FOR_SERVICE
+                      </a></li>
+                    
+                      <li><a
+                        href='#actionsagents_for_service'
+                        class='regular pre-open'>
+                        .AGENTS_FOR_SERVICE
+                      </a></li>
+                    
+                      <li><a
+                        href='#actionssend'
+                        class='regular pre-open'>
+                        .SEND
+                      </a></li>
+                    
+                      <li><a
+                        href='#actionswants_messages_for'
+                        class='regular pre-open'>
+                        .WANTS_MESSAGES_FOR
+                      </a></li>
+                    
+                      <li><a
+                        href='#actionsshutdown'
+                        class='regular pre-open'>
+                        .SHUTDOWN
+                      </a></li>
+                    
+                    </ul>
+                  
+                  
+                  
+                  
+                </div>
+                
+                </li>
+              
             </ul>
           </div>
           <div class='mt1 h6 quiet'>
@@ -449,15 +632,12 @@
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L77-L665'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
   </div>
   
 
-  <p>A gateway for connecting to a fjage master container. The new version of the constructor
-uses an options object instead of individual parameters.</p>
+  <p>A gateway for connecting to a fjage master container. This class provides methods to
+send and receive messages, subscribe to topics, and manage connections to the master container.
+It can be used to connect to a fjage master container over WebSockets or TCP.</p>
 
     <div class='pre p1 fill-light mt0'>new Gateway(opts: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</div>
   
@@ -528,7 +708,7 @@ uses an options object instead of individual parameters.</p>
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>opts.keepAlive</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  <td class='break-word'><span class='code bold'>opts.keepAlive</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>true</code>)
   </td>
@@ -591,6 +771,33 @@ uses an options object instead of individual parameters.</p>
   
 
   
+    <div class='py1 quiet mt1 prose-big'>Properties</div>
+    <div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>aid</span> <code class='quiet'>(<a href="#agentid">AgentID</a>)</code>
+          : agent id of the gateway
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>connected</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
+          : true if the gateway is connected to the master container
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>debug</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
+          : true if debug messages should be logged to the console
+<p>Constructor arguments:</p>
+
+          
+        </div>
+      
+    </div>
+  
 
   
 
@@ -627,15 +834,6 @@ uses an options object instead of individual parameters.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L389-L394'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Add an event listener to listen to various events happening on this Gateway</p>
@@ -716,15 +914,6 @@ uses an options object instead of individual parameters.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L403-L407'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Remove an event listener.</p>
 
@@ -804,15 +993,6 @@ uses an options object instead of individual parameters.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L415-L417'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Add a new listener to listen to all {Message}s sent to this Gateway</p>
 
@@ -882,15 +1062,6 @@ uses an options object instead of individual parameters.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L425-L427'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Remove a message listener.</p>
@@ -962,15 +1133,6 @@ uses an options object instead of individual parameters.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L435-L437'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Add a new listener to get notified when the connection to master is created and terminated.</p>
 
@@ -1040,15 +1202,6 @@ uses an options object instead of individual parameters.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L445-L447'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Remove a connection listener.</p>
@@ -1120,15 +1273,6 @@ uses an options object instead of individual parameters.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L454-L456'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Gets the agent ID associated with the gateway.</p>
 
@@ -1185,15 +1329,6 @@ uses an options object instead of individual parameters.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L464-L466'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Get an AgentID for a given agent name.</p>
@@ -1265,15 +1400,6 @@ uses an options object instead of individual parameters.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L475-L481'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Returns an object representing the named topic.</p>
@@ -1355,15 +1481,6 @@ uses an options object instead of individual parameters.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L489-L494'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Subscribes the gateway to receive all messages sent to the given topic.</p>
 
@@ -1435,15 +1552,6 @@ uses an options object instead of individual parameters.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L502-L506'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Unsubscribes the gateway from a given topic.</p>
 
@@ -1514,15 +1622,6 @@ uses an options object instead of individual parameters.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L512-L517'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Gets a list of all agents in the container.</p>
 
@@ -1579,15 +1678,6 @@ uses an options object instead of individual parameters.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L525-L530'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Check if an agent with a given name exists in the container.</p>
@@ -1659,15 +1749,6 @@ uses an options object instead of individual parameters.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L539-L548'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Finds an agent that provides a named service. If multiple agents are registered
@@ -1741,15 +1822,6 @@ to provide a given service, any of the agents' id may be returned.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L556-L568'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Finds all agents that provides a named service.</p>
 
@@ -1812,15 +1884,6 @@ to provide a given service, any of the agents' id may be returned.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L577-L588'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Sends a message to the recipient indicated in the message. The recipient
@@ -1894,15 +1957,6 @@ may be an agent or a topic.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L595-L597'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Flush the Gateway queue for all pending messages. This drops all the pending messages.</p>
 
@@ -1958,15 +2012,6 @@ may be an agent or a topic.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L607-L610'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Sends a request and waits for a response. This method returns a {Promise} which resolves when a response
@@ -2050,15 +2095,6 @@ is received or if no response is received after the timeout.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L621-L653'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Returns a response message received by the gateway. This method returns a {Promise} which resolves when
 a response is received or if no response is received after the timeout.</p>
@@ -2140,15 +2176,6 @@ a response is received or if no response is received after the timeout.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/gateway.js#L660-L663'>
-      <span>gateways/js/src/gateway.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Closes the gateway. The gateway functionality may not longer be accessed after
 this method is called.</p>
@@ -2217,14 +2244,11 @@ this method is called.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/agentID.js#L13-L177'>
-      <span>gateways/js/src/agentID.js</span>
-      </a>
-    
   </div>
   
 
-  <p>An identifier for an agent or a topic.</p>
+  <p>An identifier for an agent or a topic. This can be to send, receive messages, and set or get parameters
+on an agent or topic on the fjåge master container.</p>
 
     <div class='pre p1 fill-light mt0'>new AgentID(name: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, topic: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>, owner: <a href="#gateway">Gateway</a>?)</div>
   
@@ -2283,6 +2307,83 @@ this method is called.</p>
   
 
   
+    <div class='py1 quiet mt1 prose-big'>Static Members</div>
+    <div class="clearfix">
+  
+    <div class='border-bottom' id='agentidfromjson'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>fromJSON(json)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Inflate the AgentID from a JSON string or object.</p>
+
+    <div class='pre p1 fill-light mt0'>fromJSON(json: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): <a href="#agentid">AgentID</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>json</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    JSON string or object to be converted to an AgentID
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="#agentid">AgentID</a></code>:
+        AgentID created from the JSON string or object
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+</div>
+
+  
 
   
     <div class='py1 quiet mt1 prose-big'>Instance Members</div>
@@ -2298,15 +2399,6 @@ this method is called.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/agentID.js#L26-L28'>
-      <span>gateways/js/src/agentID.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Gets the name of the agent or topic.</p>
@@ -2365,15 +2457,6 @@ this method is called.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/agentID.js#L35-L37'>
-      <span>gateways/js/src/agentID.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Returns true if the agent id represents a topic.</p>
 
@@ -2430,15 +2513,6 @@ this method is called.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/agentID.js#L45-L49'>
-      <span>gateways/js/src/agentID.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Sends a message to the agent represented by this id.</p>
@@ -2509,15 +2583,6 @@ this method is called.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/agentID.js#L58-L62'>
-      <span>gateways/js/src/agentID.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Sends a request to the agent represented by this id and waits for a reponse.</p>
@@ -2600,15 +2665,6 @@ this method is called.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/agentID.js#L69-L71'>
-      <span>gateways/js/src/agentID.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Gets a string representation of the agent id.</p>
 
@@ -2666,15 +2722,6 @@ this method is called.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/agentID.js#L78-L80'>
-      <span>gateways/js/src/agentID.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Gets a JSON string representation of the agent id.</p>
 
@@ -2731,15 +2778,6 @@ this method is called.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/agentID.js#L91-L129'>
-      <span>gateways/js/src/agentID.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Sets parameter(s) on the Agent referred to by this AgentID.</p>
@@ -2841,15 +2879,6 @@ this method is called.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/agentID.js#L140-L176'>
-      <span>gateways/js/src/agentID.js</span>
-      </a>
-    
-  </div>
-  
 
   <p>Gets parameter(s) on the Agent referred to by this AgentID.</p>
 
@@ -2943,10 +2972,6 @@ this method is called.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/services.js#L4-L6'>
-      <span>gateways/js/src/services.js</span>
-      </a>
-    
   </div>
   
 
@@ -2989,15 +3014,6 @@ this method is called.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/services.js#L5-L5'>
-      <span>gateways/js/src/services.js</span>
-      </a>
-    
-  </div>
   
 
   
@@ -3060,10 +3076,6 @@ this method is called.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L6-L19'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
   </div>
   
 
@@ -3113,15 +3125,6 @@ FIPA ACL recommendations for interagent communication.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L7-L7'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
-  
 
   
     <div class='pre p1 fill-light mt0'>REQUEST</div>
@@ -3169,15 +3172,6 @@ FIPA ACL recommendations for interagent communication.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L8-L8'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
   
 
   
@@ -3227,15 +3221,6 @@ FIPA ACL recommendations for interagent communication.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L9-L9'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
-  
 
   
     <div class='pre p1 fill-light mt0'>REFUSE</div>
@@ -3283,15 +3268,6 @@ FIPA ACL recommendations for interagent communication.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L10-L10'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
   
 
   
@@ -3341,15 +3317,6 @@ FIPA ACL recommendations for interagent communication.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L11-L11'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
-  
 
   
     <div class='pre p1 fill-light mt0'>INFORM</div>
@@ -3397,15 +3364,6 @@ FIPA ACL recommendations for interagent communication.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L12-L12'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
   
 
   
@@ -3455,15 +3413,6 @@ FIPA ACL recommendations for interagent communication.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L13-L13'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
-  
 
   
     <div class='pre p1 fill-light mt0'>DISCONFIRM</div>
@@ -3511,15 +3460,6 @@ FIPA ACL recommendations for interagent communication.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L14-L14'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
   
 
   
@@ -3569,15 +3509,6 @@ FIPA ACL recommendations for interagent communication.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L15-L15'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
-  
 
   
     <div class='pre p1 fill-light mt0'>NOT_UNDERSTOOD</div>
@@ -3625,15 +3556,6 @@ FIPA ACL recommendations for interagent communication.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L16-L16'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
   
 
   
@@ -3683,15 +3605,6 @@ FIPA ACL recommendations for interagent communication.</p>
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L17-L17'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
-  
 
   
     <div class='pre p1 fill-light mt0'>PROPOSE</div>
@@ -3739,15 +3652,6 @@ FIPA ACL recommendations for interagent communication.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/performative.js#L18-L18'>
-      <span>gateways/js/src/performative.js</span>
-      </a>
-    
-  </div>
   
 
   
@@ -3810,16 +3714,12 @@ FIPA ACL recommendations for interagent communication.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/message.js#L13-L100'>
-      <span>gateways/js/src/message.js</span>
-      </a>
-    
   </div>
   
 
   <p>Base class for messages transmitted by one agent to another. Creates an empty message.</p>
 
-    <div class='pre p1 fill-light mt0'>new Message(inReplyTo: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, perf: <a href="#performative">Performative</a>)</div>
+    <div class='pre p1 fill-light mt0'>new Message(inReplyToMsg: any, perf: any)</div>
   
   
 
@@ -3836,54 +3736,67 @@ FIPA ACL recommendations for interagent communication.</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>inReplyTo</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>
-            = <code>{msgID:null,sender:null}</code>)</code>
+            <span class='code bold'>inReplyToMsg</span> <code class='quiet'>(any)</code>
 	    
           </div>
-          
-          <table class='mt1 mb2 fixed-table h5 col-12'>
-            <colgroup>
-              <col width='30%' />
-              <col width='70%' />
-            </colgroup>
-            <thead>
-              <tr class='bold fill-light'>
-                <th>Name</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody class='mt1'>
-              
-                <tr>
-  <td class='break-word'><span class='code bold'>inReplyTo.msgID</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?</code>
-  </td>
-  <td class='break-word'><span>ID of the message to which this message response corresponds to
-</span></td>
-</tr>
-
-
-              
-                <tr>
-  <td class='break-word'><span class='code bold'>inReplyTo.sender</span> <code class='quiet'><a href="#agentid">AgentID</a>?</code>
-  </td>
-  <td class='break-word'><span>AgentID of the sender of the message to which this message response corresponds to
-</span></td>
-</tr>
-
-
-              
-            </tbody>
-          </table>
           
         </div>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>perf</span> <code class='quiet'>(<a href="#performative">Performative</a>
+            <span class='code bold'>perf</span> <code class='quiet'>(any
             = <code>Performative.INFORM</code>)</code>
-	    performative
-
+	    
           </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Properties</div>
+    <div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>msgID</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+          : unique message ID
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>perf</span> <code class='quiet'>(<a href="#performative">Performative</a>)</code>
+          : performative of the message
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>sender</span> <code class='quiet'>(<a href="#agentid">AgentID</a>?)</code>
+          : AgentID of the sender of the message
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>recipient</span> <code class='quiet'>(<a href="#agentid">AgentID</a>?)</code>
+          : AgentID of the recipient of the message
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>inReplyTo</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
+          : ID of the message to which this message is a response
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>sentAt</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</code>
+          : timestamp when the message was sent
+
           
         </div>
       
@@ -3899,6 +3812,81 @@ FIPA ACL recommendations for interagent communication.</p>
   
 
   
+    <div class='py1 quiet mt1 prose-big'>Static Members</div>
+    <div class="clearfix">
+  
+    <div class='border-bottom' id='messagefromjson'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>fromJSON(jsonObj)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Create a message fron a object parsed from the JSON representation of the message.</p>
+
+    <div class='pre p1 fill-light mt0'>fromJSON(jsonObj: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>): <a href="#message">Message</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>jsonObj</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    Object containing all the properties of the message
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="#message">Message</a></code>:
+        A message created from the Object
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+</div>
 
   
 
@@ -3916,15 +3904,6 @@ FIPA ACL recommendations for interagent communication.</p>
       <div class="clearfix display-none toggle-target">
         <section class='p2 mb2 clearfix bg-white minishadow'>
 
-  
-  <div class='clearfix'>
-    
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/message.js#L29-L51'>
-      <span>gateways/js/src/message.js</span>
-      </a>
-    
-  </div>
   
 
   <p>Gets a string representation of the message.</p>
@@ -3972,6 +3951,65 @@ FIPA ACL recommendations for interagent communication.</p>
       </div>
     </div>
   
+    <div class='border-bottom' id='messagetojson'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>toJSON()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Convert a message into a object for JSON serialization.</p>
+<p>NOTE: we don't do any base64 encoding for TX as
+we don't know what data type is intended</p>
+
+    <div class='pre p1 fill-light mt0'>toJSON(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></code>:
+        JSON string representation of the message
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
 </div>
 
   
@@ -3993,10 +4031,6 @@ FIPA ACL recommendations for interagent communication.</p>
       MessageClass
     </h3>
     
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/message.js#L126-L148'>
-      <span>gateways/js/src/message.js</span>
-      </a>
     
   </div>
   
@@ -4078,10 +4112,6 @@ FIPA ACL recommendations for interagent communication.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/message.js#L191-L213'>
-      <span>gateways/js/src/message.js</span>
-      </a>
-    
   </div>
   
 
@@ -4132,7 +4162,7 @@ FIPA ACL recommendations for interagent communication.</p>
       
         <div class='space-bottom0'>
           <span class='code bold'>index</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</code>
-          : index of parameter(s) to be set
+          : index of parameter(s) to be set*
 
           
         </div>
@@ -4187,10 +4217,6 @@ FIPA ACL recommendations for interagent communication.</p>
       ParameterReq.Entry
     </h3>
     
-    
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/message.js#L184-L189'>
-      <span>gateways/js/src/message.js</span>
-      </a>
     
   </div>
   
@@ -4265,10 +4291,6 @@ FIPA ACL recommendations for interagent communication.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/org-arl/fjage/blob/bea2d4ac29eb249b78945e63da53516be9899d34/gateways/js/src/message.js#L107-L115'>
-      <span>gateways/js/src/message.js</span>
-      </a>
-    
   </div>
   
 
@@ -4303,6 +4325,1284 @@ FIPA ACL recommendations for interagent communication.</p>
   
 
   
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='jsonmessage'>
+      JSONMessage
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>Class representing a fjage's on-the-wire JSON message. A JSONMessage object
+contains all the fields that can be a part of a fjage JSON message. The class
+provides methods to create JSONMessage objects from raw strings and to
+convert JSONMessage objects to JSON strings in the format of the fjage on-the-wire
+protocol. See <a href="https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes">fjage documentation</a>
+for more details on the JSON message format.</p>
+<p>Most users will not need to create JSONMessage objects directly, but rather use the Gateway and Message classes
+to send and receive messages. However, this class can be useful for low-level access to the fjage protocol
+or for generating/consuming the fjåge protocol messages without having them be transmitted over a network.</p>
+
+    <div class='pre p1 fill-light mt0'>new JSONMessage(jsonString: any)</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>jsonString</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Properties</div>
+    <div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>id</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
+          : A UUID assigned to each JSONMessage object.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>action</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
+          : Denotes the main action the object is supposed to perform.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>inResponseTo</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
+          : This attribute contains the action to which this object is a response to.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>agentID</span> <code class='quiet'>(<a href="#agentid">AgentID</a>?)</code>
+          : An AgentID. This attribute is populated in objects which are responses to objects requesting the ID of an agent providing a specific service.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>agentIDs</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#agentid">AgentID</a>>?)</code>
+          : This attribute is populated in objects which are responses to objects requesting the IDs of agents providing a specific service, or objects which are responses to objects requesting a list of all agents running in a container.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>agentTypes</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>>?)</code>
+          : This attribute is optionally populated in objects which are responses to objects requesting a list of all agents running in a container. If populated, it contains a list of agent types running in the container, with a one-to-one mapping to the agent IDs in the "agentIDs" attribute.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>service</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
+          : Used in conjunction with "action" : "agentForService" and "action" : "agentsForService" to query for agent(s) providing this specific service.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>services</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>>?)</code>
+          : This attribute is populated in objects which are responses to objects requesting the services available with "action" : "services".
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>answer</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
+          : This attribute is populated in objects which are responses to query objects with "action" : "containsAgent".
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>message</span> <code class='quiet'>(<a href="#message">Message</a>?)</code>
+          : This holds the main payload of the message. The structure and format of this object is discussed in the 
+<a href="https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes">fjage documentation</a>
+.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>relay</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
+          : This attribute defines if the target container should relay (forward) the message to other containers it is connected to or not.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>creds</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>?)</code>
+          : Credentials to be used for authentication.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>auth</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>?)</code>
+          : Authentication information to be used for the message.
+
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Example</div>
+    
+      
+      <pre class='p1 overflow-auto round fill-light'><span class="hljs-keyword">const</span> jsonMsg = <span class="hljs-keyword">new</span> <span class="hljs-title class_">JSON</span>Message();
+jsonMsg.<span class="hljs-property">action</span> = <span class="hljs-string">&#x27;send&#x27;</span>;
+jsonMsg.<span class="hljs-property">message</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Message</span>();
+jsonMsg.<span class="hljs-property">message</span>.<span class="hljs-property">sender</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">AgentID</span>(<span class="hljs-string">&#x27;agent1&#x27;</span>);
+jsonMsg.<span class="hljs-property">message</span>.<span class="hljs-property">recipient</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">AgentID</span>(<span class="hljs-string">&#x27;agent2&#x27;</span>);
+jsonMsg.<span class="hljs-property">message</span>.<span class="hljs-property">perf</span> = <span class="hljs-title class_">Performative</span>.<span class="hljs-property">INFORM</span>;
+jsonMsg.<span class="hljs-title function_">toJSON</span>(); <span class="hljs-comment">// Converts to JSON string in the fjage on-the-wire protocol format</span></pre>
+    
+      
+      <pre class='p1 overflow-auto round fill-light'><span class="hljs-keyword">const</span> jsonString = <span class="hljs-string">&#x27;{&quot;id&quot;:&quot;1234&quot;,...}&#x27;</span>; <span class="hljs-comment">// JSON string representation of a JSONMessage</span>
+<span class="hljs-keyword">const</span> jsonMsg = <span class="hljs-keyword">new</span> <span class="hljs-title class_">JSON</span>Message(jsonString); <span class="hljs-comment">// Parses the JSON string into a JSONMessage object</span>
+jsonMsg.<span class="hljs-property">message</span>; <span class="hljs-comment">// Access the Message object contained in the JSONMessage</span></pre>
+    
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Static Members</div>
+    <div class="clearfix">
+  
+    <div class='border-bottom' id='jsonmessagecreatesend'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>createSend(msg, relay)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Creates a JSONMessage object to send a message.</p>
+
+    <div class='pre p1 fill-light mt0'>createSend(msg: <a href="#message">Message</a>, relay: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): <a href="#jsonmessage">JSONMessage</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>msg</span> <code class='quiet'>(<a href="#message">Message</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>relay</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>
+            = <code>false</code>)</code>
+	    whether to relay the message
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="#jsonmessage">JSONMessage</a></code>:
+        JSONMessage object with request to send a message
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='jsonmessagecreatewantsmessagesfor'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>createWantsMessagesFor(agentIDs)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Creates a JSONMessage object to update WantsMessagesFor list.</p>
+
+    <div class='pre p1 fill-light mt0'>createWantsMessagesFor(agentIDs: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#agentid">AgentID</a>>): <a href="#jsonmessage">JSONMessage</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>agentIDs</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#agentid">AgentID</a>>)</code>
+	    array of AgentID objects for which the gateway wants messages
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="#jsonmessage">JSONMessage</a></code>:
+        JSONMessage object with request to update WantsMessagesFor list
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='jsonmessagecreateagents'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>createAgents()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Creates a JSONMessage object to request the list of agents.</p>
+
+    <div class='pre p1 fill-light mt0'>createAgents(): <a href="#jsonmessage">JSONMessage</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="#jsonmessage">JSONMessage</a></code>:
+        JSONMessage object with request for the list of agents
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='jsonmessagecreatecontainsagent'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>createContainsAgent(agentID)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Creates a JSONMessage object to check if an agent is contained</p>
+
+    <div class='pre p1 fill-light mt0'>createContainsAgent(agentID: <a href="#agentid">AgentID</a>): <a href="#jsonmessage">JSONMessage</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>agentID</span> <code class='quiet'>(<a href="#agentid">AgentID</a>)</code>
+	    AgentID of the agent to check
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="#jsonmessage">JSONMessage</a></code>:
+        JSONMessage object with request to check if the agent is contained
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='jsonmessagecreateagentforservice'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>createAgentForService(service)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Creates a JSONMessage object to get an agent for a service.</p>
+
+    <div class='pre p1 fill-light mt0'>createAgentForService(service: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): <a href="#jsonmessage">JSONMessage</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>service</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    service which the agent must provide
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="#jsonmessage">JSONMessage</a></code>:
+        JSONMessage object with request for an agent providing the service
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='jsonmessagecreateagentsforservice'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>createAgentsForService(service)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Creates a JSONMessage object to get all agents for a service.</p>
+
+    <div class='pre p1 fill-light mt0'>createAgentsForService(service: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): <a href="#jsonmessage">JSONMessage</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>service</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    service which the agents must provide
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="#jsonmessage">JSONMessage</a></code>:
+        JSONMessage object with request for all agent providing the service
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+</div>
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
+    <div class="clearfix">
+  
+    <div class='border-bottom' id='jsonmessagetojson'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>toJSON()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Converts the JSONMessage object to a JSON string in the format of the
+fjage on-the-wire protocol. If the JSONMessage contains a Message or
+AgentID objects, they will be serialized as per the fjåge protocol.</p>
+
+    <div class='pre p1 fill-light mt0'>toJSON(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>:
+        JSON string representation of the message
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='jsonmessagetostring'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>toString()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  
+    <div class='pre p1 fill-light mt0'>toString()</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+</div>
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='parameterrsp'>
+      ParameterRsp
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>A message that is a response to a <a href="#parameterreq">ParameterReq</a> message.</p>
+
+    <div class='pre p1 fill-light mt0'>ParameterRsp</div>
+  
+    <p>
+      Type:
+      <a href="#message">Message</a>
+    </p>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Properties</div>
+    <div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>param</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+          : parameters name if only a single parameter value was requested
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>value</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+          : parameters value if only a single parameter was requested
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>values</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map">Map</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>>)</code>
+          : a map of multiple parameter names and their values if multiple parameters were requested
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>readonly</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>>)</code>
+          : a list of booleans indicating if the parameters are read-only
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>index</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</code>
+          : index of parameter(s) being returned
+
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Example</div>
+    
+      <p><p>Receiving a parameter from myAgent</p>
+</p>
+      <pre class='p1 overflow-auto round fill-light'><span class="hljs-keyword">let</span> rsp = gw.<span class="hljs-title function_">receive</span>(<span class="hljs-title class_">ParameterRsp</span>)
+rsp.<span class="hljs-property">sender</span> <span class="hljs-comment">// = myAgentId; sender of the message</span>
+rsp.<span class="hljs-property">param</span>  <span class="hljs-comment">// = &#x27;x&#x27;; parameter name that was get/set</span>
+rsp.<span class="hljs-property">value</span>  <span class="hljs-comment">// = 42;  value of the parameter that was set</span>
+rsp.<span class="hljs-property">readonly</span> <span class="hljs-comment">// = [false]; indicates if the parameter is read-only</span></pre>
+    
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='actions'>
+      Actions
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>Actions supported by the fjåge JSON message protocol. See
+<a href="https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes">fjage documentation</a> for more details.</p>
+
+    <div class='pre p1 fill-light mt0'>Actions</div>
+  
+    <p>
+      Type:
+      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>
+    </p>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Static Members</div>
+    <div class="clearfix">
+  
+    <div class='border-bottom' id='actionsagents'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>AGENTS</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  
+    <div class='pre p1 fill-light mt0'>AGENTS</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='actionscontains_agent'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>CONTAINS_AGENT</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  
+    <div class='pre p1 fill-light mt0'>CONTAINS_AGENT</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='actionsservices'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>SERVICES</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  
+    <div class='pre p1 fill-light mt0'>SERVICES</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='actionsagent_for_service'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>AGENT_FOR_SERVICE</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  
+    <div class='pre p1 fill-light mt0'>AGENT_FOR_SERVICE</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='actionsagents_for_service'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>AGENTS_FOR_SERVICE</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  
+    <div class='pre p1 fill-light mt0'>AGENTS_FOR_SERVICE</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='actionssend'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>SEND</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  
+    <div class='pre p1 fill-light mt0'>SEND</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='actionswants_messages_for'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>WANTS_MESSAGES_FOR</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  
+    <div class='pre p1 fill-light mt0'>WANTS_MESSAGES_FOR</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='actionsshutdown'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>SHUTDOWN</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  
+    <div class='pre p1 fill-light mt0'>SHUTDOWN</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+</div>
 
   
 
