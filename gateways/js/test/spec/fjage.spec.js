@@ -1,4 +1,4 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass GenericMessage it expect expectAsync describe fdescribe spyOn beforeAll afterAll beforeEach jasmine*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -225,13 +225,11 @@ describe('A Gateway', function () {
     smr.perf = Performative.REQUEST;
     smr.recipient = gw.agent('echo');
     gw.send(smr);
-    await delay(4000);
-    expect(gw.queue.length).toBeLessThanOrEqual(128);
-    if (gw.queue.length == 128){
-      var ids = gw.queue.map(m => m.id).filter( id => !!id).sort((a,b) => a-b);
-      expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1);
-      expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128);
-    }
+    await delay(3800);
+    expect(gw.queue.length).toBe(128);
+    var ids = gw.queue.map(m => m.id).filter( id => !!id).sort((a,b) => a-b);
+    expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1);
+    expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128);
     await delay(300);
     gw.close();
   });
@@ -330,8 +328,7 @@ describe('A Gateway', function () {
   it('should cancel requests when disconnected', async function() {
     const gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnFailedResponse: false, cancelPendingOnDisconnect: true}));
     const shell = gw.agent('shell');
-    expectAsync(shell.get('language'))
-    .toBeRejectedWithError();
+    expectAsync(shell.get('language')).toBeRejectedWithError();
     if (isBrowser) gw.connector.sock.close();
     else gw.connector.sock.destroy();
     await delay(100);
@@ -525,6 +522,31 @@ describe('An AgentID setup to reject promises', function () {
 
 });
 
+describe('A JSONMessage', function () {
+  it('should serialise and deserialise correctly', function () {
+    const TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq');
+    const txMsg = new TxFrameReq();
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = 'send';
+    jsonMsg.relay = false;
+    jsonMsg.message = txMsg;
+    const raw = jsonMsg.toJSON();
+    const parsedJsonMsg = new JSONMessage(raw);
+    expect(parsedJsonMsg.action).toEqual('send');
+    expect(parsedJsonMsg.message instanceof TxFrameReq).toBeTruthy();
+    expect(parsedJsonMsg.message.msgID).toEqual(txMsg.msgID);
+    expect(parsedJsonMsg.message.perf).toEqual(txMsg.perf);
+  });
+
+  it('should be able to deserialise base64 encoded numeric arrays', function () {
+    const DATA_ARRAY = [72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33];
+    const str = '{"action":"send","relay":false,"message":{"clazz":"org.arl.fjage.test.TestMessage","data":{"msgID":"12345678901234567890123456789012","sender":"test","recipient":"echo","perf":"REQUEST","data":{"clazz":"[B","data":"SGVsbG8sIFdvcmxkIQ=="}}}}';
+    const jsonMsg = new JSONMessage(str);
+    expect(jsonMsg.message.data).toEqual(DATA_ARRAY);
+  });
+});
+
+
 
 describe('A Message', function () {
   it('should be able to be consuctured', function () {
@@ -544,11 +566,11 @@ describe('A Message', function () {
 
   it('should serialise and deserialise correctly', function () {
     const msg1 = new Message();
-    const msg2 = Message._deserialize(msg1._serialize());
+    const msg2 = Message.fromJSON(msg1.toJSON());
     const TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq');
     const txMsg = new TxFrameReq();
     expect(msg1).toEqual(msg2);
-    expect(Message._deserialize(txMsg._serialize())).toEqual(txMsg);
+    expect(Message.fromJSON(txMsg.toJSON())).toEqual(txMsg);
   });
 });
 

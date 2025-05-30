@@ -1,29 +1,55 @@
-/* fjage.js v2.1.0 */
-
-const isBrowser =
-  typeof window !== "undefined" && typeof window.document !== "undefined";
-
-const isNode =
-  typeof process !== "undefined" &&
-  process.versions != null &&
-  process.versions.node != null;
-
-const isWebWorker =
-  typeof self === "object" &&
-  self.constructor &&
-  self.constructor.name === "DedicatedWorkerGlobalScope";
+/* fjage.js v2.2.0 */
 
 /**
- * @see https://github.com/jsdom/jsdom/releases/tag/12.0.0
- * @see https://github.com/jsdom/jsdom/issues/1537
- */
-const isJsDom =
-  (typeof window !== "undefined" && window.name === "nodejs") ||
-  (typeof navigator !== "undefined" &&
-    (navigator.userAgent.includes("Node.js") ||
-      navigator.userAgent.includes("jsdom")));
+* An action represented by a message. The performative actions are a subset of the
+* FIPA ACL recommendations for interagent communication.
+* @enum {string}
+*/
+const Performative = {
+  REQUEST: 'REQUEST',               // Request an action to be performed
+  AGREE: 'AGREE',                   // Agree to performing the requested action
+  REFUSE: 'REFUSE',                 // Refuse to perform the requested action
+  FAILURE: 'FAILURE',               // Notification of failure to perform a requested or agreed action
+  INFORM: 'INFORM',                 // Notification of an event
+  CONFIRM: 'CONFIRM',               // Confirm that the answer to a query is true
+  DISCONFIRM: 'DISCONFIRM',         // Confirm that the answer to a query is false
+  QUERY_IF: 'QUERY_IF',             // Query if some statement is true or false
+  NOT_UNDERSTOOD: 'NOT_UNDERSTOOD', // Notification that a message was not understood
+  CFP: 'CFP',                       // Call for proposal
+  PROPOSE: 'PROPOSE',               // Response for CFP
+  CANCEL: 'CANCEL'                  // Cancel pending request
+};
 
-typeof Deno !== "undefined" && typeof Deno.core !== "undefined";
+////// common utilities
+
+// generate random ID with length 4*len characters
+/**
+ *
+ * @private
+ * @param {number} len
+ */
+function _guid(len) {
+  const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  return Array.from({ length: len }, s4).join('');
+}
+
+// src/index.ts
+var isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+var isNode = (
+  // @ts-expect-error
+  typeof process !== "undefined" && // @ts-expect-error
+  process.versions != null && // @ts-expect-error
+  process.versions.node != null
+);
+var isWebWorker = typeof self === "object" && self.constructor && self.constructor.name === "DedicatedWorkerGlobalScope";
+var isJsDom = typeof window !== "undefined" && window.name === "nodejs" || typeof navigator !== "undefined" && "userAgent" in navigator && typeof navigator.userAgent === "string" && (navigator.userAgent.includes("Node.js") || navigator.userAgent.includes("jsdom"));
+(
+  // @ts-expect-error
+  typeof Deno !== "undefined" && // @ts-expect-error
+  typeof Deno.version !== "undefined" && // @ts-expect-error
+  typeof Deno.version.deno !== "undefined"
+);
+typeof process !== "undefined" && process.versions != null && process.versions.bun != null;
 
 const SOCKET_OPEN = 'open';
 const SOCKET_OPENING = 'opening';
@@ -32,20 +58,20 @@ const DEFAULT_RECONNECT_TIME$1 = 5000;       // ms, delay between retries to con
 var createConnection;
 
 /**
- * @class
- * @ignore
- */
+* @class
+* @ignore
+*/
 class TCPConnector {
 
   /**
-    * Create an TCPConnector to connect to a fjage master over TCP
-   * @param {Object} opts
-   * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
-   * @param {number} [opts.port=1100] - port number of the master container to connect to
-   * @param {boolean} [opts.keepAlive=true] - try to reconnect if the connection is lost
-   * @param {boolean} [opts.debug=false] - debug info to be logged to console?
-   * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
-    */
+  * Create an TCPConnector to connect to a fjage master over TCP
+  * @param {Object} opts
+  * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
+  * @param {number} [opts.port=1100] - port number of the master container to connect to
+  * @param {boolean} [opts.keepAlive=true] - try to reconnect if the connection is lost
+  * @param {boolean} [opts.debug=false] - debug info to be logged to console?
+  * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
+  */
   constructor(opts = {}) {
     let host = opts.hostname || 'localhost';
     let port = opts.port || 1100;
@@ -140,10 +166,10 @@ class TCPConnector {
   }
 
   /**
-   * Write a string to the connector
-   * @param {string} s - string to be written out of the connector to the master
-   * @return {boolean} - true if connect was able to write or queue the string to the underlying socket
-   */
+  * Write a string to the connector
+  * @param {string} s - string to be written out of the connector to the master
+  * @return {boolean} - true if connect was able to write or queue the string to the underlying socket
+  */
   write(s){
     if (!this.sock || this.sock.readyState == SOCKET_OPENING){
       this.pendingOnOpen.push(() => {
@@ -158,32 +184,32 @@ class TCPConnector {
   }
 
   /**
-   * @callback TCPConnectorReadCallback
-   * @ignore
-   * @param {string} s - incoming message string
-   */
+  * @callback TCPConnectorReadCallback
+  * @ignore
+  * @param {string} s - incoming message string
+  */
 
   /**
-   * Set a callback for receiving incoming strings from the connector
-   * @param {TCPConnectorReadCallback} cb - callback that is called when the connector gets a string
-   */
+  * Set a callback for receiving incoming strings from the connector
+  * @param {TCPConnectorReadCallback} cb - callback that is called when the connector gets a string
+  */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onSockRx = cb;
   }
 
   /**
-   * Add listener for connection events
-   * @param {function} listener - a listener callback that is called when the connection is opened/closed
-   */
+  * Add listener for connection events
+  * @param {function} listener - a listener callback that is called when the connection is opened/closed
+  */
   addConnectionListener(listener){
     this.connListeners.push(listener);
   }
 
   /**
-   * Remove listener for connection events
-   * @param {function} listener - remove the listener for connection
-   * @return {boolean} - true if the listner was removed successfully
-   */
+  * Remove listener for connection events
+  * @param {function} listener - remove the listener for connection
+  * @return {boolean} - true if the listner was removed successfully
+  */
   removeConnectionListener(listener) {
     let ndx = this.connListeners.indexOf(listener);
     if (ndx >= 0) {
@@ -194,8 +220,8 @@ class TCPConnector {
   }
 
   /**
-   * Close the connector
-   */
+  * Close the connector
+  */
   close(){
     if (!this.sock) return;
     if (this.sock.readyState == SOCKET_OPENING) {
@@ -219,21 +245,21 @@ class TCPConnector {
 const DEFAULT_RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
 
 /**
- * @class
- * @ignore
- */
+* @class
+* @ignore
+*/
 class WSConnector {
 
   /**
-   * Create an WSConnector to connect to a fjage master over WebSockets
-   * @param {Object} opts
-   * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
-   * @param {number} [opts.port=80] - port number of the master container to connect to
-   * @param {string} [opts.pathname="/"] - path of the master container to connect to
-   * @param {boolean} [opts.keepAlive=true] - try to reconnect if the connection is lost
-   * @param {boolean} [opts.debug=false] - debug info to be logged to console?
-   * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
-   */
+  * Create an WSConnector to connect to a fjage master over WebSockets
+  * @param {Object} opts
+  * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
+  * @param {number} [opts.port=80] - port number of the master container to connect to
+  * @param {string} [opts.pathname="/"] - path of the master container to connect to
+  * @param {boolean} [opts.keepAlive=true] - try to reconnect if the connection is lost
+  * @param {boolean} [opts.debug=false] - debug info to be logged to console?
+  * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
+  */
   constructor(opts = {}) {
     let host = opts.hostname || 'localhost';
     let port = opts.port || 80;
@@ -298,9 +324,9 @@ class WSConnector {
   }
 
   /**
-   * Write a string to the connector
-   * @param {string} s - string to be written out of the connector to the master
-   */
+  * Write a string to the connector
+  * @param {string} s - string to be written out of the connector to the master
+  */
   write(s){
     if (!this.sock || this.sock.readyState == this.sock.CONNECTING){
       this.pendingOnOpen.push(() => {
@@ -315,33 +341,33 @@ class WSConnector {
   }
 
   /**
-   * @callback WSConnectorReadCallback
-   * @ignore
-   * @param {string} s - incoming message string
-   */
+  * @callback WSConnectorReadCallback
+  * @ignore
+  * @param {string} s - incoming message string
+  */
 
   /**
-   * Set a callback for receiving incoming strings from the connector
-   * @param {WSConnectorReadCallback} cb - callback that is called when the connector gets a string
-   * @ignore
-   */
+  * Set a callback for receiving incoming strings from the connector
+  * @param {WSConnectorReadCallback} cb - callback that is called when the connector gets a string
+  * @ignore
+  */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onWebsockRx = cb;
   }
 
   /**
-   * Add listener for connection events
-   * @param {function} listener - a listener callback that is called when the connection is opened/closed
-   */
+  * Add listener for connection events
+  * @param {function} listener - a listener callback that is called when the connection is opened/closed
+  */
   addConnectionListener(listener){
     this.connListeners.push(listener);
   }
 
   /**
-   * Remove listener for connection events
-   * @param {function} listener - remove the listener for connection
-   * @return {boolean} - true if the listner was removed successfully
-   */
+  * Remove listener for connection events
+  * @param {function} listener - remove the listener for connection
+  * @return {boolean} - true if the listner was removed successfully
+  */
   removeConnectionListener(listener) {
     let ndx = this.connListeners.indexOf(listener);
     if (ndx >= 0) {
@@ -352,8 +378,8 @@ class WSConnector {
   }
 
   /**
-   * Close the connector
-   */
+  * Close the connector
+  */
   close(){
     if (!this.sock) return;
     if (this.sock.readyState == this.sock.CONNECTING) {
@@ -370,343 +396,388 @@ class WSConnector {
   }
 }
 
-/* global global Buffer */
+/* global Buffer */
+
+/**
+* Class representing a fjage's on-the-wire JSON message. A JSONMessage object
+* contains all the fields that can be a part of a fjage JSON message. The class
+* provides methods to create JSONMessage objects from raw strings and to
+* convert JSONMessage objects to JSON strings in the format of the fjage on-the-wire
+* protocol. See {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation}
+* for more details on the JSON message format.
+*
+* Most users will not need to create JSONMessage objects directly, but rather use the Gateway and Message classes
+* to send and receive messages. However, this class can be useful for low-level access to the fjage protocol
+* or for generating/consuming the fjåge protocol messages without having them be transmitted over a network.
+*
+* @example
+* const jsonMsg = new JSONMessage();
+* jsonMsg.action = 'send';
+* jsonMsg.message = new Message();
+* jsonMsg.message.sender = new AgentID('agent1');
+* jsonMsg.message.recipient = new AgentID('agent2');
+* jsonMsg.message.perf = Performative.INFORM;
+* jsonMsg.toJSON(); // Converts to JSON string in the fjage on-the-wire protocol format
+*
+* @example
+* const jsonString = '{"id":"1234",...}'; // JSON string representation of a JSONMessage
+* const jsonMsg = new JSONMessage(jsonString); // Parses the JSON string into a JSONMessage object
+* jsonMsg.message; // Access the Message object contained in the JSONMessage
+*
+* @class
+* @property {string} [id] - A UUID assigned to each JSONMessage object.
+* @property {string} [action] - Denotes the main action the object is supposed to perform.
+* @property {string} [inResponseTo] - This attribute contains the action to which this object is a response to.
+* @property {AgentID} [agentID] - An AgentID. This attribute is populated in objects which are responses to objects requesting the ID of an agent providing a specific service.
+* @property {Array<AgentID>} [agentIDs] - This attribute is populated in objects which are responses to objects requesting the IDs of agents providing a specific service, or objects which are responses to objects requesting a list of all agents running in a container.
+* @property {Array<string>} [agentTypes] - This attribute is optionally populated in objects which are responses to objects requesting a list of all agents running in a container. If populated, it contains a list of agent types running in the container, with a one-to-one mapping to the agent IDs in the "agentIDs" attribute.
+* @property {string} [service] - Used in conjunction with "action" : "agentForService" and "action" : "agentsForService" to query for agent(s) providing this specific service.
+* @property {Array<string>} [services] - This attribute is populated in objects which are responses to objects requesting the services available with "action" : "services".
+* @property {boolean} [answer] - This attribute is populated in objects which are responses to query objects with "action" : "containsAgent".
+* @property {Message} [message] - This holds the main payload of the message. The structure and format of this object is discussed in the {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation}.
+* @property {boolean} [relay] - This attribute defines if the target container should relay (forward) the message to other containers it is connected to or not.
+* @property {Object} [creds] - Credentials to be used for authentication.
+* @property {Object} [auth] - Authentication information to be used for the message.
+*
+*
+*/
+class JSONMessage {
+
+  /**
+   * @param {String} [jsonString] - JSON string to be parsed into a JSONMessage object.
+   */
+  constructor(jsonString) {
+    this.id =  _guid(8); // unique JSON message ID
+    this.action =  null;
+    this.inResponseTo =  null;
+    this.agentID = null;
+    this.agentIDs = null;
+    this.agentTypes = null;
+    this.service =  null;
+    this.services = null;
+    this.answer =  null;
+    this.message = null;
+    this.relay =  null;
+    this.creds =  null;
+    this.auth =  null;
+    this.name =  null;
+    if (jsonString && typeof jsonString === 'string') {
+      try {
+        const parsed = JSON.parse(jsonString, _decodeBase64);
+        if (parsed.message) parsed.message = Message.fromJSON(parsed.message);
+        if (parsed.agentID) parsed.agentID = AgentID.fromJSON(parsed.agentID);
+        if (parsed.agentIDs) parsed.agentIDs = parsed.agentIDs.map(id => AgentID.fromJSON(id));
+        Object.assign(this, parsed);
+      } catch (e) {
+        throw new Error('Invalid JSON string: ' + e.message);
+      }
+    }  }
+
+  /**
+  * Creates a JSONMessage object to send a message.
+  *
+  * @param {Message} msg
+  * @param {boolean} [relay=false] - whether to relay the message
+  * @returns {JSONMessage} - JSONMessage object with request to send a message
+  */
+  static createSend(msg, relay=false){
+    if (!(msg instanceof Message)) {
+      throw new Error('Invalid message type');
+    }
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.SEND;
+    jsonMsg.relay = relay;
+    jsonMsg.message = msg;
+    return jsonMsg;
+  }
+
+  /**
+  * Creates a JSONMessage object to update WantsMessagesFor list.
+  *
+  * @param {Array<AgentID>} agentIDs - array of AgentID objects for which the gateway wants messages
+  * @returns {JSONMessage} - JSONMessage object with request to update WantsMessagesFor list
+  */
+  static createWantsMessagesFor(agentIDs) {
+    if (!Array.isArray(agentIDs) || agentIDs.length === 0) {
+      throw new Error('agentIDNames must be a non-empty array');
+    }
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.WANTS_MESSAGES_FOR;
+    jsonMsg.agentIDs = agentIDs;
+    return jsonMsg;
+  }
+
+  /**
+  * Creates a JSONMessage object to request the list of agents.
+  *
+  * @returns {JSONMessage} - JSONMessage object with request for the list of agents
+  */
+  static createAgents(){
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.AGENTS;
+    jsonMsg.id = _guid(8); // unique JSON message ID
+    return jsonMsg;
+  }
+
+  /**
+  * Creates a JSONMessage object to check if an agent is contained
+  *
+  * @param {AgentID} agentID - AgentID of the agent to check
+  * @returns {JSONMessage} - JSONMessage object with request to check if the agent is contained
+  */
+  static createContainsAgent(agentID) {
+    if (!(agentID instanceof AgentID)) {
+      throw new Error('agentID must be an instance of AgentID');
+    }
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.CONTAINS_AGENT;
+    jsonMsg.id = _guid(8); // unique JSON message ID
+    jsonMsg.agentID = agentID;
+    return jsonMsg;
+  }
+
+  /**
+  * Creates a JSONMessage object to get an agent for a service.
+  *
+  * @param {string} service - service which the agent must provide
+  * @returns {JSONMessage} - JSONMessage object with request for an agent providing the service
+  */
+  static createAgentForService(service) {
+    if (typeof service !== 'string' || service.length === 0) {
+      throw new Error('service must be a non-empty string');
+    }
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.AGENT_FOR_SERVICE;
+    jsonMsg.id = _guid(8); // unique JSON message ID
+    jsonMsg.service = service;
+    return jsonMsg;
+  }
+
+  /**
+  * Creates a JSONMessage object to get all agents for a service.
+  *
+  * @param {string} service - service which the agents must provide
+  * @returns {JSONMessage} - JSONMessage object with request for all agent providing the service
+  */
+  static createAgentsForService(service) {
+    if (typeof service !== 'string' || service.length === 0) {
+      throw new Error('service must be a non-empty string');
+    }
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.AGENTS_FOR_SERVICE;
+    jsonMsg.id = _guid(8); // unique JSON message ID
+    jsonMsg.service = service;
+    return jsonMsg;
+  }
+
+  /**
+  * Converts the JSONMessage object to a JSON string in the format of the
+  * fjage on-the-wire protocol. If the JSONMessage contains a Message or
+  * AgentID objects, they will be serialized as per the fjåge protocol.
+  *
+  * @returns {string} - JSON string representation of the message
+  */
+  toJSON() {
+    if (!this.action && !this.id) {
+      throw new Error('Neither action nor id is set. Cannot serialize JSONMessage.');
+    }
+    const jsonObj = {};
+    // Add property if not null or undefined
+    if (this.id) jsonObj.id = this.id;
+    if (this.action) jsonObj.action = this.action;
+    if (this.inResponseTo) jsonObj.inResponseTo = this.inResponseTo;
+    if (this.agentID) jsonObj.agentID = this.agentID.toJSON();
+    if (this.agentIDs) {
+      jsonObj.agentIDs = this.agentIDs.map(id => id.toJSON());
+      if (jsonObj.agentIDs.length === 0) delete jsonObj.agentIDs; // remove empty array
+    }
+    if (this.service) jsonObj.service = this.service;
+    if (this.services) {
+      jsonObj.services = this.services;
+      if (jsonObj.services.length === 0) delete jsonObj.services; // remove empty array
+    }
+    if (this.answer) jsonObj.answer = this.answer;
+    if (this.message) jsonObj.message = this.message;
+    if (this.relay) jsonObj.relay = this.relay;
+    if (this.creds) jsonObj.creds = this.creds;
+    if (this.auth) jsonObj.auth = this.auth;
+    if (this.name) jsonObj.name = this.name;
+    return JSON.stringify(jsonObj);
+  }
+
+  toString() {
+    return this.toJSON();
+  }
+}
+
+
+/**
+ * Actions supported by the fjåge JSON message protocol. See
+ * {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation} for more details.
+ *
+ * @enum {string} Actions
+ */
+const Actions = {
+  AGENTS : 'agents',
+  CONTAINS_AGENT : 'containsAgent',
+  AGENT_FOR_SERVICE : 'agentForService',
+  AGENTS_FOR_SERVICE : 'agentsForService',
+  SEND : 'send',
+  WANTS_MESSAGES_FOR : 'wantsMessagesFor'};
+
+////// private utilities
+
+
+// base64 JSON decoder
+/**
+* @private
+*
+* @param {string} k - key
+* @param {any} d - data
+* @returns {Array} - decoded data in array format
+* */
+function _decodeBase64(k, d) {
+  if (d === null) return null;
+  if (typeof d == 'object' && 'clazz' in d) {
+    if (d.clazz.startsWith('[') && d.clazz.length == 2 && 'data' in d) {
+      let x = _b64toArray(d.data, d.clazz);
+      if (x) d = x;
+    }
+  }
+  return d;
+}
+
+// convert from base 64 to numeric array
+/**
+* @private
+*
+* @param {string} base64 - base64 encoded string
+* @param {string} dtype - data type, e.g. '[B' for byte array, '[S' for short array, etc.
+* @param {boolean} [littleEndian=true] - whether to use little-endian byte order
+*/
+function _b64toArray(base64, dtype, littleEndian=true) {
+  let s = _atob(base64);
+  let len = s.length;
+  let bytes = new Uint8Array(len);
+  for (var i = 0; i < len; i++)
+    bytes[i] = s.charCodeAt(i);
+  let rv = [];
+  let view = new DataView(bytes.buffer);
+  switch (dtype) {
+    case '[B': // byte array
+    for (i = 0; i < len; i++)
+      rv.push(view.getUint8(i));
+    break;
+    case '[S': // short array
+    for (i = 0; i < len; i+=2)
+      rv.push(view.getInt16(i, littleEndian));
+    break;
+    case '[I': // integer array
+    for (i = 0; i < len; i+=4)
+      rv.push(view.getInt32(i, littleEndian));
+    break;
+    case '[J': // long array
+    for (i = 0; i < len; i+=8)
+      rv.push(view.getBigInt64(i, littleEndian));
+    break;
+    case '[F': // float array
+    for (i = 0; i < len; i+=4)
+      rv.push(view.getFloat32(i, littleEndian));
+    break;
+    case '[D': // double array
+    for (i = 0; i < len; i+=8)
+      rv.push(view.getFloat64(i, littleEndian));
+    break;
+    default:
+    return;
+  }
+  return rv;
+}
+
+// node.js safe atob function
+/**
+* @private
+* @param {string} a
+*/
+function _atob(a){
+  if (isBrowser || isWebWorker) return window.atob(a);
+  else if (isJsDom || isNode) return Buffer.from(a, 'base64').toString('binary');
+}
+
+/* global global */
 
 
 const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
-
-/**
- * An action represented by a message. The performative actions are a subset of the
- * FIPA ACL recommendations for interagent communication.
- * @enum {string}
- */
-const Performative = {
-  REQUEST: 'REQUEST',               // Request an action to be performed
-  AGREE: 'AGREE',                   // Agree to performing the requested action
-  REFUSE: 'REFUSE',                 // Refuse to perform the requested action
-  FAILURE: 'FAILURE',               // Notification of failure to perform a requested or agreed action
-  INFORM: 'INFORM',                 // Notification of an event
-  CONFIRM: 'CONFIRM',               // Confirm that the answer to a query is true
-  DISCONFIRM: 'DISCONFIRM',         // Confirm that the answer to a query is false
-  QUERY_IF: 'QUERY_IF',             // Query if some statement is true or false
-  NOT_UNDERSTOOD: 'NOT_UNDERSTOOD', // Notification that a message was not understood
-  CFP: 'CFP',                       // Call for proposal
-  PROPOSE: 'PROPOSE',               // Response for CFP
-  CANCEL: 'CANCEL'                  // Cancel pending request
+const GATEWAY_DEFAULTS = {
+  'timeout': 1000,
+  'keepAlive' : true,
+  'queueSize': DEFAULT_QUEUE_SIZE,
+  'returnNullOnFailedResponse': true
 };
 
-/**
- * An identifier for an agent or a topic.
- * @class
- * @param {string} name - name of the agent
- * @param {boolean} [topic=false] - name of topic
- * @param {Gateway} [owner] - Gateway owner for this AgentID
- */
-class AgentID {
-
-
-  constructor(name, topic=false, owner) {
-    this.name = name;
-    this.topic = topic;
-    this.owner = owner;
-  }
-
-  /**
-   * Gets the name of the agent or topic.
-   *
-   * @returns {string} - name of agent or topic
-   */
-  getName() {
-    return this.name;
-  }
-
-  /**
-   * Returns true if the agent id represents a topic.
-   *
-   * @returns {boolean} - true if the agent id represents a topic, false if it represents an agent
-   */
-  isTopic() {
-    return this.topic;
-  }
-
-  /**
-   * Sends a message to the agent represented by this id.
-   *
-   * @param {Message} msg - message to send
-   * @returns {void}
-   */
-  send(msg) {
-    msg.recipient = this.toJSON();
-    if (this.owner) this.owner.send(msg);
-    else throw new Error('Unowned AgentID cannot send messages');
-  }
-
-  /**
-   * Sends a request to the agent represented by this id and waits for a reponse.
-   *
-   * @param {Message} msg - request to send
-   * @param {number} [timeout=1000] - timeout in milliseconds
-   * @returns {Promise<Message>} - response
-   */
-  async request(msg, timeout=1000) {
-    msg.recipient = this.toJSON();
-    if (this.owner) return this.owner.request(msg, timeout);
-    else throw new Error('Unowned AgentID cannot send messages');
-  }
-
-  /**
-   * Gets a string representation of the agent id.
-   *
-   * @returns {string} - string representation of the agent id
-   */
-  toString() {
-    return this.toJSON() + ((this.owner && this.owner.connector) ? ` on ${this.owner.connector.url}` : '');
-  }
-
-  /**
-   * Gets a JSON string representation of the agent id.
-   *
-   * @returns {string} - JSON string representation of the agent id
-   */
-  toJSON() {
-    return (this.topic ? '#' : '') + this.name;
-  }
-
-  /**
-   * Sets parameter(s) on the Agent referred to by this AgentID.
-   *
-   * @param {(string|string[])} params - parameters name(s) to be set
-   * @param {(Object|Object[])} values - parameters value(s) to be set
-   * @param {number} [index=-1] - index of parameter(s) to be set
-   * @param {number} [timeout=5000] - timeout for the response
-   * @returns {Promise<(Object|Object[])>} - a promise which returns the new value(s) of the parameters
-   */
-  async set (params, values, index=-1, timeout=5000) {
-    if (!params) return null;
-    let msg = new ParameterReq();
-    msg.recipient = this.name;
-    if (Array.isArray(params)){
-      msg.param = params.shift();
-      msg.value = values.shift();
-      msg.requests = params.map((p, i) => {
-        return {
-          'param': p,
-          'value': values[i]
-        };
-      });
-      // Add back for generating a response
-      params.unshift(msg.param);
-    } else {
-      msg.param = params;
-      msg.value = values;
-    }
-    msg.index = Number.isInteger(index) ? index : -1;
-    const rsp = await this.owner.request(msg, timeout);
-    var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
-    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) {
-      if (this.owner._returnNullOnFailedResponse) return ret;
-      else throw new Error(`Unable to set ${this.name}.${params} to ${values}`);
-    }
-    if (Array.isArray(params)) {
-      if (!rsp.values) rsp.values = {};
-      if (rsp.param) rsp.values[rsp.param] = rsp.value;
-      const rkeys = Object.keys(rsp.values);
-      return params.map( p => {
-        if (p.includes('.')) p = p.split('.').pop();
-        let f = rkeys.find(k => (k.includes('.') ? k.split('.').pop() : k) == p);
-        return f ? rsp.values[f] : undefined;
-      });
-    } else {
-      return rsp.value;
-    }
-  }
-
-
-  /**
-   * Gets parameter(s) on the Agent referred to by this AgentID.
-   *
-   * @param {(?string|?string[])} params - parameters name(s) to be get, null implies get value of all parameters on the Agent
-   * @param {number} [index=-1] - index of parameter(s) to be get
-   * @param {number} [timeout=5000] - timeout for the response
-   * @returns {Promise<(?Object|?Object[])>} - a promise which returns the value(s) of the parameters
-   */
-  async get(params, index=-1, timeout=5000) {
-    let msg = new ParameterReq();
-    msg.recipient = this.name;
-    if (params){
-      if (Array.isArray(params)) {
-        msg.param = params.shift();
-        msg.requests = params.map(p => {return {'param': p};});
-        // Add back for generating a response
-        params.unshift(msg.param);
-      }
-      else msg.param = params;
-    }
-    msg.index = Number.isInteger(index) ? index : -1;
-    const rsp = await this.owner.request(msg, timeout);
-    var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
-    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) {
-      if (this.owner._returnNullOnFailedResponse) return ret;
-      else throw new Error(`Unable to get ${this.name}.${params}`);
-    }
-    // Request for listing of all parameters.
-    if (!params) {
-      if (!rsp.values) rsp.values = {};
-      if (rsp.param) rsp.values[rsp.param] = rsp.value;
-      return rsp.values;
-    } else if (Array.isArray(params)) {
-      if (!rsp.values) rsp.values = {};
-      if (rsp.param) rsp.values[rsp.param] = rsp.value;
-      const rkeys = Object.keys(rsp.values);
-      return params.map( p => {
-        if (p.includes('.')) p = p.split('.').pop();
-        let f = rkeys.find(k => (k.includes('.') ? k.split('.').pop() : k) == p);
-        return f ? rsp.values[f] : undefined;
-      });
-    } else {
-      return rsp.value;
-    }
-  }
-}
-
-// protected String msgID = UUID.randomUUID().toString();
-// protected Performative perf;
-// protected AgentID recipient;
-// protected AgentID sender = null;
-// protected String inReplyTo = null;
-// protected Long sentAt = null;
+let DEFAULT_URL;
+let gObj = {};
 
 /**
- * Base class for messages transmitted by one agent to another. Creates an empty message.
- * @class
- * @param {string} [msgID] - unique identifier for the message
- * @param {Performative} [perf=Performative.INFORM] - performative
- * @param {AgentID} [recipient] - recipient of the message
- * @param {AgentID} [sender] - sender of the message
- * @param {string} [inReplyTo] - message to which this response corresponds to
- * @param {Message} [inReplyTo] - message to which this response corresponds to
- * @param {number} [sentAt] - time at which the message was sent
- */
-class Message {
-
-  constructor(inReplyTo={msgID:null, sender:null}, perf=Performative.INFORM) {
-    this.__clazz__ = 'org.arl.fjage.Message';
-    this.msgID = _guid(8);
-    this.sender = null;
-    this.recipient = inReplyTo.sender;
-    this.perf = perf;
-    this.inReplyTo = inReplyTo.msgID || null;
-  }
-
-  /**
-   * Gets a string representation of the message.
-   *
-   * @returns {string} - string representation
-   */
-  toString() {
-    let s = '';
-    let suffix = '';
-    if (!this.__clazz__) return '';
-    let clazz = this.__clazz__;
-    clazz = clazz.replace(/^.*\./, '');
-    let perf = this.perf;
-    for (var k in this) {
-      if (k.startsWith('__')) continue;
-      if (k == 'sender') continue;
-      if (k == 'recipient') continue;
-      if (k == 'msgID') continue;
-      if (k == 'perf') continue;
-      if (k == 'inReplyTo') continue;
-      if (typeof this[k] == 'object') {
-        suffix = ' ...';
-        continue;
-      }
-      s += ' ' + k + ':' + this[k];
-    }
-    s += suffix;
-    return clazz+':'+perf+'['+s.replace(/^ /, '')+']';
-  }
-
-  // convert a message into a JSON string
-  // NOTE: we don't do any base64 encoding for TX as
-  //       we don't know what data type is intended
-  /**
-   * @private
-   *
-   * @return {string} - JSON string representation of the message
-   */
-  _serialize() {
-    let clazz = this.__clazz__ || 'org.arl.fjage.Message';
-    let data = JSON.stringify(this, (k,v) => {
-      if (k.startsWith('__')) return;
-      return v;
+*
+* @private
+*
+* Initializes the Gateway module. This function should be called before using the Gateway class.
+* It sets up the default values for the Gateway and initializes the global object.
+* It also sets up the default URL for the Gateway based on the environment (browser, Node.js, etc.).
+* @returns {void}
+*/
+function init(){
+  /** @type {Window & globalThis & Object} */
+  if (isBrowser || isWebWorker){
+    gObj = window;
+    Object.assign(GATEWAY_DEFAULTS, {
+      'hostname': gObj.location.hostname,
+      'port': gObj.location.port,
+      'pathname' : '/ws/'
     });
-    return '{ "clazz": "'+clazz+'", "data": '+data+' }';
-  }
-
-  // inflate a data dictionary into the message
-  /** @private */
-  _inflate(data) {
-    for (var key in data)
-      this[key] = data[key];
-  }
-
-  // convert a dictionary (usually from decoding JSON) into a message
-  /**
-   * @private
-   *
-   * @param {(string|Object)} json - JSON string or object to be converted to a message
-   * @returns {Message} - message created from the JSON string or object
-   * */
-  static _deserialize(json) {
-    let obj = null;
-    if (typeof json == 'string') {
-      try {
-        obj = JSON.parse(json);
-      }catch(e){
-        return null;
-      }
-    } else obj = json;
-    let qclazz = obj.clazz;
-    let clazz = qclazz.replace(/^.*\./, '');
-    let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
-    rv.__clazz__ = qclazz;
-    rv._inflate(obj.data);
-    return rv;
+    DEFAULT_URL = new URL('ws://localhost');
+    // Enable caching of Gateways in browser
+    if (typeof gObj.fjage === 'undefined') gObj.fjage = {};
+    if (typeof gObj.fjage.gateways == 'undefined') gObj.fjage.gateways = [];
+  } else if (isJsDom || isNode){
+    gObj = global;
+    Object.assign(GATEWAY_DEFAULTS, {
+      'hostname': 'localhost',
+      'port': '1100',
+      'pathname': ''
+    });
+    DEFAULT_URL = new URL('tcp://localhost');
   }
 }
 
 /**
- * A message class that can convey generic messages represented by key-value pairs.
- * @class
- * @extends Message
- */
-class GenericMessage extends Message {
-  /**
-   * Creates an empty generic message.
-   */
-  constructor() {
-    super();
-    this.__clazz__ = 'org.arl.fjage.GenericMessage';
-  }
-}
-
-/**
- * A gateway for connecting to a fjage master container. The new version of the constructor
- * uses an options object instead of individual parameters. The old version with
- *
- *
- * @class
- * @param {Object} opts
- * @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
- * @param {number} [opts.port=1100]          - port number of the master container to connect to
- * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
- * @param {string} [opts.keepAlive=true]     - try to reconnect if the connection is lost
- * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
- * @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
- * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
- * @param {boolean} [opts.cancelPendingOnDisconnect=false] - cancel pending requests on disconnect
- */
+* A gateway for connecting to a fjage master container. This class provides methods to
+* send and receive messages, subscribe to topics, and manage connections to the master container.
+* It can be used to connect to a fjage master container over WebSockets or TCP.
+*
+* @example <caption>Connects to the localhost:1100</caption>
+* const gw = new Gateway({ hostname: 'localhost', port: 1100 });
+*
+* @example <caption>Connects to the origin</caption>
+* const gw = new Gateway();
+*
+* @class
+* @property {AgentID} aid - agent id of the gateway
+* @property {boolean} connected - true if the gateway is connected to the master container
+* @property {boolean} debug - true if debug messages should be logged to the console
+*
+* Constructor arguments:
+* @param {Object} opts
+* @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
+* @param {number} [opts.port=1100]          - port number of the master container to connect to
+* @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
+* @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
+* @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
+* @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
+* @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
+* @param {boolean} [opts.cancelPendingOnDisconnect=false] - cancel pending requests on disconnects
+*/
 class Gateway {
 
   constructor(opts = {}) {
@@ -726,7 +797,7 @@ class Gateway {
     this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
     this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect; // cancel pending requests on disconnect
     this.pending = {};                    // msgid to callback mapping for pending requests to server
-    this.subscriptions = {};              // hashset for all topics that are subscribed
+    this.subscriptions = {};       // map for all topics that are subscribed
     this.listeners = {};                  // list of callbacks that want to listen to incoming messages
     this.eventListeners = {};             // external listeners wanting to listen internal events
     this.queue = [];                      // incoming message queue
@@ -738,11 +809,11 @@ class Gateway {
   }
 
   /**
-   * Sends an event to all registered listeners of the given type.
-   * @private
-   * @param {string} type - type of event
-   * @param {Object|Message|string} val - value to be sent to the listeners
-   */
+  * Sends an event to all registered listeners of the given type.
+  * @private
+  * @param {string} type - type of event
+  * @param {Object|Message|string} val - value to be sent to the listeners
+  */
   _sendEvent(type, val) {
     if (!Array.isArray(this.eventListeners[type])) return;
     this.eventListeners[type].forEach(l => {
@@ -757,12 +828,12 @@ class Gateway {
   }
 
   /**
-   * Sends the message to all registered receivers.
-   *
-   * @private
-   * @param {Message} msg
-   * @returns {boolean} - true if the message was consumed by any listener
-   */
+  * Sends the message to all registered receivers.
+  *
+  * @private
+  * @param {Message} msg
+  * @returns {boolean} - true if the message was consumed by any listener
+  */
   _sendReceivers(msg) {
     for (var lid in this.listeners){
       try {
@@ -776,31 +847,30 @@ class Gateway {
 
 
   /**
-   * @private
-   * @param {string} data - stringfied JSON data received from the master container to be processed
-   * @returns {void}
-   */
+  * @private
+  * @param {string} data - stringfied JSON data received from the master container to be processed
+  * @returns {void}
+  */
   _onMsgRx(data) {
-    var obj;
+    var jsonMsg;
     if (this.debug) console.log('< '+data);
     this._sendEvent('rx', data);
     try {
-      obj = JSON.parse(data, _decodeBase64);
+      jsonMsg = new JSONMessage(data);
     }catch(e){
       return;
     }
-    this._sendEvent('rxp', obj);
-    if ('id' in obj && obj.id in this.pending) {
+    this._sendEvent('rxp', jsonMsg);
+    if (jsonMsg.id && jsonMsg.id in this.pending) {
       // response to a pending request to master
-      this.pending[obj.id](obj);
-      delete this.pending[obj.id];
-    } else if (obj.action == 'send') {
+      this.pending[jsonMsg.id](jsonMsg);
+      delete this.pending[jsonMsg.id];
+    } else if (jsonMsg.action == Actions.SEND) {
       // incoming message from master
-      // @ts-ignore
-      let msg = Message._deserialize(obj.message);
+      const msg = jsonMsg.message;
       if (!msg) return;
       this._sendEvent('rxmsg', msg);
-      if ((msg.recipient == this.aid.toJSON() )|| this.subscriptions[msg.recipient]) {
+      if ((msg.recipient.toJSON() == this.aid.toJSON())|| this.subscriptions[msg.recipient.toJSON()]) {
         // send to any "message" listeners
         this._sendEvent('message', msg);
         // send message to receivers, if not consumed, add to queue
@@ -810,25 +880,27 @@ class Gateway {
         }
       }
     } else {
-      // respond to standard requests that every container must
-      let rsp = { id: obj.id, inResponseTo: obj.action };
-      switch (obj.action) {
-      case 'agents':
-        rsp.agentIDs = [this.aid.getName()];
+      // respond to standard requests that every gateway must
+      let rsp = new JSONMessage();
+      rsp.id = jsonMsg.id;
+      rsp.inResponseTo = jsonMsg.action;
+      switch (jsonMsg.action) {
+        case 'agents':
+        rsp.agentIDs = [this.aid];
         break;
-      case 'containsAgent':
-        rsp.answer = (obj.agentID == this.aid.getName());
+        case 'containsAgent':
+        rsp.answer = (jsonMsg.agentID.toJSON() == this.aid.toJSON());
         break;
-      case 'services':
+        case 'services':
         rsp.services = [];
         break;
-      case 'agentForService':
+        case 'agentForService':
         rsp.agentID = '';
         break;
-      case 'agentsForService':
+        case 'agentsForService':
         rsp.agentIDs = [];
         break;
-      default:
+        default:
         rsp = undefined;
       }
       if (rsp) this._msgTx(rsp);
@@ -836,23 +908,23 @@ class Gateway {
   }
 
   /**
-   * Sends a message out to the master container.
-   * @private
-   * @param {string|Object} s - JSON object (either stringified or not) to be sent to the master container
-   * @returns {boolean} - true if the message was sent successfully
-   */
-  _msgTx(s) {
-    if (typeof s != 'string' && !(s instanceof String)) s = JSON.stringify(s);
+  * Sends a message out to the master container.
+  * @private
+  * @param {JSONMessage} msg - JSONMessage to be sent to the master container
+  * @returns {boolean} - true if the message was sent successfully
+  */
+  _msgTx(msg) {
+    const s = msg.toJSON();
     if(this.debug) console.log('> '+s);
     this._sendEvent('tx', s);
     return this.connector.write(s);
   }
 
   /**
-   * @private
-   * @param {Object} rq - request to be sent to the master container as a JSON object
-   * @returns {Promise<Object>} - a promise which returns the response from the master container
-   */
+  * @private
+  * @param {JSONMessage} rq - JSONMessage to be sent to the master container
+  * @returns {Promise<Object>} - a promise which returns the response from the master container
+  */
   _msgTxRx(rq) {
     rq.id = _guid(8);
     return new Promise(resolve => {
@@ -875,10 +947,10 @@ class Gateway {
   }
 
   /**
-   * @private
-   * @param {URL} url - URL object of the master container to connect to
-   * @returns {TCPConnector|WSConnector} - connector object to connect to the master container
-   */
+  * @private
+  * @param {URL} url - URL object of the master container to connect to
+  * @returns {TCPConnector|WSConnector} - connector object to connect to the master container
+  */
   _createConnector(url){
     let conn;
     if (url.protocol.startsWith('ws')){
@@ -916,12 +988,12 @@ class Gateway {
   }
 
   /**
-   * Checks if the object is a constructor.
-   *
-   * @private
-   * @param {Object} value - an object to be checked if it is a constructor
-   * @returns {boolean} - if the object is a constructor
-   */
+  * Checks if the object is a constructor.
+  *
+  * @private
+  * @param {Object} value - an object to be checked if it is a constructor
+  * @returns {boolean} - if the object is a constructor
+  */
   _isConstructor(value) {
     try {
       new new Proxy(value, {construct() { return {}; }});
@@ -932,12 +1004,12 @@ class Gateway {
   }
 
   /**
-   * Matches a message with a filter.
-   * @private
-   * @param {string|Object|function} filter - filter to be matched
-   * @param {Message} msg - message to be matched to the filter
-   * @returns {boolean} - true if the message matches the filter
-   */
+  * Matches a message with a filter.
+  * @private
+  * @param {string|Object|function} filter - filter to be matched
+  * @param {Message} msg - message to be matched to the filter
+  * @returns {boolean} - true if the message matches the filter
+  */
   _matchMessage(filter, msg){
     if (typeof filter == 'string' || filter instanceof String) {
       return 'inReplyTo' in msg && msg.inReplyTo == filter;
@@ -958,10 +1030,10 @@ class Gateway {
   }
 
   /**
-   * Gets the next message from the queue that matches the filter.
-   * @private
-   * @param {string|Object|function} filter - filter to be matched
-   */
+  * Gets the next message from the queue that matches the filter.
+  * @private
+  * @param {string|Object|function} filter - filter to be matched
+  */
   _getMessageFromQueue(filter) {
     if (!this.queue.length) return;
     if (!filter) return this.queue.shift();
@@ -971,11 +1043,11 @@ class Gateway {
   }
 
   /**
-   * Gets a cached gateway object for the given URL (if it exists).
-   * @private
-   * @param {URL} url - URL object of the master container to connect to
-   * @returns {Gateway|void} - gateway object for the given URL
-   */
+  * Gets a cached gateway object for the given URL (if it exists).
+  * @private
+  * @param {URL} url - URL object of the master container to connect to
+  * @returns {Gateway|void} - gateway object for the given URL
+  */
   _getGWCache(url){
     if (!gObj.fjage || !gObj.fjage.gateways) return null;
     var f = gObj.fjage.gateways.filter(g => g.connector.url.toString() == url.toString());
@@ -984,20 +1056,20 @@ class Gateway {
   }
 
   /**
-   * Adds a gateway object to the cache if it doesn't already exist.
-   * @private
-   * @param {Gateway} gw - gateway object to be added to the cache
-   */
+  * Adds a gateway object to the cache if it doesn't already exist.
+  * @private
+  * @param {Gateway} gw - gateway object to be added to the cache
+  */
   _addGWCache(gw){
     if (!gObj.fjage || !gObj.fjage.gateways) return;
     gObj.fjage.gateways.push(gw);
   }
 
   /**
-   * Removes a gateway object from the cache if it exists.
-   * @private
-   * @param {Gateway} gw - gateway object to be removed from the cache
-   */
+  * Removes a gateway object from the cache if it exists.
+  * @private
+  * @param {Gateway} gw - gateway object to be removed from the cache
+  */
   _removeGWCache(gw){
     if (!gObj.fjage || !gObj.fjage.gateways) return;
     var index = gObj.fjage.gateways.indexOf(gw);
@@ -1007,18 +1079,18 @@ class Gateway {
   /** @private */
   _update_watch() {
     let watch = Object.keys(this.subscriptions);
-    watch.push(this.aid.getName());
-    let rq = { action: 'wantsMessagesFor', agentIDs: watch };
-    this._msgTx(rq);
+    watch.push(this.aid.toJSON());
+    const jsonMsg = JSONMessage.createWantsMessagesFor(watch.map(id => AgentID.fromJSON(id)));
+    this._msgTx(jsonMsg);
   }
 
   /**
-   * Add an event listener to listen to various events happening on this Gateway
-   *
-   * @param {string} type - type of event to be listened to
-   * @param {function} listener - new callback/function to be called when the event happens
-   * @returns {void}
-   */
+  * Add an event listener to listen to various events happening on this Gateway
+  *
+  * @param {string} type - type of event to be listened to
+  * @param {function} listener - new callback/function to be called when the event happens
+  * @returns {void}
+  */
   addEventListener(type, listener) {
     if (!Array.isArray(this.eventListeners[type])){
       this.eventListeners[type] = [];
@@ -1027,12 +1099,12 @@ class Gateway {
   }
 
   /**
-   * Remove an event listener.
-   *
-   * @param {string} type - type of event the listener was for
-   * @param {function} listener - callback/function which was to be called when the event happens
-   * @returns {void}
-   */
+  * Remove an event listener.
+  *
+  * @param {string} type - type of event the listener was for
+  * @param {function} listener - callback/function which was to be called when the event happens
+  * @returns {void}
+  */
   removeEventListener(type, listener) {
     if (!this.eventListeners[type]) return;
     let ndx = this.eventListeners[type].indexOf(listener);
@@ -1040,71 +1112,71 @@ class Gateway {
   }
 
   /**
-   * Add a new listener to listen to all {Message}s sent to this Gateway
-   *
-   * @param {function} listener - new callback/function to be called when a {Message} is received
-   * @returns {void}
-   */
+  * Add a new listener to listen to all {Message}s sent to this Gateway
+  *
+  * @param {function} listener - new callback/function to be called when a {Message} is received
+  * @returns {void}
+  */
   addMessageListener(listener) {
     this.addEventListener('message',listener);
   }
 
   /**
-   * Remove a message listener.
-   *
-   * @param {function} listener - removes a previously registered listener/callback
-   * @returns {void}
-   */
+  * Remove a message listener.
+  *
+  * @param {function} listener - removes a previously registered listener/callback
+  * @returns {void}
+  */
   removeMessageListener(listener) {
     this.removeEventListener('message', listener);
   }
 
   /**
-   * Add a new listener to get notified when the connection to master is created and terminated.
-   *
-   * @param {function} listener - new callback/function to be called connection to master is created and terminated
-   * @returns {void}
-   */
+  * Add a new listener to get notified when the connection to master is created and terminated.
+  *
+  * @param {function} listener - new callback/function to be called connection to master is created and terminated
+  * @returns {void}
+  */
   addConnListener(listener) {
     this.addEventListener('conn', listener);
   }
 
   /**
-   * Remove a connection listener.
-   *
-   * @param {function} listener - removes a previously registered listener/callback
-   * @returns {void}
-   */
+  * Remove a connection listener.
+  *
+  * @param {function} listener - removes a previously registered listener/callback
+  * @returns {void}
+  */
   removeConnListener(listener) {
     this.removeEventListener('conn', listener);
   }
 
   /**
-   * Gets the agent ID associated with the gateway.
-   *
-   * @returns {AgentID} - agent ID
-   */
+  * Gets the agent ID associated with the gateway.
+  *
+  * @returns {AgentID} - agent ID
+  */
   getAgentID() {
     return this.aid;
   }
 
   /**
-   * Get an AgentID for a given agent name.
-   *
-   * @param {string} name - name of agent
-   * @returns {AgentID} - AgentID for the given name
-   */
+  * Get an AgentID for a given agent name.
+  *
+  * @param {string} name - name of agent
+  * @returns {AgentID} - AgentID for the given name
+  */
   agent(name) {
     return new AgentID(name, false, this);
   }
 
   /**
-   * Returns an object representing the named topic.
-   *
-   * @param {string|AgentID} topic - name of the topic or AgentID
-   * @param {string} [topic2] - name of the topic if the topic param is an AgentID
-   * @returns {AgentID} - object representing the topic
-   */
+  * Returns an object representing the named topic.
+  *
+  * @param {string|AgentID} topic - name of the topic or AgentID
+  * @param {string} [topic2] - name of the topic if the topic param is an AgentID
+  * @returns {AgentID} - object representing the topic
+  */
   topic(topic, topic2) {
     if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic, true, this);
     if (topic instanceof AgentID) {
@@ -1114,11 +1186,11 @@ class Gateway {
   }
 
   /**
-   * Subscribes the gateway to receive all messages sent to the given topic.
-   *
-   * @param {AgentID} topic - the topic to subscribe to
-   * @returns {boolean} - true if the subscription is successful, false otherwise
-   */
+  * Subscribes the gateway to receive all messages sent to the given topic.
+  *
+  * @param {AgentID} topic - the topic to subscribe to
+  * @returns {boolean} - true if the subscription is successful, false otherwise
+  */
   subscribe(topic) {
     if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
     this.subscriptions[topic.toJSON()] = true;
@@ -1127,11 +1199,11 @@ class Gateway {
   }
 
   /**
-   * Unsubscribes the gateway from a given topic.
-   *
-   * @param {AgentID} topic - the topic to unsubscribe
-   * @returns {void}
-   */
+  * Unsubscribes the gateway from a given topic.
+  *
+  * @param {AgentID} topic - the topic to unsubscribe
+  * @returns {void}
+  */
   unsubscribe(topic) {
     if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
     delete this.subscriptions[topic.toJSON()];
@@ -1139,118 +1211,110 @@ class Gateway {
   }
 
   /**
-   * Gets a list of all agents in the container.
-   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids when resolved
-   */
+  * Gets a list of all agents in the container.
+  * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids when resolved
+  */
   async agents() {
-    let rq = { action: 'agents' };
-    let rsp = await this._msgTxRx(rq);
+    let jsonMsg = JSONMessage.createAgents();
+    let rsp = await this._msgTxRx(jsonMsg);
     if (!rsp || !Array.isArray(rsp.agentIDs)) throw new Error('Unable to get agents');
-    return rsp.agentIDs.map(aid => new AgentID(aid, false, this));
+    return rsp.agentIDs;
   }
 
   /**
-   * Check if an agent with a given name exists in the container.
-   *
-   * @param {AgentID|String} agentID - the agent id to check
-   * @returns {Promise<boolean>} - a promise which returns true if the agent exists when resolved
-   */
+  * Check if an agent with a given name exists in the container.
+  *
+  * @param {AgentID|string} agentID - the agent id to check
+  * @returns {Promise<boolean>} - a promise which returns true if the agent exists when resolved
+  */
   async containsAgent(agentID) {
-    let rq = { action: 'containsAgent', agentID: agentID instanceof AgentID ? agentID.getName() : agentID };
-    let rsp = await this._msgTxRx(rq);
-    if (!rsp) throw new Error('Unable to check if agent exists');
+    let jsonMsg = JSONMessage.createContainsAgent(agentID instanceof AgentID ? agentID : new AgentID(agentID));
+    let rsp = await this._msgTxRx(jsonMsg);
+    if (!rsp) {
+       if (this._returnNullOnFailedResponse) return null;
+       else throw new Error('Unable to check if agent exists');
+    }
     return !!rsp.answer;
   }
 
   /**
-   * Finds an agent that provides a named service. If multiple agents are registered
-   * to provide a given service, any of the agents' id may be returned.
-   *
-   * @param {string} service - the named service of interest
-   * @returns {Promise<?AgentID>} - a promise which returns an agent id for an agent that provides the service when resolved
-   */
+  * Finds an agent that provides a named service. If multiple agents are registered
+  * to provide a given service, any of the agents' id may be returned.
+  *
+  * @param {string} service - the named service of interest
+  * @returns {Promise<?AgentID>} - a promise which returns an agent id for an agent that provides the service when resolved
+  */
   async agentForService(service) {
-    let rq = { action: 'agentForService', service: service };
-    let rsp = await this._msgTxRx(rq);
+    let jsonMsg = JSONMessage.createAgentForService(service);
+    let rsp = await this._msgTxRx(jsonMsg);
     if (!rsp) {
       if (this._returnNullOnFailedResponse) return null;
       else throw new Error('Unable to get agent for service');
     }
-    if (!rsp.agentID) return null;
-    return new AgentID(rsp.agentID, false, this);
+    return rsp.agentID;
   }
 
   /**
-   * Finds all agents that provides a named service.
-   *
-   * @param {string} service - the named service of interest
-   * @returns {Promise<?AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
-   */
+  * Finds all agents that provides a named service.
+  *
+  * @param {string} service - the named service of interest
+  * @returns {Promise<?AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
+  */
   async agentsForService(service) {
-    let rq = { action: 'agentsForService', service: service };
-    let rsp = await this._msgTxRx(rq);
-    let aids = [];
+    let jsonMsg = JSONMessage.createAgentsForService(service);
+    let rsp = await this._msgTxRx(jsonMsg);
     if (!rsp) {
-      if (this._returnNullOnFailedResponse) return aids;
+      if (this._returnNullOnFailedResponse) return null;
       else throw new Error('Unable to get agents for service');
     }
-    if (!Array.isArray(rsp.agentIDs)) return aids;
-    for (var i = 0; i < rsp.agentIDs.length; i++)
-      aids.push(new AgentID(rsp.agentIDs[i], false, this));
-    return aids;
+    return rsp.agentIDs || [];
   }
 
   /**
-   * Sends a message to the recipient indicated in the message. The recipient
-   * may be an agent or a topic.
-   *
-   * @param {Message} msg - message to be sent
-   * @returns {boolean} - if sending was successful
-   */
+  * Sends a message to the recipient indicated in the message. The recipient
+  * may be an agent or a topic.
+  *
+  * @param {Message} msg - message to be sent
+  * @returns {boolean} - if sending was successful
+  */
   send(msg) {
-    msg.sender = this.aid.toJSON();
-    if (msg.perf == '') {
-      if (msg.__clazz__.endsWith('Req')) msg.perf = Performative.REQUEST;
-      else msg.perf = Performative.INFORM;
-    }
+    msg.sender = this.aid;
     this._sendEvent('txmsg', msg);
-    let rq = JSON.stringify({ action: 'send', relay: true, message: '###MSG###' });
-    // @ts-ignore
-    rq = rq.replace('"###MSG###"', msg._serialize());
-    return !!this._msgTx(rq);
+    const jsonMsg = JSONMessage.createSend(msg, true);
+    return !!this._msgTx(jsonMsg);
   }
 
   /**
-   * Flush the Gateway queue for all pending messages. This drops all the pending messages.
-   * @returns {void}
-   *
-   */
+  * Flush the Gateway queue for all pending messages. This drops all the pending messages.
+  * @returns {void}
+  *
+  */
   flush() {
     this.queue.length = 0;
   }
 
   /**
-   * Sends a request and waits for a response. This method returns a {Promise} which resolves when a response
-   * is received or if no response is received after the timeout.
-   *
-   * @param {Message} msg - message to send
-   * @param {number} [timeout=1000] - timeout in milliseconds
-   * @returns {Promise<Message|void>} - a promise which resolves with the received response message, null on timeout
-   */
+  * Sends a request and waits for a response. This method returns a {Promise} which resolves when a response
+  * is received or if no response is received after the timeout.
+  *
+  * @param {Message} msg - message to send
+  * @param {number} [timeout=1000] - timeout in milliseconds
+  * @returns {Promise<Message|void>} - a promise which resolves with the received response message, null on timeout
+  */
   async request(msg, timeout=1000) {
     this.send(msg);
     return this.receive(msg, timeout);
   }
 
   /**
-   * Returns a response message received by the gateway. This method returns a {Promise} which resolves when
-   * a response is received or if no response is received after the timeout.
-   *
-   * @param {function|Message|typeof Message} filter - original message to which a response is expected, or a MessageClass of the type
-   * of message to match, or a closure to use to match against the message
-   * @param {number} [timeout=0] - timeout in milliseconds
-   * @returns {Promise<Message|void>} - received response message, null on timeout
-   */
+  * Returns a response message received by the gateway. This method returns a {Promise} which resolves when
+  * a response is received or if no response is received after the timeout.
+  *
+  * @param {function|Message|typeof Message} filter - original message to which a response is expected, or a MessageClass of the type
+  * of message to match, or a closure to use to match against the message
+  * @param {number} [timeout=0] - timeout in milliseconds
+  * @returns {Promise<Message|void>} - received response message, null on timeout
+  */
   async receive(filter, timeout=0) {
     return new Promise(resolve => {
       let msg = this._getMessageFromQueue.call(this,filter);
@@ -1286,10 +1350,10 @@ class Gateway {
   }
 
   /**
-   * Closes the gateway. The gateway functionality may not longer be accessed after
-   * this method is called.
-   * @returns {void}
-   */
+  * Closes the gateway. The gateway functionality may not longer be accessed after
+  * this method is called.
+  * @returns {void}
+  */
   close() {
     this.connector.close();
     this._removeGWCache(this);
@@ -1298,28 +1362,311 @@ class Gateway {
 }
 
 /**
- * Services supported by fjage agents.
- */
-const Services = {
-  SHELL : 'org.arl.fjage.shell.Services.SHELL'
-};
+* An identifier for an agent or a topic. This can be to send, receive messages, and set or get parameters
+* on an agent or topic on the fjåge master container.
+*
+* @class
+* @param {string} name - name of the agent
+* @param {boolean} [topic=false] - name of topic
+* @param {Gateway} [owner] - Gateway owner for this AgentID
+*/
+class AgentID {
+
+  constructor(name, topic=false, owner) {
+    this.name = name;
+    this.topic = topic;
+    this.owner = owner;
+  }
+
+  /**
+  * Gets the name of the agent or topic.
+  *
+  * @returns {string} - name of agent or topic
+  */
+  getName() {
+    return this.name;
+  }
+
+  /**
+  * Returns true if the agent id represents a topic.
+  *
+  * @returns {boolean} - true if the agent id represents a topic, false if it represents an agent
+  */
+  isTopic() {
+    return this.topic;
+  }
+
+  /**
+  * Sends a message to the agent represented by this id.
+  *
+  * @param {Message} msg - message to send
+  * @returns {void}
+  */
+  send(msg) {
+    msg.recipient = this;
+    if (this.owner) this.owner.send(msg);
+    else throw new Error('Unowned AgentID cannot send messages');
+  }
+
+  /**
+  * Sends a request to the agent represented by this id and waits for a reponse.
+  *
+  * @param {Message} msg - request to send
+  * @param {number} [timeout=1000] - timeout in milliseconds
+  * @returns {Promise<Message>} - response
+  */
+  async request(msg, timeout=1000) {
+    msg.recipient = this;
+    if (this.owner) return this.owner.request(msg, timeout);
+    else throw new Error('Unowned AgentID cannot send messages');
+  }
+
+  /**
+  * Gets a string representation of the agent id.
+  *
+  * @returns {string} - string representation of the agent id
+  */
+  toString() {
+    return this.toJSON() + ((this.owner && this.owner.connector) ? ` on ${this.owner.connector.url}` : '');
+  }
+
+  /**
+  * Gets a JSON string representation of the agent id.
+  *
+  * @returns {string} - JSON string representation of the agent id
+  */
+  toJSON() {
+    return (this.topic ? '#' : '') + this.name;
+  }
+
+  /**
+   * Inflate the AgentID from a JSON string or object.
+   *
+   * @param {string} json - JSON string or object to be converted to an AgentID
+   * @returns {AgentID} - AgentID created from the JSON string or object
+   */
+  static fromJSON(json) {
+    if (typeof json !== 'string') {
+      throw new Error('Invalid JSON for AgentID');
+    }
+    json = json.trim();
+    if (json.startsWith('#')) {
+      return new AgentID(json.substring(1), true);
+    } else {
+      return new AgentID(json, false);
+    }
+  }
+
+  /**
+  * Sets parameter(s) on the Agent referred to by this AgentID.
+  *
+  * @param {(string|string[])} params - parameters name(s) to be set
+  * @param {(Object|Object[])} values - parameters value(s) to be set
+  * @param {number} [index=-1] - index of parameter(s) to be set
+  * @param {number} [timeout=5000] - timeout for the response
+  * @returns {Promise<(Object|Object[])>} - a promise which returns the new value(s) of the parameters
+  */
+  async set (params, values, index=-1, timeout=5000) {
+    if (!params) return null;
+    let msg = new ParameterReq();
+    msg.recipient = this;
+    if (Array.isArray(params)){
+      if (params.length != values.length) throw new Error(`Parameters and values arrays must have the same length: ${params.length} != ${values.length}`);
+      const clonedParams = params.slice(); // Clone the array to avoid side effects
+      const clonedValues = values.slice(); // Clone the values array
+      msg.param = clonedParams.shift();
+      msg.value = clonedValues.shift();
+      msg.requests = clonedParams.map((p, i) => {
+        return {
+          'param': p,
+          'value': clonedValues[i]
+        };
+      });
+    } else {
+      msg.param = params;
+      msg.value = values;
+    }
+    msg.index = Number.isInteger(index) ? index : -1;
+    const rsp = await this.owner.request(msg, timeout);
+    var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
+    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) {
+      if (this.owner._returnNullOnFailedResponse) return ret;
+      else throw new Error(`Unable to set ${this.name}.${params} to ${values}`);
+    }
+    if (Array.isArray(params)) {
+      if (!rsp.values) rsp.values = {};
+      if (rsp.param) rsp.values[rsp.param] = rsp.value;
+      const rkeys = Object.keys(rsp.values);
+      return params.map( p => {
+        if (p.includes('.')) p = p.split('.').pop();
+        let f = rkeys.find(k => (k.includes('.') ? k.split('.').pop() : k) == p);
+        return f ? rsp.values[f] : undefined;
+      });
+    } else {
+      return rsp.value;
+    }
+  }
+
+
+  /**
+  * Gets parameter(s) on the Agent referred to by this AgentID.
+  *
+  * @param {(?string|?string[])} params - parameters name(s) to be get, null implies get value of all parameters on the Agent
+  * @param {number} [index=-1] - index of parameter(s) to be get
+  * @param {number} [timeout=5000] - timeout for the response
+  * @returns {Promise<(?Object|?Object[])>} - a promise which returns the value(s) of the parameters
+  */
+  async get(params, index=-1, timeout=5000) {
+    let msg = new ParameterReq();
+    msg.recipient = this;
+    if (params){
+      if (Array.isArray(params)) {
+        const clonedParams = params.slice(); // Clone the array to avoid side effects
+        msg.param = clonedParams.shift();
+        msg.requests = clonedParams.map(p => {return {'param': p};});
+      }
+      else msg.param = params;
+    }
+    msg.index = Number.isInteger(index) ? index : -1;
+    const rsp = await this.owner.request(msg, timeout);
+    var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
+    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) {
+      if (this.owner._returnNullOnFailedResponse) return ret;
+      else throw new Error(`Unable to get ${this.name}.${params}`);
+    }
+    // Request for listing of all parameters.
+    if (!params) {
+      if (!rsp.values) rsp.values = {};
+      if (rsp.param) rsp.values[rsp.param] = rsp.value;
+      return rsp.values;
+    } else if (Array.isArray(params)) {
+      if (!rsp.values) rsp.values = {};
+      if (rsp.param) rsp.values[rsp.param] = rsp.value;
+      const rkeys = Object.keys(rsp.values);
+      return params.map( p => {
+        if (p.includes('.')) p = p.split('.').pop();
+        let f = rkeys.find(k => (k.includes('.') ? k.split('.').pop() : k) == p);
+        return f ? rsp.values[f] : undefined;
+      });
+    } else {
+      return rsp.value;
+    }
+  }
+}
 
 /**
- * Creates a unqualified message class based on a fully qualified name.
- * @param {string} name - fully qualified name of the message class to be created
- * @param {typeof Message} [parent] - class of the parent MessageClass to inherit from
- * @constructs Message
- * @example
- * const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
- * let pReq = new ParameterReq()
- */
+* Base class for messages transmitted by one agent to another. Creates an empty message.
+* @class
+*
+* @property {string} msgID - unique message ID
+* @property {Performative} perf - performative of the message
+* @property {AgentID} [sender] - AgentID of the sender of the message
+* @property {AgentID} [recipient] - AgentID of the recipient of the message
+* @property {string} [inReplyTo] - ID of the message to which this message is a response
+* @property {number} [sentAt] - timestamp when the message was sent
+*/
+class Message {
+
+  /**
+  * @param {Message} [inReplyToMsg] - message to which this message is a response
+  * @param {Performative} [perf=Performative.INFORM] - performative of the message
+  */
+  constructor(inReplyToMsg, perf=Performative.INFORM) {
+    this.__clazz__ = 'org.arl.fjage.Message';
+    this.msgID = _guid(8);
+    this.perf = perf;
+    this.sender = null;
+    this.recipient = inReplyToMsg ? inReplyToMsg.sender : null;
+    this.inReplyTo = inReplyToMsg ? inReplyToMsg.msgID : null;
+  }
+
+  /**
+  * Gets a string representation of the message.
+  *
+  * @returns {string} - string representation
+  */
+  toString() {
+    let p = this.perf ? this.perf.toString() : 'MESSAGE';
+    if (this.__clazz__ == 'org.arl.fjage.Message') return p;
+    return p + ': ' + this.__clazz__.replace(/^.*\./, '');
+  }
+
+  /** Convert a message into a object for JSON serialization.
+  *
+  * NOTE: we don't do any base64 encoding for TX as
+  *       we don't know what data type is intended
+  *
+  * @return {Object} - JSON string representation of the message
+  */
+  toJSON() {
+    let props = {};
+    for (let key in this) {
+      if (key.startsWith('_')) continue; // skip private properties
+      // @ts-ignore
+      props[key] = this[key];
+    }
+    return { 'clazz': this.__clazz__, 'data': props };
+  }
+
+
+  /**
+  * Create a message from a object parsed from the JSON representation of the message.
+  *
+  * @param {Object} jsonObj - Object containing all the properties of the message
+  * @returns {Message} - A message created from the Object
+  *
+  */
+  static fromJSON(jsonObj) {
+    if (!( 'clazz' in jsonObj) || !( 'data' in jsonObj)) {
+      throw new Error(`Invalid Object for Message : ${jsonObj}`);
+    }
+    let qclazz = jsonObj.clazz;
+    let clazz = qclazz.replace(/^.*\./, '');
+    let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
+    rv.__clazz__ = qclazz;
+    // copy all properties from the data object
+    for (var key in jsonObj.data){
+      if (key === 'sender' || key === 'recipient') {
+        if (jsonObj.data[key] && typeof jsonObj.data[key] === 'string') {
+          rv[key] = AgentID.fromJSON(jsonObj.data[key]);
+        }
+      } else rv[key] = jsonObj.data[key];
+    }
+    return rv;
+  }
+}
+
+/**
+* A message class that can convey generic messages represented by key-value pairs.
+* @class
+* @extends Message
+*/
+class GenericMessage extends Message {
+  /**
+  * Creates an empty generic message.
+  */
+  constructor() {
+    super();
+    this.__clazz__ = 'org.arl.fjage.GenericMessage';
+  }
+}
+
+/**
+* Creates a unqualified message class based on a fully qualified name.
+* @param {string} name - fully qualified name of the message class to be created
+* @param {typeof Message} [parent] - class of the parent MessageClass to inherit from
+* @constructs Message
+* @example
+* const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
+* let pReq = new ParameterReq()
+*/
 function MessageClass(name, parent=Message) {
   let sname = name.replace(/^.*\./, '');
   if (MessageClass[sname]) return MessageClass[sname];
   let cls = class extends parent {
     /**
-     * @param {{ [x: string]: any; }} params
-     */
+    * @param {{ [x: string]: any; }} params
+    */
     constructor(params) {
       super();
       this.__clazz__ = name;
@@ -1337,133 +1684,66 @@ function MessageClass(name, parent=Message) {
   return cls;
 }
 
-////// private utilities
-
-// generate random ID with length 4*len characters
-/** @private */
-function _guid(len) {
-  function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-  }
-  let s = s4();
-  for (var i = 0; i < len-1; i++)
-    s += s4();
-  return s;
-}
-
-// convert from base 64 to array
-/** @private */
-function _b64toArray(base64, dtype, littleEndian=true) {
-  let s = gObj.atob(base64);
-  let len = s.length;
-  let bytes = new Uint8Array(len);
-  for (var i = 0; i < len; i++)
-    bytes[i] = s.charCodeAt(i);
-  let rv = [];
-  let view = new DataView(bytes.buffer);
-  switch (dtype) {
-  case '[B': // byte array
-    for (i = 0; i < len; i++)
-      rv.push(view.getUint8(i));
-    break;
-  case '[S': // short array
-    for (i = 0; i < len; i+=2)
-      rv.push(view.getInt16(i, littleEndian));
-    break;
-  case '[I': // integer array
-    for (i = 0; i < len; i+=4)
-      rv.push(view.getInt32(i, littleEndian));
-    break;
-  case '[J': // long array
-    for (i = 0; i < len; i+=8)
-      rv.push(view.getBigInt64(i, littleEndian));
-    break;
-  case '[F': // float array
-    for (i = 0; i < len; i+=4)
-      rv.push(view.getFloat32(i, littleEndian));
-    break;
-  case '[D': // double array
-    for (i = 0; i < len; i+=8)
-      rv.push(view.getFloat64(i, littleEndian));
-    break;
-  default:
-    return;
-  }
-  return rv;
-}
-
-// base 64 JSON decoder
-/** @private */
-function _decodeBase64(k, d) {
-  if (d === null) {
-    return null;
-  }
-  if (typeof d == 'object' && 'clazz' in d) {
-    let clazz = d.clazz;
-    if (clazz.startsWith('[') && clazz.length == 2 && 'data' in d) {
-      let x = _b64toArray(d.data, d.clazz);
-      if (x) d = x;
-    }
-  }
-  return d;
-}
-
-////// global
-
-const GATEWAY_DEFAULTS = {};
-
-/** @type {Window & globalThis & Object} */
-let gObj = {};
-let DEFAULT_URL;
-if (isBrowser || isWebWorker){
-  gObj = window;
-  Object.assign(GATEWAY_DEFAULTS, {
-    'hostname': gObj.location.hostname,
-    'port': gObj.location.port,
-    'pathname' : '/ws/',
-    'timeout': 1000,
-    'keepAlive' : true,
-    'queueSize': DEFAULT_QUEUE_SIZE,
-    'returnNullOnFailedResponse': true,
-    'cancelPendingOnDisconnect': false
-  });
-  DEFAULT_URL = new URL('ws://localhost');
-  // Enable caching of Gateways
-  if (typeof gObj.fjage === 'undefined') gObj.fjage = {};
-  if (typeof gObj.fjage.gateways == 'undefined') gObj.fjage.gateways = [];
-} else if (isJsDom || isNode){
-  gObj = global;
-  Object.assign(GATEWAY_DEFAULTS, {
-    'hostname': 'localhost',
-    'port': '1100',
-    'pathname': '',
-    'timeout': 1000,
-    'keepAlive' : true,
-    'queueSize': DEFAULT_QUEUE_SIZE,
-    'returnNullOnFailedResponse': true,
-    'cancelPendingOnDisconnect': false
-  });
-  DEFAULT_URL = new URL('tcp://localhost');
-  gObj.atob = a => Buffer.from(a, 'base64').toString('binary');
-}
+/**
+* @typedef {Object} ParameterReq.Entry
+* @property {string} param - parameter name
+* @property {Object} value - parameter value
+* @exports ParameterReq.Entry
+*/
 
 /**
- * @typedef {Object} ParameterReq.Entry
- * @property {string} param - parameter name
- * @property {Object} value - parameter value
- * @exports ParameterReq.Entry
- */
-
-
-/**
- * A message that requests one or more parameters of an agent.
- * @typedef {Message} ParameterReq
- * @property {string} param - parameters name to be get/set if only a single parameter is to be get/set
- * @property {Object} value - parameters value to be set if only a single parameter is to be set
- * @property {Array<ParameterReq.Entry>} requests - a list of multiple parameters to be get/set
- * @property {number} [index=-1] - index of parameter(s) to be set
- * @exports ParameterReq
- */
+* A message that requests one or more parameters of an agent.
+*
+* @example <caption>Setting a parameter myAgent.x to 42</caption>
+* let req = new ParameterReq({
+*  recipient: myAgentId,
+*  param: 'x',
+*  value: 42
+* });
+*
+* @example <caption>Getting the value of myAgent.x</caption>
+* let req = new ParameterReq({
+* recipient: myAgentId,
+* param: 'x'
+* });
+*
+* @typedef {Message} ParameterReq
+* @property {string} param - parameters name to be get/set if only a single parameter is to be get/set
+* @property {Object} value - parameters value to be set if only a single parameter is to be set
+* @property {Array<ParameterReq.Entry>} requests - a list of multiple parameters to be get/set
+* @property {number} [index=-1] - index of parameter(s) to be set*
+* @exports ParameterReq
+*/
 const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
 
-export { AgentID, Gateway, GenericMessage, Message, MessageClass, ParameterReq, Performative, Services };
+/**
+* A message that is a response to a {@link ParameterReq} message.
+*
+* @example <caption>Receiving a parameter from myAgent</caption>
+* let rsp = gw.receive(ParameterRsp)
+* rsp.sender // = myAgentId; sender of the message
+* rsp.param  // = 'x'; parameter name that was get/set
+* rsp.value  // = 42;  value of the parameter that was set
+* rsp.readonly // = [false]; indicates if the parameter is read-only
+*
+*
+* @typedef {Message} ParameterRsp
+* @property {string} param - parameters name if only a single parameter value was requested
+* @property {Object} value - parameters value if only a single parameter was requested
+* @property {Map<string, Object>} values - a map of multiple parameter names and their values if multiple parameters were requested
+* @property {Array<boolean>} readonly - a list of booleans indicating if the parameters are read-only
+* @property {number} [index=-1] - index of parameter(s) being returned
+* @exports ParameterReq
+*/
+const ParameterRsp = MessageClass('org.arl.fjage.param.ParameterRsp');
+
+/**
+* Services supported by fjage agents.
+*/
+const Services = {
+  SHELL : 'org.arl.fjage.shell.Services.SHELL'
+};
+
+init();
+
+export { AgentID, Gateway, GenericMessage, JSONMessage, Message, MessageClass, ParameterReq, ParameterRsp, Performative, Services };
