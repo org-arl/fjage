@@ -160,7 +160,7 @@ export class AgentID {
   */
   async get(params, index=-1, timeout=5000) {
     let msg = new ParameterReq();
-    msg.recipient = this.toJSON();
+    msg.recipient = this;
     if (params){
       if (Array.isArray(params)) {
         const clonedParams = params.slice(); // Clone the array to avoid side effects
