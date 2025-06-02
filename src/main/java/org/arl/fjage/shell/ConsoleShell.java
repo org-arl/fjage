@@ -11,6 +11,8 @@ for full license details.
 package org.arl.fjage.shell;
 
 import java.io.*;
+import java.security.AccessController;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.arl.fjage.connectors.ConnectionListener;
@@ -23,9 +25,9 @@ import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStyle;
 
 /**
- * Shell input/output driver for console devices with line editing and
- * color support.
- */
+* Shell input/output driver for console devices with line editing and
+* color support.
+*/
 public class ConsoleShell implements Shell, ConnectionListener {
 
   private Terminal term = null;
@@ -115,13 +117,18 @@ public class ConsoleShell implements Shell, ConnectionListener {
     if (term == null) return;
     scriptEngine = engine;
     if (Terminal.TYPE_DUMB.equals(term.getType())) {
-      console = LineReaderBuilder.builder().terminal(term).build();
+      console = AccessController.doPrivileged((java.security.PrivilegedAction<LineReader>) () -> {
+        return LineReaderBuilder.builder().terminal(term).build();
+      });
+      // console = LineReaderBuilder.builder().terminal(term).build();
       console.setVariable(LineReader.DISABLE_COMPLETION, true);
       return;
     }
-    if (scriptEngine == null)
-      console = LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).build();
-    else {
+    if (scriptEngine == null){
+      console = AccessController.doPrivileged((java.security.PrivilegedAction<LineReader>) () -> {
+        return LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).build();
+      });
+    } else {
       Parser parser = new Parser() {
         @Override
         public CompletingParsedLine parse(String s, int cursor) {
@@ -138,7 +145,9 @@ public class ConsoleShell implements Shell, ConnectionListener {
           return false;
         }
       };
-      console = LineReaderBuilder.builder().parser(parser).terminal(term).build();
+      console = AccessController.doPrivileged((java.security.PrivilegedAction<LineReader>) () -> {
+        return LineReaderBuilder.builder().parser(parser).terminal(term).build();
+      });
       console.setVariable(LineReader.DISABLE_COMPLETION, true);
       console.setOpt(LineReader.Option.ERASE_LINE_ON_FINISH);
       console.getWidgets().put(FORCE_BRACKETED_PASTE_ON, new Widget() {
@@ -192,7 +201,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
     } catch (EndOfFileException ex) {
       return null;
     } catch (Throwable ex) {
-      log.warning(ex.toString());
+      log.log(Level.WARNING, "Error reading line", ex);
       return "";
     }
   }
