@@ -38,7 +38,7 @@ Maven Central dependency
     <dependency>
       <groupId>com.github.org-arl</groupId>
       <artifactId>fjage</artifactId>
-      <version>2.0.0</version>
+      <version>2.0.1</version>
     </dependency>
 
 Versions

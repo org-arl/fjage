@@ -1,5 +1,10 @@
 # Release Notes
 
+## v2.0.1
+
+* Added support for maps/arrays in GenericValue
+* Added ability to list connections
+
 ## v2.0.0
 
 * Changed `WebSocketConnector` to `WebSocketHubConnector`
