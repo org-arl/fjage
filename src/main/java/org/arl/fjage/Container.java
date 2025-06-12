@@ -40,6 +40,7 @@ public class Container {
   //////////// Private attributes
 
   private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*$");
+  private static final String GATEWAY_NAME_PREFIX = "gateway-";
 
   protected String name;
   protected Platform platform;
@@ -206,12 +207,12 @@ public class Container {
    * @return an agent id if successful, null on failure.
    */
   public AgentID add(String name, Agent agent) {
-    if (name == null || name.length() == 0) {
+    if (name == null || name.isEmpty()) {
       log.warning("Undefined agent name");
       return null;
     }
     Matcher matcher = NAME_PATTERN.matcher(name);
-    if (!matcher.matches()) log.warning("Agent name "+name+" does not meet naming guidelines and may be disallowed in future");
+    if (!name.startsWith(GATEWAY_NAME_PREFIX) && !matcher.matches()) log.warning("Agent name "+name+" does not meet naming guidelines and may be disallowed in future");
     AgentID aid = new AgentID(name);
     aid.setType(agent.getClass().getName());
     if (isDuplicate(aid)) {
