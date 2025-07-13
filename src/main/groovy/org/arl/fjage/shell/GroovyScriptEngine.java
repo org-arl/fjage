@@ -116,6 +116,7 @@ public class GroovyScriptEngine implements ScriptEngine {
     compiler.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
     groovy = new GroovyShell(gcl, binding, compiler);
     binding.setVariable("__groovy__", groovy);
+    binding.setVariable("__script_engine__", this);
     binding.setVariable("__doc__", doc);
     groovy.evaluate("__init__()");
   }

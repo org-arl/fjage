@@ -1,7 +1,0 @@
-org.arl.fjage
-org.arl.fjage.auth
-org.arl.fjage.connectors
-org.arl.fjage.param
-org.arl.fjage.persistence
-org.arl.fjage.remote
-org.arl.fjage.shell
