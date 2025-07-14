@@ -162,7 +162,7 @@ export class Gateway {
     if (this.debug) console.log('< '+data);
     this._sendEvent('rx', data);
     try {
-      jsonMsg = new JSONMessage(data);
+      jsonMsg = new JSONMessage(data, this);
     }catch(e){
       return;
     }

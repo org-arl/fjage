@@ -451,8 +451,9 @@
 
     /**
      * @param {String} [jsonString] - JSON string to be parsed into a JSONMessage object.
+     * @param {Object} [owner] - The owner of the JSONMessage object, typically the Gateway instance.
      */
-    constructor(jsonString) {
+    constructor(jsonString, owner) {
       this.id =  _guid(8); // unique JSON message ID
       this.action =  null;
       this.inResponseTo =  null;
@@ -471,8 +472,8 @@
         try {
           const parsed = JSON.parse(jsonString, _decodeBase64);
           if (parsed.message) parsed.message = Message.fromJSON(parsed.message);
-          if (parsed.agentID) parsed.agentID = AgentID.fromJSON(parsed.agentID);
-          if (parsed.agentIDs) parsed.agentIDs = parsed.agentIDs.map(id => AgentID.fromJSON(id));
+          if (parsed.agentID) parsed.agentID = AgentID.fromJSON(parsed.agentID, owner);
+          if (parsed.agentIDs) parsed.agentIDs = parsed.agentIDs.map(id => AgentID.fromJSON(id, owner));
           Object.assign(this, parsed);
         } catch (e) {
           throw new Error('Invalid JSON string: ' + e.message);
@@ -866,7 +867,7 @@
       if (this.debug) console.log('< '+data);
       this._sendEvent('rx', data);
       try {
-        jsonMsg = new JSONMessage(data);
+        jsonMsg = new JSONMessage(data, this);
       }catch(e){
         return;
       }
@@ -1521,17 +1522,18 @@
      * Inflate the AgentID from a JSON string or object.
      *
      * @param {string} json - JSON string or object to be converted to an AgentID
+     * @param {Gateway} [owner] - Gateway owner for this AgentID
      * @returns {AgentID} - AgentID created from the JSON string or object
      */
-    static fromJSON(json) {
+    static fromJSON(json, owner) {
       if (typeof json !== 'string') {
         throw new Error('Invalid JSON for AgentID');
       }
       json = json.trim();
       if (json.startsWith('#')) {
-        return new AgentID(json.substring(1), true);
+        return new AgentID(json.substring(1), true, owner);
       } else {
-        return new AgentID(json, false);
+        return new AgentID(json, false, owner);
       }
     }
 

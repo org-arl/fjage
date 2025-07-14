@@ -96,17 +96,18 @@ export class AgentID {
    * Inflate the AgentID from a JSON string or object.
    *
    * @param {string} json - JSON string or object to be converted to an AgentID
+   * @param {Gateway} [owner] - Gateway owner for this AgentID
    * @returns {AgentID} - AgentID created from the JSON string or object
    */
-  static fromJSON(json) {
+  static fromJSON(json, owner) {
     if (typeof json !== 'string') {
       throw new Error('Invalid JSON for AgentID');
     }
     json = json.trim();
     if (json.startsWith('#')) {
-      return new AgentID(json.substring(1), true);
+      return new AgentID(json.substring(1), true, owner);
     } else {
-      return new AgentID(json, false);
+      return new AgentID(json, false, owner);
     }
   }
 
