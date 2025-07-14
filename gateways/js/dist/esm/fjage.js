@@ -797,12 +797,13 @@ class Gateway {
     this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
     this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect; // cancel pending requests on disconnect
     this.pending = {};                    // msgid to callback mapping for pending requests to server
-    this.subscriptions = {};       // map for all topics that are subscribed
+    this.subscriptions = {};              // map for all topics that are subscribed
     this.listeners = {};                  // list of callbacks that want to listen to incoming messages
     this.eventListeners = {};             // external listeners wanting to listen internal events
     this.queue = [];                      // incoming message queue
     this.connected = false;               // connection status
     this.debug = false;                   // debug info to be logged to console?
+    this.metrics = null;                  // metrics object to collect metrics. If null, no metrics are collected
     this.aid = new AgentID('gateway-'+_guid(4));         // gateway agent name
     this.connector = this._createConnector(url);
     this._addGWCache(this);
@@ -837,7 +838,10 @@ class Gateway {
   _sendReceivers(msg) {
     for (var lid in this.listeners){
       try {
-        if (this.listeners[lid] && this.listeners[lid](msg)) return true;
+        if (this.listeners[lid] && this.listeners[lid](msg)) {
+          this._collectMetrics(msg, 'complete');
+          return true;
+        }
       } catch (error) {
         console.warn('Error in listener : ' + error);
       }
@@ -864,6 +868,8 @@ class Gateway {
     if (jsonMsg.id && jsonMsg.id in this.pending) {
       // response to a pending request to master
       this.pending[jsonMsg.id](jsonMsg);
+      // Add to metrics if collecting metrics
+      this._collectMetrics(jsonMsg, 'complete');
       delete this.pending[jsonMsg.id];
     } else if (jsonMsg.action == Actions.SEND) {
       // incoming message from master
@@ -908,7 +914,8 @@ class Gateway {
   }
 
   /**
-  * Sends a message out to the master container.
+  * Sends a message out to the master container. This method is used for sending
+  * fjage level actions that do not require a response, such as alive, wantMessages, etc.
   * @private
   * @param {JSONMessage} msg - JSONMessage to be sent to the master container
   * @returns {boolean} - true if the message was sent successfully
@@ -921,18 +928,22 @@ class Gateway {
   }
 
   /**
+  * Send a message to the master container and wait for a response. This method is used for sending
+  * fjage level actions that require a response, such as agentForService, agents, etc.
   * @private
   * @param {JSONMessage} rq - JSONMessage to be sent to the master container
-  * @returns {Promise<Object>} - a promise which returns the response from the master container
+  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds for the response
+  * @returns {Promise<JSONMessage|null>} - a promise which returns the response from the master container
   */
-  _msgTxRx(rq) {
+  _msgTxRx(rq, timeout = this._timeout*8) {
     rq.id = _guid(8);
     return new Promise(resolve => {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
         if (this.debug) console.log('Receive Timeout : ' + JSON.stringify(rq));
-        resolve();
-      }, 8*this._timeout);
+        this._collectMetrics(rq, 'timeout');
+        resolve(null);
+      }, timeout);
       this.pending[rq.id] = rsp => {
         clearTimeout(timer);
         resolve(rsp);
@@ -940,9 +951,11 @@ class Gateway {
       if (!this._msgTx.call(this,rq)) {
         clearTimeout(timer);
         delete this.pending[rq.id];
-        if (this.debug) console.log('Transmit Timeout : ' +  JSON.stringify(rq));
-        resolve();
+        if (this.debug) console.log('Transmit Failed : ' +  JSON.stringify(rq));
+        resolve(null);
       }
+      // Add to metrics if collecting metrics
+      this._collectMetrics(rq, 'pending');
     });
   }
 
@@ -1085,6 +1098,47 @@ class Gateway {
   }
 
   /**
+  * Collect metrics for various messages sent and received by the gateway.
+  *
+  * @private
+  * @param {JSONMessage|Message} msg - a message to collect metrics for
+  * @param {string} [status = 'pending'] - status of the message
+  */
+  _collectMetrics(msg, status='pending') {
+    if (!this.metrics) return;
+    if (status == 'pending') {
+      if (msg instanceof JSONMessage) {
+        this.metrics[msg.id] = {
+          'action': msg.action,
+          'to': 'container',
+          'start': Date.now(),
+          'end': null,
+          'status': status
+        };
+      } else if (msg instanceof Message) {
+        this.metrics[msg.msgID] = {
+          'action': msg.__clazz__,
+          'to': msg.recipient.toJSON(),
+          'start': Date.now(),
+          'end': null,
+          'status': status
+        };
+      } else {
+        console.warn('Unknown message type for metrics: ' + JSON.stringify(msg));
+        return;
+      }
+    } else if (status == 'complete' || status == 'timeout') {
+      let id = (msg instanceof JSONMessage) ? msg.inResponseTo : msg.inReplyTo;
+      if (id in this.metrics) {
+        this.metrics[id].end = Date.now();
+        this.metrics[id].status = status;
+      } else {
+        console.warn('Metrics not found for id: ' + id + 'of message: ' + JSON.stringify(msg));
+      }
+    }
+  }
+
+  /**
   * Add an event listener to listen to various events happening on this Gateway
   *
   * @param {string} type - type of event to be listened to
@@ -1212,11 +1266,12 @@ class Gateway {
 
   /**
   * Gets a list of all agents in the container.
+  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids when resolved
   */
-  async agents() {
+  async agents(timeout=this._timeout*8) {
     let jsonMsg = JSONMessage.createAgents();
-    let rsp = await this._msgTxRx(jsonMsg);
+    let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp || !Array.isArray(rsp.agentIDs)) throw new Error('Unable to get agents');
     return rsp.agentIDs;
   }
@@ -1225,14 +1280,15 @@ class Gateway {
   * Check if an agent with a given name exists in the container.
   *
   * @param {AgentID|string} agentID - the agent id to check
+  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
   * @returns {Promise<boolean>} - a promise which returns true if the agent exists when resolved
   */
-  async containsAgent(agentID) {
+  async containsAgent(agentID, timeout=this._timeout*8) {
     let jsonMsg = JSONMessage.createContainsAgent(agentID instanceof AgentID ? agentID : new AgentID(agentID));
-    let rsp = await this._msgTxRx(jsonMsg);
+    let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
-       if (this._returnNullOnFailedResponse) return null;
-       else throw new Error('Unable to check if agent exists');
+      if (this._returnNullOnFailedResponse) return null;
+      else throw new Error('Unable to check if agent exists');
     }
     return !!rsp.answer;
   }
@@ -1242,11 +1298,12 @@ class Gateway {
   * to provide a given service, any of the agents' id may be returned.
   *
   * @param {string} service - the named service of interest
+  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
   * @returns {Promise<?AgentID>} - a promise which returns an agent id for an agent that provides the service when resolved
   */
-  async agentForService(service) {
+  async agentForService(service, timeout=this._timeout*8) {
     let jsonMsg = JSONMessage.createAgentForService(service);
-    let rsp = await this._msgTxRx(jsonMsg);
+    let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
       if (this._returnNullOnFailedResponse) return null;
       else throw new Error('Unable to get agent for service');
@@ -1258,11 +1315,12 @@ class Gateway {
   * Finds all agents that provides a named service.
   *
   * @param {string} service - the named service of interest
+  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
   * @returns {Promise<?AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
   */
-  async agentsForService(service) {
+  async agentsForService(service, timeout=this._timeout*8) {
     let jsonMsg = JSONMessage.createAgentsForService(service);
-    let rsp = await this._msgTxRx(jsonMsg);
+    let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
       if (this._returnNullOnFailedResponse) return null;
       else throw new Error('Unable to get agents for service');
@@ -1298,11 +1356,12 @@ class Gateway {
   * is received or if no response is received after the timeout.
   *
   * @param {Message} msg - message to send
-  * @param {number} [timeout=1000] - timeout in milliseconds
+  * @param {number} [timeout=this._timeout] - timeout in milliseconds
   * @returns {Promise<Message|void>} - a promise which resolves with the received response message, null on timeout
   */
-  async request(msg, timeout=1000) {
+  async request(msg, timeout=this._timeout) {
     this.send(msg);
+    this._collectMetrics(msg, 'pending');
     return this.receive(msg, timeout);
   }
 
@@ -1319,6 +1378,7 @@ class Gateway {
     return new Promise(resolve => {
       let msg = this._getMessageFromQueue.call(this,filter);
       if (msg) {
+        this._collectMetrics(msg, 'complete');
         resolve(msg);
         return;
       }
@@ -1346,6 +1406,7 @@ class Gateway {
         resolve(msg);
         return true;
       };
+
     });
   }
 
@@ -1376,6 +1437,7 @@ class AgentID {
     this.name = name;
     this.topic = topic;
     this.owner = owner;
+    this._timeout = owner ? owner._timeout : 1000; // Default timeout if owner is not provided
   }
 
   /**
@@ -1385,6 +1447,16 @@ class AgentID {
   */
   getName() {
     return this.name;
+  }
+
+  /**
+   * Set the timeout for requests made using this AgentID.
+   *
+   * @param {number} timeout - timeout in milliseconds
+   * @returns {void}
+   */
+  setTimeout(timeout) {
+    this._timeout = timeout;
   }
 
   /**
@@ -1415,7 +1487,7 @@ class AgentID {
   * @param {number} [timeout=1000] - timeout in milliseconds
   * @returns {Promise<Message>} - response
   */
-  async request(msg, timeout=1000) {
+  async request(msg, timeout=this._timeout) {
     msg.recipient = this;
     if (this.owner) return this.owner.request(msg, timeout);
     else throw new Error('Unowned AgentID cannot send messages');
@@ -1463,10 +1535,10 @@ class AgentID {
   * @param {(string|string[])} params - parameters name(s) to be set
   * @param {(Object|Object[])} values - parameters value(s) to be set
   * @param {number} [index=-1] - index of parameter(s) to be set
-  * @param {number} [timeout=5000] - timeout for the response
+  * @param {number} [timeout=this._timeout*5] - timeout for the response
   * @returns {Promise<(Object|Object[])>} - a promise which returns the new value(s) of the parameters
   */
-  async set (params, values, index=-1, timeout=5000) {
+  async set (params, values, index=-1, timeout=this._timeout*5) {
     if (!params) return null;
     let msg = new ParameterReq();
     msg.recipient = this;
@@ -1513,10 +1585,10 @@ class AgentID {
   *
   * @param {(?string|?string[])} params - parameters name(s) to be get, null implies get value of all parameters on the Agent
   * @param {number} [index=-1] - index of parameter(s) to be get
-  * @param {number} [timeout=5000] - timeout for the response
+  * @param {number} [timeout=this._timeout*5] - timeout for the response
   * @returns {Promise<(?Object|?Object[])>} - a promise which returns the value(s) of the parameters
   */
-  async get(params, index=-1, timeout=5000) {
+  async get(params, index=-1, timeout=this._timeout*5) {
     let msg = new ParameterReq();
     msg.recipient = this;
     if (params){

@@ -93,6 +93,7 @@ async function runJasmine (dir, specs) {
   jasmine.loadConfig({
     spec_dir: dir,
     spec_files: specs,
+    stopOnSpecFailure: true
   });
   jasmine.exitOnCompletion = false;
   await jasmine.execute();
