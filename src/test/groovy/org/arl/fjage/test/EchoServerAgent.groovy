@@ -1,6 +1,7 @@
 package org.arl.fjage.test
 
 import org.arl.fjage.*
+import org.arl.fjage.test.Services
 
 public class EchoServerAgent extends Agent {
     @Override
@@ -17,6 +18,7 @@ public class EchoServerAgent extends Agent {
                 }
             }
         })
+        register(Services.TEST)
     }
 
     protected Message processRequest(Message msg) {
