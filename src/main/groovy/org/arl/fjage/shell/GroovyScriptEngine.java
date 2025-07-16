@@ -404,7 +404,7 @@ public class GroovyScriptEngine implements ScriptEngine {
     String s = ex.toString();
     if (s.contains("BUG! exception in phase 'semantic analysis'")) {
       int ndx1 = s.indexOf("The lookup for ");
-      int ndx2 = s.indexOf(" caused a failed compilaton");
+      int ndx2 = s.indexOf(" caused a failed compilation");
       if (ndx1 >= 0 && ndx2 >= ndx1) {
         String offendingClass = s.substring(ndx1+15, ndx2);
         String offendingGroovyScript = offendingClass.replace(".","/")+".groovy";
