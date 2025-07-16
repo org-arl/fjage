@@ -5,20 +5,20 @@ const DEFAULT_RECONNECT_TIME = 5000;       // ms, delay between retries to conne
 var createConnection;
 
 /**
- * @class
- * @ignore
- */
+* @class
+* @ignore
+*/
 class TCPConnector {
 
   /**
-    * Create an TCPConnector to connect to a fjage master over TCP
-   * @param {Object} opts
-   * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
-   * @param {number} [opts.port=1100] - port number of the master container to connect to
-   * @param {boolean} [opts.keepAlive=true] - try to reconnect if the connection is lost
-   * @param {boolean} [opts.debug=false] - debug info to be logged to console?
-   * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
-    */
+  * Create an TCPConnector to connect to a fjage master over TCP
+  * @param {Object} opts
+  * @param {string} [opts.hostname='localhost'] - hostname/ip address of the master container to connect to
+  * @param {number} [opts.port=1100] - port number of the master container to connect to
+  * @param {boolean} [opts.keepAlive=true] - try to reconnect if the connection is lost
+  * @param {boolean} [opts.debug=false] - debug info to be logged to console?
+  * @param {number} [opts.reconnectTime=5000] - time before reconnection is attempted after an error
+  */
   constructor(opts = {}) {
     let host = opts.hostname || 'localhost';
     let port = opts.port || 1100;
@@ -113,10 +113,10 @@ class TCPConnector {
   }
 
   /**
-   * Write a string to the connector
-   * @param {string} s - string to be written out of the connector to the master
-   * @return {boolean} - true if connect was able to write or queue the string to the underlying socket
-   */
+  * Write a string to the connector
+  * @param {string} s - string to be written out of the connector to the master
+  * @return {boolean} - true if connect was able to write or queue the string to the underlying socket
+  */
   write(s){
     if (!this.sock || this.sock.readyState == SOCKET_OPENING){
       this.pendingOnOpen.push(() => {
@@ -131,32 +131,32 @@ class TCPConnector {
   }
 
   /**
-   * @callback TCPConnectorReadCallback
-   * @ignore
-   * @param {string} s - incoming message string
-   */
+  * @callback TCPConnectorReadCallback
+  * @ignore
+  * @param {string} s - incoming message string
+  */
 
   /**
-   * Set a callback for receiving incoming strings from the connector
-   * @param {TCPConnectorReadCallback} cb - callback that is called when the connector gets a string
-   */
+  * Set a callback for receiving incoming strings from the connector
+  * @param {TCPConnectorReadCallback} cb - callback that is called when the connector gets a string
+  */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onSockRx = cb;
   }
 
   /**
-   * Add listener for connection events
-   * @param {function} listener - a listener callback that is called when the connection is opened/closed
-   */
+  * Add listener for connection events
+  * @param {function} listener - a listener callback that is called when the connection is opened/closed
+  */
   addConnectionListener(listener){
     this.connListeners.push(listener);
   }
 
   /**
-   * Remove listener for connection events
-   * @param {function} listener - remove the listener for connection
-   * @return {boolean} - true if the listner was removed successfully
-   */
+  * Remove listener for connection events
+  * @param {function} listener - remove the listener for connection
+  * @return {boolean} - true if the listner was removed successfully
+  */
   removeConnectionListener(listener) {
     let ndx = this.connListeners.indexOf(listener);
     if (ndx >= 0) {
@@ -167,8 +167,8 @@ class TCPConnector {
   }
 
   /**
-   * Close the connector
-   */
+  * Close the connector
+  */
   close(){
     if (!this.sock) return;
     if (this.sock.readyState == SOCKET_OPENING) {

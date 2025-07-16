@@ -1,16 +1,17 @@
 {
     "compileOnSave": false,
     "compilerOptions": {
-        // "noEmit": true,
         "allowJs": true,
         "checkJs": true,
         "declaration": true,
         "target": "es2020",
         "resolveJsonModule": true,
-        "moduleResolution": "node",
+        "module": "Node16",
+        "moduleResolution": "node16",
         "emitDeclarationOnly": true,
         "outDir": "dist/esm",
-        "declarationMap": true
+        "declarationMap": true,
+        "types": ["node"]
     },
-    "include": ["./src/*.js"],
+    "include": ["./src/*.js"]
 }
