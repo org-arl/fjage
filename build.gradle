@@ -39,7 +39,7 @@ repositories {
 
 dependencies {
   api 'org.codehaus.groovy:groovy:2.5.23'
-  api 'org.jline:jline:3.25.0'
+  api 'org.jline:jline:3.30.4'
   api 'org.apache.commons:commons-lang3:3.17.0'
   api 'commons-io:commons-io:2.19.0'
   api 'uk.com.robust-it:cloning:1.9.12'
@@ -149,16 +149,20 @@ task jsdoc(type: Exec){
 
 task updatexterm {
   doLast {
+    // create package.json with `{}` if it does not exist
+    if (!file('package.json').exists()) {
+      file('package.json').text = '{}'
+    }
     exec {
       workingDir '.'
       executable npmcmd
-      args 'install', 'xterm@4.19.0', 'xterm-addon-attach@0.6.0', 'xterm-addon-fit@0.5.0', 'xterm-addon-web-links@0.6.0'
+      args 'install', '@xterm/xterm@5.5.0', '@xterm/addon-attach@0.11.0', '@xterm/addon-fit@0.10.0', '@xterm/addon-web-links@0.11.0'
     }
     copy {
-      from (['node_modules/xterm-addon-web-links/lib', 'node_modules/xterm-addon-attach/lib', 'node_modules/xterm-addon-fit/lib', 'node_modules/xterm/lib']) {
+      from (['node_modules/@xterm/addon-web-links/lib', 'node_modules/@xterm/addon-attach/lib', 'node_modules/@xterm/addon-fit/lib', 'node_modules/@xterm/xterm/lib']) {
         include '*.js'
       }
-      from ('node_modules/xterm/css'){
+      from ('node_modules/@xterm/xterm/css'){
         include 'xterm.css'
       }
       into 'src/main/resources/org/arl/fjage/web/shell'
