@@ -11,14 +11,12 @@ for full license details.
 package org.arl.fjage.shell;
 
 import java.io.*;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.arl.fjage.connectors.ConnectionListener;
 import org.arl.fjage.connectors.Connector;
 import org.arl.fjage.connectors.WebSocketHubConnector;
-import org.jline.builtins.Completers;
 import org.jline.reader.*;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
@@ -84,7 +82,6 @@ public class ConsoleShell implements Shell, ConnectionListener {
       connector.setConnectionListener(this);
       this.connector = connector;
       term = TerminalBuilder.builder().system(false).type("xterm").jni(false).jansi(false).streams(in, out).build();
-      log.info("Terminal type: " + term.getClass());
       setupStyles();
     } catch (IOException ex) {
       log.log(Level.WARNING,"Unable to open terminal: ", ex);
