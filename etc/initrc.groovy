@@ -2,6 +2,7 @@ import org.arl.fjage.*
 import org.arl.fjage.remote.*
 import org.arl.fjage.shell.*
 import org.arl.fjage.connectors.*
+import java.nio.file.Paths
 
 boolean web = System.properties.getProperty('fjage.web') == 'true'
 int port = 5081
@@ -26,10 +27,10 @@ if (devname != null)  container.addConnector(new SerialPortConnector(devname, ba
 if (web) {
   WebServer.getInstance(8080).addStatic("/", "/org/arl/fjage/web")
   Connector conn = new WebSocketHubConnector(8080, "/shell/ws")
-  shell = new ShellAgent(new ConsoleShell(conn), new GroovyScriptEngine())
+  shell = new ShellAgent(new ConsoleShell(conn, Paths.get(".fjage-shell-history")), new GroovyScriptEngine())
   container.openWebSocketServer(8080, "/ws")
 } else {
-  shell = new ShellAgent(new ConsoleShell(), new GroovyScriptEngine())
+  shell = new ShellAgent(new ConsoleShell(Paths.get(".fjage-shell-history")), new GroovyScriptEngine())
 }
 container.add 'shell', shell
 platform.start()
