@@ -87,6 +87,10 @@ jar {
   }
 }
 
+processResources {
+  exclude '**/readme.md'
+}
+
 test {
   testLogging {
     events "passed", "skipped", "failed"

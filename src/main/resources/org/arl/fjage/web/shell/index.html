@@ -45,17 +45,8 @@
       width: 100%;
     }
 
-    .embedded .container{
-      border-radius: 1rem;
-    }
-
     .dark .container {
       background-color: #000000;
-    }
-
-    .embedded #terminal {
-      height: calc(100% - 0.25rem);
-      width: calc(100% - 0.25rem);
     }
 
     .btn-container {
@@ -151,7 +142,6 @@
     let term = null;
     let userScheme = false; // true if the user manually changed the scheme
     window.shellready = false;
-    const embedded = (window.parent != window);
 
     function setScheme(term, scheme, user) {
       if (scheme == 'light'){
@@ -170,15 +160,16 @@
 
     // Get colour scheme information from parent (if available)
     function getDefaultColourScheme() {
-      if (!embedded) return null; // not embedded, no parent document
-      return window.frameElement.dataset.prefersColorScheme;
+      try {
+        return window.frameElement.dataset.prefersColorScheme;
+      } catch {
+        return null;
+      }
     }
 
     window.addEventListener('load', () => {
       let attachAddon = null;
       const schemeToggleBnt = document.getElementById('schemetgl-bnt');
-
-      if (embedded) document.body.classList.add('embedded');
 
       // Get the default scheme
       const defaultScheme = getDefaultColourScheme();
