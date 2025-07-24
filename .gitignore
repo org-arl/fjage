@@ -11,3 +11,4 @@ build
 test_fjage
 docs/doc
 
+.fjage-shell-history

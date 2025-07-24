@@ -1,16 +1,16 @@
 /******************************************************************************
 
-Copyright (c) 2018-2019, Mandar Chitre
+ Copyright (c) 2018-2019, Mandar Chitre
 
-This file is part of fjage which is released under Simplified BSD License.
-See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
-for full license details.
-
-******************************************************************************/
+ This file is part of fjage which is released under Simplified BSD License.
+ See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
+ for full license details.
+ ******************************************************************************/
 
 package org.arl.fjage.shell;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,10 +18,12 @@ import org.arl.fjage.connectors.ConnectionListener;
 import org.arl.fjage.connectors.Connector;
 import org.arl.fjage.connectors.WebSocketHubConnector;
 import org.jline.reader.*;
+import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStyle;
+import org.jline.widget.AutosuggestionWidgets;
 
 /**
  * Shell input/output driver for console devices with line editing and
@@ -29,6 +31,9 @@ import org.jline.utils.AttributedStyle;
  */
 public class ConsoleShell implements Shell, ConnectionListener {
 
+  private static final String FORCE_BRACKETED_PASTE_ON = "FORCE_BRACKETED_PASTE_ON";
+  private static final String BRACKETED_PASTE_ON = "\033[?2004h";
+  private final Logger log = Logger.getLogger(getClass().getName());
   private Terminal term = null;
   private LineReader console = null;
   private Connector connector = null;
@@ -38,10 +43,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
   private AttributedStyle outputStyle = null;
   private AttributedStyle notifyStyle = null;
   private AttributedStyle errorStyle = null;
-  private final Logger log = Logger.getLogger(getClass().getName());
-
-  private static final String FORCE_BRACKETED_PASTE_ON = "FORCE_BRACKETED_PASTE_ON";
-  private static final String BRACKETED_PASTE_ON = "\033[?2004h";
+  private Path historyFile = null;
 
   /**
    * Create a console shell attached to the system terminal.
@@ -58,7 +60,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
   /**
    * Create a console shell attached to a specified input and output stream.
    *
-   * @param in input stream.
+   * @param in  input stream.
    * @param out output stream.
    */
   public ConsoleShell(InputStream in, OutputStream out) {
@@ -66,7 +68,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
       term = TerminalBuilder.builder().system(false).type("xterm").jni(false).jansi(false).streams(in, out).build();
       setupStyles();
     } catch (IOException ex) {
-      log.log(Level.WARNING,"Unable to open terminal: ", ex);
+      log.log(Level.WARNING, "Unable to open terminal: ", ex);
     }
   }
 
@@ -84,8 +86,40 @@ public class ConsoleShell implements Shell, ConnectionListener {
       term = TerminalBuilder.builder().system(false).type("xterm").jni(false).jansi(false).streams(in, out).build();
       setupStyles();
     } catch (IOException ex) {
-      log.log(Level.WARNING,"Unable to open terminal: ", ex);
+      log.log(Level.WARNING, "Unable to open terminal: ", ex);
     }
+  }
+
+  /**
+   * Create a console shell attached to the system terminal.
+   * @param historyFile file to store command history.
+   */
+  public ConsoleShell(Path historyFile) {
+    this();
+    this.historyFile = historyFile;
+  }
+
+  /**
+   * Create a console shell attached to a specified input and output stream.
+   *
+   * @param in  input stream.
+   * @param out output stream.
+   * @param historyFile file to store command history.
+   */
+  public ConsoleShell(InputStream in, OutputStream out, Path historyFile) {
+    this(in, out);
+    this.historyFile = historyFile;
+  }
+
+  /**
+   * Create a console shell attached to a specified connector.
+   *
+   * @param connector input/output streams.
+   * @param historyFile file to store command history.
+   */
+  public ConsoleShell(Connector connector, Path historyFile){
+    this(connector);
+    this.historyFile = historyFile;
   }
 
   @Override
@@ -97,17 +131,17 @@ public class ConsoleShell implements Shell, ConnectionListener {
         console.callWidget(LineReader.REDRAW_LINE);
         console.callWidget(LineReader.REDISPLAY);
       }
-    } catch(IllegalStateException ex) {
-      // safely ignore exception
+    } catch (IllegalStateException ex) {
+      log.log(Level.FINE, "Unable to redraw console: ", ex);
     }
   }
 
   private void setupStyles() {
     AttributedStyle style = new AttributedStyle();
-    promptStyle = style.foreground(AttributedStyle.BRIGHT+AttributedStyle.YELLOW);
+    promptStyle = style.foreground(AttributedStyle.BRIGHT + AttributedStyle.YELLOW);
     inputStyle = style.foreground(AttributedStyle.WHITE);
     outputStyle = style.foreground(AttributedStyle.GREEN);
-    notifyStyle = style.foreground(AttributedStyle.BRIGHT+AttributedStyle.BLUE);
+    notifyStyle = style.foreground(AttributedStyle.BRIGHT + AttributedStyle.BLUE);
     errorStyle = style.foreground(AttributedStyle.RED);
   }
 
@@ -123,25 +157,15 @@ public class ConsoleShell implements Shell, ConnectionListener {
     if (scriptEngine == null)
       console = LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).build();
     else {
-      Parser parser = new Parser() {
-        @Override
-        public CompletingParsedLine parse(String s, int cursor) {
-          if (!scriptEngine.isComplete(s)) throw new EOFError(-1, -1, "");
-          if (s.contains("\n") && cursor < s.length()) throw new EOFError(-1, -1, "");
-          return null;
-        }
-        @Override
-        public CompletingParsedLine parse(String s, int cursor, Parser.ParseContext context) {
-          return parse(s, cursor);
-        }
-        @Override
-        public boolean isEscapeChar(char ch) {
-          return false;
-        }
-      };
-      console = LineReaderBuilder.builder().parser(parser).terminal(term).build();
-      console.setVariable(LineReader.DISABLE_COMPLETION, true);
-      console.setOpt(LineReader.Option.ERASE_LINE_ON_FINISH);
+      if (historyFile == null) {
+        console = LineReaderBuilder.builder().terminal(term).build();
+      } else {
+        console = LineReaderBuilder.builder().terminal(term).history(new DefaultHistory()).build();
+        console.setVariable(LineReader.HISTORY_FILE, historyFile); // set history file
+        console.setVariable(LineReader.HISTORY_SIZE, 1000); // set history size
+      }
+      AutosuggestionWidgets autosuggestionWidgets = new AutosuggestionWidgets(console);
+      autosuggestionWidgets.enable();
       console.getWidgets().put(FORCE_BRACKETED_PASTE_ON, () -> {
         console.getTerminal().writer().write(BRACKETED_PASTE_ON);
         return true;
@@ -184,7 +208,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
     if (console == null) return null;
     try {
       console.setVariable(LineReader.SECONDARY_PROMPT_PATTERN, prompt2);
-      return console.readLine(prompt1, null, (Character)null, line);
+      return console.readLine(prompt1, null, (Character) null, line);
     } catch (UserInterruptException ex) {
       return ABORT;
     } catch (EndOfFileException ex) {
@@ -206,7 +230,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
       try {
         term.close();
       } catch (IOException ex) {
-        // do nothing
+        log.log(Level.FINE, "Error closing terminal: ", ex);
       }
       term = null;
     }
