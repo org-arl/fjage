@@ -13,13 +13,14 @@
   <meta charset='utf-8'/>
   <link rel="stylesheet" href="xterm.css" />
   <script src='xterm.js'></script>
-  <script src='xterm-addon-attach.js'></script>
-  <script src='xterm-addon-fit.js'></script>
-  <script src='xterm-addon-web-links.js'></script>
+  <script src='addon-attach.js'></script>
+  <script src='addon-fit.js'></script>
+  <script src='addon-web-links.js'></script>
   <style>
     html {
       height: 100%;
     }
+
     body {
       position: absolute;
       height: 100%;
@@ -99,7 +100,7 @@
         // enable cursor to indicate connection is back
         term.write("\u001B[?25h");
         term.write('\x1b[1G\x1b[2K');
-        term.setOption('cursorBlink', true);
+        term.options.cursorBlink = true;
       };
       ws.onmessage = () => window.shellready = true;
     }
@@ -120,7 +121,7 @@
     }
     function setTheme(term, theme){
       if (theme == 'light'){
-        term.setOption('theme', {
+        term.options.theme = {
           background: '#fdf6e3',
           foreground: '#002B36',
           yellow: '#b58900',
@@ -130,12 +131,12 @@
           red: '#dc322f',
           cursor: '#586e75',
           selection: '#d3c494'
-        });
+        };
         document.getElementById('darkmode-dark').style.display = 'none';
         document.getElementById('darkmode-light').style.display = 'block';
         currentTheme = theme;
       }else if (theme == 'dark'){
-        term.setOption('theme', {
+        term.options.theme = {
           background: '#000000',
           foreground: '#ffffff',
           yellow: '#c4a000',
@@ -144,7 +145,7 @@
           blue: '#3465a4',
           red: '#cc0000',
           cursor: '#ff6e75'
-        });
+        };
         document.getElementById('darkmode-dark').style.display = 'block';
         document.getElementById('darkmode-light').style.display = 'none';
         currentTheme = theme;
