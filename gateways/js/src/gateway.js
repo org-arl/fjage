@@ -30,7 +30,6 @@ let gObj = {};
 * @returns {void}
 */
 export function init(){
-  /** @type {Window & globalThis & Object} */
   if (isBrowser || isWebWorker){
     gObj = window;
     Object.assign(GATEWAY_DEFAULTS, {
@@ -99,7 +98,7 @@ export class Gateway {
     this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
     this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect; // cancel pending requests on disconnect
     this.pending = {};                    // msgid to callback mapping for pending requests to server
-    this.subscriptions = {};       // map for all topics that are subscribed
+    this.subscriptions = {};              // map for all topics that are subscribed
     this.listeners = {};                  // list of callbacks that want to listen to incoming messages
     this.eventListeners = {};             // external listeners wanting to listen internal events
     this.queue = [];                      // incoming message queue
@@ -158,7 +157,7 @@ export class Gateway {
     if (this.debug) console.log('< '+data);
     this._sendEvent('rx', data);
     try {
-      jsonMsg = new JSONMessage(data);
+      jsonMsg = new JSONMessage(data, this);
     }catch(e){
       return;
     }
@@ -210,7 +209,8 @@ export class Gateway {
   }
 
   /**
-  * Sends a message out to the master container.
+  * Sends a message out to the master container. This method is used for sending
+  * fjage level actions that do not require a response, such as alive, wantMessages, etc.
   * @private
   * @param {JSONMessage} msg - JSONMessage to be sent to the master container
   * @returns {boolean} - true if the message was sent successfully
@@ -223,9 +223,11 @@ export class Gateway {
   }
 
   /**
+  * Send a message to the master container and wait for a response. This method is used for sending
+  * fjage level actions that require a response, such as agentForService, agents, etc.
   * @private
   * @param {JSONMessage} rq - JSONMessage to be sent to the master container
-  * @returns {Promise<Object>} - a promise which returns the response from the master container
+  * @returns {Promise<JSONMessage|null>} - a promise which returns the response from the master container
   */
   _msgTxRx(rq) {
     rq.id = _guid(8);
@@ -233,7 +235,7 @@ export class Gateway {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
         if (this.debug) console.log('Receive Timeout : ' + JSON.stringify(rq));
-        resolve();
+        resolve(null);
       }, 8*this._timeout);
       this.pending[rq.id] = rsp => {
         clearTimeout(timer);
@@ -243,7 +245,7 @@ export class Gateway {
         clearTimeout(timer);
         delete this.pending[rq.id];
         if (this.debug) console.log('Transmit Timeout : ' +  JSON.stringify(rq));
-        resolve();
+        resolve(null);
       }
     });
   }
@@ -533,8 +535,8 @@ export class Gateway {
     let jsonMsg = JSONMessage.createContainsAgent(agentID instanceof AgentID ? agentID : new AgentID(agentID));
     let rsp = await this._msgTxRx(jsonMsg);
     if (!rsp) {
-       if (this._returnNullOnFailedResponse) return null;
-       else throw new Error('Unable to check if agent exists');
+      if (this._returnNullOnFailedResponse) return null;
+      else throw new Error('Unable to check if agent exists');
     }
     return !!rsp.answer;
   }
@@ -560,7 +562,7 @@ export class Gateway {
   * Finds all agents that provides a named service.
   *
   * @param {string} service - the named service of interest
-  * @returns {Promise<?AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
+  * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
   */
   async agentsForService(service) {
     let jsonMsg = JSONMessage.createAgentsForService(service);
