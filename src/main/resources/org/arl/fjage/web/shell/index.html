@@ -174,8 +174,10 @@
       const schemeToggleBnt = document.getElementById('schemetgl-bnt');
       try {
         // Get the color scheme from the parent document
-        theme = window.frameElement.dataset.prefersColorScheme;
-        if (theme != null) schemeToggleBnt.parentElement.style.display = 'none';
+        if (window.frameElement && window.frameElement.dataset) {
+          theme = window.frameElement.dataset.prefersColorScheme;
+          if (theme != null) schemeToggleBnt.parentElement.style.display = 'none';
+        }
       } catch {
         // If we can't access the parent document (e.g., cross-origin, or not in an iframe),
         theme = window.matchMedia ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : 'light';
