@@ -2,6 +2,7 @@ package org.arl.fjage.test
 
 import org.arl.fjage.*
 import org.arl.fjage.param.*;
+import org.arl.fjage.test.Services
 
 
 public enum Params implements Parameter {
@@ -56,5 +57,6 @@ public class ParamServerAgent extends Agent {
         else if (ndx == 1) return getParameterList();
       }
     });
+    register(Services.TEST)
   }
 }
