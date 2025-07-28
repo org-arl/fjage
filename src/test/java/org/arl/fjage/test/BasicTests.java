@@ -34,8 +34,8 @@ public class BasicTests {
   private static final int TICKS = 100;
   private static final int DELAY = 1000;
 
-  private Random rnd = new Random();
-  private Logger log = Logger.getLogger(getClass().getName());
+  private final Random rnd = new Random();
+  private final Logger log = Logger.getLogger(getClass().getName());
 
   @Before
   public void beforeTesting() {
@@ -168,11 +168,11 @@ public class BasicTests {
     gw.send(req);
     rsp = gw.receive(100);
     assertNotNull(rsp);
-    assertSame(rsp.getClass(), ResponseMessage.class);
+    assertSame(ResponseMessage.class, rsp.getClass());
     req = new RequestMessage(server.getAgentID());
     rsp = gw.request(req, 100);
     assertNotNull(rsp);
-    assertSame(rsp.getClass(), ResponseMessage.class);
+    assertSame(ResponseMessage.class, rsp.getClass());
     req = new NuisanceMessage(server.getAgentID());
     rsp = gw.request(req, 100);
     assertNull(rsp);
@@ -188,7 +188,7 @@ public class BasicTests {
     Agent agent = new Agent();
     container.add(agent);
     FSMBehavior fsm = new FSMBehavior();
-    final List<Integer> list = new ArrayList<Integer>();
+    final List<Integer> list = new ArrayList<>();
     fsm.add(new FSMBehavior.State("tick") {
       @Override
       public void onEnter() {
@@ -251,7 +251,7 @@ public class BasicTests {
     platform.delay(tickDelay*ticks+1000);
     platform.shutdown();
     for (int i = 0; i < nAgents; i++)
-      assertEquals("ticks = " + tb[i].getTickCount() + ", expected " + ticks, tb[i].getTickCount(), ticks);
+      assertEquals("ticks = " + tb[i].getTickCount() + ", expected " + ticks, ticks, tb[i].getTickCount());
   }
 
   @Test
@@ -335,17 +335,17 @@ public class BasicTests {
     while (!agent.done)
       platform.delay(1000);
     platform.shutdown();
-    assertTrue(agent.exec);
-    assertTrue(agent.put1);
-    assertTrue(agent.put2);
-    assertTrue(agent.put3);
-    assertTrue(agent.put4);
-    assertTrue(agent.get);
-    assertTrue(agent.get2);
-    assertTrue(agent.get3);
-    assertTrue(agent.get4);
-    assertTrue(agent.dir);
-    assertTrue(agent.del);
+    assertTrue("Shell command execution failed", agent.exec);
+    assertTrue("Put file (test 1) failed", agent.put1);
+    assertTrue("Put file (test 2, append) failed", agent.put2);
+    assertTrue("Put file (test 3, overwrite) failed", agent.put3);
+    assertTrue("Put file (test 4, truncate) failed", agent.put4);
+    assertTrue("Get file (full) failed", agent.get);
+    assertTrue("Get file (offset 5, len 4) failed", agent.get2);
+    assertTrue("Get file (offset 9, len 0) failed", agent.get3);
+    assertTrue("Get file (offset 27, len 1, out of bounds) failed", agent.get4);
+    assertTrue("Directory listing failed", agent.dir);
+    assertTrue("Delete file failed", agent.del);
   }
 
   @Test
@@ -394,7 +394,7 @@ public class BasicTests {
     int n1 = listener.n;
     assertTrue(n1 > 0);
     assertEquals(n1,client.nuisance);
-    assertEquals(server.nuisance,0);
+    assertEquals(0, server.nuisance);
     server.nuisance = 0;
     client.nuisance = 0;
     platform.delay(1000);
@@ -423,10 +423,10 @@ public class BasicTests {
     log.info("Successful: "+(client1.count + client2.count + client3.count));
     log.info("Warnings: "+(client1.warnings + client2.warnings + client3.warnings));
     log.info("Errors: "+(server.errors + client1.errors + client2.errors + client3.errors));
-    assertEquals(server.errors, 0);
-    assertEquals(client1.errors, 0);
-    assertEquals(client2.errors, 0);
-    assertEquals(client3.errors, 0);
+    assertEquals(0, server.errors);
+    assertEquals(0, client1.errors);
+    assertEquals(0, client2.errors);
+    assertEquals(0, client3.errors);
     assertTrue(client1.warnings < 3);
     assertTrue(client2.warnings < 3);
     assertTrue(client3.warnings < 3);
@@ -453,10 +453,10 @@ public class BasicTests {
     log.info("Successful: "+(client1.count + client2.count + client3.count));
     log.info("Warnings: "+(client1.warnings + client2.warnings + client3.warnings));
     log.info("Errors: "+(server.errors + client1.errors + client2.errors + client3.errors));
-    assertEquals(server.errors, 0);
-    assertEquals(client1.errors, 0);
-    assertEquals(client2.errors, 0);
-    assertEquals(client3.errors, 0);
+    assertEquals(0, server.errors);
+    assertEquals(0, client1.errors);
+    assertEquals(0, client2.errors);
+    assertEquals(0, client3.errors);
     assertTrue(client1.warnings < 3);
     assertTrue(client2.warnings < 3);
     assertTrue(client3.warnings < 3);
@@ -483,10 +483,10 @@ public class BasicTests {
     log.info("Successful: "+(client1.count + client2.count + client3.count));
     log.info("Warnings: "+(client1.warnings + client2.warnings + client3.warnings));
     log.info("Errors: "+(server.errors + client1.errors + client2.errors + client3.errors));
-    assertEquals(server.errors, 0);
-    assertEquals(client1.errors, 0);
-    assertEquals(client2.errors, 0);
-    assertEquals(client3.errors, 0);
+    assertEquals(0, server.errors);
+    assertEquals(0, client1.errors);
+    assertEquals(0, client2.errors);
+    assertEquals(0, client3.errors);
     assertTrue(client1.warnings < 3);
     assertTrue(client2.warnings < 3);
     assertTrue(client3.warnings < 3);
@@ -504,15 +504,15 @@ public class BasicTests {
     container.add("C", client);
     platform.start();
     platform.delay(2000);
-    assertEquals(server.n, 1);
+    assertEquals(1, server.n);
     client.zVal = 7;
     platform.delay(2000);
-    assertEquals(server.n, 2);
+    assertEquals(2, server.n);
     log.info("Warnings: "+client.warnings);
     log.info("Errors: "+(server.errors + client.errors));
-    assertEquals(server.errors, 0);
-    assertEquals(client.errors, 0);
-    assertEquals(client.warnings, 0);
+    assertEquals(0, server.errors);
+    assertEquals(0, client.errors);
+    assertEquals(0, client.warnings);
     platform.shutdown();
     platform.delay(2000);
   }
@@ -544,7 +544,7 @@ public class BasicTests {
     x, y, z, s
   }
 
-  public class ParamServerAgent extends Agent {
+  public static class ParamServerAgent extends Agent {
     public int errors = 0;
     public int x = 1;
     public int n = 0;
@@ -584,7 +584,7 @@ public class BasicTests {
             Message m1 = new Message();
             Message m2 = receive(m1, 500);
             if (m2 != null) {
-              log.warning("Unexpected message: "+m2.toString());
+              log.warning("Unexpected message: "+ m2);
               errors++;
             }
           }
@@ -593,7 +593,7 @@ public class BasicTests {
     }
   }
 
-  private class ParamClientAgent extends Agent {
+  private static class ParamClientAgent extends Agent {
     public int errors = 0;
     public int warnings = 0;
     public int count = 0;
@@ -720,7 +720,6 @@ public class BasicTests {
           if (rsp == null) {
             log.warning("No response from server");
             warnings++;
-            return;
           } else if (!(rsp instanceof ResponseMessage)) {
             log.warning("Bad response: "+rsp);
             errors++;
@@ -730,7 +729,7 @@ public class BasicTests {
     }
   }
 
-  private class ParamNtfClientAgent extends Agent{
+  private static class ParamNtfClientAgent extends Agent{
     public int zVal = 4;
     public int errors = 0;
     public int warnings = 0;
@@ -763,7 +762,7 @@ public class BasicTests {
 
   }
 
-  private class AIDParamClientAgent extends Agent {
+  private static class AIDParamClientAgent extends Agent {
     public int errors = 0;
     public int warnings = 0;
     public int count = 0;
@@ -814,7 +813,6 @@ public class BasicTests {
           if (x == null) {
             log.warning("Unable to set x[7]");
             warnings++;
-            return;
           } else if (x != 45) {
             log.warning("Bad value of x[7]: "+x);
             errors++;
@@ -824,7 +822,7 @@ public class BasicTests {
     }
   }
 
-  private class ServerAgent extends Agent {
+  private static class ServerAgent extends Agent {
     public int requests = 0, nuisance = 0;
     @Override
     public void init() {
@@ -890,7 +888,7 @@ public class BasicTests {
     }
   }
 
-  private class ClientAgent2 extends Agent {
+  private static class ClientAgent2 extends Agent {
     public int nuisance = 0;
     @Override
     public void init() {
@@ -907,7 +905,7 @@ public class BasicTests {
     }
   }
 
-  private class MyMessageListener implements MessageListener {
+  private static class MyMessageListener implements MessageListener {
     public int n = 0;
     public boolean eat = false;
     @Override
@@ -917,7 +915,7 @@ public class BasicTests {
     }
   }
 
-  private class ShellTestAgent extends Agent {
+  private static class ShellTestAgent extends Agent {
     private final String DIRNAME = System.getProperty("java.io.tmpdir");
     private final String FILENAME = "fjage-test.txt";
     public boolean exec = false, put1 = false, put2 = false, put3 = false, put4 = false, get = false, get2 = false, get3 = false, get4 = false, del = false, dir = false, done = false;
@@ -1008,16 +1006,16 @@ public class BasicTests {
           log.info("put2 rsp: "+rsp);
           if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
             File f = new File(DIRNAME+File.separator+FILENAME);
-            if (f.exists() && f.length() == bytes.length*2) put2 = true;
+            if (f.exists() && f.length() == bytes.length* 2L) put2 = true;
           }
 
-          req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, bytes, (bytes.length*2)-2);
+          req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, bytes, (bytes.length* 2L)-2);
           rsp = request(req);
           log.info("put3 rsp: "+rsp);
           if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
             File f = new File(DIRNAME+File.separator+FILENAME);
             log.info("put3 length " + f.length() + " : " + ((bytes.length*3)-2));
-            if (f.exists() && f.length() == (bytes.length*3)-2) put3 = true;
+            if (f.exists() && f.length() == (bytes.length* 3L)-2) put3 = true;
           }
 
           req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, null, bytes.length);
