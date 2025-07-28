@@ -18,7 +18,6 @@ import org.arl.fjage.connectors.Connector;
 import org.arl.fjage.connectors.WebSocketHubConnector;
 import org.jline.reader.*;
 import org.jline.reader.impl.completer.AggregateCompleter;
-import org.jline.reader.impl.completer.StringsCompleter;
 import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
@@ -34,8 +33,6 @@ public class ConsoleShell implements Shell, ConnectionListener {
 
   private static final String FORCE_BRACKETED_PASTE_ON = "FORCE_BRACKETED_PASTE_ON";
   private static final String BRACKETED_PASTE_ON = "\033[?2004h";
-  private static final Path HISTORY_FILE = Paths.get(".fjage-shell-history");
-  private static String[] shellCommands;
   private final Logger log = Logger.getLogger(getClass().getName());
   private Terminal term = null;
   private LineReader console = null;
@@ -46,7 +43,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
   private AttributedStyle outputStyle = null;
   private AttributedStyle notifyStyle = null;
   private AttributedStyle errorStyle = null;
-  private static final List<String> EXCLUDED_METHODS = Arrays.asList("methodMissing", "propertyMissing");
+  private Path historyFile = null;
 
   /**
    * Create a console shell attached to the system terminal.
@@ -55,7 +52,6 @@ public class ConsoleShell implements Shell, ConnectionListener {
     try {
       term = TerminalBuilder.terminal();
       setupStyles();
-      shellCommands = getCommandsFromGroovyScript();
     } catch (IOException ex) {
       log.log(Level.WARNING, "Unable to open terminal: ", ex);
     }
@@ -71,7 +67,6 @@ public class ConsoleShell implements Shell, ConnectionListener {
     try {
       term = TerminalBuilder.builder().system(false).type("xterm").jni(false).jansi(false).streams(in, out).build();
       setupStyles();
-      shellCommands = getCommandsFromGroovyScript();
     } catch (IOException ex) {
       log.log(Level.WARNING, "Unable to open terminal: ", ex);
     }
@@ -93,6 +88,38 @@ public class ConsoleShell implements Shell, ConnectionListener {
     } catch (IOException ex) {
       log.log(Level.WARNING, "Unable to open terminal: ", ex);
     }
+  }
+
+  /**
+   * Create a console shell attached to the system terminal.
+   * @param historyFile file to store command history.
+   */
+  public ConsoleShell(Path historyFile) {
+    this();
+    this.historyFile = historyFile;
+  }
+
+  /**
+   * Create a console shell attached to a specified input and output stream.
+   *
+   * @param in  input stream.
+   * @param out output stream.
+   * @param historyFile file to store command history.
+   */
+  public ConsoleShell(InputStream in, OutputStream out, Path historyFile) {
+    this(in, out);
+    this.historyFile = historyFile;
+  }
+
+  /**
+   * Create a console shell attached to a specified connector.
+   *
+   * @param connector input/output streams.
+   * @param historyFile file to store command history.
+   */
+  public ConsoleShell(Connector connector, Path historyFile){
+    this(connector);
+    this.historyFile = historyFile;
   }
 
   @Override
@@ -122,26 +149,27 @@ public class ConsoleShell implements Shell, ConnectionListener {
   public void init(ScriptEngine engine) {
     if (term == null) return;
     scriptEngine = engine;
-    History history = new DefaultHistory();
-    Completer myCompleter = new AggregateCompleter(
-        new StringsCompleter(shellCommands), // static commands
-        new HistoryCompleter(history)       // dynamic history
-    );
-
     if (Terminal.TYPE_DUMB.equals(term.getType())) {
-      console = LineReaderBuilder.builder().terminal(term).history(history).completer(myCompleter).build();
-      console.setVariable(LineReader.HISTORY_FILE, HISTORY_FILE);
-      console.setVariable(LineReader.HISTORY_SIZE, 1000); // set history size
+      console = LineReaderBuilder.builder().terminal(term).build();
+      console.setVariable(LineReader.DISABLE_COMPLETION, true);
       return;
     }
     if (scriptEngine == null)
-      console = LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).history(history).completer(myCompleter).build();
+      console = LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).build();
     else {
-      console = LineReaderBuilder.builder().terminal(term).history(history).completer(myCompleter).build();
+      if (historyFile == null) {
+        console = LineReaderBuilder.builder().terminal(term).build();
+      } else {
+        History history = new DefaultHistory();
+        Completer completer = new AggregateCompleter(
+            new HistoryCompleter(history)
+        );
+        console = LineReaderBuilder.builder().terminal(term).history(history).completer(completer).build();
+        console.setVariable(LineReader.HISTORY_FILE, historyFile); // set history file
+        console.setVariable(LineReader.HISTORY_SIZE, 1000); // set history size
+      }
       AutosuggestionWidgets autosuggestionWidgets = new AutosuggestionWidgets(console);
       autosuggestionWidgets.enable();
-      console.setVariable(LineReader.HISTORY_FILE, HISTORY_FILE); // set history file
-      console.setVariable(LineReader.HISTORY_SIZE, 1000); // set history size
       console.getWidgets().put(FORCE_BRACKETED_PASTE_ON, () -> {
         console.getTerminal().writer().write(BRACKETED_PASTE_ON);
         return true;
@@ -222,32 +250,5 @@ public class ConsoleShell implements Shell, ConnectionListener {
     if (connector == null) return "console://-";
     else return connector.toString();
   }
-
-  /**
-   * Get the list of commands available for completion from the BaseGroovyScript class.
-   *
-   * @return an array of command names.
-   */
-  private String[] getCommandsFromGroovyScript() {
-    Set<String> commands = new HashSet<>();
-    try {
-      Class<?> thisClass = Class.forName("org.arl.fjage.shell.BaseGroovyScript");
-      Method[] methods = thisClass.getDeclaredMethods();
-      for (Method method : methods) {
-        if (!method.getName().startsWith("get") &&
-            !method.getName().startsWith("__") &&
-            !EXCLUDED_METHODS.contains(method.getName()) &&
-            !method.isSynthetic() &&
-            !java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
-          commands.add(method.getName());
-        }
-      }
-    } catch (ClassNotFoundException ex) {
-      log.info("BaseGroovyScript class not found, no commands available for completion.");
-    }
-
-    return commands.toArray(new String[0]);
-  }
-
 
 }
