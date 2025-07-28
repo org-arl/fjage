@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.shell;
 
 import java.io.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.arl.fjage.connectors.ConnectionListener;
@@ -37,7 +38,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
   private AttributedStyle outputStyle = null;
   private AttributedStyle notifyStyle = null;
   private AttributedStyle errorStyle = null;
-  private Logger log = Logger.getLogger(getClass().getName());
+  private final Logger log = Logger.getLogger(getClass().getName());
 
   private static final String FORCE_BRACKETED_PASTE_ON = "FORCE_BRACKETED_PASTE_ON";
   private static final String BRACKETED_PASTE_ON = "\033[?2004h";
@@ -50,7 +51,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
       term = TerminalBuilder.terminal();
       setupStyles();
     } catch (IOException ex) {
-      log.warning("Unable to open terminal: "+ex.toString());
+      log.log(Level.WARNING, "Unable to open terminal: ", ex);
     }
   }
 
@@ -65,7 +66,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
       term = TerminalBuilder.builder().system(false).type("xterm").jni(false).jansi(false).streams(in, out).build();
       setupStyles();
     } catch (IOException ex) {
-      log.warning("Unable to open terminal: "+ex.toString());
+      log.log(Level.WARNING,"Unable to open terminal: ", ex);
     }
   }
 
@@ -83,7 +84,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
       term = TerminalBuilder.builder().system(false).type("xterm").jni(false).jansi(false).streams(in, out).build();
       setupStyles();
     } catch (IOException ex) {
-      log.warning("Unable to open terminal: "+ex.toString());
+      log.log(Level.WARNING,"Unable to open terminal: ", ex);
     }
   }
 
@@ -141,12 +142,9 @@ public class ConsoleShell implements Shell, ConnectionListener {
       console = LineReaderBuilder.builder().parser(parser).terminal(term).build();
       console.setVariable(LineReader.DISABLE_COMPLETION, true);
       console.setOpt(LineReader.Option.ERASE_LINE_ON_FINISH);
-      console.getWidgets().put(FORCE_BRACKETED_PASTE_ON, new Widget() {
-        @Override
-        public boolean apply() {
-          console.getTerminal().writer().write(BRACKETED_PASTE_ON);
-          return true;
-        }
+      console.getWidgets().put(FORCE_BRACKETED_PASTE_ON, () -> {
+        console.getTerminal().writer().write(BRACKETED_PASTE_ON);
+        return true;
       });
     }
   }
@@ -192,7 +190,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
     } catch (EndOfFileException ex) {
       return null;
     } catch (Throwable ex) {
-      log.warning(ex.toString());
+      log.log(Level.WARNING, "Error reading line: ", ex);
       return "";
     }
   }
