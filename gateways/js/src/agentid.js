@@ -85,17 +85,18 @@ export class AgentID {
    * Inflate the AgentID from a JSON string or object.
    *
    * @param {string} json - JSON string or object to be converted to an AgentID
+   * @param {Gateway} [owner] - Gateway owner for this AgentID
    * @returns {AgentID} - AgentID created from the JSON string or object
    */
-  static fromJSON(json) {
+  static fromJSON(json, owner) {
     if (typeof json !== 'string') {
       throw new Error('Invalid JSON for AgentID');
     }
     json = json.trim();
     if (json.startsWith('#')) {
-      return new AgentID(json.substring(1), true);
+      return new AgentID(json.substring(1), true, owner);
     } else {
-      return new AgentID(json, false);
+      return new AgentID(json, false, owner);
     }
   }
 
@@ -153,10 +154,10 @@ export class AgentID {
   /**
   * Gets parameter(s) on the Agent referred to by this AgentID.
   *
-  * @param {(?string|?string[])} params - parameters name(s) to be get, null implies get value of all parameters on the Agent
+  * @param {(string|string[])} params - parameters name(s) to be get, null implies get value of all parameters on the Agent
   * @param {number} [index=-1] - index of parameter(s) to be get
   * @param {number} [timeout=5000] - timeout for the response
-  * @returns {Promise<(?Object|?Object[])>} - a promise which returns the value(s) of the parameters
+  * @returns {Promise<(Object|Object[])>} - a promise which returns the value(s) of the parameters
   */
   async get(params, index=-1, timeout=5000) {
     let msg = new ParameterReq();
