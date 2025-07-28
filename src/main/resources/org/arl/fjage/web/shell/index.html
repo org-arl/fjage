@@ -2,9 +2,9 @@
 
 # API
 
-- shellready : will be true when the shell is ready to accept input
-- hideModeToggle : if true, the mode toggle button will be hidden
-- window.postMessage({theme: 'dark'}) : to set the theme to 'dark' mode
+- window.shellready : will be true when the shell is ready to accept input
+- window.prefersColorScheme : 'dark'/'light' used to set the default colour scheme (and disable toggle)
+- window.postMessage({scheme: 'dark'/'light'}) : to set the colour scheme dynamically
 
 -->
 <html>
