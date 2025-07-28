@@ -335,6 +335,56 @@ describe('A Gateway', function () {
     gw.close();
   });
 
+  it('should be able to request for all agents from the master container', async function() {
+    const gw = new Gateway(gwOpts);
+    await delay(300);
+    let agents = await gw.agents();
+    expect(agents).toBeDefined();
+    expect(Array.isArray(agents)).toBeTruthy();
+    expect(agents.length).toBeGreaterThan(0);
+    let aids = agents.map(a => a.name);
+    expect(aids).toContain('shell');
+    expect(aids).toContain('S');
+    expect(aids).toContain('echo');
+    expect(aids).toContain('test');
+    gw.close();
+  });
+
+  it('should be able to check if an agent exists on the master container', async function() {
+    const gw = new Gateway(gwOpts);
+    await delay(300);
+    let aid = new AgentID('S', false, gw);
+    let exists = await gw.containsAgent(aid);
+    expect(exists).toEqual(true);
+    aid = new AgentID('T', false, gw);
+    exists = await gw.containsAgent(aid);
+    expect(exists).toEqual(false);
+    gw.close();
+  });
+
+  it('should be able to get the agent for a service', async function() {
+    const gw = new Gateway(gwOpts);
+    await delay(300);
+    let aid = await gw.agentForService('server');
+    expect(aid).toBeDefined();
+    expect(aid.name).toBe('S');
+    gw.close();
+  });
+
+  it('should be able to get all agents for a service', async function() {
+    const gw = new Gateway(gwOpts);
+    await delay(300);
+    let aids = await gw.agentsForService('org.arl.fjage.test.Services.TEST');
+    expect(aids).toBeDefined();
+    expect(Array.isArray(aids)).toBeTruthy();
+    expect(aids.length).toBeGreaterThan(0);
+    // it should contain ParamServerAgent and EchoServerAgent only
+    let aidNames = aids.map(a => a.name);
+    expect(aidNames).toContain('S');
+    expect(aidNames).toContain('echo');
+    gw.close();
+  });
+
 });
 
 describe('An AgentID', function () {
