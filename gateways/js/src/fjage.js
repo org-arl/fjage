@@ -1,8 +1,8 @@
 /* global global Buffer */
 
-import { isBrowser, isNode, isJsDom, isWebWorker } from '../node_modules/browser-or-node/src/index.js';
-import TCPConnector from './TCPConnector';
-import WSConnector from './WSConnector';
+import { isBrowser, isNode, isJsDom, isWebWorker } from 'browser-or-node';
+import TCPConnector from './TCPConnector.js';
+import WSConnector from './WSConnector.js';
 
 const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
 
