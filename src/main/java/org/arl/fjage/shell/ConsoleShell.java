@@ -10,6 +10,7 @@
 package org.arl.fjage.shell;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,7 +18,6 @@ import org.arl.fjage.connectors.ConnectionListener;
 import org.arl.fjage.connectors.Connector;
 import org.arl.fjage.connectors.WebSocketHubConnector;
 import org.jline.reader.*;
-import org.jline.reader.impl.completer.AggregateCompleter;
 import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
@@ -132,7 +132,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
         console.callWidget(LineReader.REDISPLAY);
       }
     } catch (IllegalStateException ex) {
-      // safely ignore exception
+      log.log(Level.FINE, "Unable to redraw console: ", ex);
     }
   }
 
@@ -160,11 +160,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
       if (historyFile == null) {
         console = LineReaderBuilder.builder().terminal(term).build();
       } else {
-        History history = new DefaultHistory();
-        Completer completer = new AggregateCompleter(
-            new HistoryCompleter(history)
-        );
-        console = LineReaderBuilder.builder().terminal(term).history(history).completer(completer).build();
+        console = LineReaderBuilder.builder().terminal(term).history(new DefaultHistory()).build();
         console.setVariable(LineReader.HISTORY_FILE, historyFile); // set history file
         console.setVariable(LineReader.HISTORY_SIZE, 1000); // set history size
       }
@@ -234,7 +230,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
       try {
         term.close();
       } catch (IOException ex) {
-        // do nothing
+        log.log(Level.FINE, "Error closing terminal: ", ex);
       }
       term = null;
     }
