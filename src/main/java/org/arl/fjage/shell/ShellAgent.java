@@ -14,11 +14,15 @@ import org.arl.fjage.*;
 import org.arl.fjage.param.ParameterMessageBehavior;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 
 /**
  * Shell agent runs in a container and allows execution of shell commands and scripts.
@@ -31,7 +35,7 @@ public class ShellAgent extends Agent {
 
   ////// private classes
 
-  protected class InitScript {
+  protected static class InitScript {
     String name;
     File file;
     Reader reader;
@@ -197,20 +201,15 @@ public class ShellAgent extends Agent {
               shutdownPlatform();
               break;
             } else if (s.equals(Shell.ABORT)) {
-              boolean aborted = true;
               if (engine != null && engine.isBusy()) {
                 engine.abort();
-                aborted = true;
               }
               synchronized(executor) {
                 if (exec != null) {
                   exec = null;
-                  aborted = true;
                 }
               }
-              if (aborted) {
-                log.fine("ABORT");
-              }
+              log.fine("ABORT");
               s = null;
             } else {
               if (engine == null) s = null;
@@ -220,7 +219,7 @@ public class ShellAgent extends Agent {
                 final String p1 = prompt1==null ? "" : prompt1;
                 final String p2 = prompt2==null ? "\n" : "\n"+prompt2;
                 s = null;
-                if (cmd.length() > 0) {
+                if (!cmd.isEmpty()) {
                   synchronized(executor) {
                     exec = () -> {
                       log.fine("> "+cmd);
@@ -465,12 +464,12 @@ public class ShellAgent extends Agent {
    * @return description.
    */
   public String getDescription() {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     if (shell != null) sb.append("Interactive ");
     else if (ephemeral) sb.append("Ephemeral ");
     else sb.append("Non-interactive ");
     String lang = getLanguage();
-    if (lang != null) sb.append(lang+" ");
+    if (lang != null) sb.append(lang).append(" ");
     sb.append("shell");
     if (!enabled) sb.append(" (disabled)");
     return sb.toString();
@@ -536,93 +535,66 @@ public class ShellAgent extends Agent {
     send(rsp);
   }
 
-  private void handleGetFileReq(final GetFileReq req) {
-    String filename = req.getFilename();
-    if (filename == null) {
-      send(new Message(req, Performative.REFUSE));
-      return;
-    }
-    if (filename.endsWith("/") || filename.endsWith(File.separator))
-      filename = filename.substring(0, filename.length()-1);
-    File f = new File(filename);
-    GetFileRsp rsp = null;
-    InputStream is = null;
-    try {
-      if (f.isDirectory()) {
-        File[] files = f.listFiles();
-        StringBuilder sb = new StringBuilder();
-        if (files != null){
-          for (File file : files) {
-            sb.append(file.getName());
-            if (file.isDirectory()) sb.append('/');
-            sb.append('\t');
-            sb.append(file.length());
-            sb.append('\t');
-            sb.append(file.lastModified());
-            sb.append('\n');
-          }
+private void handleGetFileReq(final GetFileReq req) {
+  String filename = req.getFilename();
+  if (filename == null) {
+    send(new Message(req, Performative.REFUSE));
+    return;
+  }
+  if (filename.endsWith("/") || filename.endsWith(File.separator))
+    filename = filename.substring(0, filename.length()-1);
+  Path path = Paths.get(filename);
+  GetFileRsp rsp = null;
+  try {
+    if (Files.isDirectory(path)) {
+      StringBuilder sb = new StringBuilder();
+      try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
+        for (Path entry : stream) {
+          if (Files.isSymbolicLink(entry)) continue;
+          sb.append(entry.getFileName().toString());
+          if (Files.isDirectory(entry)) sb.append('/');
+          sb.append('\t');
+          sb.append(Files.size(entry));
+          sb.append('\t');
+          sb.append(Files.getLastModifiedTime(entry).toMillis());
+          sb.append('\n');
         }
-        rsp = new GetFileRsp(req);
-        rsp.setDirectory(true);
-        rsp.setContents(sb.toString().getBytes());
-      } else if (f.canRead()) {
-        long ofs = req.getOffset();
-        long len = req.getLength();
-        long length = f.length();
-        if (ofs > length) {
-          send(new Message(req, Performative.REFUSE));
-          return;
-        }
-        if (len <= 0) len = length-ofs;
-        else if (ofs+len > length) len = length-ofs;
-        if (len > Integer.MAX_VALUE) throw new IOException("File is too large!");
-        byte[] bytes = new byte[(int)len];
-        InputStreamCacheEntry isce = isCache.get(filename);
-        if (isce != null) {
-          if (isce.pos == ofs) {
-            isce.lastUsed = currentTimeMillis();
-            isce.pos += len;
-            is = isce.is;
-          } else {
-            isce.is.close();
-            isCache.remove(filename);
-          }
-        }
+      }
+      rsp = new GetFileRsp(req);
+      rsp.setDirectory(true);
+      rsp.setContents(sb.toString().getBytes());
+    } else if (Files.isReadable(path)) {
+      long ofs = req.getOffset();
+      long len = req.getLength();
+      long length = Files.size(path);
+      if (ofs > length) {
+        send(new Message(req, Performative.REFUSE));
+        return;
+      }
+      if (len <= 0) len = length - ofs;
+      else if (ofs + len > length) len = length - ofs;
+      if (len > Integer.MAX_VALUE) throw new IOException("File is too large!");
+      byte[] bytes = new byte[(int)len];
+      try (SeekableByteChannel channel = Files.newByteChannel(path)) {
+        channel.position(ofs);
         int offset = 0;
         int numRead;
-        if (is == null) {
-          is = new FileInputStream(f);
-          if (ofs > 0) is.skip(ofs);
-          else if (ofs < 0) is.skip(length-ofs);
-        }
-        while (offset < bytes.length && (numRead = is.read(bytes, offset, bytes.length-offset)) >= 0)
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        while (offset < bytes.length && (numRead = channel.read(buffer)) > 0) {
           offset += numRead;
+        }
         if (offset < bytes.length) throw new IOException("File read incomplete!");
-        rsp = new GetFileRsp(req);
-        rsp.setOffset(ofs);
-        rsp.setContents(bytes);
-        if (ofs != 0) {
-          if (!isCache.containsKey(filename))
-            isCache.put(filename, new InputStreamCacheEntry(is, ofs+bytes.length));
-          is = null;
-        }
       }
-    } catch (IOException ex) {
-      log.warning(ex.toString());
-    } finally {
-      if (is != null) {
-        try {
-          is.close();
-        } catch (IOException ex) {
-          // do nothing
-        }
-        isCache.remove(filename);
-      }
+      rsp = new GetFileRsp(req);
+      rsp.setOffset(ofs);
+      rsp.setContents(bytes);
     }
-    if (rsp != null) send(rsp);
-    else send(new Message(req, Performative.FAILURE));
+  } catch (IOException ex) {
+    log.log(Level.WARNING, "GetFileReq failure", ex);
   }
-
+  if (rsp != null) send(rsp);
+  else send(new Message(req, Performative.FAILURE));
+}
   private void handlePutFileReq(final PutFileReq req) {
     String filename = req.getFilename();
     if (filename == null) {
@@ -630,67 +602,60 @@ public class ShellAgent extends Agent {
       return;
     }
     byte[] contents = req.getContents();
-    File f = new File(filename);
+    Path path = Paths.get(filename);
     Message rsp = null;
-    Closeable os = null;
     long ofs = req.getOffset();
     try {
       boolean fileIsDir = filename.endsWith("/") || filename.endsWith(File.separator);
       if (fileIsDir) {
         if (ofs == 0) {
           if (contents == null) {
-            Path pathToBeDeleted = Paths.get(filename);
-
-            Files.walk(pathToBeDeleted)
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
-
+            if (Files.exists(path)) {
+              Files.walk(path)
+                  .sorted(Comparator.reverseOrder())
+                  .map(Path::toFile)
+                  .forEach(File::delete);
+            }
             rsp = new Message(req, Performative.AGREE);
           } else {
-            if (!f.exists()) rsp = new Message(req, f.mkdir() ? Performative.AGREE : Performative.FAILURE);
+            if (!Files.exists(path)) {
+              Files.createDirectory(path);
+              rsp = new Message(req, Performative.AGREE);
+            }
           }
         }
       } else {
         if (contents == null && ofs == 0) {
-          if (isCache.containsKey(filename)){
+          if (isCache.containsKey(filename)) {
             isCache.get(filename).is.close();
             isCache.remove(filename);
           }
-          if (f.delete()) rsp = new Message(req, Performative.AGREE);
+          if (Files.deleteIfExists(path)) rsp = new Message(req, Performative.AGREE);
         } else if (contents == null) {
-          os = new RandomAccessFile(f, "rw");
-          ((RandomAccessFile) os).setLength(ofs);
+          try (SeekableByteChannel channel = Files.newByteChannel(path, java.nio.file.StandardOpenOption.WRITE)) {
+            channel.truncate(ofs);
+          }
           rsp = new Message(req, Performative.AGREE);
         } else {
-          if (ofs == f.length()) {
+          if (Files.exists(path) && ofs == Files.size(path)) {
             // Append if ofs != 0
-            os = new FileOutputStream(f, ofs != 0);
-            ((FileOutputStream) os).write(contents);
-            ((FileOutputStream) os).flush();
-            ((FileOutputStream) os).getFD().sync();
+            try (SeekableByteChannel channel = Files.newByteChannel(path, java.nio.file.StandardOpenOption.WRITE, java.nio.file.StandardOpenOption.APPEND)) {
+              channel.write(ByteBuffer.wrap(contents));
+            }
           } else {
-            // Overwrite if ofs == 0
-            os = new RandomAccessFile(f, "rw");
-            if(ofs >= 0)((RandomAccessFile) os).setLength(ofs + contents.length);
-            if (ofs > 0) ((RandomAccessFile) os).skipBytes((int) ofs);
-            else if (ofs < 0) ((RandomAccessFile) os).skipBytes((int) (f.length() + ofs));
-            ((RandomAccessFile) os).write(contents);
-            ((RandomAccessFile) os).getFD().sync();
+            // Overwrite if ofs == 0 or random write
+            try (SeekableByteChannel channel = Files.newByteChannel(path, java.nio.file.StandardOpenOption.WRITE, java.nio.file.StandardOpenOption.CREATE)) {
+              if (ofs >= 0) channel.truncate(ofs + contents.length);
+              if (ofs > 0) channel.position(ofs);
+              else if (ofs < 0) channel.position(Files.size(path) + ofs);
+              channel.write(ByteBuffer.wrap(contents));
+            }
           }
           rsp = new Message(req, Performative.AGREE);
         }
       }
     } catch (IOException ex) {
-      log.warning(ex.toString());
-    } finally {
-      if (os != null) {
-        try {
-          os.close();
-        } catch (IOException ex) {
-          // do nothing
-        }
-      }
+      log.log(Level.WARNING, "PutFileReq failure", ex);
     }
     if (rsp == null) rsp = new Message(req, Performative.FAILURE);
     send(rsp);

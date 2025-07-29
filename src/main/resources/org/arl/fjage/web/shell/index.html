@@ -2,9 +2,9 @@
 
 # API
 
-- shellready : will be true when the shell is ready to accept input
-- hideModeToggle : if true, the mode toggle button will be hidden
-- window.postMessage({theme: 'dark'}) : to set the theme to 'dark' mode
+- window.shellready : will be true when the shell is ready to accept input
+- window.prefersColorScheme : 'dark'/'light' used to set the default colour scheme (and disable toggle)
+- window.postMessage({scheme: 'dark'/'light'}) : to set the colour scheme dynamically
 
 -->
 <html>
@@ -13,13 +13,14 @@
   <meta charset='utf-8'/>
   <link rel="stylesheet" href="xterm.css" />
   <script src='xterm.js'></script>
-  <script src='xterm-addon-attach.js'></script>
-  <script src='xterm-addon-fit.js'></script>
-  <script src='xterm-addon-web-links.js'></script>
+  <script src='addon-attach.js'></script>
+  <script src='addon-fit.js'></script>
+  <script src='addon-web-links.js'></script>
   <style>
     html {
       height: 100%;
     }
+
     body {
       position: absolute;
       height: 100%;
@@ -28,17 +29,26 @@
       margin: 0px;
       padding: 0px;
     }
+
+    .container {
+      height: 100%;
+      position: relative;
+      background-color: #fdf6e3;
+      padding-top: 0.5rem;
+      padding-left: 0.5rem;
+    }
+
     #terminal {
       display: block;
       position: relative;
       height: 100%;
       width: 100%;
-      margin: 0px;
-      padding: 0px;
     }
-    .container {
-      position: relative;
+
+    .dark .container {
+      background-color: #000000;
     }
+
     .btn-container {
       position: absolute;
       top: 5px;
@@ -53,6 +63,23 @@
       padding: 0;
       margin: 0;
     }
+
+    .dark #schemetgl-dark {
+      display: block;
+    }
+
+    .dark #schemetgl-light {
+      display: none;
+    }
+
+    .light #schemetgl-dark {
+      display: none;
+    }
+
+    .light #schemetgl-light {
+      display: block;
+    }
+
     *::-webkit-scrollbar {
       width: 8px;
     }
@@ -66,163 +93,220 @@
       border-radius: 20px;
       border: 4px solid transparent;
     }
+
   </style>
 </head>
 <body>
   <div class="container">
     <div id='terminal'></div>
     <div class="btn-container" title="Toggle Light/Dark ColorMode">
-      <button class="modeToggle" id="darkmode-tgl">
-        <svg id="darkmode-dark" style="display: none;" data-v-bd832875="" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="icon" width="24px" height="24px" viewBox="0 0 24 24"><path fill="white" d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2h.1A6.98 6.98 0 0 0 10 7m-6 5a8 8 0 0 0 15.062 3.762A9 9 0 0 1 8.238 4.938A7.999 7.999 0 0 0 4 12"></path></svg>
-        <svg id="darkmode-light" style="display: none;" data-v-bd832875="" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="icon" width="24px" height="24px" viewBox="0 0 24 24"><path fill="currentColor" d="M12 18a6 6 0 1 1 0-12a6 6 0 0 1 0 12m0-2a4 4 0 1 0 0-8a4 4 0 0 0 0 8M11 1h2v3h-2zm0 19h2v3h-2zM3.515 4.929l1.414-1.414L7.05 5.636L5.636 7.05zM16.95 18.364l1.414-1.414l2.121 2.121l-1.414 1.414zm2.121-14.85l1.414 1.415l-2.121 2.121l-1.414-1.414zM5.636 16.95l1.414 1.414l-2.121 2.121l-1.414-1.414zM23 11v2h-3v-2zM4 11v2H1v-2z"></path></svg>
+      <button class="modeToggle" id="schemetgl-bnt">
+        <svg id="schemetgl-dark" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="icon" width="24px" height="24px" viewBox="0 0 24 24"><path fill="white" d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2h.1A6.98 6.98 0 0 0 10 7m-6 5a8 8 0 0 0 15.062 3.762A9 9 0 0 1 8.238 4.938A7.999 7.999 0 0 0 4 12"></path></svg>
+        <svg id="schemetgl-light" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="icon" width="24px" height="24px" viewBox="0 0 24 24"><path fill="currentColor" d="M12 18a6 6 0 1 1 0-12a6 6 0 0 1 0 12m0-2a4 4 0 1 0 0-8a4 4 0 0 0 0 8M11 1h2v3h-2zm0 19h2v3h-2zM3.515 4.929l1.414-1.414L7.05 5.636L5.636 7.05zM16.95 18.364l1.414-1.414l2.121 2.121l-1.414 1.414zm2.121-14.85l1.414 1.415l-2.121 2.121l-1.414-1.414zM5.636 16.95l1.414 1.414l-2.121 2.121l-1.414-1.414zM23 11v2h-3v-2zM4 11v2H1v-2z"></path></svg>
       </button>
     </div>
   </div>
   <script>
-    const ignoreKeys = ['Meta-R', 'Meta-Shift-R'];
-    let rtime = 0;
-    let resizing = false;
-    let delta = 200;
-    let fitAddon;
-    let currentTheme = null;
-    window.shellready = false;
-    function connectSocket(term, url, path){
-      const ws = new WebSocket('ws://' + url + path);
-      let attachAddon;
-      window.ws = ws;
-      ws.onerror = () => reconnectSocket(term, attachAddon, url, path, ws)
-      ws.onclose = () => reconnectSocket(term, attachAddon, url, path, ws)
-      ws.onopen = () => {
-        console.log('Connected to ', path);
-        attachAddon = new AttachAddon.AttachAddon(ws);
-        term.loadAddon(attachAddon);
-        // enable cursor to indicate connection is back
-        term.write("\u001B[?25h");
-        term.write('\x1b[1G\x1b[2K');
-        term.setOption('cursorBlink', true);
-      };
-      ws.onmessage = () => window.shellready = true;
-    }
-    function reconnectSocket(term,attachAddon,url, path, ws){
-      disconnectSocket(term,attachAddon, ws);
-      setTimeout(() => connectSocket(term, url, path),1000);
-    }
-    function disconnectSocket(term,attachAddon, ws){
-      // disable cursor to indicate no connection
-      if (attachAddon) attachAddon.dispose();
-      window.shellready = false;
-      term.write("\u001B[?25l");
-      term.write('\x1b[1G\x1b[2K\x1b[31m\x1b[2m(connection lost)\x1b[0m');
-      ws.onmessage = null;
-      ws.onopen = null;
-      ws.onclose = null;
-      ws.onerror = null;
-    }
-    function setTheme(term, theme){
-      if (theme == 'light'){
-        term.setOption('theme', {
-          background: '#fdf6e3',
-          foreground: '#002B36',
-          yellow: '#b58900',
-          white: '#002B36',
-          green: '#859900',
-          blue: '#268bd2',
-          red: '#dc322f',
-          cursor: '#586e75',
-          selection: '#d3c494'
-        });
-        document.getElementById('darkmode-dark').style.display = 'none';
-        document.getElementById('darkmode-light').style.display = 'block';
-        currentTheme = theme;
-      }else if (theme == 'dark'){
-        term.setOption('theme', {
-          background: '#000000',
-          foreground: '#ffffff',
-          yellow: '#c4a000',
-          white: '#d3d7cf',
-          green: '#4e9a06',
-          blue: '#3465a4',
-          red: '#cc0000',
-          cursor: '#ff6e75'
-        });
-        document.getElementById('darkmode-dark').style.display = 'block';
-        document.getElementById('darkmode-light').style.display = 'none';
-        currentTheme = theme;
-      }
+    const IGNORE_KEYS = ['Meta-R', 'Meta-Shift-R'];
+    const DARK_THEME = {
+      background: '#000000',
+      foreground: '#ffffff',
+      yellow: '#c4a000',
+      white: '#d3d7cf',
+      green: '#4e9a06',
+      blue: '#3465a4',
+      red: '#cc0000',
+      cursor: '#ff6e75'
     };
-    function resizeend() {
-      if (new Date() - rtime < delta) {
-        setTimeout(resizeend, delta);
-      } else {
-        resizing = false;
-        fitAddon.fit();
+    const LIGHT_THEME = {
+      background: '#fdf6e3',
+      foreground: '#002B36',
+      yellow: '#b58900',
+      white: '#002B36',
+      green: '#859900',
+      blue: '#268bd2',
+      red: '#dc322f',
+      cursor: '#586e75',
+      selectionBackground: '#d3c49455'
+    };
+    const RESIZE_DELAY = 200; // ms
+    const COLS = 160
+    const ROWS = 50
+    const SHOW_CURSOR = "\x1B[?25h"; // show cursor
+    const HIDE_CURSOR = "\x1B[?25l"; // hide cursor
+    const CLEAR_LINE = '\x1B[1G\x1B[2K'; // clear line
+    const CONNECTION_LOST = "\x1B[1G\x1B[2K\x1B[31m\x1B[2m(connection lost)\x1B[0m"; // connection lost message
+
+    let fitAddon = null
+    let currentScheme = null;
+    let term = null;
+    let userScheme = false; // true if the user manually changed the scheme
+    window.shellready = false;
+
+    function setScheme(term, scheme, user) {
+      if (scheme == 'light'){
+        term.options.theme = LIGHT_THEME;
+        document.body.classList.remove('dark');
+        document.body.classList.add('light');
+        currentScheme = scheme;
+      }else if (scheme == 'dark'){
+        term.options.theme = DARK_THEME
+        document.body.classList.remove('light');
+        document.body.classList.add('dark');
+        currentScheme = scheme;
+      }
+      if (user !== undefined) userScheme = user;
+    };
+
+    // Get colour scheme information from parent (if available)
+    function getDefaultColourScheme() {
+      try {
+        return window.frameElement.dataset.prefersColorScheme;
+      } catch {
+        return null;
       }
     }
-    window.addEventListener('load', () => {
-      const darkmodeBtn = document.getElementById('darkmode-tgl');
-      let hideModeToggle = false;
-      let userTheme = false;
 
-      try{
-        if (window.parent.document.documentElement.classList.contains('dark')){
-          currentTheme = 'dark';
-          hideModeToggle = true;
-        }else if (window.parent.document.documentElement.classList.contains('light')){
-          currentTheme = 'light';
-          hideModeToggle = true;
-        }
-        hideModeToggle = hideModeToggle || window.parent.hideModeToggle;
-      }catch(e){
-        // ignore
+    window.addEventListener('load', () => {
+      let attachAddon = null;
+      const schemeToggleBnt = document.getElementById('schemetgl-bnt');
+
+      // Get the default scheme
+      const defaultScheme = getDefaultColourScheme();
+      if (defaultScheme){
+        // If the parent document has a scheme, use that
+        currentScheme = defaultScheme;
+      } else if (window.matchMedia) {
+        // Else use the user's preference
+        currentScheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      } else {
+        // Else just set to 'light'
+        currentScheme = 'light'
       }
 
-      const term = new Terminal({
-        cols: 160,
-        rows: 50
+      // Enable/disable the dark scheme toggle button
+      if (defaultScheme) {
+        schemeToggleBnt.parentElement.style.display = 'none';
+      } else {
+        schemeToggleBnt.addEventListener('click', evt => {
+          setScheme(term, currentScheme == 'dark' ? 'light' : 'dark', true);
+        })
+      }
+
+      // Change scheme on user preference change
+      if (window.matchMedia){
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', evt => {
+          if (userScheme) return;
+          setScheme(term, evt.matches ? "dark" : "light");
+        });
+      }
+
+      // Change scheme on message from parent document
+      window.addEventListener('message', evt => {
+        if (evt.data && evt.data.scheme){
+          setScheme(term, evt.data.scheme, true);
+        }
       });
+
+      term = new Terminal({ cols: COLS, rows: ROWS });
       fitAddon = new FitAddon.FitAddon();
       term.loadAddon(fitAddon);
       term.loadAddon(new WebLinksAddon.WebLinksAddon());
       term.open(document.getElementById('terminal'));
-
       fitAddon.fit();
 
-      if (currentTheme == null && window.matchMedia) currentTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-
-      if (hideModeToggle){
-        darkmodeBtn.parentElement.style.display = 'none';
-        window.addEventListener('message', evt => {
-          if (evt.data && evt.data.theme){
-            setTheme(term, evt.data.theme);
-          }
-        });
-      }else {
-        if (window.matchMedia){
-          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-            if (userTheme) return;
-            const newColorScheme = e.matches ? "dark" : "light";
-            setTheme(term, newColorScheme);
-          });
-        }
-        darkmodeBtn.addEventListener('click', evt => {
-            setTheme(term, currentTheme == 'dark' ? 'light' : 'dark');
-            userTheme = true;
-        })
-      }
-      setTheme(term, currentTheme);
+      setScheme(term, currentScheme);
 
       const urlParams = new URLSearchParams(window.location.search);
-      const url = urlParams.get('url') || window.location.hostname + ':' + window.location.port;;
-      const path = window.location.pathname.replace(/\/[^/]*$/, '/ws/');
-      connectSocket(term, url, path);
+      const url = urlParams.get('url') || (window.location.hostname + ':' + window.location.port + window.location.pathname.replace(/\/[^/]*$/, '/ws/'));
+      const socket = new ReconnectingWebSocket(`ws://${url}`, {
+        onopen: ws => {
+          console.log('Connected to ', url);
+          attachAddon = new AttachAddon.AttachAddon(ws);
+          term.loadAddon(attachAddon);
+          term.write(SHOW_CURSOR);       // show cursor
+          term.write(CLEAR_LINE);  // clear line
+          term.options.cursorBlink = true;
+        },
+        onmessage: (msg) => {
+          window.shellready = true;
+          term.focus();
+        },
+        onerror: (err) => {
+          if (attachAddon) attachAddon.dispose();
+          window.shellready = false;
+          term.write(HIDE_CURSOR);     // hide cursor
+          term.write(CONNECTION_LOST); // clear line and write message
+          term.options.cursorBlink = false;
+        },
+        onclose: () => {
+          if (attachAddon) attachAddon.dispose();
+          window.shellready = false;
+          term.write(HIDE_CURSOR);     // hide cursor
+          term.write(CONNECTION_LOST); // clear line and write message
+          term.options.cursorBlink = false;
+        }
+      });
     });
-    window.addEventListener('resize', () => {
-      rtime = new Date();
-      if (!resizing) {
-        resizing = true;
-        setTimeout(resizeend, delta);
+
+
+    let timeout = null;
+    window.addEventListener('resize', function() {
+      // clear the timeout
+      clearTimeout(timeout);
+      // start timing for event "completion"
+      timeout = setTimeout(() => {
+        fitAddon.fit();
+      }, RESIZE_DELAY);
+    });
+
+    /**
+    * A wrapper around WebSocket that automatically reconnects
+    * when the connection is lost. It has callbacks for
+    * onopen, onmessage, onerror, and onclose.
+    */
+    class ReconnectingWebSocket{
+      constructor(url, callbacks = {}) {
+        this.url = url;
+        this.ws = null;
+        this.onopen = callbacks.onopen;
+        this.onmessage = callbacks.onmessage;
+        this.onerror = callbacks.onerror;
+        this.onclose = callbacks.onclose;
+        this.connect();
       }
-    })
+
+      connect() {
+        this.ws = new WebSocket(this.url);
+        this.ws.onopen = () => {
+          if (this.onopen) this.onopen(this.ws);
+        };
+        this.ws.onmessage = (msg) => {
+          if (this.onmessage) this.onmessage(msg);
+        };
+        this.ws.onerror = (err) => {
+          if (this.onerror) this.onerror(err);
+          this.disconnect();
+          setTimeout(() => this.connect(), 1000);
+        };
+        this.ws.onclose = () => {
+          if (this.onclose) this.onclose();
+          this.disconnect();
+          setTimeout(() => this.connect(), 1000);
+        };
+      }
+
+      disconnect() {
+        if (this.ws) {
+          this.ws.close();
+          this.ws.onopen = null;
+          this.ws.onmessage = null;
+          this.ws.onerror = null;
+          this.ws.onclose = null;
+          this.ws = null;
+        }
+      }
+    }
   </script>
 </body>
 </html>
