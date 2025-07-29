@@ -7,7 +7,7 @@ plugins {
   id 'signing'
 }
 
-defaultTasks 'jars'
+defaultTasks 'jar'
 
 archivesBaseName = 'fjage'
 group = 'com.github.org-arl'
@@ -28,7 +28,7 @@ try {
   def npmproc = "$npmcmd -v".execute()
   npmproc.waitForOrKill(3000)
   npmExists = npmproc.exitValue() == 0
-} catch (IOException ex){}
+} catch (IOException ignored){}
 
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
@@ -68,45 +68,9 @@ compileGroovy {
   options.compilerArgs << "-Xlint:-options"
 }
 
-test {
-  systemProperties project.properties.subMap(["manualJSTest"])
-  systemProperties project.properties.subMap(["manualPyTest"])
-  systemProperties project.properties.subMap(["manualCTest"])
-}
-
-tasks.withType(Javadoc) {
-  options.addStringOption('Xdoclint:none', '-quiet')
-}
-
-jar {
-  manifest {
-    attributes (
-      "Build-Owner": System.getenv().USER ?: "fjage",
-      "Build-Timestamp": new Date().format('d-MM-yyyy_HH:mm:ss'),
-      "Build-Version": "${project.version}/${commit}")
-  }
-}
-
-processResources {
-  exclude '**/readme.md'
-}
-
-test {
-  testLogging {
-    events "passed", "skipped", "failed"
-    exceptionFormat "full"
-  }
-}
-
-task lite(dependsOn: jar, type: Copy) {
-  into "$buildDir/libs"
-  from configurations.runtimeClasspath
-}
-
-task buildjs {
+tasks.register('buildjs') {
   inputs.files fileTree('gateways/js/src').include('**/*.js'), "gateways/js/package.json"
   outputs.dir "gateways/js/dist"
-
   doLast {
     if (npmExists) {
       exec {
@@ -121,37 +85,35 @@ task buildjs {
         executable npmcmd
         args 'run', 'build'
       }
-    } else{
-      project.logger.lifecycle('npm not found. Using cached fjage.js build')
+    } else if (file('gateways/js/dist/fjage.js').exists()) {
+      if (!gradle.taskGraph.hasTask(":javadoc")) { // only log if not building javadoc
+        project.logger.lifecycle('npm not found. Using cached fjage.js build')
+      }
+    } else {
+      if (!gradle.taskGraph.hasTask(":javadoc")) { // only log if not building javadoc
+        project.logger.lifecycle('Not bundling fjage.js. WebShell will not work.')
+      }
     }
   }
 }
 
-test.dependsOn 'buildjs'
-
-task jars() {
-  dependsOn 'lite'
-  dependsOn 'buildjs'
-  tasks.findByName('buildjs').mustRunAfter 'lite'
-}
-
-jars.outputs.upToDateWhen { false }
-
-javadoc.doLast {
-  mkdir 'docs/javadoc'
-  copy {
-    from javadoc.destinationDir
-    into 'docs/javadoc'
+tasks.register('jsdoc', Exec) {
+  doFirst{
+    if (!npmExists) {
+      throw new GradleException("npm not found. Cannot generate JSDoc.")
+    }
   }
-}
-
-task jsdoc(type: Exec){
   workingDir 'gateways/js'
   executable npmcmd
   args = ['run', 'docs']
 }
 
-task updatexterm {
+tasks.register('updatexterm') {
+  doFirst{
+    if (!npmExists) {
+      throw new GradleException("npm not found. Cannot update xterm.")
+    }
+  }
   doLast {
     // create package.json with `{}` if it does not exist
     if (!file('package.json').exists()) {
@@ -163,15 +125,54 @@ task updatexterm {
       args 'install', '@xterm/xterm@5.5.0', '@xterm/addon-attach@0.11.0', '@xterm/addon-fit@0.10.0', '@xterm/addon-web-links@0.11.0'
     }
     copy {
-      from (['node_modules/@xterm/addon-web-links/lib', 'node_modules/@xterm/addon-attach/lib', 'node_modules/@xterm/addon-fit/lib', 'node_modules/@xterm/xterm/lib']) {
+      from(['node_modules/@xterm/addon-web-links/lib', 'node_modules/@xterm/addon-attach/lib', 'node_modules/@xterm/addon-fit/lib', 'node_modules/@xterm/xterm/lib']) {
         include '*.js'
       }
-      from ('node_modules/@xterm/xterm/css'){
+      from('node_modules/@xterm/xterm/css') {
         include 'xterm.css'
       }
       into 'src/main/resources/org/arl/fjage/web/shell'
     }
     delete "node_modules", "package.json", "package-lock.json"
+  }
+}
+
+jar {
+  manifest {
+    attributes (
+        "Build-Owner": System.getenv().USER ?: "fjage",
+        "Build-Timestamp": new Date().format('d-MM-yyyy_HH:mm:ss'),
+        "Build-Version": "${project.version}/${commit}")
+  }
+}
+
+processResources {
+  exclude '**/readme.md'
+  with copySpec {
+    from { tasks.named('buildjs').get()?.outputs?.files?.asFileTree?.matching {include 'dist/fjage.js'} ?: [] }
+    into('org/arl/fjage/web/shell')
+  }
+}
+
+test {
+  dependsOn 'buildjs'
+  systemProperties project.properties.subMap(["manualJSTest"])
+  systemProperties project.properties.subMap(["manualPyTest"])
+  systemProperties project.properties.subMap(["manualCTest"])
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat "full"
+  }
+}
+
+javadoc {
+  options.addStringOption('Xdoclint:none', '-quiet')
+  doLast {
+    mkdir 'docs/javadoc'
+    copy {
+      from javadoc.destinationDir
+      into 'docs/javadoc'
+    }
   }
 }
 

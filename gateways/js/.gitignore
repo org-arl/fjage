@@ -2,4 +2,3 @@ node_modules
 test/spec/fjageSpec.cjs
 test/spec/fjageSpec.mjs
 dist/*
-!dist/esm/fjage.js
