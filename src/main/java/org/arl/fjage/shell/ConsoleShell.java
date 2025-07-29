@@ -166,6 +166,8 @@ public class ConsoleShell implements Shell, ConnectionListener {
       }
       AutosuggestionWidgets autosuggestionWidgets = new AutosuggestionWidgets(console);
       autosuggestionWidgets.enable();
+      console.setVariable(LineReader.DISABLE_COMPLETION, true);
+      console.setOpt(LineReader.Option.ERASE_LINE_ON_FINISH);
       console.getWidgets().put(FORCE_BRACKETED_PASTE_ON, () -> {
         console.getTerminal().writer().write(BRACKETED_PASTE_ON);
         return true;
