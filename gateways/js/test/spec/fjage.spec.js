@@ -14,7 +14,6 @@ const TestCompleteNtf = MessageClass('org.arl.fjage.test.TestCompleteNtf');
 
 const ValidFjageActions = ['agents', 'containsAgent', 'services', 'agentForService', 'agentsForService', 'send', 'shutdown'];
 const ValidFjagePerformatives = ['REQUEST', 'AGREE', 'REFUSE', 'FAILURE', 'INFORM', 'CONFIRM', 'DISCONFIRM', 'QUERY_IF', 'NOT_UNDERSTOOD', 'CFP', 'PROPOSE', 'CANCEL', ];
-const DEFAULT_CLOSE_DELAY = 100;
 
 var gwOpts;
 var gObj = {};
@@ -110,7 +109,6 @@ describe('A Gateway', function () {
     };
     expect(createGW).not.toThrow();
     expect(gw).toBeDefined();
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -126,7 +124,6 @@ describe('A Gateway', function () {
     const gw = new Gateway(gwOpts);
     const gw2 = new Gateway(gwOpts);
     expect(gw).toBe(gw2);
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -134,7 +131,6 @@ describe('A Gateway', function () {
     if (!isBrowser) return;
     var gw = new Gateway(gwOpts);
     expect(gObj.fjage.gateways).toContain(gw);
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -167,7 +163,6 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalled();
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -183,7 +178,6 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(fjageMessageChecker());
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -199,7 +193,6 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -213,7 +206,6 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -231,7 +223,6 @@ describe('A Gateway', function () {
     var ids = gw.queue.map(m => m.id).filter( id => !!id).sort((a,b) => a-b);
     expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1);
     expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128);
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -259,7 +250,6 @@ describe('A Gateway', function () {
       }
     }
     expect(rxed.filter(r => !r).length).toBe(0);
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -275,7 +265,6 @@ describe('A Gateway', function () {
     await delay(1000);
     expect(gw.connected).toBe(true);
     gw.connector._reconnectTime = 5000;
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -295,7 +284,6 @@ describe('A Gateway', function () {
     await delay(1000);
     expect(spy).toHaveBeenCalledWith(true);
     gw.connector._reconnectTime = 5000;
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -334,7 +322,7 @@ describe('A Gateway', function () {
     expectAsync(shell.get('language')).toBeRejectedWithError();
     if (isBrowser) gw.connector.sock.close();
     else gw.connector.sock.destroy();
-    await delay(DEFAULT_CLOSE_DELAY);
+    await delay(100); // wait for disconnect
     gw.close();
   });
 
@@ -394,7 +382,6 @@ describe('An AgentID', function () {
   });
 
   afterAll(async () => {
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -545,7 +532,6 @@ describe('An AgentID setup to reject promises', function () {
   });
 
   afterAll(async () => {
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -671,7 +657,6 @@ describe('Shell GetFile/PutFile', function () {
     pfr.filename = DIRNAME + '/' + FILENAME;
     const rsp = await gw.request(pfr);
     expect(rsp).not.toBeNull();
-    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
