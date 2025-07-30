@@ -310,7 +310,7 @@ describe('A Gateway', function () {
       }
     });
     await delay(600);
-    // Since we're not ticking, we should not receive any messages
+    // Since the 'tick' property is not yet enabled, we should not receive any messages
     expect(pubCount).toBe(0);
     // Enable publishing
     pub.set('tick', true);
