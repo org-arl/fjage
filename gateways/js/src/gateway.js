@@ -104,6 +104,7 @@ export class Gateway {
     this.queue = [];                      // incoming message queue
     this.connected = false;               // connection status
     this.debug = false;                   // debug info to be logged to console?
+    this.metrics = null;                  // metrics object to collect metrics. If null, no metrics are collected
     this.aid = new AgentID('gateway-'+_guid(4));         // gateway agent name
     this.connector = this._createConnector(url);
     this._addGWCache(this);
@@ -138,7 +139,10 @@ export class Gateway {
   _sendReceivers(msg) {
     for (var lid in this.listeners){
       try {
-        if (this.listeners[lid] && this.listeners[lid](msg)) return true;
+        if (this.listeners[lid] && this.listeners[lid](msg)) {
+          this._collectMetrics(msg, 'complete');
+          return true;
+        }
       } catch (error) {
         console.warn('Error in listener : ' + error);
       }
@@ -165,6 +169,8 @@ export class Gateway {
     if (jsonMsg.id && jsonMsg.id in this.pending) {
       // response to a pending request to master
       this.pending[jsonMsg.id](jsonMsg);
+      // Add to metrics if collecting metrics
+      this._collectMetrics(jsonMsg, 'complete');
       delete this.pending[jsonMsg.id];
     } else if (jsonMsg.action == Actions.SEND) {
       // incoming message from master
@@ -235,6 +241,7 @@ export class Gateway {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
         if (this.debug) console.log('Receive Timeout : ' + JSON.stringify(rq));
+        this._collectMetrics(rq, 'timeout');
         resolve(null);
       },  8*this._timeout);
       this.pending[rq.id] = rsp => {
@@ -247,6 +254,8 @@ export class Gateway {
         if (this.debug) console.log('Transmit Timeout : ' +  JSON.stringify(rq));
         resolve(null);
       }
+      // Add to metrics if collecting metrics
+      this._collectMetrics(rq, 'pending');
     });
   }
 
@@ -386,6 +395,47 @@ export class Gateway {
     watch.push(this.aid.toJSON());
     const jsonMsg = JSONMessage.createWantsMessagesFor(watch.map(id => AgentID.fromJSON(id)));
     this._msgTx(jsonMsg);
+  }
+
+  /**
+  * Collect metrics for various messages sent and received by the gateway.
+  *
+  * @private
+  * @param {JSONMessage|Message} msg - a message to collect metrics for
+  * @param {string} [status = 'pending'] - status of the message
+  */
+  _collectMetrics(msg, status='pending') {
+    if (!this.metrics) return;
+    if (status == 'pending') {
+      if (msg instanceof JSONMessage) {
+        this.metrics[msg.id] = {
+          'action': msg.action,
+          'to': 'container',
+          'start': Date.now(),
+          'end': null,
+          'status': status
+        };
+      } else if (msg instanceof Message) {
+        this.metrics[msg.msgID] = {
+          'action': msg.__clazz__,
+          'to': msg.recipient.toJSON(),
+          'start': Date.now(),
+          'end': null,
+          'status': status
+        };
+      } else {
+        console.warn('Unknown message type for metrics: ' + JSON.stringify(msg));
+        return;
+      }
+    } else if (status == 'complete' || status == 'timeout') {
+      let id = (msg instanceof JSONMessage) ? msg.inResponseTo : msg.inReplyTo;
+      if (id in this.metrics) {
+        this.metrics[id].end = Date.now();
+        this.metrics[id].status = status;
+      } else {
+        console.warn('Metrics not found for id: ' + id + 'of message: ' + JSON.stringify(msg));
+      }
+    }
   }
 
   /**
@@ -628,6 +678,7 @@ export class Gateway {
     return new Promise(resolve => {
       let msg = this._getMessageFromQueue.call(this,filter);
       if (msg) {
+        this._collectMetrics(msg, 'complete');
         resolve(msg);
         return;
       }
@@ -655,6 +706,7 @@ export class Gateway {
         resolve(msg);
         return true;
       };
+
     });
   }
 
