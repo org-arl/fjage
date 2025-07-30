@@ -302,7 +302,7 @@ describe('A Gateway', function () {
   it('should be able to subscribe to topics', async function() {
     const gw = new Gateway(gwOpts);
     const pub = gw.agent('pub');
-    // The publisher agent publishes a message every second 500ms
+    // The publisher agent publishes a message every 500ms
     let pubCount = 0;
     gw.addMessageListener(m => {
       if (m.__clazz__ == 'org.arl.fjage.GenericMessage' && m.sender == 'pub') {
