@@ -14,6 +14,7 @@ const TestCompleteNtf = MessageClass('org.arl.fjage.test.TestCompleteNtf');
 
 const ValidFjageActions = ['agents', 'containsAgent', 'services', 'agentForService', 'agentsForService', 'send', 'shutdown'];
 const ValidFjagePerformatives = ['REQUEST', 'AGREE', 'REFUSE', 'FAILURE', 'INFORM', 'CONFIRM', 'DISCONFIRM', 'QUERY_IF', 'NOT_UNDERSTOOD', 'CFP', 'PROPOSE', 'CANCEL', ];
+const DEFAULT_CLOSE_DELAY = 100;
 
 var gwOpts;
 var gObj = {};
@@ -109,7 +110,7 @@ describe('A Gateway', function () {
     };
     expect(createGW).not.toThrow();
     expect(gw).toBeDefined();
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -125,7 +126,7 @@ describe('A Gateway', function () {
     const gw = new Gateway(gwOpts);
     const gw2 = new Gateway(gwOpts);
     expect(gw).toBe(gw2);
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -133,7 +134,7 @@ describe('A Gateway', function () {
     if (!isBrowser) return;
     var gw = new Gateway(gwOpts);
     expect(gObj.fjage.gateways).toContain(gw);
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -166,7 +167,7 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalled();
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -182,7 +183,7 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(fjageMessageChecker());
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -198,7 +199,7 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -212,7 +213,7 @@ describe('A Gateway', function () {
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -225,12 +226,12 @@ describe('A Gateway', function () {
     smr.perf = Performative.REQUEST;
     smr.recipient = gw.agent('echo');
     gw.send(smr);
-    await delay(3800);
+    await delay(3800); // allow time for all messages to be received
     expect(gw.queue.length).toBe(128);
     var ids = gw.queue.map(m => m.id).filter( id => !!id).sort((a,b) => a-b);
     expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1);
     expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128);
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -258,7 +259,7 @@ describe('A Gateway', function () {
       }
     }
     expect(rxed.filter(r => !r).length).toBe(0);
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -274,7 +275,7 @@ describe('A Gateway', function () {
     await delay(1000);
     expect(gw.connected).toBe(true);
     gw.connector._reconnectTime = 5000;
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -294,29 +295,31 @@ describe('A Gateway', function () {
     await delay(1000);
     expect(spy).toHaveBeenCalledWith(true);
     gw.connector._reconnectTime = 5000;
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
   it('should be able to subscribe to topics', async function() {
     const gw = new Gateway(gwOpts);
     const pub = gw.agent('pub');
+    // The publisher agent publishes a message every second 500ms
     let pubCount = 0;
     gw.addMessageListener(m => {
       if (m.__clazz__ == 'org.arl.fjage.GenericMessage' && m.sender == 'pub') {
         pubCount++;
       }
     });
-    await delay(500);
+    await delay(600);
+    // Since we're not ticking, we should not receive any messages
     expect(pubCount).toBe(0);
     // Enable publishing
     pub.set('tick', true);
-    await delay(1000);
+    await delay(600);
     // Since we're not subscribing to any topics, we should not receive any messages
     expect(pubCount).toBe(0);
     // Subscribe to the topic
     gw.subscribe(gw.topic('test-topic'));
-    await delay(1000);
+    await delay(600);
     // We should receive messages now
     expect(pubCount).toBeGreaterThan(0);
     // Unsubscribe from the topic
@@ -331,13 +334,12 @@ describe('A Gateway', function () {
     expectAsync(shell.get('language')).toBeRejectedWithError();
     if (isBrowser) gw.connector.sock.close();
     else gw.connector.sock.destroy();
-    await delay(100);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
   it('should be able to request for all agents from the master container', async function() {
     const gw = new Gateway(gwOpts);
-    await delay(300);
     let agents = await gw.agents();
     expect(agents).toBeDefined();
     expect(Array.isArray(agents)).toBeTruthy();
@@ -352,7 +354,6 @@ describe('A Gateway', function () {
 
   it('should be able to check if an agent exists on the master container', async function() {
     const gw = new Gateway(gwOpts);
-    await delay(300);
     let aid = new AgentID('S', false, gw);
     let exists = await gw.containsAgent(aid);
     expect(exists).toEqual(true);
@@ -364,7 +365,6 @@ describe('A Gateway', function () {
 
   it('should be able to get the agent for a service', async function() {
     const gw = new Gateway(gwOpts);
-    await delay(300);
     let aid = await gw.agentForService('server');
     expect(aid).toBeDefined();
     expect(aid.name).toBe('S');
@@ -373,7 +373,6 @@ describe('A Gateway', function () {
 
   it('should be able to get all agents for a service', async function() {
     const gw = new Gateway(gwOpts);
-    await delay(300);
     let aids = await gw.agentsForService('org.arl.fjage.test.Services.TEST');
     expect(aids).toBeDefined();
     expect(Array.isArray(aids)).toBeTruthy();
@@ -395,7 +394,7 @@ describe('An AgentID', function () {
   });
 
   afterAll(async () => {
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -546,7 +545,7 @@ describe('An AgentID setup to reject promises', function () {
   });
 
   afterAll(async () => {
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -672,7 +671,7 @@ describe('Shell GetFile/PutFile', function () {
     pfr.filename = DIRNAME + '/' + FILENAME;
     const rsp = await gw.request(pfr);
     expect(rsp).not.toBeNull();
-    await delay(300);
+    await delay(DEFAULT_CLOSE_DELAY);
     gw.close();
   });
 
@@ -922,7 +921,6 @@ describe('Shell GetFile/PutFile', function () {
 
 async function sendTestStatus(status, trace, type) {
   var gw = new Gateway(gwOpts);
-  await delay(300);
   let msg = new TestCompleteNtf();
   msg.recipient = gw.agent('test');
   msg.perf = Performative.INFORM;
