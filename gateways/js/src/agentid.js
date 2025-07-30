@@ -18,6 +18,7 @@ export class AgentID {
     this.name = name;
     this.topic = topic;
     this.owner = owner;
+    this._timeout = owner ? owner._timeout : 1000; // Default timeout if owner is not provided
   }
 
   /**
@@ -27,6 +28,16 @@ export class AgentID {
   */
   getName() {
     return this.name;
+  }
+
+  /**
+   * Set the timeout for requests made using this AgentID.
+   *
+   * @param {number} timeout - timeout in milliseconds
+   * @returns {void}
+   */
+  setTimeout(timeout) {
+    this._timeout = timeout;
   }
 
   /**
@@ -57,7 +68,7 @@ export class AgentID {
   * @param {number} [timeout=1000] - timeout in milliseconds
   * @returns {Promise<Message>} - response
   */
-  async request(msg, timeout=1000) {
+  async request(msg, timeout=this._timeout) {
     msg.recipient = this;
     if (this.owner) return this.owner.request(msg, timeout);
     else throw new Error('Unowned AgentID cannot send messages');
@@ -106,10 +117,10 @@ export class AgentID {
   * @param {(string|string[])} params - parameters name(s) to be set
   * @param {(Object|Object[])} values - parameters value(s) to be set
   * @param {number} [index=-1] - index of parameter(s) to be set
-  * @param {number} [timeout=5000] - timeout for the response
+  * @param {number} [timeout=this._timeout*5] - timeout for the response
   * @returns {Promise<(Object|Object[])>} - a promise which returns the new value(s) of the parameters
   */
-  async set (params, values, index=-1, timeout=5000) {
+  async set (params, values, index=-1, timeout=this._timeout*5) {
     if (!params) return null;
     let msg = new ParameterReq();
     msg.recipient = this;
@@ -156,10 +167,10 @@ export class AgentID {
   *
   * @param {(string|string[])} params - parameters name(s) to be get, null implies get value of all parameters on the Agent
   * @param {number} [index=-1] - index of parameter(s) to be get
-  * @param {number} [timeout=5000] - timeout for the response
+  * @param {number} [timeout=this._timeout*5] - timeout for the response
   * @returns {Promise<(Object|Object[])>} - a promise which returns the value(s) of the parameters
   */
-  async get(params, index=-1, timeout=5000) {
+  async get(params, index=-1, timeout=this._timeout*5) {
     let msg = new ParameterReq();
     msg.recipient = this;
     if (params){

@@ -229,14 +229,14 @@ export class Gateway {
   * @param {JSONMessage} rq - JSONMessage to be sent to the master container
   * @returns {Promise<JSONMessage|null>} - a promise which returns the response from the master container
   */
-  _msgTxRx(rq) {
+  _msgTxRx(rq, timeout = this._timeout*8) {
     rq.id = _guid(8);
     return new Promise(resolve => {
       let timer = setTimeout(() => {
         delete this.pending[rq.id];
         if (this.debug) console.log('Receive Timeout : ' + JSON.stringify(rq));
         resolve(null);
-      }, 8*this._timeout);
+      },  8*this._timeout);
       this.pending[rq.id] = rsp => {
         clearTimeout(timer);
         resolve(rsp);
@@ -516,11 +516,12 @@ export class Gateway {
 
   /**
   * Gets a list of all agents in the container.
+  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids when resolved
   */
-  async agents() {
+  async agents(timeout=this._timeout*8) {
     let jsonMsg = JSONMessage.createAgents();
-    let rsp = await this._msgTxRx(jsonMsg);
+    let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp || !Array.isArray(rsp.agentIDs)) throw new Error('Unable to get agents');
     return rsp.agentIDs;
   }
@@ -529,11 +530,12 @@ export class Gateway {
   * Check if an agent with a given name exists in the container.
   *
   * @param {AgentID|string} agentID - the agent id to check
+  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
   * @returns {Promise<boolean>} - a promise which returns true if the agent exists when resolved
   */
-  async containsAgent(agentID) {
+  async containsAgent(agentID, timeout=this._timeout*8) {
     let jsonMsg = JSONMessage.createContainsAgent(agentID instanceof AgentID ? agentID : new AgentID(agentID));
-    let rsp = await this._msgTxRx(jsonMsg);
+    let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
       if (this._returnNullOnFailedResponse) return null;
       else throw new Error('Unable to check if agent exists');
@@ -546,11 +548,12 @@ export class Gateway {
   * to provide a given service, any of the agents' id may be returned.
   *
   * @param {string} service - the named service of interest
+  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
   * @returns {Promise<?AgentID>} - a promise which returns an agent id for an agent that provides the service when resolved
   */
-  async agentForService(service) {
+  async agentForService(service, timeout=this._timeout*8) {
     let jsonMsg = JSONMessage.createAgentForService(service);
-    let rsp = await this._msgTxRx(jsonMsg);
+    let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
       if (this._returnNullOnFailedResponse) return null;
       else throw new Error('Unable to get agent for service');
@@ -562,11 +565,12 @@ export class Gateway {
   * Finds all agents that provides a named service.
   *
   * @param {string} service - the named service of interest
+  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
   */
-  async agentsForService(service) {
+  async agentsForService(service, timeout=this._timeout*8) {
     let jsonMsg = JSONMessage.createAgentsForService(service);
-    let rsp = await this._msgTxRx(jsonMsg);
+    let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
       if (this._returnNullOnFailedResponse) return null;
       else throw new Error('Unable to get agents for service');
@@ -602,11 +606,12 @@ export class Gateway {
   * is received or if no response is received after the timeout.
   *
   * @param {Message} msg - message to send
-  * @param {number} [timeout=1000] - timeout in milliseconds
+  * @param {number} [timeout=this._timeout] - timeout in milliseconds
   * @returns {Promise<Message|void>} - a promise which resolves with the received response message, null on timeout
   */
-  async request(msg, timeout=1000) {
+  async request(msg, timeout=this._timeout) {
     this.send(msg);
+    this._collectMetrics(msg, 'pending');
     return this.receive(msg, timeout);
   }
 
