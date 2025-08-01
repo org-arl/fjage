@@ -18,7 +18,7 @@ export class AgentID {
     this.name = name;
     this.topic = topic;
     this.owner = owner;
-    this._timeout = owner ? owner._timeout : 1000; // Default timeout if owner is not provided
+    this._timeout = owner ? owner._messageTimeout : 1000; // Default timeout if owner is not provided
   }
 
   /**
@@ -117,10 +117,10 @@ export class AgentID {
   * @param {(string|string[])} params - parameters name(s) to be set
   * @param {(Object|Object[])} values - parameters value(s) to be set
   * @param {number} [index=-1] - index of parameter(s) to be set
-  * @param {number} [timeout=this._timeout*5] - timeout for the response
+  * @param {number} [timeout=this._timeout] - timeout for the response
   * @returns {Promise<(Object|Object[])>} - a promise which returns the new value(s) of the parameters
   */
-  async set (params, values, index=-1, timeout=this._timeout*5) {
+  async set (params, values, index=-1, timeout=this._timeout) {
     if (!params) return null;
     let msg = new ParameterReq();
     msg.recipient = this;
@@ -167,10 +167,10 @@ export class AgentID {
   *
   * @param {(string|string[])} params - parameters name(s) to be get, null implies get value of all parameters on the Agent
   * @param {number} [index=-1] - index of parameter(s) to be get
-  * @param {number} [timeout=this._timeout*5] - timeout for the response
+  * @param {number} [timeout=this._timeout] - timeout for the response
   * @returns {Promise<(Object|Object[])>} - a promise which returns the value(s) of the parameters
   */
-  async get(params, index=-1, timeout=this._timeout*5) {
+  async get(params, index=-1, timeout=this._timeout) {
     let msg = new ParameterReq();
     msg.recipient = this;
     if (params){

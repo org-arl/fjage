@@ -11,7 +11,8 @@ import { JSONMessage, Actions } from './jsonmessage.js';
 
 const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
 const GATEWAY_DEFAULTS = {
-  'timeout': 1000,
+  'containerQueryTimeout': 1000,
+  'messageTimeout': 1000,
   'keepAlive' : true,
   'queueSize': DEFAULT_QUEUE_SIZE,
   'returnNullOnFailedResponse': true
@@ -75,7 +76,8 @@ export function init(){
 * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
 * @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
 * @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
-* @param {number} [opts.timeout=1000]       - timeout for fjage level messages in ms
+* @param {number} [opts.containerQueryTimeout=1000] - timeout for fjage container queries in ms
+* @param {number} [opts.messageTimeout=1000]        - timeout for fjage requests (send, request etc) in ms
 * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
 * @param {boolean} [opts.cancelPendingOnDisconnect=false] - cancel pending requests on disconnects
 */
@@ -92,7 +94,8 @@ export class Gateway {
     url.pathname = opts.pathname;
     let existing = this._getGWCache(url);
     if (existing) return existing;
-    this._timeout = opts.timeout;         // timeout for fjage level messages (agentForService etc)
+    this._containerQueryTimeout = opts.containerQueryTimeout;  // timeout for fjage container queries (agentForService etc)
+    this._messageTimeout = opts.messageTimeout;                // timeout for fjage requests (send, request etc)
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
     this._queueSize = opts.queueSize;     // size of queue
     this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
@@ -227,10 +230,10 @@ export class Gateway {
   * fjage level actions that require a response, such as agentForService, agents, etc.
   * @private
   * @param {JSONMessage} rq - JSONMessage to be sent to the master container
-  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds for the response
+  * @param {number} [timeout=this._containerQueryTimeout] - timeout in milliseconds for the response
   * @returns {Promise<JSONMessage|null>} - a promise which returns the response from the master container
   */
-  _msgTxRx(rq, timeout = this._timeout*8) {
+  _msgTxRx(rq, timeout = this._containerQueryTimeout) {
     rq.id = _guid(8);
     return new Promise(resolve => {
       let timer;
@@ -520,10 +523,10 @@ export class Gateway {
 
   /**
   * Gets a list of all agents in the container.
-  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
+  * @param {number} [timeout=this._containerQueryTimeout] - timeout in milliseconds
   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids when resolved
   */
-  async agents(timeout=this._timeout*8) {
+  async agents(timeout=this._containerQueryTimeout) {
     let jsonMsg = JSONMessage.createAgents();
     let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp || !Array.isArray(rsp.agentIDs)) throw new Error('Unable to get agents');
@@ -534,10 +537,10 @@ export class Gateway {
   * Check if an agent with a given name exists in the container.
   *
   * @param {AgentID|string} agentID - the agent id to check
-  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
+  * @param {number} [timeout=this._containerQueryTimeout] - timeout in milliseconds
   * @returns {Promise<boolean>} - a promise which returns true if the agent exists when resolved
   */
-  async containsAgent(agentID, timeout=this._timeout*8) {
+  async containsAgent(agentID, timeout=this._containerQueryTimeout) {
     let jsonMsg = JSONMessage.createContainsAgent(agentID instanceof AgentID ? agentID : new AgentID(agentID));
     let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
@@ -552,10 +555,10 @@ export class Gateway {
   * to provide a given service, any of the agents' id may be returned.
   *
   * @param {string} service - the named service of interest
-  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
+  * @param {number} [timeout=this._containerQueryTimeout] - timeout in milliseconds
   * @returns {Promise<?AgentID>} - a promise which returns an agent id for an agent that provides the service when resolved
   */
-  async agentForService(service, timeout=this._timeout*8) {
+  async agentForService(service, timeout=this._containerQueryTimeout) {
     let jsonMsg = JSONMessage.createAgentForService(service);
     let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
@@ -569,10 +572,10 @@ export class Gateway {
   * Finds all agents that provides a named service.
   *
   * @param {string} service - the named service of interest
-  * @param {number} [timeout=this._timeout*8] - timeout in milliseconds
+  * @param {number} [timeout=this._containerQueryTimeout] - timeout in milliseconds
   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
   */
-  async agentsForService(service, timeout=this._timeout*8) {
+  async agentsForService(service, timeout=this._containerQueryTimeout) {
     let jsonMsg = JSONMessage.createAgentsForService(service);
     let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
@@ -610,10 +613,10 @@ export class Gateway {
   * is received or if no response is received after the timeout.
   *
   * @param {Message} msg - message to send
-  * @param {number} [timeout=this._timeout] - timeout in milliseconds
+  * @param {number} [timeout=this._messageTimeout] - timeout in milliseconds
   * @returns {Promise<Message|void>} - a promise which resolves with the received response message, null on timeout
   */
-  async request(msg, timeout=this._timeout) {
+  async request(msg, timeout=this._messageTimeout) {
     this.send(msg);
     return this.receive(msg, timeout);
   }
