@@ -145,6 +145,12 @@ jar {
         "Build-Timestamp": new Date().format('d-MM-yyyy_HH:mm:ss'),
         "Build-Version": "${project.version}/${commit}")
   }
+  doLast {
+    copy {
+      into "$buildDir/libs"
+      from configurations.runtimeClasspath
+    }
+  }
 }
 
 processResources {
