@@ -78,6 +78,10 @@ dependencies {
   tasks.withType(type).configureEach { options.compilerArgs << '-Xlint:all' }
 }
 
+compileJava {
+  options.compilerArgs << '-Xlint:-removal'
+}
+
 tasks.register('buildjs') {
   inputs.files fileTree('gateways/js') {
     include 'src/**', '*.json', '*.yaml', 'rollup.config.js', 'eslint.config.js'

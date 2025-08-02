@@ -45,7 +45,7 @@ public class LogFormatter extends Formatter {
     s.append('|');
     s.append(record.getLoggerName());
     s.append('@');
-    s.append(record.getThreadID());
+    s.append(record.getLongThreadID());
     s.append(':');
     s.append(record.getSourceMethodName());
     s.append('|');
