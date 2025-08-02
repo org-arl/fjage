@@ -55,6 +55,7 @@ dependencies {
 compileJava {
   options.compilerArgs << "-Xlint:all"
   options.compilerArgs << "-Xlint:-options"
+  options.compilerArgs << "-Xlint:-removal"
 }
 
 compileTestJava {

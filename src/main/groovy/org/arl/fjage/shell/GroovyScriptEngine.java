@@ -262,7 +262,7 @@ public class GroovyScriptEngine implements ScriptEngine {
           binding.setVariable("out", out);
           binding.setVariable("script", script.getName());
           binding.setVariable("args", args);
-          Script gs = (Script)script.newInstance();
+          Script gs = (Script)script.getDeclaredConstructor().newInstance();
           gs.setBinding(binding);
           gs.run();
         } catch (Throwable ex) {
