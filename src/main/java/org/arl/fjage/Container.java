@@ -140,7 +140,7 @@ public class Container {
         doClone = Class.forName(SERIAL_CLONER).getDeclaredMethod("clone", Serializable.class);
       } else if (name.equals(FAST_CLONER)) {
         Class<?> cls = Class.forName(FAST_CLONER);
-        cloner = cls.newInstance();
+        cloner = cls.getDeclaredConstructor().newInstance();
         doClone = cls.getMethod("deepClone", Object.class);
       } else {
         cloner = null;
