@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage.remote;
 
+import java.io.File;
 import java.util.Date;
 import com.google.gson.*;
 import org.arl.fjage.AgentID;
@@ -42,6 +43,7 @@ public class JsonMessage {
     .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (value, type, jsonSerializationContext) -> value.isNaN()?null:new JsonPrimitive(value))
     .registerTypeAdapter(Date.class, (JsonDeserializer<Date>) (json, typeOfT, context) -> new Date(json.getAsJsonPrimitive().getAsLong()))
     .registerTypeAdapter(Date.class, (JsonSerializer<Date>) (date, type, jsonSerializationContext) -> new JsonPrimitive(date.getTime()))
+    .registerTypeAdapter(File.class, new FileAdapter())
     .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
     .registerTypeHierarchyAdapter(Parameter.class, new EnumTypeAdapter())
     .registerTypeAdapterFactory(new MessageAdapterFactory())

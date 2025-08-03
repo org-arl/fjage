@@ -14,6 +14,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.arl.fjage.AgentID;
 import org.arl.fjage.auth.*;
@@ -153,8 +154,10 @@ public class ConnectionHandler extends Thread {
           else if (fw.permit(rq)) pool.execute(new RemoteTask(rq));
           else respondAuth(rq, false);
         }
+      } catch(com.google.gson.JsonIOException ex) {
+        log.log(Level.WARNING, "Bad JSON message: " + s, ex);
       } catch(Exception ex) {
-        log.warning("Bad JSON request: "+ex.toString() + " in " + s);
+        log.log(Level.WARNING, "Error processing request: " + s, ex);
       }
     }
     fw.signoff();
