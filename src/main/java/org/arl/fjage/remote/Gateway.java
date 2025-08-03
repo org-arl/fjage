@@ -117,7 +117,7 @@ public class Gateway implements Messenger, Closeable {
   protected void init() {
     agent = new Agent() {
       private Message rsp;
-      private Object sync = new Object();
+      private final Object sync = new Object();
       @Override
       public Message receive(final MessageFilter filter, long timeout) {
         if (Thread.currentThread().getId() == tid) return super.receive(filter, timeout);
@@ -235,7 +235,7 @@ public class Gateway implements Messenger, Closeable {
 
   @Override
   public Message receive(final Class<?> cls, long timeout) {
-    return receive(m -> cls.isInstance(m), timeout);
+    return receive(cls::isInstance, timeout);
   }
 
   @Override
@@ -248,7 +248,7 @@ public class Gateway implements Messenger, Closeable {
     if (container instanceof SlaveContainer)
       ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
     Message rsp = receive(new MessageFilter() {
-      private String mid = m.getMessageID();
+      private final String mid = m.getMessageID();
       @Override
       public boolean matches(Message m) {
         String s = m.getInReplyTo();
@@ -434,12 +434,4 @@ public class Gateway implements Messenger, Closeable {
       t[i] = new AgentID(t[i], this);
     return t;
   }
-
-  ////////////// Private methods
-
-  @Override
-  public void finalize() {
-    close();
-  }
-
 }

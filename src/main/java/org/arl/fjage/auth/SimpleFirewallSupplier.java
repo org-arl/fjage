@@ -10,7 +10,7 @@ for full license details.
 
 package org.arl.fjage.auth;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.arl.fjage.AgentID;
 import org.arl.fjage.remote.Action;
 import org.arl.fjage.remote.JsonMessage;
@@ -73,7 +73,7 @@ public class SimpleFirewallSupplier
    * @return This <code>SimpleFirewallSupplier</code> instance.
    */
   public SimpleFirewallSupplier addPolicy(String policyId, Consumer<Policy> policyConsumer) {
-    if (StringUtils.equals(policyId, POLICY_ID_ALLOW_ALL)) {
+    if (Strings.CS.equals(policyId, POLICY_ID_ALLOW_ALL)) {
       throw new IllegalArgumentException(String.format("%s is a reserved policy ID", policyId));
     }
 
@@ -98,7 +98,7 @@ public class SimpleFirewallSupplier
    * @param policyId Policy ID.
    */
   public void removePolicy(String policyId) {
-    if (StringUtils.equals(policyId, POLICY_ID_ALLOW_ALL)) {
+    if (Strings.CS.equals(policyId, POLICY_ID_ALLOW_ALL)) {
       throw new IllegalArgumentException(String.format("%s is a reserved policy ID", policyId));
     }
     policyMap.remove(policyId);
@@ -115,7 +115,7 @@ public class SimpleFirewallSupplier
       return null;
     }
     for (final User user : userMap.values()) {
-      if (StringUtils.equals(user.getCredentials(), credentials)) {
+      if (Strings.CS.equals(user.getCredentials(), credentials)) {
         return user;
       }
     }
@@ -156,7 +156,7 @@ public class SimpleFirewallSupplier
         return false;
       }
       policy = findPolicy(user.getPolicyId());
-      allowAll = StringUtils.equals(user.getPolicyId(), POLICY_ID_ALLOW_ALL);
+      allowAll = Strings.CS.equals(user.getPolicyId(), POLICY_ID_ALLOW_ALL);
       return true;
     }
 

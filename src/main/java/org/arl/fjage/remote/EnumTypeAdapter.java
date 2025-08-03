@@ -28,7 +28,7 @@ public class EnumTypeAdapter extends TypeAdapter<Object> {
     log = Logger.getLogger(EnumTypeAdapter.class.getName());
     try {
       Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
-      classloader = (ClassLoader)cls.newInstance();
+      classloader = (ClassLoader)cls.getDeclaredConstructor().newInstance();
       log.info("Groovy detected, using GroovyClassLoader");
     } catch (Exception ex) {
       // do nothing

@@ -1,7 +1,7 @@
 package org.arl.fjage.test;
 
 import net.jodah.concurrentunit.Waiter;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.arl.fjage.Container;
 import org.arl.fjage.DiscreteEventSimulator;
@@ -219,7 +219,7 @@ public abstract class AbstractSimulatorTest {
 
     protected Stream<TestEvent> findEventById(List<TestEvent> testEvents, String id) {
       return testEvents.stream()
-          .filter(event -> StringUtils.equals(event.getId(), id));
+          .filter(event -> Strings.CS.equals(event.getId(), id));
     }
   }
 
