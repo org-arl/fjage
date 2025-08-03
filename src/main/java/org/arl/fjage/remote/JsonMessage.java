@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage.remote;
 
+import java.io.File;
 import java.lang.reflect.ReflectPermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -54,6 +55,7 @@ public class JsonMessage {
     .registerTypeAdapter(Date.class, (JsonSerializer<Date>) (date, type, jsonSerializationContext) -> new JsonPrimitive(date.getTime()))
     .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
     .registerTypeAdapter(Duration.class, new DurationTypeAdapter())
+    .registerTypeAdapter(File.class, new FileAdapter())
     .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
     .registerTypeHierarchyAdapter(Parameter.class, new EnumTypeAdapter())
     .registerTypeAdapterFactory(new MessageAdapterFactory())

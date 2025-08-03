@@ -165,6 +165,8 @@ public class ConnectionHandler extends Thread {
           }
           else respondAuth(rq, false);
         }
+      } catch(com.google.gson.JsonIOException ex) {
+        log.log(Level.WARNING, "Bad JSON message: " + s, ex);
       } catch(Exception ex) {
         log.log(Level.WARNING, "Failed to process message: "+s, ex);
       }

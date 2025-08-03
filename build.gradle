@@ -59,11 +59,11 @@ repositories {
 def jettyVersion = '9.4.58.v20250814'
 
 dependencies {
-  api 'org.codehaus.groovy:groovy:2.5.23'
+  api 'org.apache.groovy:groovy:4.0.28'
   api 'org.jline:jline:3.29.0:jdk8'
   api 'org.apache.commons:commons-lang3:3.21.0'
   api 'commons-io:commons-io:2.22.0'
-  api 'uk.com.robust-it:cloning:1.9.12'
+  api 'io.github.kostaskougios:cloning:1.12.0'
   api "org.eclipse.jetty:jetty-server:$jettyVersion"
   api "org.eclipse.jetty:jetty-servlet:$jettyVersion"
   api "org.eclipse.jetty:jetty-rewrite:$jettyVersion"
@@ -182,6 +182,12 @@ jar {
 
 processResources {
   exclude '**/readme.md'
+  doLast {
+    copy {
+      into "$buildDir/libs"
+      from configurations.runtimeClasspath
+    }
+  }
 }
 
 tasks.withType(Test).configureEach {
