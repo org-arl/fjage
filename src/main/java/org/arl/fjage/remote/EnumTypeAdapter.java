@@ -22,7 +22,7 @@ import com.google.gson.stream.*;
 public class EnumTypeAdapter extends TypeAdapter<Object> {
 
   private static ClassLoader classloader = null;
-  private static Logger log;
+  private static final Logger log;
 
   static {
     log = Logger.getLogger(EnumTypeAdapter.class.getName());

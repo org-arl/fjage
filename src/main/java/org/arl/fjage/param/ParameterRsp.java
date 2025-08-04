@@ -102,7 +102,7 @@ public class ParameterRsp extends Message {
       if (v == null) return null;
       rv = v.getValue();
     }
-    if (rv instanceof Double && ((Double)rv).intValue() == ((Double)rv).doubleValue()) rv = new Integer(((Double)rv).intValue());
+    if (rv instanceof Double && ((Double)rv).intValue() == ((Double)rv).doubleValue()) rv = Integer.valueOf(((Double)rv).intValue());
     return rv;
   }
 
@@ -162,7 +162,7 @@ public class ParameterRsp extends Message {
 
   @Override
   public String toString() {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append(getClass().getSimpleName());
     sb.append('[');
     if (index >= 0) {
@@ -178,7 +178,7 @@ public class ParameterRsp extends Message {
       sb.append(':');
       if (value != null) {
         v = value.getValue();
-        if (v instanceof Double && ((Double)v).intValue() == ((Double)v).doubleValue()) v = new Integer(((Double)v).intValue());
+        if (v instanceof Double && ((Double)v).intValue() == ((Double)v).doubleValue()) v = Integer.valueOf(((Double)v).intValue());
         sb.append(v);
       } else {
         sb.append("null");
@@ -192,12 +192,12 @@ public class ParameterRsp extends Message {
           GenericValue gv = e.getValue();
           v = null;
           if (gv != null) v = gv.getValue();
-          if (v instanceof Double && ((Double)v).intValue() == ((Double)v).doubleValue()) v = new Integer(((Double)v).intValue());
+          if (v instanceof Double && ((Double)v).intValue() == ((Double)v).doubleValue()) v = Integer.valueOf(((Double)v).intValue());
           sb.append(v);
         }
       }
       s = sb.toString();
-      if (s.length() == 0) s = null;
+      if (s.isEmpty()) s = null;
     }
     sb.append(']');
     return sb.toString();

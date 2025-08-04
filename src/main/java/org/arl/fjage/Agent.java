@@ -84,15 +84,15 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   private AgentID aid = null;
   private volatile AgentState state = AgentState.INIT;
   private volatile AgentState oldState = AgentState.NONE;
-  private Queue<Behavior> newBehaviors = new ArrayDeque<>();
-  private Queue<Behavior> activeBehaviors = new PriorityQueue<>();
-  private Queue<Behavior> blockedBehaviors = new ArrayDeque<>();
-  private Stack<MessageFilter> exclusions = new Stack<>();
+  private final Queue<Behavior> newBehaviors = new ArrayDeque<>();
+  private final Queue<Behavior> activeBehaviors = new PriorityQueue<>();
+  private final Queue<Behavior> blockedBehaviors = new ArrayDeque<>();
+  private final Stack<MessageFilter> exclusions = new Stack<>();
   private volatile boolean restartBehaviors = false;
   private boolean unblocked = false;
   private Platform platform = null;
   private Container container = null;
-  private MessageQueue queue = new MessageQueue(256);
+  private final MessageQueue queue = new MessageQueue(256);
   private boolean yieldDuringReceive = false;
   protected long tid = -1;
   protected Thread thread = null;
@@ -503,7 +503,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
 
   @Override
   public Message receive(final Class<?> cls, long timeout) {
-    return receive(m -> cls.isInstance(m), timeout);
+    return receive(cls::isInstance, timeout);
   }
 
   @Override
@@ -516,7 +516,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
     if (container instanceof SlaveContainer)
       ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
     Message rsp = receive(new MessageFilter() {
-      private String mid = m.getMessageID();
+      private final String mid = m.getMessageID();
       @Override
       public boolean matches(Message m) {
         String s = m.getInReplyTo();
@@ -801,7 +801,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       else throw(ex);
     }
     synchronized (this) {
-      return (newBehaviors.size() > 0);
+      return (!newBehaviors.isEmpty());
     }
   }
 

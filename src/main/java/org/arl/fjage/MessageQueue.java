@@ -22,8 +22,8 @@ public class MessageQueue {
 
   /////////// Private attributes
 
-  private LinkedList<Message> queue = new LinkedList<Message>();
-  private LinkedList<Message> quarantine = new LinkedList<Message>();
+  private final LinkedList<Message> queue = new LinkedList<>();
+  private final LinkedList<Message> quarantine = new LinkedList<>();
   private int maxQueueLen;
 
   /////////// Interface methods

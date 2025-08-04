@@ -31,8 +31,10 @@ public class SlaveContainer extends RemoteContainer {
   private static final long TIMEOUT = 2000;
 
   private ConnectionHandler master;
-  private String hostname, settings;
-  private int port, baud;
+  private final String hostname;
+  private String settings;
+  private final int port;
+  private final int baud;
   private boolean quit = false;
   private String watchListCache = null;
 
@@ -193,7 +195,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
-    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
+    if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentIDs;
   }
 
@@ -206,7 +208,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
-    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
+    if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.services;
   }
 
@@ -220,7 +222,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
-    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
+    if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentID;
   }
 
@@ -234,7 +236,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
-    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
+    if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentIDs;
   }
 
@@ -371,11 +373,9 @@ public class SlaveContainer extends RemoteContainer {
 
   private synchronized void updateWatchList() {
     if (master == null) return;
-    List<AgentID> watchList = new ArrayList<>();
-    for (AgentID aid: getLocalAgents())
-      watchList.add(aid);
+    List<AgentID> watchList = new ArrayList<>(Arrays.asList(getLocalAgents()));
     for (AgentID aid: topics.keySet())
-      if (topics.get(aid).size() > 0)
+      if (!topics.get(aid).isEmpty())
         watchList.add(aid);
     JsonMessage rq = new JsonMessage();
     rq.action = Action.WANTS_MESSAGES_FOR;

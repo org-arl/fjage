@@ -24,7 +24,7 @@ public class BriefLogFormatter extends Formatter {
    */
   @Override
   public String format(LogRecord record) {
-    StringBuffer s = new StringBuffer();
+    StringBuilder s = new StringBuilder();
     s.append("\033[31m");                   // terminal code for RED color
     s.append(record.getLevel());
     s.append(": ");

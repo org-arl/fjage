@@ -213,16 +213,13 @@ public class Store implements Closeable {
    * Removes all objects of a given type from the store.
    *
    * @param type objet class
-   * @return true if removed, false otherwise
    */
-  public <T> boolean removeByType(Class<T> type) {
+  public <T> void removeByType(Class<T> type) {
     if (root == null) throw new FjageException("Store has been closed");
     try {
       File f = new File(root, type.getName());
       FileUtils.deleteDirectory(f);
-      return true;
-    } catch (IOException ex) {
-      return false;
+    } catch (IOException ignored) {
     }
   }
 
@@ -231,14 +228,12 @@ public class Store implements Closeable {
    * is called, the store is deleted and closed. The instance of the store should
    * no longer be used.
    */
-  public boolean delete() {
+  public void delete() {
     if (root == null) throw new FjageException("Store has been closed");
     try {
       FileUtils.deleteDirectory(root);
       close();
-      return true;
-    } catch (IOException ex) {
-      return false;
+    } catch (IOException ignored) {
     }
   }
 

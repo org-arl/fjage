@@ -223,7 +223,7 @@ public class FSMBehavior extends Behavior {
 
     /////////// Private attributes
 
-    private Object name;
+    private final Object name;
     private Runnable runnable;
 
     /**

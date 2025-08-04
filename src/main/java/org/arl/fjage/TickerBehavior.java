@@ -21,7 +21,7 @@ public class TickerBehavior extends Behavior {
   ////////// Private attributes
 
   private int ticks;
-  private long period;
+  private final long period;
   private long wakeupTime;
   private boolean quit;
 

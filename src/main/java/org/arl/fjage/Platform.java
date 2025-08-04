@@ -31,7 +31,7 @@ public abstract class Platform implements TimestampProvider {
   protected List<Container> containers = new ArrayList<Container>();
   protected boolean running = false;
   private String hostname = null;
-  private int port = 1099;
+  private final int port = 1099;
   private NetworkInterface nif = null;
 
   ////////// Interface methods for platforms to implement

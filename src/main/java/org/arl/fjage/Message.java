@@ -10,8 +10,6 @@ for full license details.
 
 package org.arl.fjage;
 
-import org.arl.fjage.remote.JsonMessage;
-
 import java.io.Serializable;
 import java.util.UUID;
 

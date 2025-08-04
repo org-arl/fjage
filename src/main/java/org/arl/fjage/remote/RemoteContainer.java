@@ -55,7 +55,7 @@ abstract class RemoteContainer extends Container {
    * On the master container, this method should be the same as getServices(). On the
    * slave container, however, this method should only list services residing in that slave.
    *
-   * @return list of all services.
+   * @return array of all services.
    */
   abstract String[] getLocalServices();
 

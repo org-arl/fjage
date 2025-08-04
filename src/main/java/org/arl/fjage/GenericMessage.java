@@ -23,7 +23,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
 
   //////////// Private attributes
 
-  private Map<Object,GenericValue> map = new HashMap<Object,GenericValue>();
+  private final Map<Object,GenericValue> map = new HashMap<>();
 
   //////////// Interface methods
 
@@ -149,8 +149,8 @@ public class GenericMessage extends Message implements Map<Object,Object> {
   }
 
   @Override
-  public void putAll(Map<? extends Object, ? extends Object> map) {
-    for (Map.Entry<? extends Object, ? extends Object> entry: map.entrySet()) {
+  public void putAll(Map<?, ?> map) {
+    for (Map.Entry<?, ?> entry: map.entrySet()) {
       Object k = entry.getKey();
       Object v = entry.getValue();
       if (v instanceof GenericValue) this.map.put(k, (GenericValue)v);
@@ -170,7 +170,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
 
   @Override
   public Collection<Object> values() {
-    return Collections.unmodifiableCollection((Collection<? extends Object>)map.values());
+    return Collections.unmodifiableCollection(map.values());
   }
 
   /////////////// Special getters

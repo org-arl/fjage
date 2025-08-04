@@ -20,8 +20,8 @@ public class NamedParameter implements Parameter, Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private String name;
-  private int ord;
+  private final String name;
+  private final int ord;
 
   /**
    * Constructs named parameter with specified name.

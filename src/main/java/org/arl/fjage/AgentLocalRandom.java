@@ -110,8 +110,7 @@ public class AgentLocalRandom extends Random {
    * @return random number.
    */
   public double nextExp() {
-    double r = -Math.log(nextDouble());
-    return r;
+    return -Math.log(nextDouble());
   }
 
   /**
