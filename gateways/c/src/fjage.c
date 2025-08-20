@@ -74,6 +74,7 @@ for full license details.
 static fjage_msg_t fjage_msg_from_json(const char* json);
 static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg);
 static void fjage_msg_set_sender(fjage_msg_t msg, fjage_aid_t aid);
+static long get_time_ms(void);
 #ifdef __GNUC__
 static void sthandler(int sig) __attribute__ ((unused));
 #endif
@@ -91,6 +92,47 @@ static void generate_uuid(char* uuid) {
     uuid[i] = base64[rand()%64];
   uuid[UUID_LEN] = 0;
 }
+
+static void generate_uuid7(char *uuid){
+    // The UUID is 16 bytes (128 bits)
+    uint8_t uuid_bytes[16];
+
+    // 1. Get the 48-bit timestamp
+    long timestamp_ms = get_time_ms();
+
+    // 2. Get random bytes
+    uint8_t random_bytes[10];
+    for (int i = 0; i < 10; ++i) {
+        random_bytes[i] = rand() % 256;
+    }
+
+    // 3. Populate the UUID bytes according to the UUIDv7 spec
+
+    // First 6 bytes are the 48-bit timestamp
+    uuid_bytes[0] = (uint8_t)(timestamp_ms >> 40);
+    uuid_bytes[1] = (uint8_t)(timestamp_ms >> 32);
+    uuid_bytes[2] = (uint8_t)(timestamp_ms >> 24);
+    uuid_bytes[3] = (uint8_t)(timestamp_ms >> 16);
+    uuid_bytes[4] = (uint8_t)(timestamp_ms >> 8);
+    uuid_bytes[5] = (uint8_t)timestamp_ms;
+
+    // Next 2 bytes (6 and 7) for version and rand_a
+    // Set version to 7 (0111)
+    uuid_bytes[6] = 0x70 | (random_bytes[0] & 0x0F);
+    uuid_bytes[7] = random_bytes[1];
+
+    // Next 8 bytes for variant and rand_b
+    // Set variant to '10'
+    uuid_bytes[8] = 0x80 | (random_bytes[2] & 0x3F);
+    memcpy(&uuid_bytes[9], &random_bytes[3], 7);
+
+    // 4. Format the bytes into a standard UUID string
+    snprintf(uuid, 37, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+             uuid_bytes[0], uuid_bytes[1], uuid_bytes[2], uuid_bytes[3],
+             uuid_bytes[4], uuid_bytes[5], uuid_bytes[6], uuid_bytes[7],
+             uuid_bytes[8], uuid_bytes[9], uuid_bytes[10], uuid_bytes[11],
+             uuid_bytes[12], uuid_bytes[13], uuid_bytes[14], uuid_bytes[15]);
+  }
 
 static int writes(int fd, const char* s) {
   int n = strlen(s);
@@ -713,7 +755,7 @@ fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
   if (gw == NULL) return NULL;
   _fjage_gw_t* fgw = gw;
   char uuid[UUID_LEN+1];
-  generate_uuid(uuid);
+  generate_uuid7(uuid);
   writes(fgw->sockfd, "{\"action\": \"agentForService\", \"id\": \"");
   writes(fgw->sockfd, uuid);
   writes(fgw->sockfd, "\", \"service\": \"");
@@ -731,7 +773,7 @@ int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* ag
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
   char uuid[UUID_LEN+1];
-  generate_uuid(uuid);
+  generate_uuid7(uuid);
   writes(fgw->sockfd, "{\"action\": \"agentsForService\", \"id\": \"");
   writes(fgw->sockfd, uuid);
   writes(fgw->sockfd, "\", \"service\": \"");
@@ -1004,7 +1046,7 @@ static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg) {
 fjage_msg_t fjage_msg_create(const char* clazz, fjage_perf_t perf) {
   _fjage_msg_t* m = malloc(sizeof(_fjage_msg_t));
   if (m == NULL) return NULL;
-  generate_uuid(m->id);
+  generate_uuid7(m->id);
   memset(m->clazz, 0, CLAZZ_LEN+1);
   if (clazz != NULL) strncpy(m->clazz, clazz, CLAZZ_LEN);
   m->perf = perf;
