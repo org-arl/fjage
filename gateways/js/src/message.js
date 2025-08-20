@@ -1,5 +1,5 @@
 import { Performative } from './performative.js';
-import { _guid } from './utils.js';
+import { UUID7 } from './utils.js';
 import { AgentID } from './agentid.js';  // import AgentID class for type checking. Remove if not needed.
 
 /**
@@ -21,7 +21,7 @@ export class Message {
   */
   constructor(inReplyToMsg, perf=Performative.INFORM) {
     this.__clazz__ = 'org.arl.fjage.Message';
-    this.msgID = _guid(8);
+    this.msgID = UUID7.generate().toString();
     this.perf = perf;
     this.sender = null;
     this.recipient = inReplyToMsg ? inReplyToMsg.sender : null;

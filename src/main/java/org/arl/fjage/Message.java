@@ -10,10 +10,7 @@ for full license details.
 
 package org.arl.fjage;
 
-import org.arl.fjage.remote.JsonMessage;
-
 import java.io.Serializable;
-import java.util.UUID;
 
 /**
  * Base class for messages transmitted by one agent to another. This class provides
@@ -30,7 +27,7 @@ public class Message implements Serializable {
 
   //////////// Private attributes
 
-  protected String msgID = UUID.randomUUID().toString();
+  protected String msgID = UUID7.generate().toString();
   protected Performative perf;
   protected AgentID recipient;
   protected AgentID sender = null;

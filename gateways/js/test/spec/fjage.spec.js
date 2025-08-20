@@ -60,7 +60,7 @@ function fjageMessageChecker() {
 
       if (!msg.message.data) return ret;
 
-      ret = ret && !!msg.message.data.msgID && msg.message.data.msgID.length == 32;
+      ret = ret && !!msg.message.data.msgID && msg.message.data.msgID.length >= 32;
       ret = ret && !!msg.message.data.sender;
       ret = ret && !!msg.message.data.recipient;
       ret = ret && msg.message.data.perf && ValidFjagePerformatives.includes(msg.message.data.perf);
@@ -89,7 +89,7 @@ function ShellExecReqChecker() {
       ret = ret && !!msg.message;
       ret = ret && msg.message.clazz == 'org.arl.fjage.shell.ShellExecReq';
       ret = ret && !!msg.message.data;
-      ret = ret && !!msg.message.data.msgID && msg.message.data.msgID.length == 32;
+      ret = ret && !!msg.message.data.msgID && msg.message.data.msgID.length >= 32;
       ret = ret && !!msg.message.data.sender;
       ret = ret && !!msg.message.data.recipient;
       ret = ret && msg.message.data.perf && ValidFjagePerformatives.includes(msg.message.data.perf);

@@ -8,6 +8,7 @@ import base64 as _base64
 import struct as _struct
 import time as _time
 from warnings import warn as _warn
+from .UUID7 import UUID7
 
 
 def _current_time_millis():
@@ -278,7 +279,7 @@ class Message(object):
 
     def __init__(self, inReplyTo=None, perf=Performative.INFORM, **kwargs):
         self.__clazz__ = 'org.arl.fjage.Message'
-        self.msgID = str(_uuid.uuid4())
+        self.msgID = str(UUID7.generate())
         self.perf = perf
         self.recipient = None
         self.sender = None
@@ -525,7 +526,7 @@ class GenericMessage(Message):
 
     def __init__(self, **kwargs):
         self.__clazz__ = 'org.arl.fjage.GenericMessage'
-        self.msgID = str(_uuid.uuid4())
+        self.msgID = str(UUID7.generate())
         self.perf = None
         self.recipient = None
         self.sender = None
@@ -598,8 +599,6 @@ class Gateway:
         """
         req = _json.loads(rmsg, object_hook=_decode_base64)
         rsp = dict()
-        if "id" in req:
-            req['id'] = _uuid.UUID(req['id'])
         if "action" in req:
             if req["action"] == Action.AGENTS:
                 rsp["inResponseTo"] = req["action"]
@@ -914,8 +913,8 @@ class Gateway:
         :param service: the named service of interest.
         :returns: an agent id for an agent that provides the service.
         """
-        req_id = _uuid.uuid4()
-        rq = {'action': Action.AGENT_FOR_SERVICE, 'service': service, 'id': str(req_id)}
+        req_id = str(UUID7.generate())
+        rq = {'action': Action.AGENT_FOR_SERVICE, 'service': service, 'id': req_id}
         self.socket.sendall((_json.dumps(rq, cls=_CustomEncoder) + '\n').encode())
         res_event = _td.Event()
         self.pending[req_id] = (res_event, None)
@@ -941,10 +940,10 @@ class Gateway:
         :param service: the named service of interest.
         :returns: a list of agent ids representing all agent that provide the service.
         """
-        req_id = _uuid.uuid4()
+        req_id = str(UUID7.generate())
         j_dict = dict()
         j_dict["action"] = Action.AGENTS_FOR_SERVICE
-        j_dict["id"] = str(req_id)
+        j_dict["id"] = req_id
         if isinstance(service, str):
             j_dict["service"] = service
         else:
@@ -975,10 +974,10 @@ class Gateway:
         return self.aid
 
     def _is_duplicate(self):
-        req_id = _uuid.uuid4()
+        req_id = str(UUID7.generate())
         req = dict()
         req["action"] = Action.CONTAINS_AGENT
-        req["id"] = str(req_id)
+        req["id"] = req_id
         req["agentID"] = self.aid.name
         self.socket.sendall((_json.dumps(req, cls=_CustomEncoder) + '\n').encode())
         res_event = _td.Event()
