@@ -12,3 +12,4 @@ test_fjage
 docs/doc
 
 .fjage-shell-history
+gradle.properties
