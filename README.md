@@ -32,7 +32,7 @@ Support
 * [Project Home](http://github.com/org-arl/fjage)
 * [Issue Tracking](http://github.com/org-arl/fjage/issues)
 
-Maven Central dependency
+Maven dependency (Github Maven repository)
 ------------------------
 
     <dependency>
@@ -40,6 +40,8 @@ Maven Central dependency
       <artifactId>fjage</artifactId>
       <version>2.0.1</version>
     </dependency>
+
+From version 2.1.1 onwards, fjåge published in the [Github Maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry) only. The previous versions are still available in Maven Central.
 
 Versions
 -------------
