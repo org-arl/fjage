@@ -4,7 +4,6 @@ plugins {
   id 'java-library'
   id 'groovy'
   id 'maven-publish'
-  id 'signing'
 }
 
 defaultTasks 'jar'
@@ -190,51 +189,21 @@ java {
 }
 
 publishing {
-  if (project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword')) {
-    repositories {
-      maven {
-        def releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
-        def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots'
-        url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-        credentials {
-          username = sonatypeUsername
-          password = sonatypePassword
-        }
-      }
-    }
-  }
   publications {
-    mavenJava(MavenPublication) {
-      from components.java
+    maven(MavenPublication) {
+      groupId = 'com.github.org-arl'
       artifactId = 'fjage'
-      pom {
-        name = 'fjage'
-        packaging = 'jar'
-        description = 'Framework for Java and Groovy Agents'
-        url = 'http://github.com/org-arl/fjage'
-        licenses {
-          license {
-            name = '3-clause BSD License'
-            url = 'http://github.com/org-arl/fjage/blob/master/LICENSE.txt'
-            distribution = 'repo'
-          }
-        }
-        developers {
-          developer {
-            id = 'mchitre'
-            name = 'Mandar Chitre'
-          }
-        }
-        scm {
-          connection = 'scm:git:git://github.com/org-arl/fjage.git'
-          developerConnection = 'scm:git:git@github.com:org-arl/fjage.git'
-          url = 'http://github.com/org-arl/fjage'
-        }
+      from components.java
+    }
+  }
+  repositories {
+    maven {
+      name = "GitHubPackages"
+      url = "https://maven.pkg.github.com/org-arl/fjage"
+      credentials {
+        username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+        password = project.findProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
       }
     }
   }
-}
-
-signing {
-  sign publishing.publications.mavenJava
 }
