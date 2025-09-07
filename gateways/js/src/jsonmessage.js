@@ -50,9 +50,9 @@ import { Message } from './message.js';
 export class JSONMessage {
 
   /**
-   * @param {String} [jsonString] - JSON string to be parsed into a JSONMessage object.
-   * @param {Object} [owner] - The owner of the JSONMessage object, typically the Gateway instance.
-   */
+  * @param {String} [jsonString] - JSON string to be parsed into a JSONMessage object.
+  * @param {Object} [owner] - The owner of the JSONMessage object, typically the Gateway instance.
+  */
   constructor(jsonString, owner) {
     this.id =  _guid(8); // unique JSON message ID
     this.action =  null;
@@ -220,11 +220,11 @@ export class JSONMessage {
 
 
 /**
- * Actions supported by the fjåge JSON message protocol. See
- * {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation} for more details.
- *
- * @enum {string} Actions
- */
+* Actions supported by the fjåge JSON message protocol. See
+* {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation} for more details.
+*
+* @enum {string} Actions
+*/
 export const Actions = {
   AGENTS : 'agents',
   CONTAINS_AGENT : 'containsAgent',
@@ -239,27 +239,26 @@ export const Actions = {
 ////// private utilities
 
 
-// base64 JSON decoder
 /**
+* Decode large numeric arrays encoded in base64 back to array format.
+*
 * @private
 *
-* @param {string} k - key
+* @param {string} _k - key (unused)
 * @param {any} d - data
 * @returns {Array} - decoded data in array format
 * */
-function _decodeBase64(k, d) {
+function _decodeBase64(_k, d) {
   if (d === null) return null;
-  if (typeof d == 'object' && 'clazz' in d) {
-    if (d.clazz.startsWith('[') && d.clazz.length == 2 && 'data' in d) {
-      let x = _b64toArray(d.data, d.clazz);
-      if (x) d = x;
-    }
+  if (typeof d == 'object' && 'clazz' in d && 'data' in d && d.clazz.startsWith('[') && d.clazz.length == 2) {
+    return _b64toArray(d.data, d.clazz) || d;
   }
   return d;
 }
 
-// convert from base 64 to numeric array
 /**
+* Convert a base64 encoded string to an array of numbers of the specified data type.
+*
 * @private
 *
 * @param {string} base64 - base64 encoded string
