@@ -1,5 +1,11 @@
 # Release Notes
 
+## v2.1.0
+
+* Moved to using UUID7 for message IDs
+* Added Shell command history and completion
+* Fixed agent name check to follow gateway naming guidelines
+
 ## v2.0.1
 
 * Added support for maps/arrays in GenericValue
