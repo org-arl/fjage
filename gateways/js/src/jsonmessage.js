@@ -1,6 +1,6 @@
 /* global Buffer */
 import { isBrowser, isNode, isJsDom, isWebWorker } from 'browser-or-node';
-import { _guid } from './utils.js';
+import { UUID7 } from './utils.js';
 import { AgentID } from './agentid.js';
 import { Message } from './message.js';
 
@@ -54,7 +54,7 @@ export class JSONMessage {
   * @param {Object} [owner] - The owner of the JSONMessage object, typically the Gateway instance.
   */
   constructor(jsonString, owner) {
-    this.id =  _guid(8); // unique JSON message ID
+    this.id = UUID7.generate().toString(); // unique JSON message ID
     this.action =  null;
     this.inResponseTo =  null;
     this.agentID = null;
@@ -123,7 +123,7 @@ export class JSONMessage {
   static createAgents(){
     const jsonMsg = new JSONMessage();
     jsonMsg.action = Actions.AGENTS;
-    jsonMsg.id = _guid(8); // unique JSON message ID
+    jsonMsg.id = UUID7.generate().toString(); // unique JSON message ID
     return jsonMsg;
   }
 
@@ -139,7 +139,7 @@ export class JSONMessage {
     }
     const jsonMsg = new JSONMessage();
     jsonMsg.action = Actions.CONTAINS_AGENT;
-    jsonMsg.id = _guid(8); // unique JSON message ID
+    jsonMsg.id = UUID7.generate().toString(); // unique JSON message ID
     jsonMsg.agentID = agentID;
     return jsonMsg;
   }
@@ -156,7 +156,7 @@ export class JSONMessage {
     }
     const jsonMsg = new JSONMessage();
     jsonMsg.action = Actions.AGENT_FOR_SERVICE;
-    jsonMsg.id = _guid(8); // unique JSON message ID
+    jsonMsg.id = UUID7.generate().toString(); // unique JSON message ID
     jsonMsg.service = service;
     return jsonMsg;
   }
@@ -173,7 +173,7 @@ export class JSONMessage {
     }
     const jsonMsg = new JSONMessage();
     jsonMsg.action = Actions.AGENTS_FOR_SERVICE;
-    jsonMsg.id = _guid(8); // unique JSON message ID
+    jsonMsg.id = UUID7.generate().toString(); // unique JSON message ID
     jsonMsg.service = service;
     return jsonMsg;
   }

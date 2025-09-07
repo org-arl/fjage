@@ -3,7 +3,7 @@
 import { isBrowser, isNode, isJsDom, isWebWorker } from 'browser-or-node';
 import { AgentID } from './agentid.js';
 import { Message} from './message.js';
-import { _guid } from './utils.js';
+import { _guid, UUID7 } from './utils.js';
 
 import TCPConnector from './tcpconnector.js';
 import WSConnector from './wsconnector.js';
@@ -233,7 +233,7 @@ export class Gateway {
   * @returns {Promise<JSONMessage|null>} - a promise which returns the response from the master container
   */
   _msgTxRx(rq, timeout = this._timeout) {
-    rq.id = _guid(8);
+    rq.id = UUID7.generate().toString();
     return new Promise(resolve => {
       let timer;
       if (timeout >= 0){
@@ -641,7 +641,7 @@ export class Gateway {
         resolve();
         return;
       }
-      let lid = _guid(8);
+      let lid = UUID7.generate().toString();
       let timer;
       if (timeout > 0){
         timer = setTimeout(() => {
