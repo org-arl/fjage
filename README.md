@@ -41,7 +41,7 @@ Maven dependency (Github Maven repository)
       <version>2.0.1</version>
     </dependency>
 
-From version 2.1.0 onwards, fjåge published in the [Github Maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry) only. The previous versions are still available in Maven Central.
+From version 2.1.0 onwards, fjåge will be published in the [Github Maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry) only. The previous versions are still available in Maven Central.
 
 Versions
 -------------
