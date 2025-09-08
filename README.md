@@ -69,19 +69,6 @@ With the update of `WebSocketConnector` to be a direct (non-aggregated) connecti
 
 The 1.15.x releases 1.15.0, 1.15.1, and 1.15.2 have some of the breaking changes (specifically the changed parameter names) but didn't increment the major version number. This was a oversight and the 1.15.x releases are not backward compatible with the 1.14.x releases. The 1.15.x releases are not maintained anymore and **should not be used**.
 
-Releases
---------
-
-The process for creating a new release for fjage is as follows:
-
-1. Update the version number in the `VERSION` file.
-2. Make sure that the version number is also updated in this `README.md` file.
-3. Update the `ReleaseNotes.md` file with the changes made since the last release.
-4. Commit the changes and push to the `main` branch.
-5. Create a new git tag with the version number (e.g., `v2.0.1`).
-6. Push the changes and the tag to GitHub.
-7. Publish the release on GitHub using `./gradlew publish` (requires credentials).
-
 Contributing
 ------------
 
