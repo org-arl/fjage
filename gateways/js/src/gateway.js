@@ -76,7 +76,7 @@ export function init(){
 * @param {number} [opts.port=1100]          - port number of the master container to connect to
 * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
 * @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
-* @param {number} [opts.queueSize=128]      - size of the queue of received messages that haven't been consumed yet
+* @param {number} [opts.queueSize=128]      - size of the _queue of received messages that haven't been consumed yet
 * @param {number} [opts.timeout=10000]       - timeout for fjage level messages in ms
 * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
 * @param {boolean} [opts.cancelPendingOnDisconnect=false] - cancel pending requests on disconnects
@@ -96,14 +96,14 @@ export class Gateway {
     if (existing) return existing;
     this._timeout = opts.timeout;         // timeout for fjage level messages (agentForService etc)
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
-    this._queueSize = opts.queueSize;     // size of queue
+    this._queueSize = opts.queueSize;     // size of _queue
     this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
     this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect; // cancel pending requests on disconnect
-    this.pending = {};                    // msgid to callback mapping for pending requests to server
-    this.subscriptions = {};              // map for all topics that are subscribed
-    this.listeners = {};                  // list of callbacks that want to listen to incoming messages
-    this.eventListeners = {};             // external listeners wanting to listen internal events
-    this.queue = [];                      // incoming message queue
+    this._pending_actions = {};            // msgid to callback mapping for pending actions
+    this._subscriptions = {};              // map for all topics that are subscribed
+    this._pending_receives = {};           // uuid to callbacks mapping for pending receives
+    this._eventListeners = {};             // external listeners wanting to listen internal events
+    this._queue = [];                      // incoming message _queue
     this.connected = false;               // connection status
     this.debug = false;                   // debug info to be logged to console?
     this.aid = new AgentID('gateway-'+_guid(4));         // gateway agent name
@@ -118,8 +118,8 @@ export class Gateway {
   * @param {Object|Message|string} val - value to be sent to the listeners
   */
   _sendEvent(type, val) {
-    if (!Array.isArray(this.eventListeners[type])) return;
-    this.eventListeners[type].forEach(l => {
+    if (!Array.isArray(this._eventListeners[type])) return;
+    this._eventListeners[type].forEach(l => {
       if (l && {}.toString.call(l) === '[object Function]'){
         try {
           l(val);
@@ -138,9 +138,9 @@ export class Gateway {
   * @returns {boolean} - true if the message was consumed by any listener
   */
   _sendReceivers(msg) {
-    for (var lid in this.listeners){
+    for (var lid in this._pending_receives){
       try {
-        if (this.listeners[lid] && this.listeners[lid](msg)) return true;
+        if (this._pending_receives[lid] && this._pending_receives[lid](msg)) return true;
       } catch (error) {
         console.warn('Error in listener : ' + error);
       }
@@ -164,22 +164,22 @@ export class Gateway {
       return;
     }
     this._sendEvent('rxp', jsonMsg);
-    if (jsonMsg.id && jsonMsg.id in this.pending) {
+    if (jsonMsg.id && jsonMsg.id in this._pending_actions) {
       // response to a pending request to master
-      this.pending[jsonMsg.id](jsonMsg);
-      delete this.pending[jsonMsg.id];
+      this._pending_actions[jsonMsg.id](jsonMsg);
+      delete this._pending_actions[jsonMsg.id];
     } else if (jsonMsg.action == Actions.SEND) {
       // incoming message from master
       const msg = jsonMsg.message;
       if (!msg) return;
       this._sendEvent('rxmsg', msg);
-      if ((msg.recipient.toJSON() == this.aid.toJSON())|| this.subscriptions[msg.recipient.toJSON()]) {
+      if ((msg.recipient.toJSON() == this.aid.toJSON())|| this._subscriptions[msg.recipient.toJSON()]) {
         // send to any "message" listeners
         this._sendEvent('message', msg);
-        // send message to receivers, if not consumed, add to queue
+        // send message to receivers, if not consumed, add to _queue
         if(!this._sendReceivers(msg)) {
-          if (this.queue.length >= this._queueSize) this.queue.shift();
-          this.queue.push(msg);
+          if (this._queue.length >= this._queueSize) this._queue.shift();
+          this._queue.push(msg);
         }
       }
     } else {
@@ -238,18 +238,18 @@ export class Gateway {
       let timer;
       if (timeout >= 0){
         timer = setTimeout(() => {
-          delete this.pending[rq.id];
+          delete this._pending_actions[rq.id];
           if (this.debug) console.log('Receive Timeout : ' + JSON.stringify(rq));
           resolve(null);
         }, timeout);
       }
-      this.pending[rq.id] = rsp => {
+      this._pending_actions[rq.id] = rsp => {
         if (timer) clearTimeout(timer);
         resolve(rsp);
       };
       if (!this._msgTx.call(this,rq)) {
         if(timer) clearTimeout(timer);
-        delete this.pending[rq.id];
+        delete this._pending_actions[rq.id];
         if (this.debug) console.log('Transmit Failure : ' +  JSON.stringify(rq));
         resolve(null);
       }
@@ -340,15 +340,15 @@ export class Gateway {
   }
 
   /**
-  * Gets the next message from the queue that matches the filter.
+  * Gets the next message from the _queue that matches the filter.
   * @private
   * @param {string|Object|function} filter - filter to be matched
   */
   _getMessageFromQueue(filter) {
-    if (!this.queue.length) return;
-    if (!filter) return this.queue.shift();
-    let matchedMsg = this.queue.find( msg => this._matchMessage(filter, msg));
-    if (matchedMsg) this.queue.splice(this.queue.indexOf(matchedMsg), 1);
+    if (!this._queue.length) return;
+    if (!filter) return this._queue.shift();
+    let matchedMsg = this._queue.find( msg => this._matchMessage(filter, msg));
+    if (matchedMsg) this._queue.splice(this._queue.indexOf(matchedMsg), 1);
     return matchedMsg;
   }
 
@@ -388,7 +388,7 @@ export class Gateway {
 
   /** @private */
   _update_watch() {
-    let watch = Object.keys(this.subscriptions);
+    let watch = Object.keys(this._subscriptions);
     watch.push(this.aid.toJSON());
     const jsonMsg = JSONMessage.createWantsMessagesFor(watch.map(id => AgentID.fromJSON(id)));
     this._msgTx(jsonMsg);
@@ -402,10 +402,10 @@ export class Gateway {
   * @returns {void}
   */
   addEventListener(type, listener) {
-    if (!Array.isArray(this.eventListeners[type])){
-      this.eventListeners[type] = [];
+    if (!Array.isArray(this._eventListeners[type])){
+      this._eventListeners[type] = [];
     }
-    this.eventListeners[type].push(listener);
+    this._eventListeners[type].push(listener);
   }
 
   /**
@@ -416,9 +416,9 @@ export class Gateway {
   * @returns {void}
   */
   removeEventListener(type, listener) {
-    if (!this.eventListeners[type]) return;
-    let ndx = this.eventListeners[type].indexOf(listener);
-    if (ndx >= 0) this.eventListeners[type].splice(ndx, 1);
+    if (!this._eventListeners[type]) return;
+    let ndx = this._eventListeners[type].indexOf(listener);
+    if (ndx >= 0) this._eventListeners[type].splice(ndx, 1);
   }
 
   /**
@@ -503,7 +503,7 @@ export class Gateway {
   */
   subscribe(topic) {
     if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
-    this.subscriptions[topic.toJSON()] = true;
+    this._subscriptions[topic.toJSON()] = true;
     this._update_watch();
     return true;
   }
@@ -516,7 +516,7 @@ export class Gateway {
   */
   unsubscribe(topic) {
     if (!topic.isTopic()) topic = new AgentID(topic.getName() + '__ntf', true, this);
-    delete this.subscriptions[topic.toJSON()];
+    delete this._subscriptions[topic.toJSON()];
     this._update_watch();
   }
 
@@ -599,12 +599,12 @@ export class Gateway {
   }
 
   /**
-  * Flush the Gateway queue for all pending messages. This drops all the pending messages.
+  * Flush the Gateway _queue for all pending messages. This drops all the pending messages.
   * @returns {void}
   *
   */
   flush() {
-    this.queue.length = 0;
+    this._queue.length = 0;
   }
 
   /**
@@ -645,18 +645,18 @@ export class Gateway {
       let timer;
       if (timeout > 0){
         timer = setTimeout(() => {
-          this.listeners[lid] && delete this.listeners[lid];
+          this._pending_receives[lid] && delete this._pending_receives[lid];
           if (this.debug) console.log('Receive Timeout : ' + filter);
           resolve();
         }, timeout);
       }
       // listener for each pending receive
-      this.listeners[lid] = msg => {
+      this._pending_receives[lid] = msg => {
         // skip if the message does not match the filter
         if (msg && !this._matchMessage(filter, msg)) return false;
         if(timer) clearTimeout(timer);
         // if the message matches the filter or is null, delete listener clear timer and resolve
-        this.listeners[lid] && delete this.listeners[lid];
+        this._pending_receives[lid] && delete this._pending_receives[lid];
         resolve(msg);
         return true;
       };

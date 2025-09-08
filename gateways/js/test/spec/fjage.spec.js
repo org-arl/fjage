@@ -219,8 +219,8 @@ describe('A Gateway', function () {
     smr.recipient = gw.agent('echo');
     gw.send(smr);
     await delay(3800); // allow time for all messages to be received
-    expect(gw.queue.length).toBe(128);
-    var ids = gw.queue.map(m => m.id).filter( id => !!id).sort((a,b) => a-b);
+    expect(gw._queue.length).toBe(128);
+    var ids = gw._queue.map(m => m.id).filter( id => !!id).sort((a,b) => a-b);
     expect(ids[ids.length-1]-ids[0]).toBe(ids.length-1);
     expect(ids[ids.length-1]).toBeGreaterThanOrEqual(128);
     gw.close();
