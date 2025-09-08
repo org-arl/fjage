@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fjagepy"
+version = "1.7.5"
+description = "fjage Gatway in Python"
+authors = [{ name = "Chinmay Pendharkar", email = "chinmay@subnero.com" }]
+readme = "README.md"
+requires-python = ">=3.9"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["test"]
+addopts = "-ra -q"
+
+[project.optional-dependencies]
+dev = ["pytest", "numpy"]
