@@ -581,8 +581,6 @@ describe('A JSONMessage', function () {
   });
 });
 
-
-
 describe('A Message', function () {
   it('should be able to be consuctured', function () {
     var msg;
@@ -902,7 +900,6 @@ describe('Shell GetFile/PutFile', function () {
     expect(new TextDecoder('utf-8').decode(new Uint8Array(rsp2.contents))).toEqual(TEST_STRING.substring(0,10) + NEW_STRING);
   });
 });
-
 
 async function sendTestStatus(status, trace, type) {
   var gw = new Gateway(gwOpts);
