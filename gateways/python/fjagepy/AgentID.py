@@ -1,0 +1,207 @@
+from __future__ import annotations
+
+import logging
+from typing import Optional, Union, Type, Self, Any
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
+# Default timeout for non-owned AgentIDs (in milliseconds)
+DEFAULT_TIMEOUT = 10000
+
+class AgentID:
+    """An identifier for an agent or a topic. This can be used to send, receive messages,
+    and set or get parameters on an agent or topic on the fjåge master container.
+
+    Args:
+        name (str): name of the agent
+        topic (bool, optional): True if this represents a topic. Defaults to False.
+        owner: Gateway owner for this AgentID. Defaults to None.
+    """
+
+    def __init__(self, name: str, topic: bool = False, owner = None) -> None:
+        if not isinstance(name, str) or not name:
+            raise ValueError("AgentID name must be a non-empty string")
+        self.name = name
+        self.topic = topic
+        self.owner = owner
+        self.index = -1  # for indexed parameters
+        self._timeout = owner._timeout if owner else DEFAULT_TIMEOUT
+
+    def get_name(self) -> str:
+        """Gets the name of the agent or topic.
+
+        Returns:
+            str: name of agent or topic
+        """
+        return self.name
+
+    def is_topic(self) -> bool:
+        """Returns True if the agent id represents a topic.
+
+        Returns:
+            bool: True if the agent id represents a topic, False if it represents an agent
+        """
+        return self.topic
+
+    def send(self, msg) -> None:
+        """Sends a message to the agent represented by this id.
+
+        Args:
+            msg: message to send
+
+        Raises:
+            RuntimeError: if this AgentID has no owner (unowned AgentID cannot send messages)
+        """
+        msg.recipient = self
+        if self.owner:
+            self.owner.send(msg)
+        else:
+            raise RuntimeError('Unowned AgentID cannot send messages')
+
+    def request(self, msg, timeout: Optional[int] = None) -> Union[Type[Message], None]:
+        """Sends a request to the agent represented by this id and waits for a response.
+
+        Args:
+            msg: request to send
+            timeout (int, optional): timeout in milliseconds. Defaults to owner's timeout.
+
+        Returns:
+            Response message
+
+        Raises:
+            RuntimeError: if this AgentID has no owner (unowned AgentID cannot send messages)
+        """
+        if timeout is None:
+            timeout = self._timeout
+        msg.recipient = self
+        if self.owner:
+            return self.owner.request(msg, timeout)
+        else:
+            raise RuntimeError('Unowned AgentID cannot send messages')
+
+    def get(self, index: Optional[int] = -1) -> dict[str, Any]:
+        """Gets the values of all parameters on the agent.
+
+        Args:
+            index (int, optional): index for indexed parameters. Defaults to None.
+
+        Returns:
+            dict: dictionary of all parameters and their values
+
+        Raises:
+            RuntimeError: if this AgentID has no owner (unowned AgentID cannot get parameters)
+        """
+        from .Message import ParameterReq
+
+        rsp = self.request(ParameterReq(index=index))
+        if rsp is None and 'param' not in rsp.__dict__ and 'value' not in rsp.__dict__:
+            return {}
+
+        # the first parameter is in rsp.param and rsp.value and the others are in the dict rsp.values,
+        # we combine them into a single dictionary
+        params = {}
+        if 'param' in rsp.__dict__ and 'value' in rsp.__dict__:
+            params[rsp.param] = rsp.value
+        if 'values' in rsp.__dict__ and isinstance(rsp.values, dict):
+            params.update(rsp.values)
+        return params
+
+    def to_json(self) -> str:
+        """Gets a JSON string representation of the agent id.
+
+        Returns:
+            str: JSON string representation of the agent id
+        """
+        return ('#' if self.topic else '') + self.name
+
+    @staticmethod
+    def from_json(json_str: str, owner = None) -> "AgentID":
+        """Inflate the AgentID from a JSON string.
+
+        Args:
+            json_str (str): JSON string to be converted to an AgentID
+            owner: Gateway owner for this AgentID. Defaults to None.
+
+        Returns:
+            AgentID: AgentID created from the JSON string
+
+        """
+
+        json_str = json_str.strip()
+        if json_str.startswith('#'):
+            return AgentID(json_str[1:], topic=True, owner=owner)
+        else:
+            return AgentID(json_str, topic=False, owner=owner)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, AgentID):
+            return False
+        return (self.name == other.name) and (self.topic == other.topic)
+
+    def __hash__(self) -> int:
+        return hash(self.to_json())
+
+    def __str__(self) -> str:
+        """Gets a string representation of the agent id.
+
+        Returns:
+            str: string representation of the agent id
+        """
+        return self.to_json()
+
+    def _repr_pretty_(self, p, cycle) -> None:
+        """Pretty print support for IPython/Jupyter."""
+       #TODO: Implement pretty print
+
+    ## Magic methods to support syntactic sugar
+
+    def __lshift__(self, msg) -> Union[Type["Message"], None]:
+        """ Supports sending messages through the << operator.
+            Example: agent << msg will send the message msg to the agent represented by agent."""
+
+        return self.request(msg)
+
+    def __getitem__(self, index) -> Self:
+        """ Supports indexed parameter access through the [] operator.
+            Example: agent[1].param will refers to the first indexed parameter "param" of the agent."""
+
+        # make a copy of this AgentID with the specified index
+        new_aid = AgentID(self.name, topic=self.topic, owner=self.owner)
+        new_aid.index = index
+        new_aid._timeout = self._timeout
+        return new_aid
+
+# Magic methods to support dynamic parameter access using dot notation
+
+def __getter(self, param: str) -> None | Any:
+    if param in ['name', 'owner', 'topic', 'index', '_timeout']:
+        return self.__dict__[param]
+
+    from .Message import ParameterReq
+
+    rsp = self.request(ParameterReq(index=self.index).get(param))
+    if param[0] != '_':
+        self.index = -1
+    if rsp is None and 'param' not in rsp.__dict__ and 'value' not in rsp.__dict__:
+        return None
+    return rsp.__dict__.get('value', None) if 'value' in rsp.__dict__ else None
+
+
+setattr(AgentID, '__getattr__', __getter)
+
+
+def __setter(self, param : str, value : Any) -> Any | None:
+    if param in ['name', 'owner', 'topic', 'index', '_timeout']:
+        self.__dict__[param] = value
+        return value
+
+    from .Message import ParameterReq
+    rsp = self.request(ParameterReq(index=self.index).set(param, value))
+    if param[0] != '_':
+        self.index = -1
+    if rsp is None and 'param' not in rsp.__dict__ and 'value' not in rsp.__dict__:
+        return None
+    return rsp.__dict__.get('value', None) if 'value' in rsp.__dict__ else None
+
+setattr(AgentID, '__setattr__', __setter)
