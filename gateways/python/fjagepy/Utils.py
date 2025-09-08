@@ -74,6 +74,13 @@ class UUID7:
         """
         return uuid.UUID(bytes=self._bytes)
 
+    def to_json(self) -> str:
+        """
+        Converts the UUID7 to its standard string representation.
+        :return: The UUID string.
+        """
+        return str(self.to_uuid())
+
     def __str__(self):
         """
         Formats the UUID into the standard string representation.
@@ -93,3 +100,6 @@ class UUID7:
         if not isinstance(other, UUID7):
             return NotImplemented
         return self._bytes < other._bytes
+
+    def __hash__(self):
+        return hash(self._bytes)
