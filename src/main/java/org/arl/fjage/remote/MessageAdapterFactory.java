@@ -33,11 +33,12 @@ import java.util.logging.Logger;
 class MessageAdapterFactory implements TypeAdapterFactory {
 
   private static ClassLoader classloader = null;
+  private static final Logger log = Logger.getLogger(MessageAdapterFactory.class.getName());
 
   static {
     try {
       Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
-      classloader = (ClassLoader)cls.newInstance();
+      classloader = (ClassLoader)cls.getDeclaredConstructor().newInstance();
       Logger log = Logger.getLogger(MessageAdapterFactory.class.getName());
       log.info("Groovy detected, using GroovyClassLoader");
     } catch (Exception ex) {
@@ -147,6 +148,7 @@ class MessageAdapterFactory implements TypeAdapterFactory {
               rv = (T) msg;
             } else {
               TypeAdapter<?> delegate1 = gson.getDelegateAdapter(parent, TypeToken.get(cls));
+              log.info("Inflating JSONMessage with adapter" + delegate1.getClass().getName() + " for class " + cls.getName());
               rv = (T)delegate1.read(in);
             }
           } else in.skipValue();
