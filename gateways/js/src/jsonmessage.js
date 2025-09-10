@@ -204,7 +204,7 @@ export class JSONMessage {
       jsonObj.services = this.services;
       if (jsonObj.services.length === 0) delete jsonObj.services; // remove empty array
     }
-    if (this.answer) jsonObj.answer = this.answer;
+    if (this.answer != undefined) jsonObj.answer = this.answer;
     if (this.message) jsonObj.message = this.message;
     if (this.relay) jsonObj.relay = this.relay;
     if (this.creds) jsonObj.creds = this.creds;
