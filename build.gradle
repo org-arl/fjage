@@ -38,7 +38,7 @@ repositories {
 
 dependencies {
   api 'org.codehaus.groovy:groovy:2.5.23'
-  api 'org.jline:jline:3.30.4'
+  api 'org.jline:jline:3.29.0:jdk8'
   api 'org.apache.commons:commons-lang3:3.17.0'
   api 'commons-io:commons-io:2.19.0'
   api 'uk.com.robust-it:cloning:1.9.12'
