@@ -1,6 +1,6 @@
 {
   "name": "fjage",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "JS Gateway for fjåge",
   "main": "./dist/cjs/fjage.cjs",
   "types": "./dist/esm/fjage.d.ts",
