@@ -33,6 +33,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
 
   private static final String FORCE_BRACKETED_PASTE_ON = "FORCE_BRACKETED_PASTE_ON";
   private static final String BRACKETED_PASTE_ON = "\033[?2004h";
+  private static final String APPLICATION_CURSOR = "\033[?1h";
   private final Logger log = Logger.getLogger(getClass().getName());
   private Terminal term = null;
   private LineReader console = null;
@@ -170,6 +171,8 @@ public class ConsoleShell implements Shell, ConnectionListener {
       console.setOpt(LineReader.Option.ERASE_LINE_ON_FINISH);
       console.getWidgets().put(FORCE_BRACKETED_PASTE_ON, () -> {
         console.getTerminal().writer().write(BRACKETED_PASTE_ON);
+        console.getTerminal().writer().write(APPLICATION_CURSOR);
+        console.getTerminal().flush();
         return true;
       });
     }
