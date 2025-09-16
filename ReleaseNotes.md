@@ -1,5 +1,9 @@
 # Release Notes
 
+## 2.1.1
+* Bugfix: Fixed ConsoleShell to properly handle cursor keys at the start of a line
+* Bugfix: Fixed Web shell dark/light mode toggle
+
 ## v2.1.0
 
 * Moved to using UUID7 for message IDs

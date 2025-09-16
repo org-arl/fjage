@@ -38,7 +38,7 @@ Maven dependency (Github Maven repository)
     <dependency>
       <groupId>com.github.org-arl</groupId>
       <artifactId>fjage</artifactId>
-      <version>2.1.0</version>
+      <version>2.1.1</version>
     </dependency>
 
 From version 2.1.0 onwards, fjåge will be published in the [Github Maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry) only. The previous versions are still available in Maven Central.
