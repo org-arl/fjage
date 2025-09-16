@@ -107,8 +107,28 @@ class Message:
         return f"{p}: {self.__clazz__.split('.')[-1]}"
 
     def _repr_pretty_(self, p, cycle):
-        # TODO: improve pretty printing
-        p.text(str(self) if not cycle else '...')
+        if cycle:
+            p.text('...')
+            return
+        content = []
+        for k, v in self.__dict__.items():
+            if k.startswith('__') or k == 'sender' or k == 'recipient' or k == 'msgID' or k == 'perf' or k == 'inReplyTo':
+                # Skip internal and common fields
+                pass
+            elif v is None or (isinstance(v, (list, dict)) and len(v) == 0):
+                # Skip None or empty fields
+                pass
+            elif type(v) in (numpy.ndarray, list) and k == 'signal':
+                content.append(f"{k}=({len(v)} samples)")
+            elif type(v) in (numpy.ndarray, list) and k == 'data':
+                content.append(f"{k}=({len(v)} bytes)")
+            else:
+                content.append(f"{k}={v}")
+        if self.__clazz__ == 'org.arl.fjage.Message' and not content:
+            p.text(str(self.perf))
+        else:
+            p.text(self.__clazz__.split(".")[-1] + ':' + str(self.perf) +  '[' + (', '.join(content)) + ']')
+
 
 
 class GenericMessage(Message):
@@ -203,13 +223,17 @@ class ParameterReq(_ParameterReq):
             self.requests.append({'param': param, 'value': value})
         return self
 
-    # def __str__(self):
-    #     #TODO: improve pretty printing
-    #     pass
+    def __str__(self):
+        p = ''
+        if 'param' in self.__dict__ and self.param is not None:
+            p += _short(str(self.param)) + ':' + (str(_value(self.value)) if self.value is not None else '?') + ' '
+        if 'requests' in self.__dict__ and self.requests is not None:
+            if len(self.requests) > 0:
+                p += ', '.join([_short(str(v['param'])) + ':' + (str(_value(v['value'])) if 'value' in v and v['value'] is not None else '?') for v in self.requests])
+        return self.__class__.__name__ + ':' + self.perf.value + '[' + (('index:' + str(self.index) + ' ') if self.index >= 0 else '') + p.strip() + ']'
 
-    # def _repr_pretty_(self, p, cycle):
-    #     #TODO: improve pretty printing
-    #     pass
+    def _repr_pretty_(self, p, cycle):
+        p.text(str(self) if not cycle else '...')
 
 
 class ParameterRsp(_ParameterRsp):
@@ -249,17 +273,14 @@ class ParameterRsp(_ParameterRsp):
                 p[k] = _value(p[k])
         return p
 
-    # def __str__(self):
-    #     TODO: improve pretty printing
-    #     p = ''
-    #     if 'param' in self.__dict__:
-    #         p += _short(str(self.param)) + ':' + str(_value(self.value)) + ' '
-    #     if 'values' in self.__dict__ and self.values is not None:
-    #         if len(self.values) > 0:
-    #             p += ' '.join([_short(str(v)) + ':' + str(_value(self.values[v])) for v in self.values])
-    #     return self.__class__.__name__ + ':' + self.perf + '[' + (
-    #         ('index:' + str(self.index)) if self.index > 0 else '') + p.strip() + ']'
+    def __str__(self):
+        p = ''
+        if 'param' in self.__dict__ and self.param is not None and 'value' in self.__dict__:
+            p += _short(str(self.param)) + ':' + (str(_value(self.value))) + ' '
+        if 'values' in self.__dict__ and self.values is not None:
+            if len(self.values) > 0:
+                p += ', '.join([_short(str(k)) + ':' + str(_value(v)) for k, v in self.values.items()])
+        return self.__class__.__name__ + ':' + self.perf.value + '[' + (('index:' + str(self.index) + ' ') if self.index >= 0 else '') + p.strip() + ']'
 
-    # def _repr_pretty_(self, p, cycle):
-    #     TODO: improve pretty printing
-    #     p.text(str(self) if not cycle else '...')
+    def _repr_pretty_(self, p, cycle):
+        p.text(str(self) if not cycle else '...')
