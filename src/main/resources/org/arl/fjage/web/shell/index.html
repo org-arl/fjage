@@ -181,7 +181,7 @@
           theme = window.matchMedia ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : 'light';
           schemeToggleBnt.addEventListener('click', evt => {
             setScheme(term, currentScheme == 'dark' ? 'light' : 'dark', true);
-          })
+          });
         }
       } catch {
         // If we can't access the parent document (e.g., cross-origin, or not in an iframe),
