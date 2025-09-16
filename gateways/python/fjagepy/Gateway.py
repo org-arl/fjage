@@ -359,12 +359,10 @@ class Gateway:
         self.close()
 
     def __str__(self) -> str:
-        #TODO: Implement more details
-        return f"Gateway(aid={self.aid}, connected={self.is_connected()})"
+        return f"Gateway(hostname={self.connector.host} port={self.connector.port} connected={self.is_connected()})"
 
     def _repr_pretty_(self, p, cycle):
-        #TODO: Implement more details
-        p.text(self.__str__())
+        p.text(str(self) if not cycle else '...')
 
 T = TypeVar("T")
 class OneShotChannel(Generic[T]):
