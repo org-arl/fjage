@@ -13,3 +13,6 @@ class Performative(Enum):
     CFP = "CFP"
     PROPOSE = "PROPOSE"
     CANCEL = "CANCEL"
+
+    def __str__(self):
+        return self.value

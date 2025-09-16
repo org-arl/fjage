@@ -148,11 +148,63 @@ class AgentID:
         Returns:
             str: string representation of the agent id
         """
-        return self.to_json()
+        owner_str = f"Gateway({self.owner.connector.host}:{self.owner.connector.port})" if self.owner else 'none'
+        return f"AgentID(name={self.name}, topic={self.topic}, owner={owner_str})"
 
     def _repr_pretty_(self, p, cycle) -> None:
         """Pretty print support for IPython/Jupyter."""
-       #TODO: Implement pretty print
+        if (self.owner is None) or (not self.owner.is_connected()):
+            p.text(str(self) if not cycle else '...')
+            return
+
+        # Print a Java style Agent information
+        from .Message import ParameterReq
+        rsp = self.request(ParameterReq(index=self.index))
+        if rsp is None and 'param' not in rsp.__dict__ and 'value' not in rsp.__dict__:
+            p.text(str(self) if not cycle else '...')
+            return
+
+        # the first parameter is in rsp.param and rsp.value and the others are in the dict rsp.values,
+        # we combine them into a single dictionary
+        params = {}
+        if 'param' in rsp.__dict__ and 'value' in rsp.__dict__:
+            params[rsp.param] = rsp.value
+        if 'values' in rsp.__dict__ and isinstance(rsp.values, dict):
+            params.update(rsp.values)
+
+        if 'title' in params:
+            p.text('<<< ' + str(params['title']) + ' >>>\n')
+        else:
+            p.text('<<< ' + str(self.name).upper() + ' >>>\n')
+        if 'description' in params:
+            p.text('\n' + str(params['description']) + '\n')
+
+        # First we take all the parameters and sort them alphabetically
+        param_names = sorted(params.keys())
+
+        # Then we split them into lists based on the prefix. Everything before the
+        # final dot is considered a section.
+        sections = {}
+        for param in param_names:
+            if '.' in param:
+                section, subparam = param.rsplit('.', 1)
+            elif param == 'title' or param == 'description':
+                continue
+            else:
+                section, subparam = '', param
+            if section not in sections:
+                sections[section] = []
+            sections[section].append((subparam, params[param], param))
+
+
+        for section in sorted(sections.keys()):
+            if section:
+                p.text(f'\n[{section}]\n')
+            for subparam, value, param in sections[section]:
+                readonly = 'readonly' in rsp.__dict__ and isinstance(rsp.__dict__["readonly"], list) and param in rsp.__dict__["readonly"]
+                p.text(f'  {subparam} {"=>" if readonly else "="} {value}\n')
+
+        self.index = -1  # reset index after pretty print
 
     ## Magic methods to support syntactic sugar
 
