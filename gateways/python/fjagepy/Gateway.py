@@ -78,7 +78,7 @@ class Gateway:
         json_msg = JSONMessage.createSend(msg=msg)
         self._msg_tx(json_msg)
 
-    def receive(self, filter: Optional[Union[Callable, Type[Message], Type]], timeout: Optional[int] = None) -> Any:
+    def receive(self, filter: Optional[Union[Callable, Type[Message], Type]]=None, timeout: Optional[int] = None) -> Any:
         """Receives a message from the fjage platform.
 
         Args:
@@ -220,6 +220,8 @@ class Gateway:
         self.connector.disconnect()
 
     def match_filter(filter: Optional[Union[Callable, Type[Message], Type]], msg: Message) -> bool:
+        if filter is None:
+            return True
         if isinstance(filter, Message) and hasattr(filter, 'msgID'):
             return getattr(msg, 'inReplyTo', None) == filter.msgID
         if isinstance(filter, type):
