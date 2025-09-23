@@ -125,6 +125,19 @@ def test_gateway_send_shellexecreq_param_constructor(monkeypatch, gateway):
     assert msg.command == 'ps'
     assert msg.ans is True
 
+def test_gateway_receive_a_message(gateway):
+    """Gateway should be able to receive a messsage"""
+    gateway.flush()
+    smr = SendMsgReq()
+    smr.num = 1
+    smr.type = 0
+    smr.perf = Performative.REQUEST
+    smr.recipient = gateway.agent('echo')
+    rsp = gateway.request(smr)
+    rsp = gateway.receive(timeout=-1)
+    assert rsp is not None
+    assert isinstance(rsp, SendMsgRsp)
+
 def test_gateway_receive_queue_limit(gateway):
     """Gateway should only store the latest 512 messages in the receive queue."""
     gateway.flush()
