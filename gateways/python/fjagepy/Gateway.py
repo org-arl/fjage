@@ -28,7 +28,7 @@ class Gateway:
     NON_BLOCKING = 0
     BLOCKING = -1
 
-    def __init__(self, hostname: str = 'localhost', port: int = 1100, connector: type = TCPConnector, reconnect: bool = True, timeout: int = 10000) -> None:
+    def __init__(self, hostname: str = 'localhost', port: int = 1100, connector: Type[Connector] = TCPConnector, reconnect: bool = True, timeout: int = 10000) -> None:
         """Creates a new Gateway instance.
 
         Args:
