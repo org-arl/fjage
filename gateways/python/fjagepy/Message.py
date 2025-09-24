@@ -15,7 +15,7 @@ logger.addHandler(logging.NullHandler())
 try:
     import numpy
 
-    def _serialize_numpy_array(value: numpy.ndarray, key:str, props: Dict) -> list:
+    def _serialize_numpy_array(value: numpy.ndarray, key: str, props: Dict) -> list:
         """Convert a numpy array to a JSON-serializable dict, mark complex arrays."""
         if numpy.iscomplexobj(value):
             props[f"{key}__isComplex"] = True
