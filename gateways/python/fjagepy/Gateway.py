@@ -407,10 +407,10 @@ class ChannelFilter:
         self.channel = OneShotChannel[JSONMessage]()
         self.filter = filter
 
-    def get(self, timeout: Optional[float] = None) -> JSONMessage:
+    def get(self, timeout: Optional[float] = None) -> Message:
         return self.channel.get(timeout)
 
-    def tryput(self, msg: JSONMessage) -> bool:
+    def tryput(self, msg: Message) -> bool:
         if Gateway.match_filter(self.filter, msg):
             self.channel.put(msg)
             return True
