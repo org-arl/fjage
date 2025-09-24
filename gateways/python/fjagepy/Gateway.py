@@ -353,8 +353,8 @@ class Gateway:
         return msg
 
     def _update_watch(self):
-        watch = [aid.to_json() for aid, subscribed in self._subscriptions.items() if subscribed]
-        watch.append(self.aid.name)
+        watch = [aid for aid, subscribed in self._subscriptions.items() if subscribed]
+        watch.append(self.aid)
         json_msg = JSONMessage.createWantsMessagesFor(agentIDs=watch)
         self._msg_tx(json_msg)
 
