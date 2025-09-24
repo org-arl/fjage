@@ -340,7 +340,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 # Or, enable only logs from this library
-logging.getLogger("my_lib").setLevel(logging.DEBUG)
+logging.getLogger("fjagepy").setLevel(logging.DEBUG)
 ```
 
 For troubleshooting, you can also send logs to a file:
