@@ -134,7 +134,7 @@ class Gateway:
         self.send(msg)
         return self.receive(msg, timeout=timeout)
 
-    def getAgentID(self) -> AgentID:
+    def agent_id(self) -> AgentID:
         """Gets the AgentID of this gateway.
 
         Returns:
