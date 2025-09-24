@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "fjagepy"
 version = "1.7.5"
-description = "fjage Gatway in Python"
+description = "fjage Gateway in Python"
 authors = [{ name = "Chinmay Pendharkar", email = "chinmay@subnero.com" }]
 readme = "README.md"
 requires-python = ">=3.9"
