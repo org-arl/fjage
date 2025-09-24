@@ -95,7 +95,7 @@ class AgentID:
         from .Message import ParameterReq
 
         rsp = self.request(ParameterReq(index=index))
-        if rsp is None and 'param' not in rsp.__dict__ and 'value' not in rsp.__dict__:
+        if rsp is None or 'param' not in rsp.__dict__ or 'value' not in rsp.__dict__:
             return {}
 
         # the first parameter is in rsp.param and rsp.value and the others are in the dict rsp.values,
@@ -160,7 +160,7 @@ class AgentID:
         # Print a Java style Agent information
         from .Message import ParameterReq
         rsp = self.request(ParameterReq(index=self.index))
-        if rsp is None and 'param' not in rsp.__dict__ and 'value' not in rsp.__dict__:
+        if rsp is None or 'param' not in rsp.__dict__ or 'value' not in rsp.__dict__:
             p.text(str(self) if not cycle else '...')
             return
 
@@ -204,8 +204,6 @@ class AgentID:
                 readonly = 'readonly' in rsp.__dict__ and isinstance(rsp.__dict__["readonly"], list) and param in rsp.__dict__["readonly"]
                 p.text(f'  {subparam} {"=>" if readonly else "="} {value}\n')
 
-        self.index = -1  # reset index after pretty print
-
     ## Magic methods to support syntactic sugar
 
     def __lshift__(self, msg) -> Union[Type["Message"], None]:
@@ -227,17 +225,15 @@ class AgentID:
 # Magic methods to support dynamic parameter access using dot notation
 
 def __getter(self, param: str) -> None | Any:
-    if param in ['name', 'owner', 'topic', 'index', '_timeout']:
+    if param in ['name', 'owner', 'topic', 'index', '_timeout'] or param.startswith('_ipython'):
         return self.__dict__[param]
 
     from .Message import ParameterReq
 
     rsp = self.request(ParameterReq(index=self.index).get(param))
-    if param[0] != '_':
-        self.index = -1
-    if rsp is None and 'param' not in rsp.__dict__ and 'value' not in rsp.__dict__:
+    if rsp is None or 'param' not in rsp.__dict__ or 'value' not in rsp.__dict__:
         return None
-    return rsp.__dict__.get('value', None) if 'value' in rsp.__dict__ else None
+    return rsp.__dict__.get('value', None)
 
 
 setattr(AgentID, '__getattr__', __getter)
@@ -250,10 +246,8 @@ def __setter(self, param : str, value : Any) -> Any | None:
 
     from .Message import ParameterReq
     rsp = self.request(ParameterReq(index=self.index).set(param, value))
-    if param[0] != '_':
-        self.index = -1
-    if rsp is None and 'param' not in rsp.__dict__ and 'value' not in rsp.__dict__:
+    if rsp is None or 'param' not in rsp.__dict__ or 'value' not in rsp.__dict__:
         return None
-    return rsp.__dict__.get('value', None) if 'value' in rsp.__dict__ else None
+    return rsp.__dict__.get('value', None)
 
 setattr(AgentID, '__setattr__', __setter)

@@ -75,7 +75,7 @@ class Gateway:
             raise ValueError("msg must be a Message")
 
         msg.sender = self.aid
-        json_msg = JSONMessage.createSend(msg=msg)
+        json_msg = JSONMessage.createSend(msg=msg, relay=True)
         self._msg_tx(json_msg)
 
     def receive(self, filter: Optional[Union[Callable, Type[Message], Type]]=None, timeout: Optional[int] = None) -> Any:
