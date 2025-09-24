@@ -344,7 +344,7 @@ class Gateway:
             try:
                 msg = self._pending_actions[json_msg.id].get(timeout=timeout / 1000)
             except queue.Empty:
-                logger.warning(f"Receive timeout after {timeout} ms for filter {filter}")
+                logger.warning(f"Receive timeout after {timeout} ms for {json_msg.action}[{json_msg.id}] request")
                 msg = None
         else:
             msg = self._pending_actions[json_msg.id].get()

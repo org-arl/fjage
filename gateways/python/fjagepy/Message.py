@@ -126,10 +126,12 @@ class Message:
             elif v is None or (isinstance(v, (list, dict)) and len(v) == 0):
                 # Skip None or empty fields
                 pass
-            elif type(v) in (numpy.ndarray, list) and k == 'signal':
-                content.append(f"{k}=({len(v)} samples)")
-            elif type(v) in (numpy.ndarray, list) and k == 'data':
-                content.append(f"{k}=({len(v)} bytes)")
+            elif k == 'signal':
+                if type(v) is list or (hasattr(v, '__len__') and type(v).__name__ == 'ndarray'): # numpy array
+                    content.append(f"{k}=({len(v)} samples)")
+            elif k == 'data':
+                if type(v) is list or (hasattr(v, '__len__') and type(v).__name__ == 'ndarray'): # numpy array
+                    content.append(f"{k}=({len(v)} bytes)")
             else:
                 content.append(f"{k}={v}")
         if self.__clazz__ == 'org.arl.fjage.Message' and not content:
