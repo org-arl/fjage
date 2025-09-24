@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional, Union, Type, Self, Any
+from typing import Optional, Self, Any
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -11,12 +11,12 @@ DEFAULT_TIMEOUT = 10000
 
 class AgentID:
     """An identifier for an agent or a topic. This can be used to send, receive messages,
-    and set or get parameters on an agent or topic on the fjåge master container.
+    and set or get parameters on an agent or topic on the fjåge container.
 
     Args:
-        name (str): name of the agent
-        topic (bool, optional): True if this represents a topic. Defaults to False.
-        owner: Gateway owner for this AgentID. Defaults to None.
+        name : name of the agent
+        topic : True if this represents a topic. Defaults to False.
+        owner : Gateway owner for this AgentID. Defaults to None.
     """
 
     def __init__(self, name: str, topic: bool = False, owner = None) -> None:
@@ -44,7 +44,7 @@ class AgentID:
         """
         return self.topic
 
-    def send(self, msg) -> None:
+    def send(self, msg:Message) -> None:
         """Sends a message to the agent represented by this id.
 
         Args:
@@ -59,7 +59,7 @@ class AgentID:
         else:
             raise RuntimeError('Unowned AgentID cannot send messages')
 
-    def request(self, msg, timeout: Optional[int] = None) -> Union[Type[Message], None]:
+    def request(self, msg:Message, timeout: Optional[int] = None) -> Optional[Message]:
         """Sends a request to the agent represented by this id and waits for a response.
 
         Args:
@@ -84,7 +84,7 @@ class AgentID:
         """Gets the values of all parameters on the agent.
 
         Args:
-            index (int, optional): index for indexed parameters. Defaults to None.
+            index : index for indexed parameters. Defaults to -1 (no index).
 
         Returns:
             dict: dictionary of all parameters and their values
@@ -112,6 +112,8 @@ class AgentID:
 
         Returns:
             str: JSON string representation of the agent id
+
+        :meta private:
         """
         return ('#' if self.topic else '') + self.name
 
@@ -120,12 +122,13 @@ class AgentID:
         """Inflate the AgentID from a JSON string.
 
         Args:
-            json_str (str): JSON string to be converted to an AgentID
+            json_str : JSON string to be converted to an AgentID
             owner: Gateway owner for this AgentID. Defaults to None.
 
         Returns:
             AgentID: AgentID created from the JSON string
 
+        :meta private:
         """
 
         json_str = json_str.strip()
@@ -206,7 +209,7 @@ class AgentID:
 
     ## Magic methods to support syntactic sugar
 
-    def __lshift__(self, msg) -> Union[Type["Message"], None]:
+    def __lshift__(self, msg) -> Optional[Message]:
         """ Supports sending messages through the << operator.
             Example: agent << msg will send the message msg to the agent represented by agent."""
 

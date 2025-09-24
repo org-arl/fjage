@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Example of using fjagepy to connect to a fjage platform and run a simple test.
-# Make sure to start the fjage platform first, e.g. by running (in the fjage root directory):
+# Example of using fjagepy to connect to a fjage container and run a simple test.
+# Make sure to start the fjage container first, e.g. by running (in the fjage root directory):
 #   ./fjage.sh
 #
 # Then run this script:

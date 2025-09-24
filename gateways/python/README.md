@@ -2,7 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/fjagepy.svg)](https://pypi.org/project/fjagepy/)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](../../LICENSE)
 
 `fjagepy` is a Python gateway for the [fjåge](https://github.com/org-arl/fjage) multi-agent system framework. It enables Python applications to seamlessly communicate with fjåge agents over TCP connections, providing a Pythonic interface to the fjåge ecosystem.
 
@@ -47,7 +47,7 @@ pip install -e ".[dev]"
 ```python
 from fjagepy import Gateway, Message, AgentID
 
-# Connect to fjåge platform
+# Connect to fjåge container
 gw = Gateway('localhost', 1100)
 
 # Get reference to an agent
@@ -106,200 +106,6 @@ important_msg = gw.receive(my_filter, timeout=1000)
 
 gw.close()
 ```
-
-## API Reference
-
-### Gateway Class
-
-The main entry point for fjåge communication.
-
-#### Constructor
-
-```python
-Gateway(hostname='localhost', port=1100, connector=TCPConnector,
-        reconnect=True, timeout=10000)
-```
-
-**Parameters:**
-- `hostname` (str): Hostname of the fjåge platform (default: 'localhost')
-- `port` (int): Port number of the fjåge platform (default: 1100)
-- `connector` (type): Connector class to use (default: TCPConnector)
-- `reconnect` (bool): Enable automatic reconnection (default: True)
-- `timeout` (int): Default timeout in milliseconds (default: 10000)
-
-#### Key Methods
-
-##### `agent(name: str) -> AgentProxy`
-Get a proxy to communicate with a named agent.
-
-```python
-shell = gw.agent('shell')
-modem = gw.agent('modem')
-```
-
-##### `send(msg: Message) -> None`
-Send a message through the gateway.
-
-```python
-msg = Message()
-msg.recipient = AgentID('target-agent')
-gw.send(msg)
-```
-
-##### `receive(filter=None, timeout=None) -> Message`
-Receive a message matching the filter criteria.
-
-```python
-# Receive any message
-msg = gw.receive()
-
-# Receive specific message type
-rsp = gw.receive(ParameterRsp)
-
-# Receive with timeout
-msg = gw.receive(timeout=5000)
-
-# Receive with custom filter
-msg = gw.receive(lambda m: m.sender.name == 'modem')
-```
-
-##### `request(msg: Message, timeout=None) -> Message`
-Send a request and wait for response.
-
-```python
-req = ParameterReq()
-req.param = 'address'
-rsp = gw.request(req, timeout=3000)
-```
-
-##### `services() -> List[str]`
-Get list of available services.
-
-```python
-available_services = gw.services()
-print(f"Available services: {available_services}")
-```
-
-##### `agents_for_service(service: str) -> List[AgentID]`
-Find agents providing a specific service.
-
-```python
-phy_agents = gw.agents_for_service('org.arl.unet.Services.PHYSICAL')
-```
-
-##### `close() -> None`
-Close the gateway connection.
-
-```python
-gw.close()
-```
-
-### Message Classes
-
-#### Base Message Class
-
-```python
-from fjagepy import Message, Performative
-
-msg = Message()
-msg.recipient = AgentID('target')
-msg.perf = Performative.REQUEST
-msg.data = "Custom data"
-```
-
-#### Built-in Message Types
-
-**Parameter Operations:**
-```python
-from fjagepy import ParameterReq, ParameterRsp
-
-# Get parameter
-req = ParameterReq()
-req.param = 'address'
-req.index = -1  # All indices
-
-# Set parameter
-req = ParameterReq()
-req.param = 'power'
-req.value = -10
-```
-
-**File Operations:**
-```python
-from fjagepy import PutFileReq, GetFileReq
-
-# Upload file
-put_req = PutFileReq()
-put_req.filename = 'config.txt'
-put_req.contents = file_contents
-
-# Download file
-get_req = GetFileReq()
-get_req.filename = 'data.log'
-```
-
-**Shell Commands:**
-```python
-from fjagepy import ShellExecReq
-
-req = ShellExecReq()
-req.command = 'help'
-req.ans = True  # Request response
-```
-
-#### Custom Message Types
-
-Create custom message types using `MessageClass`:
-
-```python
-from fjagepy import MessageClass
-
-# Define custom message type
-MyCustomMessage = MessageClass("com.example.MyCustomMessage")
-
-# Use like any other message
-msg = MyCustomMessage()
-msg.customField = "value"
-msg.recipient = gw.agent('target')
-gw.send(msg)
-```
-
-### Agent Proxy
-
-Agent proxies provide convenient access to specific agents:
-
-```python
-# Get agent proxy
-shell = gw.agent('shell')
-
-# Send message to agent
-shell << message
-
-# Send request to agent
-response = shell.request(request_msg, timeout=5000)
-
-# Check if agent exists
-if shell.exists():
-    print("Shell agent is available")
-```
-
-### NumPy Integration
-
-fjagepy automatically handles NumPy arrays in messages:
-
-```python
-import numpy as np
-from fjagepy import Message
-
-# Create message with NumPy array
-msg = Message()
-msg.data = np.array([1.0, 2.0, 3.0])
-msg.complex_data = np.array([1+2j, 3+4j])  # Complex arrays supported
-
-# Arrays are automatically serialized/deserialized
-agent << msg
-```
-
 ## Advanced Usage
 
 ### Custom Connectors
@@ -365,6 +171,25 @@ with Gateway('localhost', 5081) as gw:
 # Gateway automatically closed
 ```
 
+### iPython / Jupyter Notebook Support
+
+In Jupyter notebooks, AgentIDs and Messages are displayed in a human-readable format
+
+```
+In [1]: from fjagepy import *
+
+In [2]: gw = Gateway("localhost", 5081)
+
+In [3]: gw.agentForService(Services.SHELL)
+Out[3]:
+<<< websh >>>
+
+Interactive Groovy shell
+
+[org.arl.fjage.shell.ShellParam]
+  language => Groovy
+```
+
 ## Testing
 
 Run the test suite:
@@ -385,7 +210,7 @@ pytest --cov=fjagepy
 
 ### Test Requirements
 
-Tests require a running fjåge platform on `localhost:5081`. You can start one using:
+Tests require a running fjåge container on `localhost:5081`. You can start one using:
 
 ```bash
 # In the main fjåge directory
@@ -395,6 +220,19 @@ Tests require a running fjåge platform on `localhost:5081`. You can start one u
 ## Examples
 
 See the `examples/` directory an example of how to use the fjagepy gateway.
+
+## Documentation
+
+To build the documentation locally:
+
+```bash
+# Install documentation dependencies
+pip install -e ".[docs]"
+# Build docs
+sphinx-build -b html docs/ ../../docs/pydocs/
+# View in browser
+open ../../docs/pydocs/index.html
+```
 
 ## Compatibility
 
@@ -416,7 +254,7 @@ See the `examples/` directory an example of how to use the fjagepy gateway.
 
 ## License
 
-This project is licensed under the BSD 3-Clause License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the BSD 3-Clause License. See the [LICENSE](../../LICENSE) file for details.
 
 ## Support
 

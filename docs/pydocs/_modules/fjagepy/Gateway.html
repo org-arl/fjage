@@ -1,0 +1,572 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fjagepy.Gateway &mdash; fjagepy Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5b045848"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            fjagepy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../fjagepy.html">fjåge Gateway in Python (fjagepy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">fjagepy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">fjagepy.Gateway</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fjagepy.Gateway</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">queue</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Optional</span>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Connector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Connector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.TCPConnector</span><span class="w"> </span><span class="kn">import</span> <span class="n">TCPConnector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.AgentID</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentID</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.JSONMessage</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONMessage</span><span class="p">,</span> <span class="n">Actions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Message</span><span class="w"> </span><span class="kn">import</span> <span class="n">Message</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">UUID7</span>
+
+<span class="n">DEFAULT_RECONNECT_DELAY</span> <span class="o">=</span> <span class="mf">2.0</span>  <span class="c1"># seconds</span>
+<span class="n">DEFAULT_MAX_QUEUE_SIZE</span> <span class="o">=</span> <span class="mi">512</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
+
+<div class="viewcode-block" id="Gateway">
+<a class="viewcode-back" href="../../api/generated/fjagepy.Gateway.html#fjagepy.Gateway">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Gateway</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; A Gateway is used to connect to a fjåge container and send and receive messages,</span>
+<span class="sd">    query for agents and services, and set or get parameters on agents from Python.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NON_BLOCKING</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BLOCKING</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<div class="viewcode-block" id="Gateway.__init__">
+<a class="viewcode-back" href="../../api/generated/fjagepy.Gateway.html#fjagepy.Gateway.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1100</span><span class="p">,</span> <span class="n">connector</span><span class="p">:</span> <span class="nb">type</span> <span class="o">=</span> <span class="n">TCPConnector</span><span class="p">,</span> <span class="n">reconnect</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a new Gateway instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            hostname : hostname of the fjage container. Defaults to &#39;localhost&#39;.</span>
+<span class="sd">            port : port of the fjage container. Defaults to 1100.</span>
+<span class="sd">            connector : Connector class to use. Defaults to TCPConnector.</span>
+<span class="sd">            keep_alive : whether to keep the connection alive. Defaults to True.</span>
+<span class="sd">            timeout : default timeout in milliseconds for requests. Defaults to 10000.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">hostname</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;hostname must be a non-empty string&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">port</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;</span> <span class="n">port</span> <span class="o">&lt;</span> <span class="mi">65536</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;port must be an integer 1-65535&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">connector</span><span class="p">,</span> <span class="n">Connector</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;connector must be a subclass of Connector&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reconnect</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;keep_alive must be a boolean&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">timeout</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;timeout must be a positive integer&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pending_actions</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pending_requests</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_queue_size</span> <span class="o">=</span> <span class="n">DEFAULT_MAX_QUEUE_SIZE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_subscriptions</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aid</span> <span class="o">=</span> <span class="n">AgentID</span><span class="p">(</span><span class="s2">&quot;gateway-&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span> <span class="n">owner</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connector</span> <span class="o">=</span> <span class="n">connector</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">reconnect</span> <span class="k">else</span> <span class="n">DEFAULT_RECONNECT_DELAY</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">set_receive_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_msg_rx</span><span class="p">)</span>
+        <span class="k">try</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to connect to </span><span class="si">{</span><span class="n">hostname</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s1">&#39;{&quot;alive&quot;: true}&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_watch</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Gateway.send">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.send">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a message to the fjage container.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            msg : message to send</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">Message</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;msg must be a Message&quot;</span><span class="p">)</span>
+
+        <span class="n">msg</span><span class="o">.</span><span class="n">sender</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aid</span>
+        <span class="n">json_msg</span> <span class="o">=</span> <span class="n">JSONMessage</span><span class="o">.</span><span class="n">createSend</span><span class="p">(</span><span class="n">msg</span><span class="o">=</span><span class="n">msg</span><span class="p">,</span> <span class="n">relay</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx</span><span class="p">(</span><span class="n">json_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Gateway.receive">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.receive">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">filter</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">Type</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="n">Message</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Receives a message from the fjage container.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filter : filter to apply to incoming messages</span>
+<span class="sd">            timeout : timeout in milliseconds. Defaults to None, which uses the gateway&#39;s default timeout.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Message or None: received message or None if timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;timeout must be an integer&quot;</span><span class="p">)</span>
+
+        <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_from_queue</span><span class="p">(</span><span class="nb">filter</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">msg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">timeout</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">NON_BLOCKING</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">msg</span>
+
+        <span class="n">lid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">UUID7</span><span class="o">.</span><span class="n">generate</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pending_requests</span><span class="p">[</span><span class="n">lid</span><span class="p">]</span> <span class="o">=</span> <span class="n">ChannelFilter</span><span class="p">(</span><span class="nb">filter</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">BLOCKING</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_requests</span><span class="p">[</span><span class="n">lid</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Receive timeout after </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2"> ms for filter </span><span class="si">{</span><span class="nb">filter</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_requests</span><span class="p">[</span><span class="n">lid</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">lid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_requests</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_requests</span><span class="p">[</span><span class="n">lid</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">msg</span></div>
+
+
+<div class="viewcode-block" id="Gateway.request">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.request">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">Message</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a request message and waits for a reply.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            msg : request message to send</span>
+<span class="sd">            timeout : timeout in milliseconds. Defaults to None, which uses the gateway&#39;s default timeout.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Message or None: reply message or None if timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">Message</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;msg must be a Message&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;timeout must be an integer&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Create a unique msgID for this request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Gateway.getAgentID">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.getAgentID">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getAgentID</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AgentID</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the AgentID of this gateway.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AgentID: AgentID of this gateway</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aid</span></div>
+
+
+<div class="viewcode-block" id="Gateway.agent">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.agent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AgentID</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates an AgentID for the given agent name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">AgentID</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Gateway.topic">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.topic">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">topic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AgentID</span><span class="p">],</span> <span class="n">topic2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AgentID</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a topic with the given name or based on the given AgentID.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">AgentID</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">topic</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">AgentID</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">is_topic</span><span class="p">()):</span>
+                <span class="k">return</span> <span class="n">topic</span>
+            <span class="k">return</span> <span class="n">AgentID</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;__</span><span class="si">{</span><span class="n">topic2</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">topic2</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;__ntf&quot;</span><span class="p">,</span> <span class="n">topic</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Gateway.subscribe">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.subscribe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="n">AgentID</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Subscribes to the given topic.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">is_topic</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">):</span>
+           <span class="n">topic</span> <span class="o">=</span> <span class="n">AgentID</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;__ntf&#39;</span><span class="p">,</span> <span class="n">topic</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_subscriptions</span><span class="p">[</span><span class="n">topic</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_watch</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="Gateway.unsubscribe">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.unsubscribe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="n">AgentID</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unsubscribes from the given topic.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">is_topic</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">):</span>
+           <span class="n">topic</span> <span class="o">=</span> <span class="n">AgentID</span><span class="p">(</span><span class="n">topic</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;__ntf&#39;</span><span class="p">,</span> <span class="n">topic</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">topic</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subscriptions</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_subscriptions</span><span class="p">[</span><span class="n">topic</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_watch</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="Gateway.agents">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.agents">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">agents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span><span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">AgentID</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the list of all agents connected to the fjage container&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span>
+        <span class="n">json_msg</span> <span class="o">=</span> <span class="n">JSONMessage</span><span class="o">.</span><span class="n">createAgents</span><span class="p">()</span>
+        <span class="n">rsp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx_rx</span><span class="p">(</span><span class="n">json_msg</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rsp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rsp</span><span class="p">,</span> <span class="s1">&#39;agentIDs&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rsp</span><span class="o">.</span><span class="n">agentIDs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">rsp</span><span class="o">.</span><span class="n">agentIDs</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Response to agents() request does not contain agentIDs&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="Gateway.containsAgent">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.containsAgent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">containsAgent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agentID</span><span class="p">:</span> <span class="n">AgentID</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if the given agent is connected to the fjage container&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span>
+        <span class="n">json_msg</span> <span class="o">=</span> <span class="n">JSONMessage</span><span class="o">.</span><span class="n">createContainsAgent</span><span class="p">(</span><span class="n">agentID</span><span class="o">=</span><span class="n">agentID</span><span class="p">)</span>
+        <span class="n">rsp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx_rx</span><span class="p">(</span><span class="n">json_msg</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rsp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rsp</span><span class="p">,</span> <span class="s1">&#39;answer&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rsp</span><span class="o">.</span><span class="n">answer</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">rsp</span><span class="o">.</span><span class="n">answer</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Response to containsAgent() request does not contain answer&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="Gateway.agentForService">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.agentForService">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">agentForService</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">],</span> <span class="n">timeout</span><span class="p">:</span><span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AgentID</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Finds an agent that provides the given service.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+            <span class="n">service</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">json_msg</span> <span class="o">=</span> <span class="n">JSONMessage</span><span class="o">.</span><span class="n">createAgentForService</span><span class="p">(</span><span class="n">service</span><span class="o">=</span><span class="n">service</span><span class="p">)</span>
+        <span class="n">rsp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx_rx</span><span class="p">(</span><span class="n">json_msg</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rsp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rsp</span><span class="p">,</span> <span class="s1">&#39;agentID&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rsp</span><span class="o">.</span><span class="n">agentID</span><span class="p">,</span> <span class="n">AgentID</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">rsp</span><span class="o">.</span><span class="n">agentID</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Response to agentForService() request does not contain agentID&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Gateway.agentsForService">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.agentsForService">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">agentsForService</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">],</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">AgentID</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a list of all agents that provide the given service.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+            <span class="n">service</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">json_msg</span> <span class="o">=</span> <span class="n">JSONMessage</span><span class="o">.</span><span class="n">createAgentsForService</span><span class="p">(</span><span class="n">service</span><span class="o">=</span><span class="n">service</span><span class="p">)</span>
+        <span class="n">rsp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx_rx</span><span class="p">(</span><span class="n">json_msg</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rsp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rsp</span><span class="p">,</span> <span class="s1">&#39;agentIDs&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rsp</span><span class="o">.</span><span class="n">agentIDs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">rsp</span><span class="o">.</span><span class="n">agentIDs</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Response to agentsForService() request does not contain agentIDs&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="Gateway.flush">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.flush">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears the internal message queue.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Gateway.close">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.close">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Closes the gateway and disconnects from the fjage container.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Gateway.match_filter">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.match_filter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">match_filter</span><span class="p">(</span><span class="nb">filter</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">Type</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="n">Message</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">msg</span><span class="p">:</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">filter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="n">Message</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="s1">&#39;msgID&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="s1">&#39;inReplyTo&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="nb">filter</span><span class="o">.</span><span class="n">msgID</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="nb">filter</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="nb">filter</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in filter function: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+    <span class="c1"># Internal helper methods</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_retrieve_from_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">filter</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">Type</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="n">Message</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Message</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># No filter: return first message</span>
+        <span class="k">if</span> <span class="nb">filter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">msg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">Gateway</span><span class="o">.</span><span class="n">match_filter</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_send_receivers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">receiver</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_requests</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">receiver</span><span class="o">.</span><span class="n">tryput</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+                    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_requests</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_msg_rx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;&lt;&lt; </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">json_msg</span> <span class="o">=</span> <span class="n">JSONMessage</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">json_msg</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_actions</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pending_actions</span><span class="p">[</span><span class="n">json_msg</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">json_msg</span><span class="p">)</span>
+                    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_actions</span><span class="p">[</span><span class="n">json_msg</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+
+                <span class="k">elif</span> <span class="p">(</span><span class="n">json_msg</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">Actions</span><span class="o">.</span><span class="n">SEND</span><span class="o">.</span><span class="n">value</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">json_msg</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">json_msg</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="n">Message</span><span class="p">)):</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">message</span>
+                    <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">recipient</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">aid</span> <span class="ow">or</span> <span class="n">msg</span><span class="o">.</span><span class="n">recipient</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subscriptions</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="c1"># if not consumed by any of the receivers, then queue it</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_receivers</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_queue_size</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rsp</span> <span class="o">=</span> <span class="n">JSONMessage</span><span class="p">()</span>
+                    <span class="n">rsp</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">id</span>
+                    <span class="n">rsp</span><span class="o">.</span><span class="n">inResponseTo</span> <span class="o">=</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span>
+                    <span class="k">if</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">Actions</span><span class="o">.</span><span class="n">AGENTS</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+                        <span class="n">rsp</span><span class="o">.</span><span class="n">agentIDs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">aid</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">Actions</span><span class="o">.</span><span class="n">CONTAINS_AGENT</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+                        <span class="n">rsp</span><span class="o">.</span><span class="n">answer</span> <span class="o">=</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">agentID</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">aid</span>
+                    <span class="k">elif</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">Actions</span><span class="o">.</span><span class="n">SERVICES</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+                        <span class="n">rsp</span><span class="o">.</span><span class="n">services</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">elif</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">Actions</span><span class="o">.</span><span class="n">AGENT_FOR_SERVICE</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+                        <span class="n">rsp</span><span class="o">.</span><span class="n">agentID</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">elif</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">Actions</span><span class="o">.</span><span class="n">AGENTS_FOR_SERVICE</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+                        <span class="n">rsp</span><span class="o">.</span><span class="n">agentIDs</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">rsp</span> <span class="o">=</span> <span class="kc">None</span>
+
+                    <span class="k">if</span> <span class="n">rsp</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx</span><span class="p">(</span><span class="n">rsp</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to parse JSONMessage: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_msg_tx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_msg</span><span class="p">:</span> <span class="n">JSONMessage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a JSONMessage to the fjage container.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            json_msg : message to send</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">json_msg</span><span class="p">,</span> <span class="n">JSONMessage</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;json_msg must be a JSONMessage&quot;</span><span class="p">)</span>
+        <span class="n">json_str</span> <span class="o">=</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&gt;&gt;&gt; </span><span class="si">{</span><span class="n">json_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json_str</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_msg_tx_rx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_msg</span><span class="p">:</span> <span class="n">JSONMessage</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">JSONMessage</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a JSONMessage and waits for a response.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            json_msg : message to send</span>
+<span class="sd">            timeout : timeout in milliseconds</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            JSONMessage or None: response message or None if timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">json_msg</span><span class="p">,</span> <span class="n">JSONMessage</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;json_msg must be a JSONMessage&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;timeout must be an integer&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pending_actions</span><span class="p">[</span><span class="n">json_msg</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">OneShotChannel</span><span class="p">[</span><span class="n">JSONMessage</span><span class="p">]()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx</span><span class="p">(</span><span class="n">json_msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">BLOCKING</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_actions</span><span class="p">[</span><span class="n">json_msg</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Receive timeout after </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2"> ms for filter </span><span class="si">{</span><span class="nb">filter</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_actions</span><span class="p">[</span><span class="n">json_msg</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_actions</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_actions</span><span class="p">[</span><span class="n">json_msg</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">msg</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_watch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">watch</span> <span class="o">=</span> <span class="p">[</span><span class="n">aid</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span> <span class="k">for</span> <span class="n">aid</span><span class="p">,</span> <span class="n">subscribed</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subscriptions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">subscribed</span><span class="p">]</span>
+        <span class="n">watch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aid</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">json_msg</span> <span class="o">=</span> <span class="n">JSONMessage</span><span class="o">.</span><span class="n">createWantsMessagesFor</span><span class="p">(</span><span class="n">agentIDs</span><span class="o">=</span><span class="n">watch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx</span><span class="p">(</span><span class="n">json_msg</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Gateway.is_connected">
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Gateway.is_connected">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_connected</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns True if the gateway is connected to the fjage container.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if connected, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">is_connected</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Gateway&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Gateway(hostname=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">host</span><span class="si">}</span><span class="s2"> port=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">port</span><span class="si">}</span><span class="s2"> connected=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">is_connected</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">cycle</span> <span class="k">else</span> <span class="s1">&#39;...&#39;</span><span class="p">)</span></div>
+
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OneShotChannel</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cond</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_has_value</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cond</span><span class="p">:</span>
+            <span class="c1"># overwrite if a value is still waiting</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_has_value</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cond</span><span class="o">.</span><span class="n">notify</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cond</span><span class="p">:</span>
+            <span class="n">ok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cond</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_value</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_has_value</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="n">val</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ChannelFilter</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">filter</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">Type</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="n">Message</span><span class="p">,</span> <span class="kc">None</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel</span> <span class="o">=</span> <span class="n">OneShotChannel</span><span class="p">[</span><span class="n">JSONMessage</span><span class="p">]()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="nb">filter</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JSONMessage</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">tryput</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">JSONMessage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">Gateway</span><span class="o">.</span><span class="n">match_filter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">channel</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Subnero / ARL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

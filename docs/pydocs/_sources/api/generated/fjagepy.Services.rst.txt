@@ -1,0 +1,29 @@
+﻿fjagepy.Services
+================
+
+.. currentmodule:: fjagepy
+
+.. autoclass:: Services
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Services.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Services.DOCUMENTATION
+      ~Services.SHELL
+   
+   

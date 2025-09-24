@@ -1,0 +1,946 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fjagepy package &mdash; fjagepy Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5b045848"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="API Reference" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            fjagepy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../fjagepy.html">fjåge Gateway in Python (fjagepy)</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">fjagepy package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.AgentID"><code class="docutils literal notranslate"><span class="pre">AgentID</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.AgentID.get"><code class="docutils literal notranslate"><span class="pre">AgentID.get()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.AgentID.get_name"><code class="docutils literal notranslate"><span class="pre">AgentID.get_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.AgentID.is_topic"><code class="docutils literal notranslate"><span class="pre">AgentID.is_topic()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.AgentID.request"><code class="docutils literal notranslate"><span class="pre">AgentID.request()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.AgentID.send"><code class="docutils literal notranslate"><span class="pre">AgentID.send()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.Gateway"><code class="docutils literal notranslate"><span class="pre">Gateway</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.BLOCKING"><code class="docutils literal notranslate"><span class="pre">Gateway.BLOCKING</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.NON_BLOCKING"><code class="docutils literal notranslate"><span class="pre">Gateway.NON_BLOCKING</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agent"><code class="docutils literal notranslate"><span class="pre">Gateway.agent()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agentForService"><code class="docutils literal notranslate"><span class="pre">Gateway.agentForService()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agents"><code class="docutils literal notranslate"><span class="pre">Gateway.agents()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agentsForService"><code class="docutils literal notranslate"><span class="pre">Gateway.agentsForService()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.close"><code class="docutils literal notranslate"><span class="pre">Gateway.close()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.containsAgent"><code class="docutils literal notranslate"><span class="pre">Gateway.containsAgent()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.flush"><code class="docutils literal notranslate"><span class="pre">Gateway.flush()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.getAgentID"><code class="docutils literal notranslate"><span class="pre">Gateway.getAgentID()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.is_connected"><code class="docutils literal notranslate"><span class="pre">Gateway.is_connected()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.match_filter"><code class="docutils literal notranslate"><span class="pre">Gateway.match_filter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.receive"><code class="docutils literal notranslate"><span class="pre">Gateway.receive()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.request"><code class="docutils literal notranslate"><span class="pre">Gateway.request()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.send"><code class="docutils literal notranslate"><span class="pre">Gateway.send()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.subscribe"><code class="docutils literal notranslate"><span class="pre">Gateway.subscribe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.topic"><code class="docutils literal notranslate"><span class="pre">Gateway.topic()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.unsubscribe"><code class="docutils literal notranslate"><span class="pre">Gateway.unsubscribe()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.GetFileReq"><code class="docutils literal notranslate"><span class="pre">GetFileReq</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.GetFileRsp"><code class="docutils literal notranslate"><span class="pre">GetFileRsp</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.JSONMessage"><code class="docutils literal notranslate"><span class="pre">JSONMessage</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.JSONMessage.createAgentForService"><code class="docutils literal notranslate"><span class="pre">JSONMessage.createAgentForService()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.JSONMessage.createAgents"><code class="docutils literal notranslate"><span class="pre">JSONMessage.createAgents()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.JSONMessage.createAgentsForService"><code class="docutils literal notranslate"><span class="pre">JSONMessage.createAgentsForService()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.JSONMessage.createContainsAgent"><code class="docutils literal notranslate"><span class="pre">JSONMessage.createContainsAgent()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.JSONMessage.createSend"><code class="docutils literal notranslate"><span class="pre">JSONMessage.createSend()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.JSONMessage.createWantsMessagesFor"><code class="docutils literal notranslate"><span class="pre">JSONMessage.createWantsMessagesFor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.JSONMessage.to_json"><code class="docutils literal notranslate"><span class="pre">JSONMessage.to_json()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.Message"><code class="docutils literal notranslate"><span class="pre">Message</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.MessageClass"><code class="docutils literal notranslate"><span class="pre">MessageClass()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.ParameterReq"><code class="docutils literal notranslate"><span class="pre">ParameterReq</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.ParameterReq.get"><code class="docutils literal notranslate"><span class="pre">ParameterReq.get()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.ParameterReq.set"><code class="docutils literal notranslate"><span class="pre">ParameterReq.set()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.ParameterRsp"><code class="docutils literal notranslate"><span class="pre">ParameterRsp</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.ParameterRsp.get"><code class="docutils literal notranslate"><span class="pre">ParameterRsp.get()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.ParameterRsp.parameters"><code class="docutils literal notranslate"><span class="pre">ParameterRsp.parameters()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.Performative"><code class="docutils literal notranslate"><span class="pre">Performative</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.AGREE"><code class="docutils literal notranslate"><span class="pre">Performative.AGREE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.CANCEL"><code class="docutils literal notranslate"><span class="pre">Performative.CANCEL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.CFP"><code class="docutils literal notranslate"><span class="pre">Performative.CFP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.CONFIRM"><code class="docutils literal notranslate"><span class="pre">Performative.CONFIRM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.DISCONFIRM"><code class="docutils literal notranslate"><span class="pre">Performative.DISCONFIRM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.FAILURE"><code class="docutils literal notranslate"><span class="pre">Performative.FAILURE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.INFORM"><code class="docutils literal notranslate"><span class="pre">Performative.INFORM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.NOT_UNDERSTOOD"><code class="docutils literal notranslate"><span class="pre">Performative.NOT_UNDERSTOOD</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.PROPOSE"><code class="docutils literal notranslate"><span class="pre">Performative.PROPOSE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.QUERY_IF"><code class="docutils literal notranslate"><span class="pre">Performative.QUERY_IF</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.REFUSE"><code class="docutils literal notranslate"><span class="pre">Performative.REFUSE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Performative.REQUEST"><code class="docutils literal notranslate"><span class="pre">Performative.REQUEST</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.PutFileReq"><code class="docutils literal notranslate"><span class="pre">PutFileReq</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.Services"><code class="docutils literal notranslate"><span class="pre">Services</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Services.DOCUMENTATION"><code class="docutils literal notranslate"><span class="pre">Services.DOCUMENTATION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Services.SHELL"><code class="docutils literal notranslate"><span class="pre">Services.SHELL</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.ShellExecReq"><code class="docutils literal notranslate"><span class="pre">ShellExecReq</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fjagepy.TCPConnector"><code class="docutils literal notranslate"><span class="pre">TCPConnector</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.TCPConnector.connect"><code class="docutils literal notranslate"><span class="pre">TCPConnector.connect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.TCPConnector.disconnect"><code class="docutils literal notranslate"><span class="pre">TCPConnector.disconnect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.TCPConnector.is_connected"><code class="docutils literal notranslate"><span class="pre">TCPConnector.is_connected()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.TCPConnector.send"><code class="docutils literal notranslate"><span class="pre">TCPConnector.send()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.TCPConnector.set_receive_callback"><code class="docutils literal notranslate"><span class="pre">TCPConnector.set_receive_callback()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">fjagepy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">API Reference</a></li>
+      <li class="breadcrumb-item active">fjagepy package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/fjagepy.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-fjagepy">
+<span id="fjagepy-package"></span><h1>fjagepy package<a class="headerlink" href="#module-fjagepy" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.AgentID">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">AgentID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/AgentID.html#AgentID"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.AgentID" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>An identifier for an agent or a topic. This can be used to send, receive messages,
+and set or get parameters on an agent or topic on the fjåge container.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – name of the agent</p></li>
+<li><p><strong>topic</strong> (<em>bool</em>) – True if this represents a topic. Defaults to False.</p></li>
+<li><p><strong>owner</strong> – Gateway owner for this AgentID. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.AgentID.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/AgentID.html#AgentID.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.AgentID.get" title="Link to this definition"></a></dt>
+<dd><p>Gets the values of all parameters on the agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>index</strong> (<em>int</em><em> | </em><em>None</em>) – index for indexed parameters. Defaults to -1 (no index).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dictionary of all parameters and their values</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> – if this AgentID has no owner (unowned AgentID cannot get parameters)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.AgentID.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/AgentID.html#AgentID.get_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.AgentID.get_name" title="Link to this definition"></a></dt>
+<dd><p>Gets the name of the agent or topic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>name of agent or topic</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.AgentID.is_topic">
+<span class="sig-name descname"><span class="pre">is_topic</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/AgentID.html#AgentID.is_topic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.AgentID.is_topic" title="Link to this definition"></a></dt>
+<dd><p>Returns True if the agent id represents a topic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the agent id represents a topic, False if it represents an agent</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.AgentID.request">
+<span class="sig-name descname"><span class="pre">request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/AgentID.html#AgentID.request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.AgentID.request" title="Link to this definition"></a></dt>
+<dd><p>Sends a request to the agent represented by this id and waits for a response.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message"><em>Message</em></a>) – request to send</p></li>
+<li><p><strong>timeout</strong> (<em>int</em><em>, </em><em>optional</em>) – timeout in milliseconds. Defaults to owner’s timeout.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Response message</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – if this AgentID has no owner (unowned AgentID cannot send messages)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message">Message</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.AgentID.send">
+<span class="sig-name descname"><span class="pre">send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/AgentID.html#AgentID.send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.AgentID.send" title="Link to this definition"></a></dt>
+<dd><p>Sends a message to the agent represented by this id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message"><em>Message</em></a>) – message to send</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> – if this AgentID has no owner (unowned AgentID cannot send messages)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.Gateway">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">Gateway</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hostname='localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port=1100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connector=&lt;class</span> <span class="pre">'fjagepy.TCPConnector.TCPConnector'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reconnect=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout=10000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A Gateway is used to connect to a fjåge container and send and receive messages,
+query for agents and services, and set or get parameters on agents from Python.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hostname</strong> (<em>str</em>)</p></li>
+<li><p><strong>port</strong> (<em>int</em>)</p></li>
+<li><p><strong>connector</strong> (<em>type</em>)</p></li>
+<li><p><strong>reconnect</strong> (<em>bool</em>)</p></li>
+<li><p><strong>timeout</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Gateway.BLOCKING">
+<span class="sig-name descname"><span class="pre">BLOCKING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">-1</span></em><a class="headerlink" href="#fjagepy.Gateway.BLOCKING" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Gateway.NON_BLOCKING">
+<span class="sig-name descname"><span class="pre">NON_BLOCKING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#fjagepy.Gateway.NON_BLOCKING" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.agent">
+<span class="sig-name descname"><span class="pre">agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.agent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.agent" title="Link to this definition"></a></dt>
+<dd><p>Creates an AgentID for the given agent name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.agentForService">
+<span class="sig-name descname"><span class="pre">agentForService</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.agentForService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.agentForService" title="Link to this definition"></a></dt>
+<dd><p>Finds an agent that provides the given service.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>service</strong> (<em>str</em><em> | </em><em>Enum</em>)</p></li>
+<li><p><strong>timeout</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.agents">
+<span class="sig-name descname"><span class="pre">agents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.agents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.agents" title="Link to this definition"></a></dt>
+<dd><p>Gets the list of all agents connected to the fjage container</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> (<em>int</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.agentsForService">
+<span class="sig-name descname"><span class="pre">agentsForService</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.agentsForService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.agentsForService" title="Link to this definition"></a></dt>
+<dd><p>Retrieves a list of all agents that provide the given service.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>service</strong> (<em>str</em><em> | </em><em>Enum</em>)</p></li>
+<li><p><strong>timeout</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.close" title="Link to this definition"></a></dt>
+<dd><p>Closes the gateway and disconnects from the fjage container.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.containsAgent">
+<span class="sig-name descname"><span class="pre">containsAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agentID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.containsAgent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.containsAgent" title="Link to this definition"></a></dt>
+<dd><p>Checks if the given agent is connected to the fjage container</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>agentID</strong> (<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p></li>
+<li><p><strong>timeout</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.flush">
+<span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.flush"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.flush" title="Link to this definition"></a></dt>
+<dd><p>Clears the internal message queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.getAgentID">
+<span class="sig-name descname"><span class="pre">getAgentID</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.getAgentID"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.getAgentID" title="Link to this definition"></a></dt>
+<dd><p>Gets the AgentID of this gateway.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AgentID of this gateway</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID">AgentID</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.is_connected">
+<span class="sig-name descname"><span class="pre">is_connected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.is_connected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.is_connected" title="Link to this definition"></a></dt>
+<dd><p>Returns True if the gateway is connected to the fjage container.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if connected, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.match_filter">
+<span class="sig-name descname"><span class="pre">match_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.match_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.match_filter" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filter</strong> (<em>Callable</em><em> | </em><em>Type</em><em>[</em><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em>] </em><em>| </em><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.receive">
+<span class="sig-name descname"><span class="pre">receive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.receive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.receive" title="Link to this definition"></a></dt>
+<dd><p>Receives a message from the fjage container.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filter</strong> (<em>Callable</em><em> | </em><em>Type</em><em>[</em><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em>] </em><em>| </em><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>) – filter to apply to incoming messages</p></li>
+<li><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>) – timeout in milliseconds. Defaults to None, which uses the gateway’s default timeout.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>received message or None if timeout</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message">Message</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.request">
+<span class="sig-name descname"><span class="pre">request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.request" title="Link to this definition"></a></dt>
+<dd><p>Sends a request message and waits for a reply.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>) – request message to send</p></li>
+<li><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>) – timeout in milliseconds. Defaults to None, which uses the gateway’s default timeout.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>reply message or None if timeout</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message">Message</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.send">
+<span class="sig-name descname"><span class="pre">send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.send" title="Link to this definition"></a></dt>
+<dd><p>Sends a message to the fjage container.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>) – message to send</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.subscribe">
+<span class="sig-name descname"><span class="pre">subscribe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.subscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.subscribe" title="Link to this definition"></a></dt>
+<dd><p>Subscribes to the given topic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>topic</strong> (<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.topic">
+<span class="sig-name descname"><span class="pre">topic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topic2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.topic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.topic" title="Link to this definition"></a></dt>
+<dd><p>Creates a topic with the given name or based on the given AgentID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic</strong> (<em>str</em><em> | </em><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p></li>
+<li><p><strong>topic2</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.unsubscribe">
+<span class="sig-name descname"><span class="pre">unsubscribe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.unsubscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.unsubscribe" title="Link to this definition"></a></dt>
+<dd><p>Unsubscribes from the given topic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>topic</strong> (<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.GetFileReq">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">GetFileReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fjagepy.GetFileReq" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.GetFileRsp">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">GetFileRsp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fjagepy.GetFileRsp" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.JSONMessage">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">JSONMessage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_str</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/JSONMessage.html#JSONMessage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.JSONMessage" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A JSONMessage is used to create and parse the on-the-wire JSON based protocol
+used by fjåge containers. It can be used to send and receive messages, query
+for agents and services, and set or get parameters on agents. The JSONMessage class
+provides static factory methods for creating common types of JSON messages and also
+can parse a JSON string into a JSONMessage object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>json_str</strong> (<em>str</em><em> | </em><em>None</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.JSONMessage.createAgentForService">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">createAgentForService</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/JSONMessage.html#JSONMessage.createAgentForService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.JSONMessage.createAgentForService" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>service</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.JSONMessage.createAgents">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">createAgents</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/JSONMessage.html#JSONMessage.createAgents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.JSONMessage.createAgents" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.JSONMessage.createAgentsForService">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">createAgentsForService</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/JSONMessage.html#JSONMessage.createAgentsForService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.JSONMessage.createAgentsForService" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>service</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.JSONMessage.createContainsAgent">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">createContainsAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agentID</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/JSONMessage.html#JSONMessage.createContainsAgent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.JSONMessage.createContainsAgent" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>agentID</strong> (<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.JSONMessage.createSend">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">createSend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/JSONMessage.html#JSONMessage.createSend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.JSONMessage.createSend" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>)</p></li>
+<li><p><strong>relay</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.JSONMessage.createWantsMessagesFor">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">createWantsMessagesFor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agentIDs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/JSONMessage.html#JSONMessage.createWantsMessagesFor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.JSONMessage.createWantsMessagesFor" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>agentIDs</strong> (<em>List</em><em>[</em><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a><em>]</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.JSONMessage.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/JSONMessage.html#JSONMessage.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.JSONMessage.to_json" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.Message">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">Message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_reply_to_msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Performative.INFORM</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#Message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Message" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for messages transmitted by one agent to another.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>in_reply_to_msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>perf</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fjagepy.MessageClass">
+<span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">MessageClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent=&lt;class</span> <span class="pre">'fjagepy.Message.Message'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#MessageClass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.MessageClass" title="Link to this definition"></a></dt>
+<dd><p>Creates an unqualified message class based on a fully qualified name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – fully qualified name of the message class</p></li>
+<li><p><strong>parent</strong> (<em>Type</em><em>[</em><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em>]</em>) – parent class to inherit from. Defaults to <a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new subclass of Message with the given name.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Type</em>[<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.ParameterReq">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">ParameterReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ParameterReq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ParameterReq" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fjagepy.ParameterReq" title="fjagepy.Message.ParameterReq"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParameterReq</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.ParameterReq.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ParameterReq.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ParameterReq.get" title="Link to this definition"></a></dt>
+<dd><p>Request a parameter by name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>param</strong> (<em>str</em>) – name of the parameter to request</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.ParameterReq.set">
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ParameterReq.set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ParameterReq.set" title="Link to this definition"></a></dt>
+<dd><p>Set a parameter value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param</strong> (<em>str</em>) – name of the parameter to set</p></li>
+<li><p><strong>value</strong> – value to set the parameter to</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.ParameterRsp">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">ParameterRsp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ParameterRsp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ParameterRsp" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fjagepy.ParameterRsp" title="fjagepy.Message.ParameterRsp"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParameterRsp</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.ParameterRsp.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ParameterRsp.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ParameterRsp.get" title="Link to this definition"></a></dt>
+<dd><p>Get the value of a parameter by name from the response.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>param</strong> (<em>str</em>) – name of the parameter to get</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>value of the parameter, or None if not found</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.ParameterRsp.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ParameterRsp.parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ParameterRsp.parameters" title="Link to this definition"></a></dt>
+<dd><p>Get all parameters in the response as a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.Performative">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">Performative</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Performative.html#Performative"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Performative" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.AGREE">
+<span class="sig-name descname"><span class="pre">AGREE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'AGREE'</span></em><a class="headerlink" href="#fjagepy.Performative.AGREE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.CANCEL">
+<span class="sig-name descname"><span class="pre">CANCEL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CANCEL'</span></em><a class="headerlink" href="#fjagepy.Performative.CANCEL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.CFP">
+<span class="sig-name descname"><span class="pre">CFP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CFP'</span></em><a class="headerlink" href="#fjagepy.Performative.CFP" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.CONFIRM">
+<span class="sig-name descname"><span class="pre">CONFIRM</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CONFIRM'</span></em><a class="headerlink" href="#fjagepy.Performative.CONFIRM" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.DISCONFIRM">
+<span class="sig-name descname"><span class="pre">DISCONFIRM</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DISCONFIRM'</span></em><a class="headerlink" href="#fjagepy.Performative.DISCONFIRM" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.FAILURE">
+<span class="sig-name descname"><span class="pre">FAILURE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'FAILURE'</span></em><a class="headerlink" href="#fjagepy.Performative.FAILURE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.INFORM">
+<span class="sig-name descname"><span class="pre">INFORM</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'INFORM'</span></em><a class="headerlink" href="#fjagepy.Performative.INFORM" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.NOT_UNDERSTOOD">
+<span class="sig-name descname"><span class="pre">NOT_UNDERSTOOD</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'NOT_UNDERSTOOD'</span></em><a class="headerlink" href="#fjagepy.Performative.NOT_UNDERSTOOD" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.PROPOSE">
+<span class="sig-name descname"><span class="pre">PROPOSE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'PROPOSE'</span></em><a class="headerlink" href="#fjagepy.Performative.PROPOSE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.QUERY_IF">
+<span class="sig-name descname"><span class="pre">QUERY_IF</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'QUERY_IF'</span></em><a class="headerlink" href="#fjagepy.Performative.QUERY_IF" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.REFUSE">
+<span class="sig-name descname"><span class="pre">REFUSE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'REFUSE'</span></em><a class="headerlink" href="#fjagepy.Performative.REFUSE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Performative.REQUEST">
+<span class="sig-name descname"><span class="pre">REQUEST</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'REQUEST'</span></em><a class="headerlink" href="#fjagepy.Performative.REQUEST" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.PutFileReq">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">PutFileReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fjagepy.PutFileReq" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.Services">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">Services</span></span><a class="reference internal" href="../_modules/fjagepy/Services.html#Services"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Services" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Services.DOCUMENTATION">
+<span class="sig-name descname"><span class="pre">DOCUMENTATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'org.arl.fjage.shell.Services.DOCUMENTATION'</span></em><a class="headerlink" href="#fjagepy.Services.DOCUMENTATION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fjagepy.Services.SHELL">
+<span class="sig-name descname"><span class="pre">SHELL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'org.arl.fjage.shell.Services.SHELL'</span></em><a class="headerlink" href="#fjagepy.Services.SHELL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.ShellExecReq">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">ShellExecReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fjagepy.ShellExecReq" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.TCPConnector">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">TCPConnector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reconnect_delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/TCPConnector.html#TCPConnector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.TCPConnector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Connector</span></code></p>
+<p>Simple TCP connector using synchronous sockets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>host</strong> (<em>str</em>)</p></li>
+<li><p><strong>port</strong> (<em>int</em>)</p></li>
+<li><p><strong>reconnect_delay</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.TCPConnector.connect">
+<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/TCPConnector.html#TCPConnector.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.TCPConnector.connect" title="Link to this definition"></a></dt>
+<dd><p>Establish the connection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.TCPConnector.disconnect">
+<span class="sig-name descname"><span class="pre">disconnect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/TCPConnector.html#TCPConnector.disconnect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.TCPConnector.disconnect" title="Link to this definition"></a></dt>
+<dd><p>Close the connection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.TCPConnector.is_connected">
+<span class="sig-name descname"><span class="pre">is_connected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/TCPConnector.html#TCPConnector.is_connected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.TCPConnector.is_connected" title="Link to this definition"></a></dt>
+<dd><p>Check if connected.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.TCPConnector.send">
+<span class="sig-name descname"><span class="pre">send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/TCPConnector.html#TCPConnector.send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.TCPConnector.send" title="Link to this definition"></a></dt>
+<dd><p>Send a message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>msg</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.TCPConnector.set_receive_callback">
+<span class="sig-name descname"><span class="pre">set_receive_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/TCPConnector.html#TCPConnector.set_receive_callback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.TCPConnector.set_receive_callback" title="Link to this definition"></a></dt>
+<dd><p>Set the callback function to handle incoming messages.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>callback</strong> (<em>Callable</em><em>[</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>, </em><em>None</em><em>]</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="API Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Subnero / ARL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

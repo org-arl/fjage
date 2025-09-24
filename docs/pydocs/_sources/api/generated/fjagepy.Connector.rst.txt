@@ -1,0 +1,12 @@
+﻿fjagepy.Connector
+=================
+
+.. automodule:: fjagepy.Connector
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Connector
+   
