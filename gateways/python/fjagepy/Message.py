@@ -23,7 +23,7 @@ try:
         return value.tolist()
 
 except ImportError:
-    def _serialize_numpy_array(value: Any, obj: Dict) -> Any:
+    def _serialize_numpy_array(value: Any, key: str, props: Dict) -> Any:
         return value
 
 class Message:
