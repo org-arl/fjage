@@ -1,0 +1,12 @@
+﻿fjagepy.Utils
+=============
+
+.. automodule:: fjagepy.Utils
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      UUID7
+   

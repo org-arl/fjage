@@ -1,0 +1,33 @@
+﻿fjagepy.Performative
+====================
+
+.. currentmodule:: fjagepy
+
+.. autoclass:: Performative
+
+   
+   .. automethod:: __init__
+
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Performative.REQUEST
+      ~Performative.AGREE
+      ~Performative.REFUSE
+      ~Performative.FAILURE
+      ~Performative.INFORM
+      ~Performative.CONFIRM
+      ~Performative.DISCONFIRM
+      ~Performative.QUERY_IF
+      ~Performative.NOT_UNDERSTOOD
+      ~Performative.CFP
+      ~Performative.PROPOSE
+      ~Performative.CANCEL
+   
+   

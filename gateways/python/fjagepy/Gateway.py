@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 class Gateway:
-    """ Gateway class for connecting to a fjage platform.
+    """ A Gateway is used to connect to a fjåge container and send and receive messages,
+    query for agents and services, and set or get parameters on agents from Python.
     """
 
     NON_BLOCKING = 0
@@ -31,11 +32,11 @@ class Gateway:
         """Creates a new Gateway instance.
 
         Args:
-            hostname (str, optional): hostname of the fjage platform. Defaults to 'localhost'.
-            port (int, optional): port of the fjage platform. Defaults to 1100.
-            connector (type, optional): Connector class to use. Defaults to TCPConnector.
-            keep_alive (bool, optional): whether to keep the connection alive. Defaults to True.
-            timeout (int, optional): default timeout in milliseconds for requests. Defaults to 10000.
+            hostname : hostname of the fjage container. Defaults to 'localhost'.
+            port : port of the fjage container. Defaults to 1100.
+            connector : Connector class to use. Defaults to TCPConnector.
+            keep_alive : whether to keep the connection alive. Defaults to True.
+            timeout : default timeout in milliseconds for requests. Defaults to 10000.
         """
         if not isinstance(hostname, str) or not hostname:
             raise ValueError("hostname must be a non-empty string")
@@ -66,10 +67,10 @@ class Gateway:
         self._update_watch()
 
     def send(self, msg: Message) -> None:
-        """Sends a message to the fjage platform.
+        """Sends a message to the fjage container.
 
         Args:
-            msg (Message): message to send
+            msg : message to send
         """
         if not isinstance(msg, Message):
             raise ValueError("msg must be a Message")
@@ -78,12 +79,12 @@ class Gateway:
         json_msg = JSONMessage.createSend(msg=msg, relay=True)
         self._msg_tx(json_msg)
 
-    def receive(self, filter: Optional[Union[Callable, Type[Message], Type]]=None, timeout: Optional[int] = None) -> Any:
-        """Receives a message from the fjage platform.
+    def receive(self, filter: Union[Callable, Type[Message], Message, None]=None, timeout: Optional[int] = None) -> Any:
+        """Receives a message from the fjage container.
 
         Args:
-            filter (Any): filter to apply to incoming messages
-            timeout (int, optional): timeout in milliseconds. Defaults to None, which uses the gateway's default timeout.
+            filter : filter to apply to incoming messages
+            timeout : timeout in milliseconds. Defaults to None, which uses the gateway's default timeout.
 
         Returns:
             Message or None: received message or None if timeout
@@ -116,8 +117,8 @@ class Gateway:
         """Sends a request message and waits for a reply.
 
         Args:
-            msg (Message): request message to send
-            timeout (int, optional): timeout in milliseconds. Defaults to None, which uses the gateway's default timeout.
+            msg : request message to send
+            timeout : timeout in milliseconds. Defaults to None, which uses the gateway's default timeout.
 
         Returns:
             Message or None: reply message or None if timeout
@@ -142,9 +143,11 @@ class Gateway:
         return self.aid
 
     def agent(self, name) -> AgentID:
+        """Creates an AgentID for the given agent name."""
         return AgentID(name, owner=self)
 
     def topic(self, topic: Union[str, AgentID], topic2: Optional[str] = None) -> AgentID:
+        """Creates a topic with the given name or based on the given AgentID."""
         if (isinstance(topic, str)):
             return AgentID(topic, topic=True, owner=self)
         if (isinstance(topic, AgentID)):
@@ -153,13 +156,15 @@ class Gateway:
             return AgentID(topic.get_name() + (f"__{topic2}" if topic2 else "") + "__ntf", topic=True, owner=self)
 
     def subscribe(self, topic: AgentID) -> bool:
+        """Subscribes to the given topic."""
         if (topic.is_topic() == False):
            topic = AgentID(topic.get_name() + '__ntf', topic=True, owner=self)
         self._subscriptions[topic] = True
         self._update_watch()
         return True
 
-    def unsubscribe(self, topic) -> bool:
+    def unsubscribe(self, topic: AgentID) -> bool:
+        """Unsubscribes from the given topic."""
         if (topic.is_topic() == False):
            topic = AgentID(topic.get_name() + '__ntf', topic=True, owner=self)
         if topic in self._subscriptions:
@@ -169,6 +174,7 @@ class Gateway:
         return False
 
     def agents(self, timeout:int = None) -> list[AgentID]:
+        """Gets the list of all agents connected to the fjage container"""
         if timeout is None:
             timeout = self._timeout
         json_msg = JSONMessage.createAgents()
@@ -179,6 +185,7 @@ class Gateway:
         return []
 
     def containsAgent(self, agentID: AgentID, timeout: int = None) -> bool:
+        """Checks if the given agent is connected to the fjage container"""
         if timeout is None:
             timeout = self._timeout
         json_msg = JSONMessage.createContainsAgent(agentID=agentID)
@@ -190,6 +197,7 @@ class Gateway:
 
 
     def agentForService(self, service: Union[str, enum.Enum], timeout:int = None) -> Optional[AgentID]:
+        """Finds an agent that provides the given service."""
         if timeout is None:
             timeout = self._timeout
         if isinstance(service, enum.Enum):
@@ -202,6 +210,7 @@ class Gateway:
         return None
 
     def agentsForService(self, service: Union[str, enum.Enum], timeout: int = None) -> list[AgentID]:
+        """Retrieves a list of all agents that provide the given service."""
         if timeout is None:
             timeout = self._timeout
         if isinstance(service, enum.Enum):
@@ -214,12 +223,14 @@ class Gateway:
         return []
 
     def flush(self):
+        """Clears the internal message queue."""
         self._queue.clear()
 
     def close(self):
+        """Closes the gateway and disconnects from the fjage container."""
         self.connector.disconnect()
 
-    def match_filter(filter: Optional[Union[Callable, Type[Message], Type]], msg: Message) -> bool:
+    def match_filter(filter: Union[Callable, Type[Message], Message, None], msg: Message) -> bool:
         if filter is None:
             return True
         if isinstance(filter, Message) and hasattr(filter, 'msgID'):
@@ -235,7 +246,7 @@ class Gateway:
         return False
 
     # Internal helper methods
-    def _retrieve_from_queue(self, filter: Optional[Union[Callable, Type[Message], Type, Message]]) -> Optional[Message]:
+    def _retrieve_from_queue(self, filter: Union[Callable, Type[Message], Message, None]) -> Optional[Message]:
         if not self._queue or len(self._queue) == 0:
             return None
 
@@ -298,10 +309,10 @@ class Gateway:
                 continue
 
     def _msg_tx(self, json_msg: JSONMessage) -> None:
-        """Sends a JSONMessage to the fjage platform.
+        """Sends a JSONMessage to the fjage container.
 
         Args:
-            json_msg (JSONMessage): message to send
+            json_msg : message to send
         """
         if not isinstance(json_msg, JSONMessage):
             raise ValueError("json_msg must be a JSONMessage")
@@ -313,8 +324,8 @@ class Gateway:
         """Sends a JSONMessage and waits for a response.
 
         Args:
-            json_msg (JSONMessage): message to send
-            timeout (int): timeout in milliseconds
+            json_msg : message to send
+            timeout : timeout in milliseconds
 
         Returns:
             JSONMessage or None: response message or None if timeout
@@ -347,7 +358,7 @@ class Gateway:
         self._msg_tx(json_msg)
 
     def is_connected(self) -> bool:
-        """Returns True if the gateway is connected to the fjage platform.
+        """Returns True if the gateway is connected to the fjage container.
 
         Returns:
             bool: True if connected, False otherwise
@@ -391,7 +402,7 @@ class OneShotChannel(Generic[T]):
             return val
 
 class ChannelFilter:
-    def __init__(self, filter:Optional[Union[Callable, Type[Message], Type]]):
+    def __init__(self, filter:Union[Callable, Type[Message], Message, None]):
         self.channel = OneShotChannel[JSONMessage]()
         self.filter = filter
 

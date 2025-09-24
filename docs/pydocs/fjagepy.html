@@ -1,0 +1,414 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fjåge Gateway in Python (fjagepy) &mdash; fjagepy Documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5b045848"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api/index.html" />
+    <link rel="prev" title="fjagepy" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            fjagepy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">fjåge Gateway in Python (fjagepy)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#from-pypi">From PyPI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#from-source">From Source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#development-installation">Development Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basic-connection-and-communication">Basic Connection and Communication</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#request-response-pattern">Request-Response Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#message-filtering-and-reception">Message Filtering and Reception</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-usage">Advanced Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#custom-connectors">Custom Connectors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#logging-and-debugging">Logging and Debugging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#context-manager-support">Context Manager Support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ipython-jupyter-notebook-support">iPython / Jupyter Notebook Support</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#testing">Testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#test-requirements">Test Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compatibility">Compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contributing">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#support">Support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#related-projects">Related Projects</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">fjagepy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">fjåge Gateway in Python (fjagepy)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/fjagepy.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fjage-gateway-in-python-fjagepy">
+<h1>fjåge Gateway in Python (fjagepy)<a class="headerlink" href="#fjage-gateway-in-python-fjagepy" title="Link to this heading"></a></h1>
+<p><a class="reference external" href="https://pypi.org/project/fjagepy/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/fjagepy.svg" /></a>
+<a class="reference external" href="https://www.python.org/downloads/"><img alt="Python 3.9+" src="https://img.shields.io/badge/python-3.9+-blue.svg" /></a>
+<a class="reference internal" href="#../../LICENSE"><span class="xref myst"><img alt="License" src="https://img.shields.io/badge/license-BSD--3--Clause-blue.svg" /></span></a></p>
+<p><code class="docutils literal notranslate"><span class="pre">fjagepy</span></code> is a Python gateway for the <a class="reference external" href="https://github.com/org-arl/fjage">fjåge</a> multi-agent system framework. It enables Python applications to seamlessly communicate with fjåge agents over TCP connections, providing a Pythonic interface to the fjåge ecosystem.</p>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Agent Communication</strong>: Send and receive messages to/from fjåge agents</p></li>
+<li><p><strong>Request-Response Pattern</strong>: Built-in support for synchronous request-response interactions</p></li>
+<li><p><strong>Message Filtering</strong>: Flexible message filtering by type, sender, or custom predicates</p></li>
+<li><p><strong>Agent Discovery</strong>: Find and communicate with agents by name or service</p></li>
+<li><p><strong>NumPy Integration</strong>: Automatic serialization/deserialization of NumPy arrays</p></li>
+<li><p><strong>Connection Management</strong>: Automatic reconnection and robust error handling</p></li>
+<li><p><strong>Type Safety</strong>: Full type hints for better IDE support and code reliability</p></li>
+</ul>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<section id="from-pypi">
+<h3>From PyPI<a class="headerlink" href="#from-pypi" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>fjagepy
+</pre></div>
+</div>
+</section>
+<section id="from-source">
+<h3>From Source<a class="headerlink" href="#from-source" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/org-arl/fjage.git
+<span class="nb">cd</span><span class="w"> </span>fjage/gateways/python
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+</section>
+<section id="development-installation">
+<h3>Development Installation<a class="headerlink" href="#development-installation" title="Link to this heading"></a></h3>
+<p>For development with testing dependencies:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h2>
+<section id="basic-connection-and-communication">
+<h3>Basic Connection and Communication<a class="headerlink" href="#basic-connection-and-communication" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fjagepy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gateway</span><span class="p">,</span> <span class="n">Message</span><span class="p">,</span> <span class="n">AgentID</span>
+
+<span class="c1"># Connect to fjåge container</span>
+<span class="n">gw</span> <span class="o">=</span> <span class="n">Gateway</span><span class="p">(</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="mi">1100</span><span class="p">)</span>
+
+<span class="c1"># Get reference to an agent</span>
+<span class="n">shell</span> <span class="o">=</span> <span class="n">gw</span><span class="o">.</span><span class="n">agent</span><span class="p">(</span><span class="s1">&#39;shell&#39;</span><span class="p">)</span>
+
+<span class="c1"># Send a message</span>
+<span class="n">msg</span> <span class="o">=</span> <span class="n">Message</span><span class="p">()</span>
+<span class="n">msg</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s2">&quot;Hello from Python!&quot;</span>
+<span class="n">shell</span> <span class="o">&lt;&lt;</span> <span class="n">msg</span>
+
+<span class="c1"># Close connection when done</span>
+<span class="n">gw</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="request-response-pattern">
+<h3>Request-Response Pattern<a class="headerlink" href="#request-response-pattern" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fjagepy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gateway</span><span class="p">,</span> <span class="n">ShellExecReq</span>
+
+<span class="c1"># Connect and get shell agent</span>
+<span class="n">gw</span> <span class="o">=</span> <span class="n">Gateway</span><span class="p">()</span>
+<span class="n">shell</span> <span class="o">=</span> <span class="n">gw</span><span class="o">.</span><span class="n">agent</span><span class="p">(</span><span class="s1">&#39;shell&#39;</span><span class="p">)</span>
+
+<span class="c1"># Create and send a shell command request</span>
+<span class="n">req</span> <span class="o">=</span> <span class="n">ShellExecReq</span><span class="p">()</span>
+<span class="n">req</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;ps&#39;</span>
+<span class="n">req</span><span class="o">.</span><span class="n">ans</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># Send request and wait for response</span>
+<span class="n">rsp</span> <span class="o">=</span> <span class="n">shell</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>  <span class="c1"># 5 second timeout</span>
+<span class="k">if</span> <span class="n">rsp</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Command output: </span><span class="si">{</span><span class="n">rsp</span><span class="o">.</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">gw</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="message-filtering-and-reception">
+<h3>Message Filtering and Reception<a class="headerlink" href="#message-filtering-and-reception" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fjagepy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gateway</span><span class="p">,</span> <span class="n">Message</span>
+
+<span class="n">gw</span> <span class="o">=</span> <span class="n">Gateway</span><span class="p">()</span>
+
+<span class="c1"># Receive any message</span>
+<span class="n">msg</span> <span class="o">=</span> <span class="n">gw</span><span class="o">.</span><span class="n">receive</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+
+<span class="c1"># Receive messages of specific type</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fjagepy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParameterRsp</span>
+<span class="n">param_msg</span> <span class="o">=</span> <span class="n">gw</span><span class="o">.</span><span class="n">receive</span><span class="p">(</span><span class="n">ParameterRsp</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+
+<span class="c1"># Receive with custom filter</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_filter</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;important&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+<span class="n">important_msg</span> <span class="o">=</span> <span class="n">gw</span><span class="o">.</span><span class="n">receive</span><span class="p">(</span><span class="n">my_filter</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+
+<span class="n">gw</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="advanced-usage">
+<h2>Advanced Usage<a class="headerlink" href="#advanced-usage" title="Link to this heading"></a></h2>
+<section id="custom-connectors">
+<h3>Custom Connectors<a class="headerlink" href="#custom-connectors" title="Link to this heading"></a></h3>
+<p>Implement custom connectors by extending the <code class="docutils literal notranslate"><span class="pre">Connector</span></code> base class:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fjagepy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Connector</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyCustomConnector</span><span class="p">(</span><span class="n">Connector</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Implementation</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Implementation</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="c1"># Implementation</span>
+        <span class="k">pass</span>
+
+<span class="c1"># Use custom connector</span>
+<span class="n">gw</span> <span class="o">=</span> <span class="n">Gateway</span><span class="p">(</span><span class="n">connector</span><span class="o">=</span><span class="n">MyCustomConnector</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="logging-and-debugging">
+<h3>Logging and Debugging<a class="headerlink" href="#logging-and-debugging" title="Link to this heading"></a></h3>
+<p>This library uses the standard <a class="reference external" href="https://docs.python.org/3/library/logging.html">Python logging</a> system.</p>
+<p>By default, the library does not emit logs to the console.
+To see logs, configure Python’s logging in your application:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="c1"># Show all logs on stdout</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+<span class="c1"># Or, enable only logs from this library</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;fjagepy&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For troubleshooting, you can also send logs to a file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;debug.log&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="context-manager-support">
+<h3>Context Manager Support<a class="headerlink" href="#context-manager-support" title="Link to this heading"></a></h3>
+<p>Use Gateway as a context manager for automatic cleanup:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fjagepy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gateway</span>
+
+<span class="k">with</span> <span class="n">Gateway</span><span class="p">(</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="mi">5081</span><span class="p">)</span> <span class="k">as</span> <span class="n">gw</span><span class="p">:</span>
+    <span class="n">shell</span> <span class="o">=</span> <span class="n">gw</span><span class="o">.</span><span class="n">agent</span><span class="p">(</span><span class="s1">&#39;shell&#39;</span><span class="p">)</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">ShellExecReq</span><span class="p">()</span>
+    <span class="n">req</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;help&#39;</span>
+    <span class="n">req</span><span class="o">.</span><span class="n">ans</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">rsp</span> <span class="o">=</span> <span class="n">shell</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">rsp</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+<span class="c1"># Gateway automatically closed</span>
+</pre></div>
+</div>
+</section>
+<section id="ipython-jupyter-notebook-support">
+<h3>iPython / Jupyter Notebook Support<a class="headerlink" href="#ipython-jupyter-notebook-support" title="Link to this heading"></a></h3>
+<p>In Jupyter notebooks, AgentIDs and Messages are displayed in a human-readable format</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">In</span> <span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="kn">from</span><span class="w"> </span><span class="nn">fjagepy</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">2</span><span class="p">]:</span> <span class="n">gw</span> <span class="o">=</span> <span class="n">Gateway</span><span class="p">(</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="mi">5081</span><span class="p">)</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">3</span><span class="p">]:</span> <span class="n">gw</span><span class="o">.</span><span class="n">agentForService</span><span class="p">(</span><span class="n">Services</span><span class="o">.</span><span class="n">SHELL</span><span class="p">)</span>
+<span class="n">Out</span><span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+<span class="o">&lt;&lt;&lt;</span> <span class="n">websh</span> <span class="o">&gt;&gt;&gt;</span>
+
+<span class="n">Interactive</span> <span class="n">Groovy</span> <span class="n">shell</span>
+
+<span class="p">[</span><span class="n">org</span><span class="o">.</span><span class="n">arl</span><span class="o">.</span><span class="n">fjage</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">ShellParam</span><span class="p">]</span>
+  <span class="n">language</span> <span class="o">=&gt;</span> <span class="n">Groovy</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h2>
+<p>Run the test suite:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install test dependencies</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+
+<span class="c1"># Run tests</span>
+pytest
+
+<span class="c1"># Run specific test file</span>
+pytest<span class="w"> </span>test/test_gateway.py
+
+<span class="c1"># Run with coverage</span>
+pytest<span class="w"> </span>--cov<span class="o">=</span>fjagepy
+</pre></div>
+</div>
+<section id="test-requirements">
+<h3>Test Requirements<a class="headerlink" href="#test-requirements" title="Link to this heading"></a></h3>
+<p>Tests require a running fjåge container on <code class="docutils literal notranslate"><span class="pre">localhost:5081</span></code>. You can start one using:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># In the main fjåge directory</span>
+./gradlew<span class="w"> </span>--info<span class="w"> </span>-PmanualPyTest<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="nb">test</span><span class="w"> </span>--tests<span class="o">=</span><span class="s2">&quot;org.arl.fjage.test.fjagepyTest&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<p>See the <code class="docutils literal notranslate"><span class="pre">examples/</span></code> directory an example of how to use the fjagepy gateway.</p>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
+<p>To build the documentation locally:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install documentation dependencies</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[docs]&quot;</span>
+<span class="c1"># Build docs</span>
+sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>docs/<span class="w"> </span>../../docs/pydocs/
+<span class="c1"># View in browser</span>
+open<span class="w"> </span>../../docs/pydocs/index.html
+</pre></div>
+</div>
+</section>
+<section id="compatibility">
+<h2>Compatibility<a class="headerlink" href="#compatibility" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Python</strong>: 3.9 or higher</p></li>
+<li><p><strong>fjåge</strong>: Compatible with fjåge 1.7.x and 2.x</p></li>
+<li><p><strong>NumPy</strong>: Optional dependency for array support</p></li>
+<li><p><strong>Operating Systems</strong>: Linux, macOS, Windows</p></li>
+</ul>
+</section>
+<section id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Fork the repository</p></li>
+<li><p>Create a feature branch (<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">-b</span> <span class="pre">feature/amazing-feature</span></code>)</p></li>
+<li><p>Make your changes</p></li>
+<li><p>Add tests for new functionality</p></li>
+<li><p>Run the test suite (<code class="docutils literal notranslate"><span class="pre">pytest</span></code>)</p></li>
+<li><p>Commit your changes (<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span> <span class="pre">-m</span> <span class="pre">'Add</span> <span class="pre">amazing</span> <span class="pre">feature'</span></code>)</p></li>
+<li><p>Push to the branch (<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">push</span> <span class="pre">origin</span> <span class="pre">feature/amazing-feature</span></code>)</p></li>
+<li><p>Open a Pull Request</p></li>
+</ol>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Link to this heading"></a></h2>
+<p>This project is licensed under the BSD 3-Clause License. See the <a class="reference internal" href="#../../LICENSE"><span class="xref myst">LICENSE</span></a> file for details.</p>
+</section>
+<section id="support">
+<h2>Support<a class="headerlink" href="#support" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Documentation</strong>: <a class="reference external" href="https://fjage.readthedocs.io/">fjåge Documentation</a></p></li>
+<li><p><strong>Issues</strong>: <a class="reference external" href="https://github.com/org-arl/fjage/issues">GitHub Issues</a></p></li>
+<li><p><strong>Discussions</strong>: <a class="reference external" href="https://github.com/org-arl/fjage/discussions">GitHub Discussions</a></p></li>
+</ul>
+</section>
+<section id="related-projects">
+<h2>Related Projects<a class="headerlink" href="#related-projects" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>fjåge</strong>: <a class="reference external" href="https://github.com/org-arl/fjage">Main fjåge framework</a></p></li>
+<li><p><strong>fjåge.js</strong>: <a class="reference external" href="https://github.com/org-arl/fjage/tree/master/gateways/js">JavaScript gateway</a></p></li>
+<li><p><strong>Fjåge.jl</strong>: <a class="reference external" href="https://github.com/org-arl/Fjage.jl">Julia gateway</a></p></li>
+<li><p><strong>fjåge-c</strong>: <a class="reference external" href="https://github.com/org-arl/fjage/tree/master/gateways/c">C gateway</a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="fjagepy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api/index.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Subnero / ARL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

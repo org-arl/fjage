@@ -51,6 +51,10 @@ class Message:
         return object.__getattribute__(self, name)
 
     def to_json(self) -> Dict[str, Any]:
+        """Convert the message to a JSON-serializable dict.
+
+        :meta private:
+        """
         props = {}
         for key, value in self.__dict__.items():
             if key.startswith("_"):
@@ -65,6 +69,10 @@ class Message:
 
     @classmethod
     def from_json(cls, json_obj: Dict[str, Any]) -> Optional["Message"]:
+        """ Inflate a Message (or subclass) from a JSON object.
+
+        :meta private:
+        """
         if "clazz" not in json_obj or "data" not in json_obj:
             logger.debug(f"Invalid JSON object for Message deserialization: {json_obj}, {type(json_obj)}")
             return None
@@ -138,7 +146,15 @@ class GenericMessage(Message):
 
 
 def MessageClass(name: str, parent: Type[Message] = Message) -> Type[Message]:
-    """Creates an unqualified message class based on a fully qualified name."""
+    """Creates an unqualified message class based on a fully qualified name.
+
+    Args:
+        name : fully qualified name of the message class
+        parent : parent class to inherit from. Defaults to :py:class:`Message`.
+
+    Returns:
+        A new subclass of Message with the given name.
+    """
 
     def setclazz(self, **kwargs):
         super(class_, self).__init__()
@@ -208,14 +224,26 @@ class ParameterReq(_ParameterReq):
         self.value = None
         self.__dict__.update(kwargs)
 
-    def get(self, param):
+    def get(self, param: str):
+        """ Request a parameter by name.
+
+        Args:
+            param : name of the parameter to request
+        """
+
         if (self.param is None):
             self.param = param
         else:
             self.requests.append({'param': param})
         return self
 
-    def set(self, param, value):
+    def set(self, param: str, value):
+        """ Set a parameter value.
+
+        Args:
+            param : name of the parameter to set
+            value : value to set the parameter to
+        """
         if (self.param is None) and (self.value is None):
             self.param = param
             self.value = value
@@ -245,7 +273,16 @@ class ParameterRsp(_ParameterRsp):
         self.perf = Performative.REQUEST
         self.__dict__.update(kwargs)
 
-    def get(self, param):
+    def get(self, param:str):# -> Any | AgentID | _GenericObject | dict | Any | None:
+        """Get the value of a parameter by name from the response.
+
+        Args:
+            param : name of the parameter to get
+
+        Returns:
+            value of the parameter, or None if not found
+
+        """
         if 'param' in self.__dict__ and self.param == param:
             return _value(self.value)
         if 'values' in self.__dict__ and self.values is not None:
@@ -261,7 +298,8 @@ class ParameterRsp(_ParameterRsp):
                     return _value(self.values[v])
         return None
 
-    def parameters(self):
+    def parameters(self) -> dict[str, any]:
+        """Get all parameters in the response as a dictionary."""
         if 'values' in self.__dict__ and self.values is not None:
             p = self.values.copy()
         else:

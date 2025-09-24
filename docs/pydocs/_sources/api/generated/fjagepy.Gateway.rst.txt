@@ -1,0 +1,45 @@
+﻿fjagepy.Gateway
+===============
+
+.. currentmodule:: fjagepy
+
+.. autoclass:: Gateway
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Gateway.__init__
+      ~Gateway.agent
+      ~Gateway.agentForService
+      ~Gateway.agents
+      ~Gateway.agentsForService
+      ~Gateway.close
+      ~Gateway.containsAgent
+      ~Gateway.flush
+      ~Gateway.getAgentID
+      ~Gateway.is_connected
+      ~Gateway.match_filter
+      ~Gateway.receive
+      ~Gateway.request
+      ~Gateway.send
+      ~Gateway.subscribe
+      ~Gateway.topic
+      ~Gateway.unsubscribe
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Gateway.BLOCKING
+      ~Gateway.NON_BLOCKING
+   
+   

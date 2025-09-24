@@ -23,6 +23,12 @@ class Actions(Enum):
     WANTS_MESSAGES_FOR = "wantsMessagesFor"
 
 class JSONMessage:
+    """A JSONMessage is used to create and parse the on-the-wire JSON based protocol
+    used by fjåge containers. It can be used to send and receive messages, query
+    for agents and services, and set or get parameters on agents. The JSONMessage class
+    provides static factory methods for creating common types of JSON messages and also
+    can parse a JSON string into a JSONMessage object."""
+
     def __init__(self, json_str: Optional[str] = None, owner = None) -> None:
         # Attributes
         self.id: str = str(UUID7.generate())

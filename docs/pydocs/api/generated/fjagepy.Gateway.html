@@ -1,0 +1,211 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fjagepy.Gateway &mdash; fjagepy Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5b045848"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            fjagepy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../fjagepy.html">fjåge Gateway in Python (fjagepy)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">fjagepy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">fjagepy.Gateway</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/generated/fjagepy.Gateway.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fjagepy-gateway">
+<h1>fjagepy.Gateway<a class="headerlink" href="#fjagepy-gateway" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="fjagepy.Gateway">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">Gateway</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hostname='localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port=1100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connector=&lt;class</span> <span class="pre">'fjagepy.TCPConnector.TCPConnector'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reconnect=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout=10000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/fjagepy/Gateway.html#Gateway"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway" title="Link to this definition"></a></dt>
+<dd><p>A Gateway is used to connect to a fjåge container and send and receive messages,
+query for agents and services, and set or get parameters on agents from Python.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hostname</strong> (<em>str</em>)</p></li>
+<li><p><strong>port</strong> (<em>int</em>)</p></li>
+<li><p><strong>connector</strong> (<em>type</em>)</p></li>
+<li><p><strong>reconnect</strong> (<em>bool</em>)</p></li>
+<li><p><strong>timeout</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hostname='localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port=1100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connector=&lt;class</span> <span class="pre">'fjagepy.TCPConnector.TCPConnector'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reconnect=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout=10000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/fjagepy/Gateway.html#Gateway.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.__init__" title="Link to this definition"></a></dt>
+<dd><p>Creates a new Gateway instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hostname</strong> (<em>str</em>) – hostname of the fjage container. Defaults to ‘localhost’.</p></li>
+<li><p><strong>port</strong> (<em>int</em>) – port of the fjage container. Defaults to 1100.</p></li>
+<li><p><strong>connector</strong> (<em>type</em>) – Connector class to use. Defaults to TCPConnector.</p></li>
+<li><p><strong>keep_alive</strong> – whether to keep the connection alive. Defaults to True.</p></li>
+<li><p><strong>timeout</strong> (<em>int</em>) – default timeout in milliseconds for requests. Defaults to 10000.</p></li>
+<li><p><strong>reconnect</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>([hostname, port, connector, ...])</p></td>
+<td><p>Creates a new Gateway instance.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">agent</span></code>(name)</p></td>
+<td><p>Creates an AgentID for the given agent name.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">agentForService</span></code>(service[, timeout])</p></td>
+<td><p>Finds an agent that provides the given service.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">agents</span></code>([timeout])</p></td>
+<td><p>Gets the list of all agents connected to the fjage container</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">agentsForService</span></code>(service[, timeout])</p></td>
+<td><p>Retrieves a list of all agents that provide the given service.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">close</span></code>()</p></td>
+<td><p>Closes the gateway and disconnects from the fjage container.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">containsAgent</span></code>(agentID[, timeout])</p></td>
+<td><p>Checks if the given agent is connected to the fjage container</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flush</span></code>()</p></td>
+<td><p>Clears the internal message queue.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getAgentID</span></code>()</p></td>
+<td><p>Gets the AgentID of this gateway.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_connected</span></code>()</p></td>
+<td><p>Returns True if the gateway is connected to the fjage container.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">match_filter</span></code>(msg)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">receive</span></code>([filter, timeout])</p></td>
+<td><p>Receives a message from the fjage container.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">request</span></code>(msg[, timeout])</p></td>
+<td><p>Sends a request message and waits for a reply.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">send</span></code>(msg)</p></td>
+<td><p>Sends a message to the fjage container.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subscribe</span></code>(topic)</p></td>
+<td><p>Subscribes to the given topic.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">topic</span></code>(topic[, topic2])</p></td>
+<td><p>Creates a topic with the given name or based on the given AgentID.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">unsubscribe</span></code>(topic)</p></td>
+<td><p>Unsubscribes from the given topic.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">BLOCKING</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">NON_BLOCKING</span></code></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Subnero / ARL.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

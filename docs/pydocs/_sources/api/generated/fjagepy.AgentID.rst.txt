@@ -1,0 +1,29 @@
+﻿fjagepy.AgentID
+===============
+
+.. currentmodule:: fjagepy
+
+.. autoclass:: AgentID
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AgentID.__init__
+      ~AgentID.from_json
+      ~AgentID.get
+      ~AgentID.get_name
+      ~AgentID.is_topic
+      ~AgentID.request
+      ~AgentID.send
+      ~AgentID.to_json
+   
+   
+
+   
+   
+   

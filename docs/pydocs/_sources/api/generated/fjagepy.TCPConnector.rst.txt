@@ -1,0 +1,27 @@
+﻿fjagepy.TCPConnector
+====================
+
+.. currentmodule:: fjagepy
+
+.. autoclass:: TCPConnector
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~TCPConnector.__init__
+      ~TCPConnector.connect
+      ~TCPConnector.disconnect
+      ~TCPConnector.is_connected
+      ~TCPConnector.send
+      ~TCPConnector.set_receive_callback
+   
+   
+
+   
+   
+   

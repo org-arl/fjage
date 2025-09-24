@@ -1,0 +1,29 @@
+﻿fjagepy.JSONMessage
+===================
+
+.. currentmodule:: fjagepy
+
+.. autoclass:: JSONMessage
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~JSONMessage.__init__
+      ~JSONMessage.createAgentForService
+      ~JSONMessage.createAgents
+      ~JSONMessage.createAgentsForService
+      ~JSONMessage.createContainsAgent
+      ~JSONMessage.createSend
+      ~JSONMessage.createWantsMessagesFor
+      ~JSONMessage.to_json
+   
+   
+
+   
+   
+   
