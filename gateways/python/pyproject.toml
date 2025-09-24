@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fjagepy"
-version = "1.7.5"
+version = "2.0.0"
 description = "fjage Gateway in Python"
 authors = [{ name = "Chinmay Pendharkar", email = "chinmay@subnero.com" }]
 readme = "README.md"
