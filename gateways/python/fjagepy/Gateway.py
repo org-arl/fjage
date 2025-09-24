@@ -230,6 +230,7 @@ class Gateway:
         """Closes the gateway and disconnects from the fjage container."""
         self.connector.disconnect()
 
+    @staticmethod
     def match_filter(filter: Union[Callable, Type[Message], Message, None], msg: Message) -> bool:
         if filter is None:
             return True
