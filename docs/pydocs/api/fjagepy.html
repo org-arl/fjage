@@ -59,12 +59,12 @@
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.NON_BLOCKING"><code class="docutils literal notranslate"><span class="pre">Gateway.NON_BLOCKING</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agent"><code class="docutils literal notranslate"><span class="pre">Gateway.agent()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agentForService"><code class="docutils literal notranslate"><span class="pre">Gateway.agentForService()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agent_id"><code class="docutils literal notranslate"><span class="pre">Gateway.agent_id()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agents"><code class="docutils literal notranslate"><span class="pre">Gateway.agents()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agentsForService"><code class="docutils literal notranslate"><span class="pre">Gateway.agentsForService()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.close"><code class="docutils literal notranslate"><span class="pre">Gateway.close()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.containsAgent"><code class="docutils literal notranslate"><span class="pre">Gateway.containsAgent()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.flush"><code class="docutils literal notranslate"><span class="pre">Gateway.flush()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.getAgentID"><code class="docutils literal notranslate"><span class="pre">Gateway.getAgentID()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.is_connected"><code class="docutils literal notranslate"><span class="pre">Gateway.is_connected()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.match_filter"><code class="docutils literal notranslate"><span class="pre">Gateway.match_filter()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.receive"><code class="docutils literal notranslate"><span class="pre">Gateway.receive()</span></code></a></li>
@@ -232,7 +232,7 @@ and set or get parameters on an agent or topic on the fjåge container.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message"><em>Message</em></a>) – request to send</p></li>
+<li><p><strong>msg</strong> (<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message"><em>Message</em></a>) – request to send</p></li>
 <li><p><strong>timeout</strong> (<em>int</em><em>, </em><em>optional</em>) – timeout in milliseconds. Defaults to owner’s timeout.</p></li>
 </ul>
 </dd>
@@ -243,7 +243,7 @@ and set or get parameters on an agent or topic on the fjåge container.</p>
 <dd class="field-odd"><p><strong>RuntimeError</strong> – if this AgentID has no owner (unowned AgentID cannot send messages)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Optional[<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message">Message</a>]</p>
+<dd class="field-even"><p>Optional[<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message">Message</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -254,7 +254,7 @@ and set or get parameters on an agent or topic on the fjåge container.</p>
 <dd><p>Sends a message to the agent represented by this id.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message"><em>Message</em></a>) – message to send</p>
+<dd class="field-odd"><p><strong>msg</strong> (<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message"><em>Message</em></a>) – message to send</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>RuntimeError</strong> – if this AgentID has no owner (unowned AgentID cannot send messages)</p>
@@ -300,7 +300,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dd><p>Creates an AgentID for the given agent name.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -317,7 +317,21 @@ query for agents and services, and set or get parameters on agents from Python.<
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a> | None</p>
+<dd class="field-even"><p><a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.agent_id">
+<span class="sig-name descname"><span class="pre">agent_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.agent_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.agent_id" title="Link to this definition"></a></dt>
+<dd><p>Gets the AgentID of this gateway.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AgentID of this gateway</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID">AgentID</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -331,7 +345,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dd class="field-odd"><p><strong>timeout</strong> (<em>int</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>list[<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>]</p>
+<dd class="field-even"><p>list[<a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -348,7 +362,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>list[<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>]</p>
+<dd class="field-even"><p>list[<a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -366,7 +380,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>agentID</strong> (<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p></li>
+<li><p><strong>agentID</strong> (<a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p></li>
 <li><p><strong>timeout</strong> (<em>int</em>)</p></li>
 </ul>
 </dd>
@@ -380,20 +394,6 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dt class="sig sig-object py" id="fjagepy.Gateway.flush">
 <span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.flush"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.flush" title="Link to this definition"></a></dt>
 <dd><p>Clears the internal message queue.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fjagepy.Gateway.getAgentID">
-<span class="sig-name descname"><span class="pre">getAgentID</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.getAgentID"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.getAgentID" title="Link to this definition"></a></dt>
-<dd><p>Gets the AgentID of this gateway.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>AgentID of this gateway</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID">AgentID</a></p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -416,8 +416,8 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filter</strong> (<em>Callable</em><em> | </em><em>Type</em><em>[</em><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em>] </em><em>| </em><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>)</p></li>
+<li><p><strong>filter</strong> (<em>Callable</em><em> | </em><em>Type</em><em>[</em><a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em>] </em><em>| </em><a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>msg</strong> (<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -433,7 +433,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filter</strong> (<em>Callable</em><em> | </em><em>Type</em><em>[</em><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em>] </em><em>| </em><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>) – filter to apply to incoming messages</p></li>
+<li><p><strong>filter</strong> (<em>Callable</em><em> | </em><em>Type</em><em>[</em><a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em>] </em><em>| </em><a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>) – filter to apply to incoming messages</p></li>
 <li><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>) – timeout in milliseconds. Defaults to None, which uses the gateway’s default timeout.</p></li>
 </ul>
 </dd>
@@ -441,7 +441,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dd class="field-even"><p>received message or None if timeout</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message">Message</a> or None</p>
+<dd class="field-odd"><p><a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message">Message</a> or None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -453,7 +453,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>) – request message to send</p></li>
+<li><p><strong>msg</strong> (<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>) – request message to send</p></li>
 <li><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>) – timeout in milliseconds. Defaults to None, which uses the gateway’s default timeout.</p></li>
 </ul>
 </dd>
@@ -461,7 +461,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dd class="field-even"><p>reply message or None if timeout</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message">Message</a> or None</p>
+<dd class="field-odd"><p><a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message">Message</a> or None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -472,7 +472,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dd><p>Sends a message to the fjage container.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>) – message to send</p>
+<dd class="field-odd"><p><strong>msg</strong> (<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>) – message to send</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -486,7 +486,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dd><p>Subscribes to the given topic.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>topic</strong> (<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p>
+<dd class="field-odd"><p><strong>topic</strong> (<a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>bool</p>
@@ -501,12 +501,12 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>topic</strong> (<em>str</em><em> | </em><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p></li>
+<li><p><strong>topic</strong> (<em>str</em><em> | </em><a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p></li>
 <li><p><strong>topic2</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -517,7 +517,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dd><p>Unsubscribes from the given topic.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>topic</strong> (<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p>
+<dd class="field-odd"><p><strong>topic</strong> (<a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>bool</p>
@@ -530,13 +530,13 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dl class="py class">
 <dt class="sig sig-object py" id="fjagepy.GetFileReq">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">GetFileReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fjagepy.GetFileReq" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fjagepy.GetFileRsp">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">GetFileRsp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fjagepy.GetFileRsp" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
 </dd></dl>
 
 <dl class="py class">
@@ -561,7 +561,7 @@ can parse a JSON string into a JSONMessage object.</p>
 <dd class="field-odd"><p><strong>service</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -571,7 +571,7 @@ can parse a JSON string into a JSONMessage object.</p>
 <em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">createAgents</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/JSONMessage.html#JSONMessage.createAgents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.JSONMessage.createAgents" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -584,7 +584,7 @@ can parse a JSON string into a JSONMessage object.</p>
 <dd class="field-odd"><p><strong>service</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -594,10 +594,10 @@ can parse a JSON string into a JSONMessage object.</p>
 <em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">createContainsAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agentID</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/JSONMessage.html#JSONMessage.createContainsAgent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.JSONMessage.createContainsAgent" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>agentID</strong> (<a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p>
+<dd class="field-odd"><p><strong>agentID</strong> (<a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -608,12 +608,12 @@ can parse a JSON string into a JSONMessage object.</p>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>)</p></li>
+<li><p><strong>msg</strong> (<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>)</p></li>
 <li><p><strong>relay</strong> (<em>bool</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -623,10 +623,10 @@ can parse a JSON string into a JSONMessage object.</p>
 <em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">createWantsMessagesFor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agentIDs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/JSONMessage.html#JSONMessage.createWantsMessagesFor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.JSONMessage.createWantsMessagesFor" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>agentIDs</strong> (<em>List</em><em>[</em><a class="reference internal" href="generated/fjagepy.AgentID.html#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a><em>]</em>)</p>
+<dd class="field-odd"><p><strong>agentIDs</strong> (<em>List</em><em>[</em><a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a><em>]</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="generated/fjagepy.JSONMessage.html#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#fjagepy.JSONMessage" title="fjagepy.JSONMessage.JSONMessage"><em>JSONMessage</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -651,7 +651,7 @@ can parse a JSON string into a JSONMessage object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>in_reply_to_msg</strong> (<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>in_reply_to_msg</strong> (<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>)</p></li>
 <li><p><strong>perf</strong> (<em>str</em>)</p></li>
 </ul>
 </dd>
@@ -666,14 +666,14 @@ can parse a JSON string into a JSONMessage object.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – fully qualified name of the message class</p></li>
-<li><p><strong>parent</strong> (<em>Type</em><em>[</em><a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em>]</em>) – parent class to inherit from. Defaults to <a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a>.</p></li>
+<li><p><strong>parent</strong> (<em>Type</em><em>[</em><a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em>]</em>) – parent class to inherit from. Defaults to <a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new subclass of Message with the given name.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><em>Type</em>[<a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>]</p>
+<dd class="field-odd"><p><em>Type</em>[<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -809,7 +809,7 @@ can parse a JSON string into a JSONMessage object.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="fjagepy.PutFileReq">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">PutFileReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fjagepy.PutFileReq" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
 </dd></dl>
 
 <dl class="py class">
@@ -831,7 +831,7 @@ can parse a JSON string into a JSONMessage object.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="fjagepy.ShellExecReq">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">ShellExecReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fjagepy.ShellExecReq" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="generated/fjagepy.Message.html#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
 </dd></dl>
 
 <dl class="py class">
