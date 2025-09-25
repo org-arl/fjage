@@ -31,7 +31,7 @@ class Message:
     """Base class for messages transmitted by one agent to another."""
 
     def __init__(self, in_reply_to_msg: Optional["Message"] = None,
-                 perf: str = Performative.INFORM, **kwargs):
+                 perf: Performative = Performative.INFORM, **kwargs):
         self.__clazz__ = "org.arl.fjage.Message"
         self.msgID = str(UUID7.generate())
         self.perf = perf
@@ -159,19 +159,19 @@ def MessageClass(name: str, parent: Type[Message] = Message) -> Type[Message]:
         A new subclass of Message with the given name.
     """
 
-    def setclazz(self, **kwargs):
-        super(class_, self).__init__()
+    sname = name.split('.')[-1]
+
+    def __init__(self, **kwargs):
+        parent.__init__(self)
         self.__clazz__ = name
         if name.endswith('Req'):
             self.perf = Performative.REQUEST
         for k, v in kwargs.items():
             if not k.startswith('_') and k.endswith('_'):
                 k = k[:-1]
-            self.__dict__[k] = v
+            setattr(self, k, v)
 
-    sname = name.split('.')[-1]
-    class_ = type(sname, (parent,), {"__init__": setclazz})
-    # Register the class in the current module's globals
+    class_ = type(sname, (parent,), {"__init__": __init__})
     sys.modules[__name__].__dict__[sname] = class_
     return class_
 
