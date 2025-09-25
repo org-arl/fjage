@@ -23,6 +23,7 @@ try:
         return value.tolist()
 
 except ImportError:
+    numpy = None
     def _serialize_numpy_array(value: Any, key: str, props: Dict) -> Any:
         return value
 
@@ -68,7 +69,7 @@ class Message:
         return {"clazz": self.__clazz__, "data": props}
 
     @classmethod
-    def from_json(cls, json_obj: Dict[str, Any]) -> Optional["Message"]:
+    def from_json(cls, json_obj: Dict[str, Any], owner: Optional["Gateway"] = None) -> Optional["Message"]:
         """ Inflate a Message (or subclass) from a JSON object.
 
         :meta private:
@@ -93,7 +94,7 @@ class Message:
 
         for key, value in json_obj["data"].items():
             if key in ("sender", "recipient") and isinstance(value, str):
-                setattr(rv, key, AgentID.from_json(value))
+                setattr(rv, key, AgentID.from_json(value, owner=owner))
             elif key == "perf" and isinstance(value, str):
                 setattr(rv, key, Performative(value))
             elif isinstance(value, list) and any(k == f"{key}__isComplex" for k in json_obj["data"].keys()):
@@ -272,7 +273,7 @@ class ParameterRsp(_ParameterRsp):
         super().__init__()
         self.index = -1
         self.values = dict()
-        self.perf = Performative.REQUEST
+        self.perf = Performative.INFORM
         self.__dict__.update(kwargs)
 
     def get(self, param:str):# -> Any | AgentID | _GenericObject | dict | Any | None:

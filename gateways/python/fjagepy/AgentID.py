@@ -9,9 +9,20 @@ logger.addHandler(logging.NullHandler())
 # Default timeout for non-owned AgentIDs (in milliseconds)
 DEFAULT_TIMEOUT = 10000
 
+#   - Accessing unknown attributes performs a remote parameter GET; returns `None` if not found.
+#   - Assigning unknown attributes performs a remote parameter SET.
+#   - Using `aid[index]` selects indexed parameters.
 class AgentID:
-    """An identifier for an agent or a topic. This can be used to send, receive messages,
-    and set or get parameters on an agent or topic on the fjåge container.
+    """
+    An identifier for an agent or a topic. This can be used to send, receive messages,
+    and set or get parameters on an agent or topic on the fjåge container. The AgentID is typically
+    owned by a Gateway which is used to send and receive messages.
+
+    The AgentID object can be used to set and get parameters on the agent using dot notation. For example,
+    to get the value of a parameter named "param" on an agent represented by an AgentID object `aid`,
+    you can use `value = aid.param`. To set the value of the parameter, you can use `aid.param = value`.
+    If the parameter is indexed, you can use `aid[index].param` to refer to the indexed parameter.
+    For example, `aid[1].param` refers to the first indexed parameter "param" of the agent.
 
     Args:
         name : name of the agent
@@ -19,7 +30,7 @@ class AgentID:
         owner : Gateway owner for this AgentID. Defaults to None.
     """
 
-    def __init__(self, name: str, topic: bool = False, owner = None) -> None:
+    def __init__(self, name: str, topic: bool = False, owner: Optional["Gateway"] = None) -> None:
         if not isinstance(name, str) or not name:
             raise ValueError("AgentID name must be a non-empty string")
         self.name = name
@@ -118,7 +129,7 @@ class AgentID:
         return ('#' if self.topic else '') + self.name
 
     @staticmethod
-    def from_json(json_str: str, owner = None) -> "AgentID":
+    def from_json(json_str: str, owner: Optional["Gateway"] = None) -> "AgentID":
         """Inflate the AgentID from a JSON string.
 
         Args:

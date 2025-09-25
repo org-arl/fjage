@@ -4,7 +4,9 @@ import queue
 import logging
 import threading
 import enum
-from typing import Any, Optional, Union, Callable, Type, Generic, TypeVar, Optional
+from collections import deque
+from collections.abc import MutableMapping
+from typing import Any, Optional, Union, Callable, Type, Generic, TypeVar
 
 
 from .Connector import Connector
@@ -20,9 +22,21 @@ DEFAULT_MAX_QUEUE_SIZE = 512
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+
 class Gateway:
     """ A Gateway is used to connect to a fjåge container and send and receive messages,
     query for agents and services, and set or get parameters on agents from Python.
+
+    The Gateway class provides methods for sending and receiving messages, subscribing to topics,
+    and querying for agents and services. It uses a Connector to handle the underlying communication
+    with the fjåge container.
+
+    The Gateway is thread-safe and can be used from multiple threads. It maintains an internal
+    message queue with a configurable maximum size (default 512 messages). A gw.receive() call
+    will first check the internal queue for a matching message before blocking for new messages.
+
+    The Gateway can be used as a context manager to ensure proper cleanup of resources.
+
     """
 
     NON_BLOCKING = 0
@@ -35,7 +49,7 @@ class Gateway:
             hostname : hostname of the fjage container. Defaults to 'localhost'.
             port : port of the fjage container. Defaults to 1100.
             connector : Connector class to use. Defaults to TCPConnector.
-            keep_alive : whether to keep the connection alive. Defaults to True.
+            reconnect : whether to keep the connection alive. Defaults to True.
             timeout : default timeout in milliseconds for requests. Defaults to 10000.
         """
         if not isinstance(hostname, str) or not hostname:
@@ -45,14 +59,13 @@ class Gateway:
         if not issubclass(connector, Connector):
             raise ValueError("connector must be a subclass of Connector")
         if not isinstance(reconnect, bool):
-            raise ValueError("keep_alive must be a boolean")
+            raise ValueError("reconnect must be a boolean")
         if not isinstance(timeout, int) or timeout <= 0:
             raise ValueError("timeout must be a positive integer")
 
-        self._pending_actions = dict()
-        self._pending_requests = dict()
-        self._queue = list()
-        self._max_queue_size = DEFAULT_MAX_QUEUE_SIZE
+        self._pending_actions = ThreadSafeDict()
+        self._pending_requests = ThreadSafeDict()
+        self._queue = ThreadSafeDeque(maxlen=DEFAULT_MAX_QUEUE_SIZE)
         self._subscriptions = dict()
         self._timeout = timeout
         self.aid = AgentID("gateway-" + str(uuid.uuid4()), owner=self)
@@ -101,7 +114,7 @@ class Gateway:
 
         lid = str(UUID7.generate())
         self._pending_requests[lid] = ChannelFilter(filter)
-        if timeout is not self.BLOCKING:
+        if timeout != self.BLOCKING:
             try:
                 msg = self._pending_requests[lid].get(timeout=timeout / 1000)
             except queue.Empty:
@@ -134,6 +147,14 @@ class Gateway:
         self.send(msg)
         return self.receive(msg, timeout=timeout)
 
+    def getAgentID(self) -> AgentID:
+        """ Java style method name for agent_id()
+
+        .. deprecated:: 2.0.0
+            Use :py:meth:`~Gateway.agent_id` instead.
+        """
+        return self.agent_id()
+
     def agent_id(self) -> AgentID:
         """Gets the AgentID of this gateway.
 
@@ -148,16 +169,15 @@ class Gateway:
 
     def topic(self, topic: Union[str, AgentID], topic2: Optional[str] = None) -> AgentID:
         """Creates a topic with the given name or based on the given AgentID."""
-        if (isinstance(topic, str)):
+        if isinstance(topic, str):
             return AgentID(topic, topic=True, owner=self)
-        if (isinstance(topic, AgentID)):
-            if (topic.is_topic()):
-                return topic
-            return AgentID(topic.get_name() + (f"__{topic2}" if topic2 else "") + "__ntf", topic=True, owner=self)
+        if isinstance(topic, AgentID):
+            return topic if topic.is_topic() else AgentID(f"{topic.get_name()}{f'__{topic2}' if topic2 else ''}__ntf", topic=True, owner=self)
+        raise TypeError("topic must be str or AgentID")
 
     def subscribe(self, topic: AgentID) -> bool:
         """Subscribes to the given topic."""
-        if (topic.is_topic() == False):
+        if topic.is_topic() is False:
            topic = AgentID(topic.get_name() + '__ntf', topic=True, owner=self)
         self._subscriptions[topic] = True
         self._update_watch()
@@ -165,7 +185,7 @@ class Gateway:
 
     def unsubscribe(self, topic: AgentID) -> bool:
         """Unsubscribes from the given topic."""
-        if (topic.is_topic() == False):
+        if topic.is_topic() is False:
            topic = AgentID(topic.get_name() + '__ntf', topic=True, owner=self)
         if topic in self._subscriptions:
             self._subscriptions[topic] = False
@@ -184,7 +204,13 @@ class Gateway:
         logger.debug("Response to agents() request does not contain agentIDs")
         return []
 
-    def containsAgent(self, agentID: AgentID, timeout: int = None) -> bool:
+
+    def contains_agent(self, agentID: AgentID, timeout: Optional[int] = None) -> bool:
+        """ A python style method name for containsAgent() """
+        return self.containsAgent(agentID, timeout)
+
+
+    def containsAgent(self, agentID: AgentID, timeout: Optional[int] = None) -> bool:
         """Checks if the given agent is connected to the fjage container"""
         if timeout is None:
             timeout = self._timeout
@@ -195,8 +221,11 @@ class Gateway:
         logger.debug("Response to containsAgent() request does not contain answer")
         return False
 
+    def agent_for_service(self, service: Union[str, enum.Enum], timeout: Optional[int] = None) -> Optional[AgentID]:
+        """ A python style method name for agentForService() """
+        return self.agentForService(service, timeout)
 
-    def agentForService(self, service: Union[str, enum.Enum], timeout:int = None) -> Optional[AgentID]:
+    def agentForService(self, service: Union[str, enum.Enum], timeout: Optional[int] = None) -> Optional[AgentID]:
         """Finds an agent that provides the given service."""
         if timeout is None:
             timeout = self._timeout
@@ -209,7 +238,11 @@ class Gateway:
         logger.debug("Response to agentForService() request does not contain agentID")
         return None
 
-    def agentsForService(self, service: Union[str, enum.Enum], timeout: int = None) -> list[AgentID]:
+    def agents_for_service(self, service: Union[str, enum.Enum], timeout: Optional[int] = None) -> list[AgentID]:
+        """ A python style method name for agentsForService() """
+        return self.agentsForService(service, timeout)
+
+    def agentsForService(self, service: Union[str, enum.Enum], timeout: Optional[int] = None) -> list[AgentID]:
         """Retrieves a list of all agents that provide the given service."""
         if timeout is None:
             timeout = self._timeout
@@ -253,11 +286,13 @@ class Gateway:
 
         # No filter: return first message
         if filter is None:
-            return self._queue.pop(0)
+            return self._queue.popleft()
 
         for i, msg in enumerate(self._queue):
             if Gateway.match_filter(filter, msg):
-                return self._queue.pop(i)
+                ret = self._queue[i]
+                del self._queue[i]
+                return ret
 
         return None
 
@@ -268,11 +303,11 @@ class Gateway:
                     return True
         return False
 
-    def _msg_rx(self, messages: list) -> None:
-        for msg in messages:
-            logger.debug(f"<<< {msg}")
+    def _msg_rx(self, strings: list) -> None:
+        for string in strings:
+            logger.debug(f"<<< {string}")
             try:
-                json_msg = JSONMessage(msg, owner=self)
+                json_msg = JSONMessage(string, owner=self)
                 if hasattr(json_msg, 'id') and json_msg.id in self._pending_actions:
                     self._pending_actions[json_msg.id].put(json_msg)
                     del self._pending_actions[json_msg.id]
@@ -282,9 +317,7 @@ class Gateway:
                     if msg.recipient == self.aid or msg.recipient in self._subscriptions.keys():
                         # if not consumed by any of the receivers, then queue it
                         if not self._send_receivers(msg):
-                            self._queue.append(msg)
-                            if len(self._queue) > self._max_queue_size:
-                                self._queue.pop(0)
+                            self._queue.append(msg) # deque will automatically discard oldest if full
                 else:
                     rsp = JSONMessage()
                     rsp.id = json_msg.id
@@ -340,7 +373,7 @@ class Gateway:
 
         self._pending_actions[json_msg.id] = OneShotChannel[JSONMessage]()
         self._msg_tx(json_msg)
-        if timeout is not self.BLOCKING:
+        if timeout != self.BLOCKING:
             try:
                 msg = self._pending_actions[json_msg.id].get(timeout=timeout / 1000)
             except queue.Empty:
@@ -357,6 +390,14 @@ class Gateway:
         watch.append(self.aid)
         json_msg = JSONMessage.createWantsMessagesFor(agentIDs=watch)
         self._msg_tx(json_msg)
+
+    def isConnected(self) -> bool:
+        """ Java style method name for is_connected()
+
+        .. deprecated:: 2.0.0
+            Use :py:meth:`~Gateway.is_connected` instead.
+        """
+        return self.is_connected()
 
     def is_connected(self) -> bool:
         """Returns True if the gateway is connected to the fjage container.
@@ -407,7 +448,7 @@ class ChannelFilter:
         self.channel = OneShotChannel[JSONMessage]()
         self.filter = filter
 
-    def get(self, timeout: Optional[float] = None) -> Message:
+    def get(self, timeout: Optional[float] = None) -> Optional[Message]:
         return self.channel.get(timeout)
 
     def tryput(self, msg: Message) -> bool:
@@ -415,3 +456,123 @@ class ChannelFilter:
             self.channel.put(msg)
             return True
         return False
+
+import threading
+from collections import deque
+
+import threading
+from collections import deque
+from collections.abc import MutableSequence
+
+class ThreadSafeDeque(MutableSequence):
+    def __init__(self, iterable=None, maxlen=None):
+        self._dq = deque(iterable or [], maxlen=maxlen)
+        self._lock = threading.RLock()
+        self.maxlen = maxlen
+
+    # Basic length and indexing
+    def __len__(self):
+        with self._lock:
+            return len(self._dq)
+
+    def __getitem__(self, index):
+        with self._lock:
+            return self._dq[index]
+
+    def __setitem__(self, index, value):
+        with self._lock:
+            self._dq[index] = value
+
+    def __delitem__(self, index):
+        with self._lock:
+            del self._dq[index]
+
+    # Insert is required by MutableSequence
+    def insert(self, index, value):
+        with self._lock:
+            self._dq.insert(index, value)
+
+    # Append/appendleft/pop/popleft
+    def append(self, item):
+        with self._lock:
+            self._dq.append(item)
+
+    def appendleft(self, item):
+        with self._lock:
+            self._dq.appendleft(item)
+
+    def pop(self):
+        with self._lock:
+            return self._dq.pop()
+
+    def popleft(self):
+        with self._lock:
+            return self._dq.popleft()
+
+    # Extend operations
+    def extend(self, iterable):
+        with self._lock:
+            self._dq.extend(iterable)
+
+    def extendleft(self, iterable):
+        with self._lock:
+            self._dq.extendleft(iterable)
+
+    # Rotation
+    def rotate(self, n=1):
+        with self._lock:
+            self._dq.rotate(n)
+
+    # Clear
+    def clear(self):
+        with self._lock:
+            self._dq.clear()
+
+    # Snapshot iteration
+    def __iter__(self):
+        with self._lock:
+            return iter(list(self._dq))
+
+    # Representations
+    def __repr__(self):
+        with self._lock:
+            return f"{self.__class__.__name__}({list(self._dq)!r}, maxlen={self.maxlen})"
+
+    def __str__(self):
+        with self._lock:
+            return str(list(self._dq))
+
+class ThreadSafeDict(MutableMapping):
+    def __init__(self, *args, **kwargs):
+        self._dict = dict(*args, **kwargs)
+        self._lock = threading.RLock()
+
+    def __getitem__(self, k):
+        with self._lock:
+            return self._dict[k]
+
+    def __setitem__(self, k, v):
+        with self._lock:
+            self._dict[k] = v
+
+    def __delitem__(self, k):
+        with self._lock:
+            del self._dict[k]
+
+    def __iter__(self):
+        # iteration lock must be held externally if you want to delete safely
+        with self._lock:
+            for k in list(self._dict.keys()):  # copy keys to allow safe deletion
+                yield k
+
+    def __len__(self):
+        with self._lock:
+            return len(self._dict)
+
+    def safe_iter(self, predicate):
+        """Traverse and remove items matching predicate."""
+        with self._lock:
+            to_delete = [k for k, v in self._dict.items() if predicate(k, v)]
+            for k in to_delete:
+                del self._dict[k]
+            return to_delete

@@ -47,13 +47,16 @@ class JSONMessage:
             obj = json.loads(json_str, object_hook=self._decode_base64)
             for k, v in obj.items():
                 if k == "message" and isinstance(v, dict):
-                    self.message = Message.from_json(v)
+                    self.message = Message.from_json(v, owner=owner)
                 elif k == "agentID" :
                     self.agentID = AgentID.from_json(v, owner=owner)
                 elif k == "agentIDs" and isinstance(v, list):
                     self.agentIDs = [AgentID.from_json(a, owner=owner) for a in v]
                 else:
-                    setattr(self, k, v)
+                    if hasattr(self, k):
+                        setattr(self, k, v)
+                    else:
+                        logger.warning(f"Unknown attribute '{k}' in JSONMessage")
 
 
     def _decode_base64(self, obj: dict) -> dict:
@@ -76,7 +79,7 @@ class JSONMessage:
             if dtype in fmt_map:
                 fmt = fmt_map[dtype]
                 count = len(data) // struct.calcsize(fmt)
-                endian = "<"
+                endian = "<" # fjåge JSON base64 binary encoding is little-endian
                 unpack_fmt = f"{endian}{count}{fmt}"
                 return list(struct.unpack(unpack_fmt, data))
         return obj
