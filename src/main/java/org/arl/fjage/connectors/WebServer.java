@@ -308,6 +308,7 @@ public class WebServer {
       resHandler.setWelcomeFiles(new String[]{ "index.html" });
       resHandler.setCacheControl(options.cacheControl);
       resHandler.setEtags(true);
+      resHandler.getMimeTypes().addMimeMapping("mjs", "application/javascript");
       handler.setHandler(resHandler);
       if (add(handler)) {
         log.info("Adding static handler at "+context+" -> "+dir);
