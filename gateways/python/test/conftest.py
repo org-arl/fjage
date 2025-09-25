@@ -23,7 +23,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                 trace += f"### {report.longrepr.reprcrash.message}\n"
                 if hasattr(report.longrepr, 'reprtraceback'):
                     for entry in report.longrepr.reprtraceback.reprentries:
-                        trace += f"  File \"{entry.reprfileloc}\", line {entry.lineno}, in {entry.name}\n"
+                        trace += f"  File \"{entry.reprfileloc}\" in {entry.name}\n"
                         for line in entry.lines:
                             trace += f"    {line}\n"
                 trace += '\n'
