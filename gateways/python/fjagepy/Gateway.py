@@ -5,7 +5,7 @@ import logging
 import threading
 import enum
 from collections import deque
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, MutableSequence
 from typing import Any, Optional, Union, Callable, Type, Generic, TypeVar
 
 
@@ -92,11 +92,11 @@ class Gateway:
         json_msg = JSONMessage.createSend(msg=msg, relay=True)
         self._msg_tx(json_msg)
 
-    def receive(self, filter: Union[Callable, Type[Message], Message, None]=None, timeout: Optional[int] = None) -> Any:
+    def receive(self, msg_filter: Union[Callable, Type[Message], Message, None]=None, timeout: Optional[int] = None, **kwargs) -> Any:
         """Receives a message from the fjage container.
 
         Args:
-            filter : filter to apply to incoming messages
+            msg_filter : a filter to apply to incoming messages
             timeout : timeout in milliseconds. Defaults to None, which uses the gateway's default timeout.
 
         Returns:
@@ -108,18 +108,20 @@ class Gateway:
         if not isinstance(timeout, int):
             raise ValueError("timeout must be an integer")
 
-        msg = self._retrieve_from_queue(filter)
+        # backward compat: allow 'filter=' kwarg
+        if msg_filter is None and 'filter' in kwargs:
+            msg_filter = kwargs['filter']
+
+        msg = self._retrieve_from_queue(msg_filter)
         if (msg is not None or timeout == self.NON_BLOCKING):
             return msg
 
         lid = str(UUID7.generate())
-        self._pending_requests[lid] = ChannelFilter(filter)
+        self._pending_requests[lid] = ChannelFilter(msg_filter)
         if timeout != self.BLOCKING:
-            try:
-                msg = self._pending_requests[lid].get(timeout=timeout / 1000)
-            except queue.Empty:
-                logger.warning(f"Receive timeout after {timeout} ms for filter {filter}")
-                msg = None
+            msg = self._pending_requests[lid].get(timeout=timeout / 1000)
+            if msg is None:
+                logger.warning(f"Receive timeout after {timeout} ms for filter {msg_filter}")
         else:
             msg = self._pending_requests[lid].get()
         if lid in self._pending_requests:
@@ -193,7 +195,7 @@ class Gateway:
             return True
         return False
 
-    def agents(self, timeout:int = None) -> list[AgentID]:
+    def agents(self, timeout: Optional[int] = None) -> list[AgentID]:
         """Gets the list of all agents connected to the fjage container"""
         if timeout is None:
             timeout = self._timeout
@@ -204,11 +206,9 @@ class Gateway:
         logger.debug("Response to agents() request does not contain agentIDs")
         return []
 
-
     def contains_agent(self, agentID: AgentID, timeout: Optional[int] = None) -> bool:
         """ A python style method name for containsAgent() """
         return self.containsAgent(agentID, timeout)
-
 
     def containsAgent(self, agentID: AgentID, timeout: Optional[int] = None) -> bool:
         """Checks if the given agent is connected to the fjage container"""
@@ -281,27 +281,18 @@ class Gateway:
 
     # Internal helper methods
     def _retrieve_from_queue(self, filter: Union[Callable, Type[Message], Message, None]) -> Optional[Message]:
-        if not self._queue or len(self._queue) == 0:
+        if not self._queue:
             return None
 
         # No filter: return first message
         if filter is None:
             return self._queue.popleft()
-
-        for i, msg in enumerate(self._queue):
-            if Gateway.match_filter(filter, msg):
-                ret = self._queue[i]
-                del self._queue[i]
-                return ret
-
-        return None
+        else:
+            return self._queue.pop_first_matching(lambda m: Gateway.match_filter(filter, m))
 
     def _send_receivers(self, msg: Message) -> bool:
-        for key, receiver in self._pending_requests.items():
-                if receiver.tryput(msg):
-                    del self._pending_requests[key]
-                    return True
-        return False
+        receiver = self._pending_requests.pop_first(lambda _, r: r.tryput(msg))
+        return receiver is not None
 
     def _msg_rx(self, strings: list) -> None:
         for string in strings:
@@ -309,8 +300,9 @@ class Gateway:
             try:
                 json_msg = JSONMessage(string, owner=self)
                 if hasattr(json_msg, 'id') and json_msg.id in self._pending_actions:
-                    self._pending_actions[json_msg.id].put(json_msg)
-                    del self._pending_actions[json_msg.id]
+                    chan = self._pending_actions.pop(json_msg.id, None)
+                    if chan:
+                        chan.put(json_msg)
 
                 elif (json_msg.action == Actions.SEND.value and hasattr(json_msg, 'message') and isinstance(json_msg.message, Message)):
                     msg = json_msg.message
@@ -374,11 +366,9 @@ class Gateway:
         self._pending_actions[json_msg.id] = OneShotChannel[JSONMessage]()
         self._msg_tx(json_msg)
         if timeout != self.BLOCKING:
-            try:
-                msg = self._pending_actions[json_msg.id].get(timeout=timeout / 1000)
-            except queue.Empty:
-                logger.warning(f"Receive timeout after {timeout} ms for {json_msg.action}[{json_msg.id}] request")
-                msg = None
+            msg = self._pending_actions[json_msg.id].get(timeout=timeout / 1000)
+            if msg is None:
+                logger.warning(f"Request timeout after {timeout} ms for action {json_msg.action}")
         else:
             msg = self._pending_actions[json_msg.id].get()
         if json_msg.id in self._pending_actions:
@@ -444,25 +434,18 @@ class OneShotChannel(Generic[T]):
             return val
 
 class ChannelFilter:
-    def __init__(self, filter:Union[Callable, Type[Message], Message, None]):
-        self.channel = OneShotChannel[JSONMessage]()
-        self.filter = filter
+    def __init__(self, msg_filter: Union[Callable, Type[Message], Message, None]):
+        self.channel = OneShotChannel[Message]()
+        self.msg_filter = msg_filter
 
     def get(self, timeout: Optional[float] = None) -> Optional[Message]:
         return self.channel.get(timeout)
 
     def tryput(self, msg: Message) -> bool:
-        if Gateway.match_filter(self.filter, msg):
+        if Gateway.match_filter(self.msg_filter, msg):
             self.channel.put(msg)
             return True
         return False
-
-import threading
-from collections import deque
-
-import threading
-from collections import deque
-from collections.abc import MutableSequence
 
 class ThreadSafeDeque(MutableSequence):
     def __init__(self, iterable=None, maxlen=None):
@@ -542,6 +525,16 @@ class ThreadSafeDeque(MutableSequence):
         with self._lock:
             return str(list(self._dq))
 
+    def pop_first_matching(self, predicate: Callable[[Any], bool]) -> Any | None:
+        with self._lock:
+            lst = list(self._dq)
+            for i, item in enumerate(lst):
+                if predicate(item):
+                    item = lst.pop(i)
+                    self._dq = deque(lst, maxlen=self.maxlen)
+                    return item
+            return None
+
 class ThreadSafeDict(MutableMapping):
     def __init__(self, *args, **kwargs):
         self._dict = dict(*args, **kwargs)
@@ -576,3 +569,11 @@ class ThreadSafeDict(MutableMapping):
             for k in to_delete:
                 del self._dict[k]
             return to_delete
+
+    def pop_first(self, predicate):
+      with self._lock:
+          for k, v in list(self._dict.items()):
+              if predicate(k, v):
+                  del self._dict[k]
+                  return v
+      return None
