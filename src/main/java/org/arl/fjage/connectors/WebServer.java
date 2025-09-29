@@ -10,6 +10,7 @@
 
 package org.arl.fjage.connectors;
 
+import org.eclipse.jetty.http.MimeTypes;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
 import org.eclipse.jetty.rewrite.handler.Rule;
 import org.eclipse.jetty.server.Handler;
@@ -259,6 +260,14 @@ public class WebServer {
       resHandler.setDirectoriesListed(false);
       resHandler.setCacheControl(options.cacheControl);
       resHandler.setEtags(true);
+      // add .mjs mapping for jetty versions < 10
+      // https://github.com/jetty/jetty.project/blob/jetty-10.0.26/jetty-http/src/main/resources/org/eclipse/jetty/http/mime.properties#L76
+      MimeTypes mimeTypes = resHandler.getMimeTypes();
+      if (mimeTypes == null) {
+        mimeTypes = new MimeTypes();
+        resHandler.setMimeTypes(mimeTypes);
+      }
+      mimeTypes.addMimeMapping("mjs", "application/javascript");
       handler.setHandler(resHandler);
       if (add(handler)) handlers.add(handler);
     }
@@ -308,7 +317,14 @@ public class WebServer {
       resHandler.setWelcomeFiles(new String[]{ "index.html" });
       resHandler.setCacheControl(options.cacheControl);
       resHandler.setEtags(true);
-      resHandler.getMimeTypes().addMimeMapping("mjs", "application/javascript");
+      // add .mjs mapping for jetty versions < 10
+      // https://github.com/jetty/jetty.project/blob/jetty-10.0.26/jetty-http/src/main/resources/org/eclipse/jetty/http/mime.properties#L76
+      MimeTypes mimeTypes = resHandler.getMimeTypes();
+      if (mimeTypes == null) {
+        mimeTypes = new MimeTypes();
+        resHandler.setMimeTypes(mimeTypes);
+      }
+      mimeTypes.addMimeMapping("mjs", "application/javascript");
       handler.setHandler(resHandler);
       if (add(handler)) {
         log.info("Adding static handler at "+context+" -> "+dir);
