@@ -1,5 +1,8 @@
 # Release Notes
 
+## 2.2.0
+* Make Jetty publish `.mjs` files with MIME type `application/javascript`.
+
 ## 2.1.1
 * Bugfix: Fixed ConsoleShell to properly handle cursor keys at the start of a line
 * Bugfix: Fixed Web shell dark/light mode toggle
