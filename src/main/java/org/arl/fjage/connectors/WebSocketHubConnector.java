@@ -128,7 +128,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
   public String[] connections() {
     // return all active (check if wsHandlers.session.isOpen()) connections in the format "ip:port"
     return wsHandlers.stream().filter(h -> h.session != null && h.session.isOpen())
-        .map(h -> h.session.getRemoteAddress().getHostName()+":"+h.session.getRemoteAddress().getPort())
+        .map(h -> h.session.getRemoteAddress().getHostString()+":"+h.session.getRemoteAddress().getPort())
         .toArray(String[]::new);
   }
 

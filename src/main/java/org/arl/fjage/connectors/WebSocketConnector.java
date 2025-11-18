@@ -46,7 +46,7 @@ public class WebSocketConnector implements Connector{
     public void onWebSocketConnect(Session session) {
         this.session = session;
         this.remote = this.session.getRemote();
-        log.finer("WebSocket Connector connected: " + session.getRemoteAddress().getHostName() + ":" + session.getRemoteAddress().getPort());
+        log.finer("WebSocket Connector connected: " + session.getRemoteAddress().getHostString() + ":" + session.getRemoteAddress().getPort());
         name = "ws://" + this.remote.getInetSocketAddress().getAddress().getHostAddress() + context + ":" + this.remote.getInetSocketAddress().getPort();
         if (listener != null) listener.connected(this);
         outThread = new OutputThread();
@@ -105,7 +105,7 @@ public class WebSocketConnector implements Connector{
     @Override
     public String[] connections() {
         if (session == null || !session.isOpen()) return new String[]{};
-        return new String[] { session.getRemoteAddress().getHostName()+":"+session.getRemoteAddress().getPort() };
+        return new String[] { session.getRemoteAddress().getHostString()+":"+session.getRemoteAddress().getPort() };
     }
 
     @Override
