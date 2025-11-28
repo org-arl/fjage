@@ -48,7 +48,7 @@ public class ConnectionHandler extends Thread {
     setName(conn.toString());
     alive = false;
     keepAlive = true;
-    closeOnDead = (conn instanceof TcpConnector) && (container instanceof MasterContainer);
+    closeOnDead = ((conn instanceof TcpConnector) || (conn instanceof WebSocketConnector)) && (container instanceof MasterContainer);
   }
 
   public ConnectionHandler(Connector conn, RemoteContainer container, Firewall fw) {
@@ -58,7 +58,7 @@ public class ConnectionHandler extends Thread {
     setName(conn.toString());
     alive = false;
     keepAlive = true;
-    closeOnDead = (conn instanceof TcpConnector) && (container instanceof MasterContainer);
+    closeOnDead = ((conn instanceof TcpConnector) || (conn instanceof WebSocketConnector)) && (container instanceof MasterContainer);
   }
 
   /**
