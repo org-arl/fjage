@@ -1,5 +1,12 @@
 # Release Notes
 
+## 2.3.0
+* Bugfix: Avoid race condition when creating store folder
+* Bugfix: Avoid DNS lookups when accepting new WebSocket connections
+* Bugfix: Close WebSocket connections once they are dead
+* Log some WebSocket errors at info level instead of warn
+* Make WebSocket max message size configurable
+
 ## 2.2.0
 * Make Jetty publish `.mjs` files with MIME type `application/javascript`.
 
