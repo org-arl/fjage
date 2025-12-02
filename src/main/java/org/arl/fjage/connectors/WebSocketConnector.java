@@ -170,6 +170,13 @@ public class WebSocketConnector implements Connector{
                 } catch (TimeoutException e){
                     log.fine("Sending timed out. Closing connection to " + session.getRemoteAddress());
                     session.disconnect();
+                } catch (java.util.concurrent.ExecutionException e) {
+                    if (e.getCause() instanceof java.nio.channels.ClosedChannelException) {
+                        log.info("Unexpected "+ e.getCause().toString() + " while sending to " + session.getRemoteAddress() + ".");
+                    }
+                    else {
+                        log.log(Level.WARNING, "Error sending websocket message: ", e);
+                    }
                 } catch (Exception e){
                     log.log(Level.WARNING, "Error sending websocket message: ", e);
                 }
