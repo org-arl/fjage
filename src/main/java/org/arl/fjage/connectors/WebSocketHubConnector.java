@@ -231,8 +231,12 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     }
 
     @OnWebSocketError
-    public void onError(Throwable t) {
-      log.warning(t.toString());
+    public void onWebSocketError(Throwable cause)  {
+      if (cause instanceof org.eclipse.jetty.io.EofException) {
+        log.info(cause.toString());
+        return;
+      }
+      log.log(Level.WARNING, "WebSocket error: ", cause);
     }
 
     @OnWebSocketMessage

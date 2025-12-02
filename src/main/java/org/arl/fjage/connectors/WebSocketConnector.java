@@ -55,6 +55,10 @@ public class WebSocketConnector implements Connector{
 
     @OnWebSocketError
     public void onWebSocketError(Throwable cause)  {
+        if (cause instanceof org.eclipse.jetty.io.EofException) {
+            log.info(cause.toString());
+            return;
+        }
         log.log(Level.WARNING, "WebSocket error: ", cause);
     }
 
