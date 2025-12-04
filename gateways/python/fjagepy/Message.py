@@ -109,16 +109,10 @@ class Message:
                 setattr(rv, key, value)
         return rv
 
-    def __str__(self):
+    def __str__(self) -> str:
         p = self.perf.value if self.perf else 'MESSAGE'
         if self.__clazz__ == 'org.arl.fjage.Message':
             return p
-        return f"{p}: {self.__clazz__.split('.')[-1]}"
-
-    def _repr_pretty_(self, p, cycle):
-        if cycle:
-            p.text('...')
-            return
         content = []
         for k, v in self.__dict__.items():
             if k.startswith('__') or k == 'sender' or k == 'recipient' or k == 'msgID' or k == 'perf' or k == 'inReplyTo':
@@ -135,10 +129,13 @@ class Message:
                     content.append(f"{k}=({len(v)} bytes)")
             else:
                 content.append(f"{k}={v}")
-        if self.__clazz__ == 'org.arl.fjage.Message' and not content:
-            p.text(str(self.perf))
+        if not content:
+            return f"{self.__clazz__.split('.')[-1]}:{p}"
         else:
-            p.text(self.__clazz__.split(".")[-1] + ':' + str(self.perf) +  '[' + (', '.join(content)) + ']')
+            return f"{self.__clazz__.split('.')[-1]}:{p}[" + (', '.join(content)) + ']'
+
+    def _repr_pretty_(self, p, cycle):
+        p.text(str(self) if not cycle else '...')
 
 
 
