@@ -4,11 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fjagepy"
-version = "2.0.0"
+version = "2.0.1"
 description = "fjage Gateway in Python"
-authors = [{ name = "Chinmay Pendharkar", email = "chinmay@subnero.com" }]
 readme = "README.md"
+license = {text = "BSD-3-Clause"}
+authors = [{ name = "Chinmay Pendharkar", email = "chinmay@subnero.com" }]
+keywords = ["fjage", "agent", "framework", "gateway", "python"]
 requires-python = ">=3.9"
+
+[project.urls]
+Homepage = "https://github.com/org-arl/fjage/tree/master/gateways/python"
+Source = "https://github.com/org-arl/fjage/tree/master/gateways/python"
+Issues = "https://github.com/org-arl/fjage/issues"
 
 [tool.pytest.ini_options]
 minversion = "8.0"

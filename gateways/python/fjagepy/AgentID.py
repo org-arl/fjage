@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional, Self, Any
+from typing import Optional, Any
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -226,7 +226,7 @@ class AgentID:
 
         return self.request(msg)
 
-    def __getitem__(self, index) -> Self:
+    def __getitem__(self, index) -> AgentID:
         """ Supports indexed parameter access through the [] operator.
             Example: agent[1].param will refers to the first indexed parameter "param" of the agent."""
 
