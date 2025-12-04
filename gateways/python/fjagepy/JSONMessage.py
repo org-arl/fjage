@@ -36,6 +36,7 @@ class JSONMessage:
         self.inResponseTo: Optional[str] = None
         self.agentID: Optional[AgentID] = None
         self.agentIDs: Optional[List[AgentID]] = None
+        self.agentTypes: Optional[List[str]] = None
         self.service: Optional[str] = None
         self.services: Optional[List[str]] = None
         self.answer: Optional[bool] = None
