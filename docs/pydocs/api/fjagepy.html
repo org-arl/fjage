@@ -13,7 +13,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=5b045848"></script>
+      <script src="../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -59,12 +59,17 @@
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.NON_BLOCKING"><code class="docutils literal notranslate"><span class="pre">Gateway.NON_BLOCKING</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agent"><code class="docutils literal notranslate"><span class="pre">Gateway.agent()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agentForService"><code class="docutils literal notranslate"><span class="pre">Gateway.agentForService()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agent_for_service"><code class="docutils literal notranslate"><span class="pre">Gateway.agent_for_service()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agent_id"><code class="docutils literal notranslate"><span class="pre">Gateway.agent_id()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agents"><code class="docutils literal notranslate"><span class="pre">Gateway.agents()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agentsForService"><code class="docutils literal notranslate"><span class="pre">Gateway.agentsForService()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.agents_for_service"><code class="docutils literal notranslate"><span class="pre">Gateway.agents_for_service()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.close"><code class="docutils literal notranslate"><span class="pre">Gateway.close()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.containsAgent"><code class="docutils literal notranslate"><span class="pre">Gateway.containsAgent()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.contains_agent"><code class="docutils literal notranslate"><span class="pre">Gateway.contains_agent()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.flush"><code class="docutils literal notranslate"><span class="pre">Gateway.flush()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.getAgentID"><code class="docutils literal notranslate"><span class="pre">Gateway.getAgentID()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.isConnected"><code class="docutils literal notranslate"><span class="pre">Gateway.isConnected()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.is_connected"><code class="docutils literal notranslate"><span class="pre">Gateway.is_connected()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.match_filter"><code class="docutils literal notranslate"><span class="pre">Gateway.match_filter()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fjagepy.Gateway.receive"><code class="docutils literal notranslate"><span class="pre">Gateway.receive()</span></code></a></li>
@@ -167,13 +172,19 @@
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">AgentID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">owner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/AgentID.html#AgentID"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.AgentID" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>An identifier for an agent or a topic. This can be used to send, receive messages,
-and set or get parameters on an agent or topic on the fjåge container.</p>
+and set or get parameters on an agent or topic on the fjåge container. The AgentID is typically
+owned by a Gateway which is used to send and receive messages.</p>
+<p>The AgentID object can be used to set and get parameters on the agent using dot notation. For example,
+to get the value of a parameter named “param” on an agent represented by an AgentID object <cite>aid</cite>,
+you can use <cite>value = aid.param</cite>. To set the value of the parameter, you can use <cite>aid.param = value</cite>.
+If the parameter is indexed, you can use <cite>aid[index].param</cite> to refer to the indexed parameter.
+For example, <cite>aid[1].param</cite> refers to the first indexed parameter “param” of the agent.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – name of the agent</p></li>
 <li><p><strong>topic</strong> (<em>bool</em>) – True if this represents a topic. Defaults to False.</p></li>
-<li><p><strong>owner</strong> – Gateway owner for this AgentID. Defaults to None.</p></li>
+<li><p><strong>owner</strong> (<em>Optional</em><em>[</em><em>'Gateway'</em><em>]</em>) – Gateway owner for this AgentID. Defaults to None.</p></li>
 </ul>
 </dd>
 </dl>
@@ -273,12 +284,19 @@ and set or get parameters on an agent or topic on the fjåge container.</p>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A Gateway is used to connect to a fjåge container and send and receive messages,
 query for agents and services, and set or get parameters on agents from Python.</p>
+<p>The Gateway class provides methods for sending and receiving messages, subscribing to topics,
+and querying for agents and services. It uses a Connector to handle the underlying communication
+with the fjåge container.</p>
+<p>The Gateway is thread-safe and can be used from multiple threads. It maintains an internal
+message queue with a configurable maximum size (default 512 messages). A gw.receive() call
+will first check the internal queue for a matching message before blocking for new messages.</p>
+<p>The Gateway can be used as a context manager to ensure proper cleanup of resources.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>hostname</strong> (<em>str</em>)</p></li>
 <li><p><strong>port</strong> (<em>int</em>)</p></li>
-<li><p><strong>connector</strong> (<em>type</em>)</p></li>
+<li><p><strong>connector</strong> (<em>Type</em><em>[</em><em>Connector</em><em>]</em>)</p></li>
 <li><p><strong>reconnect</strong> (<em>bool</em>)</p></li>
 <li><p><strong>timeout</strong> (<em>int</em>)</p></li>
 </ul>
@@ -313,7 +331,24 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service</strong> (<em>str</em><em> | </em><em>Enum</em>)</p></li>
-<li><p><strong>timeout</strong> (<em>int</em>)</p></li>
+<li><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.agent_for_service">
+<span class="sig-name descname"><span class="pre">agent_for_service</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.agent_for_service"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.agent_for_service" title="Link to this definition"></a></dt>
+<dd><p>A python style method name for agentForService()</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>service</strong> (<em>str</em><em> | </em><em>Enum</em>)</p></li>
+<li><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -342,7 +377,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dd><p>Gets the list of all agents connected to the fjage container</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>timeout</strong> (<em>int</em>)</p>
+<dd class="field-odd"><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>list[<a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>]</p>
@@ -358,7 +393,24 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service</strong> (<em>str</em><em> | </em><em>Enum</em>)</p></li>
-<li><p><strong>timeout</strong> (<em>int</em>)</p></li>
+<li><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[<a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.agents_for_service">
+<span class="sig-name descname"><span class="pre">agents_for_service</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.agents_for_service"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.agents_for_service" title="Link to this definition"></a></dt>
+<dd><p>A python style method name for agentsForService()</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>service</strong> (<em>str</em><em> | </em><em>Enum</em>)</p></li>
+<li><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -381,7 +433,24 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>agentID</strong> (<a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p></li>
-<li><p><strong>timeout</strong> (<em>int</em>)</p></li>
+<li><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.contains_agent">
+<span class="sig-name descname"><span class="pre">contains_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agentID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.contains_agent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.contains_agent" title="Link to this definition"></a></dt>
+<dd><p>A python style method name for containsAgent()</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>agentID</strong> (<a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a>)</p></li>
+<li><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -394,6 +463,34 @@ query for agents and services, and set or get parameters on agents from Python.<
 <dt class="sig sig-object py" id="fjagepy.Gateway.flush">
 <span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.flush"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.flush" title="Link to this definition"></a></dt>
 <dd><p>Clears the internal message queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.getAgentID">
+<span class="sig-name descname"><span class="pre">getAgentID</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.getAgentID"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.getAgentID" title="Link to this definition"></a></dt>
+<dd><p>Java style method name for agent_id()</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 2.0.0: </span>Use <a class="reference internal" href="#fjagepy.Gateway.agent_id" title="fjagepy.Gateway.agent_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">agent_id()</span></code></a> instead.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#fjagepy.AgentID" title="fjagepy.AgentID.AgentID"><em>AgentID</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fjagepy.Gateway.isConnected">
+<span class="sig-name descname"><span class="pre">isConnected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.isConnected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.isConnected" title="Link to this definition"></a></dt>
+<dd><p>Java style method name for is_connected()</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 2.0.0: </span>Use <a class="reference internal" href="#fjagepy.Gateway.is_connected" title="fjagepy.Gateway.is_connected"><code class="xref py py-meth docutils literal notranslate"><span class="pre">is_connected()</span></code></a> instead.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -412,7 +509,7 @@ query for agents and services, and set or get parameters on agents from Python.<
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fjagepy.Gateway.match_filter">
-<span class="sig-name descname"><span class="pre">match_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.match_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.match_filter" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">match_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.match_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.match_filter" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -428,12 +525,12 @@ query for agents and services, and set or get parameters on agents from Python.<
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fjagepy.Gateway.receive">
-<span class="sig-name descname"><span class="pre">receive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.receive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.receive" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">receive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg_filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Gateway.html#Gateway.receive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.Gateway.receive" title="Link to this definition"></a></dt>
 <dd><p>Receives a message from the fjage container.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filter</strong> (<em>Callable</em><em> | </em><em>Type</em><em>[</em><a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em>] </em><em>| </em><a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>) – filter to apply to incoming messages</p></li>
+<li><p><strong>msg_filter</strong> (<em>Callable</em><em> | </em><em>Type</em><em>[</em><a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em>] </em><em>| </em><a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>) – a filter to apply to incoming messages</p></li>
 <li><p><strong>timeout</strong> (<em>int</em><em> | </em><em>None</em>) – timeout in milliseconds. Defaults to None, which uses the gateway’s default timeout.</p></li>
 </ul>
 </dd>
@@ -652,7 +749,7 @@ can parse a JSON string into a JSONMessage object.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>in_reply_to_msg</strong> (<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>perf</strong> (<em>str</em>)</p></li>
+<li><p><strong>perf</strong> (<a class="reference internal" href="#fjagepy.Performative" title="fjagepy.Performative.Performative"><em>Performative</em></a>)</p></li>
 </ul>
 </dd>
 </dl>
