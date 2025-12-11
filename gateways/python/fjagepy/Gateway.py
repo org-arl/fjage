@@ -296,7 +296,6 @@ class Gateway:
 
     def _msg_rx(self, strings: list) -> None:
         for string in strings:
-            string = string.strip()
             logger.debug(f"<<< {string}")
             if string == '{"alive": true}':
                 continue  # ignore alive messages
