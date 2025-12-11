@@ -138,7 +138,6 @@ class Message:
         p.text(str(self) if not cycle else '...')
 
 
-
 class GenericMessage(Message):
     def __init__(self):
         super().__init__()
