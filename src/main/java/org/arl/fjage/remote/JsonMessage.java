@@ -100,6 +100,11 @@ public class JsonMessage {
     gson = gsonBuilder.create();
   }
 
+  public static void addTypeAdapterFactory(TypeAdapterFactory factory) {
+    gsonBuilder.registerTypeAdapterFactory(factory);
+    gson = gsonBuilder.create();
+  }
+
   public static JsonMessage fromJson(String s) {
     return gson.fromJson(s, JsonMessage.class);
   }
