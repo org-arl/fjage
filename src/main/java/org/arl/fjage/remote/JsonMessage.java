@@ -54,7 +54,7 @@ public class JsonMessage {
           out.nullValue();
           return;
         }
-        out.value(value.toEpochMilli());
+        out.value(value.toString());
       }
       @Override
       public Instant read(JsonReader in) throws java.io.IOException {
@@ -62,7 +62,7 @@ public class JsonMessage {
           in.nextNull();
           return null;
         }
-        return Instant.ofEpochMilli(in.nextLong());
+        return Instant.parse(in.nextString());
       }
     })
     .registerTypeAdapter(Duration.class, new TypeAdapter<Duration>() {
