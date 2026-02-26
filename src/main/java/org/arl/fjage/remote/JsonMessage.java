@@ -11,7 +11,12 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.util.Date;
+import java.time.Instant;
+import java.time.Duration;
 import com.google.gson.*;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import com.google.gson.stream.JsonToken;
 import org.arl.fjage.AgentID;
 import org.arl.fjage.Message;
 import org.arl.fjage.param.Parameter;
@@ -42,6 +47,42 @@ public class JsonMessage {
     .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (value, type, jsonSerializationContext) -> value.isNaN()?null:new JsonPrimitive(value))
     .registerTypeAdapter(Date.class, (JsonDeserializer<Date>) (json, typeOfT, context) -> new Date(json.getAsJsonPrimitive().getAsLong()))
     .registerTypeAdapter(Date.class, (JsonSerializer<Date>) (date, type, jsonSerializationContext) -> new JsonPrimitive(date.getTime()))
+    .registerTypeAdapter(Instant.class, new TypeAdapter<Instant>() {
+      @Override
+      public void write(JsonWriter out, Instant value) throws java.io.IOException {
+        if (value == null) {
+          out.nullValue();
+          return;
+        }
+        out.value(value.toEpochMilli());
+      }
+      @Override
+      public Instant read(JsonReader in) throws java.io.IOException {
+        if (in.peek() == JsonToken.NULL) {
+          in.nextNull();
+          return null;
+        }
+        return Instant.ofEpochMilli(in.nextLong());
+      }
+    })
+    .registerTypeAdapter(Duration.class, new TypeAdapter<Duration>() {
+      @Override
+      public void write(JsonWriter out, Duration value) throws java.io.IOException {
+        if (value == null) {
+          out.nullValue();
+          return;
+        }
+        out.value(value.toMillis());
+      }
+      @Override
+      public Duration read(JsonReader in) throws java.io.IOException {
+        if (in.peek() == JsonToken.NULL) {
+          in.nextNull();
+          return null;
+        }
+        return Duration.ofMillis(in.nextLong());
+      }
+    })
     .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
     .registerTypeHierarchyAdapter(Parameter.class, new EnumTypeAdapter())
     .registerTypeAdapterFactory(new MessageAdapterFactory())
