@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Container to manage agent lifecycle. Agents in a container are able to
@@ -148,7 +149,7 @@ public class Container {
         throw new FjageException("Unknown cloner name");
       }
     } catch (Exception ex) {
-      log.warning("Cloner creation failed: "+ex.toString());
+      log.log(Level.WARNING, "Cloner creation failed: "+ex.toString(), ex);
       cloner = null;
       doClone = null;
       throw new FjageException("Cloner creation failed");
@@ -168,7 +169,7 @@ public class Container {
     try {
       return (T)doClone.invoke(cloner, obj);
     } catch (Exception ex) {
-      log.warning("Cloning failed: "+ex.toString());
+      log.log(Level.WARNING, "Cloning failed: "+ex.toString(), ex);
       throw new FjageException("Cloning failed");
     }
   }

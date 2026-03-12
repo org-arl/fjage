@@ -101,7 +101,7 @@ public class GroovyBoot {
 
     } catch (Throwable ex) {
       if (log == null) ex.printStackTrace(System.err);
-      else log.severe(ex.toString());
+      else log.log(Level.SEVERE, ex.toString(), ex);
     }
   }
 
