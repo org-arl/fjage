@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 
 /**
  * Shell agent runs in a container and allows execution of shell commands and scripts.
@@ -150,7 +151,7 @@ public class ShellAgent extends Agent {
           try {
             exec.call();
           } catch (Throwable ex) {
-            log.warning("Exec failure: "+ex.toString());
+            log.log(Level.WARNING, "Exec failure: "+ex.toString(), ex);
           }
           exec = null;
         }
@@ -228,7 +229,7 @@ public class ShellAgent extends Agent {
                       try {
                         engine.exec(cmd);
                       } catch (Throwable ex) {
-                        log.warning("Exec failure: "+ex.toString());
+                        log.log(Level.WARNING, "Command exec failure: "+ex.toString(), ex);
                       }
                       return null;
                     };
@@ -257,7 +258,7 @@ public class ShellAgent extends Agent {
             try {
               if (ml.onReceive(msg)) return;
             } catch (Throwable ex) {
-              log.warning("MessageListener: "+ex.toString());
+              log.log(Level.WARNING, "MessageListener: "+ex.toString(), ex);
             }
           if (engine != null) engine.deliver(msg);
         }
@@ -275,7 +276,7 @@ public class ShellAgent extends Agent {
             else if (script.cls != null) engine.exec(script.cls);
           }
         } catch (Throwable ex) {
-          log.warning("Init script failure: "+ex.toString());
+          log.log(Level.WARNING, "Init script failure: "+ex.toString(), ex);
         }
         if (ephemeral) stop();
         else if (consoleThread != null) consoleThread.start();
@@ -608,7 +609,7 @@ public class ShellAgent extends Agent {
         }
       }
     } catch (IOException ex) {
-      log.warning(ex.toString());
+      log.log(Level.WARNING, "File read failure: "+ex.toString(), ex);
     } finally {
       if (is != null) {
         try {
@@ -682,7 +683,7 @@ public class ShellAgent extends Agent {
         }
       }
     } catch (IOException ex) {
-      log.warning(ex.toString());
+      log.log(Level.WARNING, "File write failure: "+ex.toString(), ex);
     } finally {
       if (os != null) {
         try {
