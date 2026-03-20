@@ -184,3 +184,57 @@ export const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
 * @exports ParameterReq
 */
 export const ParameterRsp = MessageClass('org.arl.fjage.param.ParameterRsp');
+
+/**
+* Request to write contents to a file, or delete a file.
+*
+* @typedef {Message} PutFileReq
+* @property {string} filename - name of the file to be written to or deleted
+* @property {number} [content] - content to be written to the file as a byte array. If not provided, the file will be deleted.
+* @property {number} [offset=0] - offset in the file to write the content to.
+* @exports PutFileReq
+*/
+export const PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq');
+
+
+/**
+* Request to read a file or a directory.
+*
+* If the filename specified represents a directory, then the contents of the
+* directory (list of files) are returned as a tab separated string with:
+*   filename, file size, last modification time.
+*
+* The time is represented as epoch time (milliseconds since 1 Jan 1970).
+*
+* @typedef {Message} GetFileReq
+* @property {string} filename - name of the file or directory to be read
+* @property {number} [offset=0] - offset in the file to read from (ignored for directories)
+* @property {number} [length=0] - number of bytes to read from the file (ignored for directories). If 0,
+* the entire file will be read.
+*  @exports GetFileReq
+*/
+export const GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq');
+
+/**
+* Response to a {@link GetFileReq}, with the contents of the file or the directory.
+*
+* @typedef {Message} GetFileRsp
+* @property {string} filename - name of the file or directory that was read
+* @property {number} [content] - content of the file as a byte array. If the filename represents a directory,
+* the content consists of a list of files (one file per line). Each line starts with the filename
+* (with a trailing "/" if it is a directory), "\t", file size in bytes, "\t", and last modification date.
+* @property {number} [offset=0] - offset in the file that the content corresponds to (ignored for directories)
+* @property {boolean} [directory=false] - indicates if the filename represents a directory
+* @exports GetFileRsp
+*/
+export const GetFileRsp = MessageClass('org.arl.fjage.shell.GetFileRsp');
+
+/**
+* Request to execute shell command/script.
+*
+* @typedef {Message} ShellExecReq
+* @property {string} command - shell command or script to be executed
+* @property {boolean} ans  - indicates if the response to this request should include the output of the command/script execution
+* @exports ShellExecReq
+*/
+export const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
