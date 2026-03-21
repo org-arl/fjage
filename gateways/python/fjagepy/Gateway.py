@@ -297,6 +297,8 @@ class Gateway:
     def _msg_rx(self, strings: list) -> None:
         for string in strings:
             logger.debug(f"<<< {string}")
+            if string == '{"alive": true}':
+                continue  # ignore alive messages
             try:
                 json_msg = JSONMessage(string, owner=self)
                 if hasattr(json_msg, 'id') and json_msg.id in self._pending_actions:
