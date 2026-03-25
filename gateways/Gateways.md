@@ -26,6 +26,7 @@ All gateway agents should use names prefixed with `gateway-`.
 - Must return a `null` if the connection to master container fails on the first attempt.
 - May support auto-reconnect, where, once a connection with the master container is established if the connection fails, the Gateway tries to reconnect automatically.
 - Must NOT set the `sentAt` field of the message. This field will be populated by the Container when the message is received.
+- Must respond to JSON message `{"alive": true}` from the master container with `{"alive": true}` as soon as possible to indicate that the gateway is alive.
 
 ### `getAgentID()` :: Void -> AgentID
 
