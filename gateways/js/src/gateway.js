@@ -112,6 +112,13 @@ export class Gateway {
   }
 
   /**
+   * Sends an alive message to the master container.
+   */
+  _sendAlive(){
+    this.connector.write('{"alive": true}');
+  }
+
+  /**
   * Sends an event to all registered listeners of the given type.
   * @private
   * @param {string} type - type of event
@@ -148,7 +155,6 @@ export class Gateway {
     return false;
   }
 
-
   /**
   * @private
   * @param {string} data - stringfied JSON data received from the master container to be processed
@@ -158,6 +164,11 @@ export class Gateway {
     var jsonMsg;
     if (this.debug) console.log('< '+data);
     this._sendEvent('rx', data);
+    // handle alive messages from master container
+    if (data.trim() == '{alive: true}') {
+      this._sendAlive();
+      return;
+    }
     try {
       jsonMsg = new JSONMessage(data, this);
     }catch(e){
@@ -284,7 +295,6 @@ export class Gateway {
       this.connected = !!state;
       if (state == true){
         this.flush();
-        this.connector.write('{"alive": true}');
         this._update_watch();
       } else{
         if (this._cancelPendingOnDisconnect) {
@@ -669,6 +679,7 @@ export class Gateway {
   * @returns {void}
   */
   close() {
+    this.connector.write('{"alive": false}');
     this.connector.close();
     this._removeGWCache(this);
   }
