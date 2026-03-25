@@ -47,42 +47,8 @@ public class JsonMessage {
     .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (value, type, jsonSerializationContext) -> value.isNaN()?null:new JsonPrimitive(value))
     .registerTypeAdapter(Date.class, (JsonDeserializer<Date>) (json, typeOfT, context) -> new Date(json.getAsJsonPrimitive().getAsLong()))
     .registerTypeAdapter(Date.class, (JsonSerializer<Date>) (date, type, jsonSerializationContext) -> new JsonPrimitive(date.getTime()))
-    .registerTypeAdapter(Instant.class, new TypeAdapter<Instant>() {
-      @Override
-      public void write(JsonWriter out, Instant value) throws java.io.IOException {
-        if (value == null) {
-          out.nullValue();
-          return;
-        }
-        out.value(value.toString());
-      }
-      @Override
-      public Instant read(JsonReader in) throws java.io.IOException {
-        if (in.peek() == JsonToken.NULL) {
-          in.nextNull();
-          return null;
-        }
-        return Instant.parse(in.nextString());
-      }
-    })
-    .registerTypeAdapter(Duration.class, new TypeAdapter<Duration>() {
-      @Override
-      public void write(JsonWriter out, Duration value) throws java.io.IOException {
-        if (value == null) {
-          out.nullValue();
-          return;
-        }
-        out.value(value.toMillis());
-      }
-      @Override
-      public Duration read(JsonReader in) throws java.io.IOException {
-        if (in.peek() == JsonToken.NULL) {
-          in.nextNull();
-          return null;
-        }
-        return Duration.ofMillis(in.nextLong());
-      }
-    })
+    .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
+    .registerTypeAdapter(Duration.class, new DurationTypeAdapter())
     .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
     .registerTypeHierarchyAdapter(Parameter.class, new EnumTypeAdapter())
     .registerTypeAdapterFactory(new MessageAdapterFactory())
