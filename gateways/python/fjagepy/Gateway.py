@@ -260,7 +260,9 @@ class Gateway:
 
     def close(self):
         """Closes the gateway and disconnects from the fjage container."""
-        self.connector.disconnect()
+        if self.is_connected():
+            self.connector.send('{"alive": false}')  # signal to container that we're disconnecting
+            self.connector.disconnect()
 
     @staticmethod
     def match_filter(filter: Union[Callable, Type[Message], Message, None], msg: Message) -> bool:
@@ -294,15 +296,12 @@ class Gateway:
         receiver = self._pending_requests.pop_first(lambda _, r: r.tryput(msg))
         return receiver is not None
 
-    def _send_alive(self):
-        self.connector.send('{"alive": true}')
-
     def _msg_rx(self, strings: list) -> None:
         for string in strings:
             logger.debug(f"<<< {string}")
             if string == '{"alive": true}':
-                self._send_alive()  # respond to alive messages to keep connection alive
-                continue  # ignore alive messages
+                self.connector.send('{"alive": true}')  # respond to alive messages to keep connection alive
+                continue
             try:
                 json_msg = JSONMessage(string, owner=self)
                 if hasattr(json_msg, 'id') and json_msg.id in self._pending_actions:
