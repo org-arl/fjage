@@ -76,7 +76,6 @@ class Gateway:
         except Exception as e:
             logger.error(f"Failed to connect to {hostname}:{port}: {e}")
             raise e
-        self.connector.send('{"alive": true}')
         self._update_watch()
 
     def send(self, msg: Message) -> None:
@@ -279,6 +278,7 @@ class Gateway:
                 return False
         return False
 
+
     # Internal helper methods
     def _retrieve_from_queue(self, filter: Union[Callable, Type[Message], Message, None]) -> Optional[Message]:
         if not self._queue:
@@ -294,10 +294,14 @@ class Gateway:
         receiver = self._pending_requests.pop_first(lambda _, r: r.tryput(msg))
         return receiver is not None
 
+    def _send_alive(self):
+        self.connector.send('{"alive": true}')
+
     def _msg_rx(self, strings: list) -> None:
         for string in strings:
             logger.debug(f"<<< {string}")
             if string == '{"alive": true}':
+                self._send_alive()  # respond to alive messages to keep connection alive
                 continue  # ignore alive messages
             try:
                 json_msg = JSONMessage(string, owner=self)
