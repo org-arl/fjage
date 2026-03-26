@@ -12,7 +12,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=5b045848"></script>
+      <script src="../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -82,12 +82,10 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
 
 <div class="viewcode-block" id="TCPConnector">
-<a class="viewcode-back" href="../../api/generated/fjagepy.TCPConnector.html#fjagepy.TCPConnector">[docs]</a>
+<a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.TCPConnector">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TCPConnector</span><span class="p">(</span><span class="n">Connector</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple TCP connector using synchronous sockets.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="TCPConnector.__init__">
-<a class="viewcode-back" href="../../api/generated/fjagepy.TCPConnector.html#fjagepy.TCPConnector.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">host</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -111,8 +109,7 @@
         <span class="c1"># Threading for receive loop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_read_thread</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span></div>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
 
 <div class="viewcode-block" id="TCPConnector.set_receive_callback">
 <a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.TCPConnector.set_receive_callback">[docs]</a>
@@ -278,7 +275,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025, Subnero / ARL.</p>
+    <p>&#169; Copyright 2026, Subnero / ARL.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
