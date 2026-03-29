@@ -10,6 +10,14 @@ import org.arl.fjage.connectors.*;
 
 /**
  * An agent that serves as a tunnel for messages between two fjage platforms.
+ * <p>
+ * A tunnel can be configured as a server or a client. A server tunnel listens on
+ * a specified TCP port for incoming connections from client tunnels. A client
+ * tunnel connects to a server tunnel at a specified IP address and TCP port.
+ * <p>
+ * Once a connection is established, the tunnel agent forwards selected messages
+ * between the two platforms. The `agents` parameter specifies the list of remote
+ * agents or topics forwarded through the tunnel.
  */
 public class Tunnel extends Agent implements ConnectionListener, MessageListener {
 
@@ -39,11 +47,22 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
     this.port = port;
   }
 
+  //// documentation
+
+  public final static String __doc__ =
+    "# @@ - tunnel\n\n" +
+    "Tunnels messages between two fjage platforms over a TCP/IP link.\n\n" +
+    "## Parameters:\n\n" +
+    "### @@.agents - list of remote agents/topics visible through the tunnel\n\n" +
+    "Example:\n  @@.agents = [agent('remoteAgent'), topic('remoteTopic')]\n\n" +
+    "### @@.ip - IP address of the server to connect to (null for servers)\n" +
+    "### @@.port - TCP port number\n";
+
   //// agent methods
 
   @Override
   public void init() {
-    log.info("Agent "+getName()+" init");
+    register(org.arl.fjage.shell.Services.DOCUMENTATION);
     executor = Executors.newFixedThreadPool(2);
     add(new ParameterMessageBehavior(TunnelParam.class));
     if (ip == null) server = new TcpServer(port, this);
@@ -56,6 +75,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
       }
     });
     getContainer().addListener(this);
+    log.info("Agent "+getName()+" init");
   }
 
   @Override
