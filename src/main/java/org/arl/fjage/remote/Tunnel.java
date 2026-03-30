@@ -125,7 +125,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
         monitor(connID, c);
       }
     } catch (IOException ex) {
-      log.fine("Failed to connect to "+ip+":"+port+": "+ex.getMessage());
+      log.info("Failed to connect to "+ip+":"+port+": "+ex.getMessage());
     }
   }
 
@@ -146,7 +146,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
       JsonMessage jmsg = new JsonMessage();
       jmsg.message = msg;
       String json = jmsg.toJson();
-      log.fine("* << "+json);
+      log.info("* << "+json);
       synchronized (connectors) {
         for (Connector c: connectors)
           sendToRemote(c, json.getBytes(StandardCharsets.UTF_8));
@@ -172,7 +172,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
         JsonMessage jmsg = new JsonMessage();
         jmsg.message = msg;
         String json = jmsg.toJson();
-        log.fine(id+" << "+json);
+        log.info(id+" << "+json);
         sendToRemote(c, json.getBytes(StandardCharsets.UTF_8));
         return true;
       }
@@ -188,7 +188,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
         try (BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8))) {
           String line;
           while ((line = in.readLine()) != null) {
-            log.fine(id+" >> "+line);
+            log.info(id+" >> "+line);
             JsonMessage jmsg = JsonMessage.fromJson(line);
             if (jmsg == null || jmsg.message == null) continue;
             AgentID sender = jmsg.message.getSender();
@@ -197,7 +197,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
             getContainer().send(jmsg.message);
           }
         } catch (IOException ex) {
-          log.fine("Read from "+cname+" failed: "+ex.getMessage());
+          log.info("Read from "+cname+" failed: "+ex.getMessage());
         } catch (Exception ex) {
           log.log(Level.WARNING, "Exception on "+cname+": "+ex.getMessage(), ex);
         }
