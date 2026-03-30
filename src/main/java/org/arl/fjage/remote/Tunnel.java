@@ -197,6 +197,8 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
           }
         } catch (IOException ex) {
           log.fine("Read from "+cname+" failed: "+ex.getMessage());
+        } catch (Exception ex) {
+          log.log(Level.WARNING, "Exception on "+cname+": "+ex.getMessage(), ex);
         }
         removeConnector(c);
       }
@@ -262,7 +264,9 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
    */
   public List<AgentID> getAgents() {
     synchronized (agents) {
-      return agents;
+      List<AgentID> copy = new ArrayList<>();
+      for (AgentID aid: agents) copy.add(aid);
+      return copy;
     }
   }
 
@@ -272,7 +276,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
    * @param agents List of remote agents/topics visible through the tunnel.
    */
   public void setAgents(List<AgentID> agents) {
-    synchronized (agents) {
+    synchronized (this.agents) {
       this.agents.clear();
       if (agents == null) return;
       for (AgentID aid : agents)
