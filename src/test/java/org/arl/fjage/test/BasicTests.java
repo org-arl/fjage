@@ -12,9 +12,7 @@ package org.arl.fjage.test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Logger;
 import org.arl.fjage.*;
 import org.arl.fjage.param.*;
@@ -417,7 +415,7 @@ public class BasicTests {
     platform.start();
     Tunnel t1 = new Tunnel(0);
     c1.add("t1", t1);
-    platform.delay(100);
+    platform.delay(500);
     Tunnel t2 = new Tunnel("localhost", t1.getPort());
     c2.add("t2", t2);
     List<AgentID> agents = new ArrayList<>();
@@ -428,12 +426,12 @@ public class BasicTests {
     agents.add(new AgentID("t1"));
     agents.add(new AgentID("sharedTopic", true));
     t2.setAgents(agents);
-    platform.delay(100);
+    platform.delay(500);
     Message msg = new ParameterReq();
     msg.setRecipient(new AgentID("t2"));
     msg.setSender(new AgentID("test-c1"));
     c1.send(msg);
-    platform.delay(100);
+    platform.delay(500);
     assertTrue(l1.msgs.get(1) instanceof ParameterRsp);
     l1.msgs.clear();
     l2.msgs.clear();
@@ -441,7 +439,7 @@ public class BasicTests {
     msg.setRecipient(new AgentID("t1"));
     msg.setSender(new AgentID("test-c2"));
     c2.send(msg);
-    platform.delay(100);
+    platform.delay(500);
     assertTrue(l2.msgs.get(1) instanceof ParameterRsp);
     l1.msgs.clear();
     l2.msgs.clear();
@@ -449,7 +447,7 @@ public class BasicTests {
     msg.setRecipient(new AgentID("sharedTopic", true));
     msg.setSender(new AgentID("test-c1"));
     c1.send(msg);
-    platform.delay(100);
+    platform.delay(500);
     assertTrue(l2.msgs.get(0) instanceof Message);
     platform.shutdown();
   }
@@ -959,7 +957,7 @@ public class BasicTests {
   }
 
   private class MyMessageListener implements MessageListener {
-    public List<Message> msgs = new ArrayList<Message>();
+    public List<Message> msgs = Collections.synchronizedList(new ArrayList<Message>());
     public int n = 0;
     public boolean eat = false;
     @Override
