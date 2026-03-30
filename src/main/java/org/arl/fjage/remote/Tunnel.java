@@ -3,6 +3,8 @@ package org.arl.fjage.remote;
 import java.util.*;
 import java.util.concurrent.*;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+
 import org.arl.fjage.*;
 import org.arl.fjage.param.*;
 import org.arl.fjage.remote.JsonMessage;
@@ -63,10 +65,16 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   @Override
   public void init() {
     register(org.arl.fjage.shell.Services.DOCUMENTATION);
-    executor = Executors.newFixedThreadPool(2);
+    executor = Executors.newCachedThreadPool();
     add(new ParameterMessageBehavior(TunnelParam.class));
-    if (ip == null) server = new TcpServer(port, this);
-    else add(new TickerBehavior(MONITOR_PERIOD) {
+    if (ip == null) {
+      server = new TcpServer(port, this);
+      if (port == 0) {
+        int p = server.getPort();
+        if (p > 0) port = p;
+        else log.warning("Failed to get TCP server port number");
+      }
+    } else add(new TickerBehavior(MONITOR_PERIOD) {
       @Override
       public void onTick() {
         synchronized (connectors) {
@@ -82,7 +90,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   public void shutdown() {
     log.info("Agent "+getName()+" shutdown");
     getContainer().removeListener(this);
-    executor.shutdown();
+    executor.shutdownNow();
     if (server != null) {
       server.close();
       server = null;
@@ -126,15 +134,21 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
       if (connectors.isEmpty()) return false;
     }
     AgentID rcpt = msg.getRecipient();
-    if (rcpt == null) return false;
-    if (agents.contains(rcpt)) {
+    AgentID sender = msg.getSender();
+    if (rcpt == null || sender == null) return false;
+    if (sender.getName().contains("@")) return false;
+    boolean shouldForward = false;
+    synchronized (agents) {
+      shouldForward = agents.contains(rcpt);
+    }
+    if (shouldForward) {
       JsonMessage jmsg = new JsonMessage();
       jmsg.message = msg;
       String json = jmsg.toJson();
       log.fine("* << "+json);
       synchronized (connectors) {
         for (Connector c: connectors)
-          sendToRemote(c, json.getBytes());
+          sendToRemote(c, json.getBytes(StandardCharsets.UTF_8));
       }
       if (!rcpt.isTopic()) return true;
     } else if (!rcpt.isTopic() && rcpt.getName().contains("@")) {
@@ -170,13 +184,14 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
       @Override
       public void run() {
         String cname = c.getName();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream()), StandardCharsets.UTF_8)) {
           String line;
           while ((line = in.readLine()) != null) {
             log.fine(id+" >> "+line);
             JsonMessage jmsg = JsonMessage.fromJson(line);
             if (jmsg == null || jmsg.message == null) continue;
             AgentID sender = jmsg.message.getSender();
+            if (sender == null) continue;
             jmsg.message.setSender(new AgentID(sender.getName() + "@" + id));
             getContainer().send(jmsg.message);
           }
@@ -194,9 +209,12 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
       public void run() {
         try {
           OutputStream out = c.getOutputStream();
-          out.write(data);
-          out.write('\n');
-          out.flush();
+          if (out == null) removeConnector(c);
+          else synchronized (out) {
+            out.write(data);
+            out.write('\n');
+            out.flush();
+          }
         } catch (IOException ex) {
           log.warning("Write to "+c.getName()+" failed: "+ex.getMessage());
           removeConnector(c);
@@ -243,7 +261,9 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
    * @return List of remote agents/topics visible through the tunnel.
    */
   public List<AgentID> getAgents() {
-    return agents;
+    synchronized (agents) {
+      return agents;
+    }
   }
 
   /**
@@ -252,10 +272,12 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
    * @param agents List of remote agents/topics visible through the tunnel.
    */
   public void setAgents(List<AgentID> agents) {
-    this.agents.clear();
-    if (agents == null) return;
-    for (AgentID aid : agents)
-      if (aid != null) this.agents.add(new AgentID(aid.getName(), aid.isTopic()));
+    synchronized (agents) {
+      this.agents.clear();
+      if (agents == null) return;
+      for (AgentID aid : agents)
+        if (aid != null) this.agents.add(new AgentID(aid.getName(), aid.isTopic()));
+    }
   }
 
   /**
