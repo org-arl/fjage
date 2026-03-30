@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-
+import java.util.logging.Level;
 import org.arl.fjage.*;
 import org.arl.fjage.param.*;
 import org.arl.fjage.remote.JsonMessage;
@@ -33,7 +33,8 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   protected TcpServer server = null;
   protected List<AgentID> agents = new ArrayList<>();
   protected List<Connector> connectors = new ArrayList<>();
-  protected ExecutorService executor = null;
+  protected ExecutorService writeExecutor = null;
+  protected ExecutorService readExecutor = null;
   protected int connID = 0;
   protected Map<Integer,Connector> connIDs = new HashMap<>();
 
@@ -65,7 +66,8 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   @Override
   public void init() {
     register(org.arl.fjage.shell.Services.DOCUMENTATION);
-    executor = Executors.newCachedThreadPool();
+    readExecutor = Executors.newCachedThreadPool();
+    writeExecutor = Executors.newSingleThreadExecutor();
     add(new ParameterMessageBehavior(TunnelParam.class));
     if (ip == null) {
       server = new TcpServer(port, this);
@@ -74,14 +76,17 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
         if (p > 0) port = p;
         else log.warning("Failed to get TCP server port number");
       }
-    } else add(new TickerBehavior(MONITOR_PERIOD) {
-      @Override
-      public void onTick() {
-        synchronized (connectors) {
-          if (connectors.isEmpty()) connect();
+    } else {
+      connect();
+      add(new TickerBehavior(MONITOR_PERIOD) {
+        @Override
+        public void onTick() {
+          synchronized (connectors) {
+            if (connectors.isEmpty()) connect();
+          }
         }
-      }
-    });
+      });
+    }
     getContainer().addListener(this);
     log.info("Agent "+getName()+" init");
   }
@@ -90,7 +95,8 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   public void shutdown() {
     log.info("Agent "+getName()+" shutdown");
     getContainer().removeListener(this);
-    executor.shutdownNow();
+    readExecutor.shutdownNow();
+    writeExecutor.shutdownNow();
     if (server != null) {
       server.close();
       server = null;
@@ -180,7 +186,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   }
 
   protected void monitor(int id, Connector c) {
-    executor.submit(new Runnable() {
+    readExecutor.submit(new Runnable() {
       @Override
       public void run() {
         String cname = c.getName();
@@ -206,7 +212,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   }
 
   protected void sendToRemote(Connector c, byte[] data) {
-    executor.submit(new Runnable() {
+    writeExecutor.submit(new Runnable() {
       @Override
       public void run() {
         try {
