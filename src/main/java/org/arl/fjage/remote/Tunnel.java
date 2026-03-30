@@ -255,7 +255,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
    * @return TCP port number for the tunnel.
    */
   public int getPort() {
-    if (port == 0) return server.getPort();
+    if (port == 0 && server != null) return server.getPort();
     return port;
   }
 
@@ -307,8 +307,8 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
       if (n == 1) s = " (1 connection)";
       else if (n > 1) s = " ("+n+" connections)";
     }
-    if (ip != null) return "Tunnel to " + ip + ":" + port + s;
-    return "Tunnel listening on port " + port + s;
+    if (ip != null) return "Tunnel to " + ip + ":" + getPort() + s;
+    return "Tunnel listening on port " + getPort() + s;
   }
 
 }
