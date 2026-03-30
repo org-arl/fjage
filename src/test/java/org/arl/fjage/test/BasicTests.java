@@ -22,6 +22,7 @@ import org.arl.fjage.persistence.Store;
 import org.arl.fjage.remote.Gateway;
 import org.arl.fjage.remote.MasterContainer;
 import org.arl.fjage.remote.SlaveContainer;
+import org.arl.fjage.remote.Tunnel;
 import org.arl.fjage.shell.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -401,6 +402,56 @@ public class BasicTests {
     platform.shutdown();
     assertEquals(n1,listener.n);
     assertTrue(server.nuisance > 0);
+  }
+
+  @Test
+  public void testTunnel() {
+    log.info("testTunnel");
+    Platform platform = new RealTimePlatform();
+    Container c1 = new Container(platform);
+    Container c2 = new Container(platform);
+    MyMessageListener l1 = new MyMessageListener();
+    c1.addListener(l1);
+    MyMessageListener l2 = new MyMessageListener();
+    c2.addListener(l2);
+    platform.start();
+    Tunnel t1 = new Tunnel(0);
+    c1.add("t1", t1);
+    platform.delay(100);
+    Tunnel t2 = new Tunnel("localhost", t1.getPort());
+    c2.add("t2", t2);
+    List<AgentID> agents = new ArrayList<>();
+    agents.add(new AgentID("t2"));
+    agents.add(new AgentID("sharedTopic", true));
+    t1.setAgents(agents);
+    agents.clear();
+    agents.add(new AgentID("t1"));
+    agents.add(new AgentID("sharedTopic", true));
+    t2.setAgents(agents);
+    platform.delay(100);
+    Message msg = new ParameterReq();
+    msg.setRecipient(new AgentID("t2"));
+    msg.setSender(new AgentID("test-c1"));
+    c1.send(msg);
+    platform.delay(100);
+    assertTrue(l1.msgs.get(1) instanceof ParameterRsp);
+    l1.msgs.clear();
+    l2.msgs.clear();
+    msg = new ParameterReq();
+    msg.setRecipient(new AgentID("t1"));
+    msg.setSender(new AgentID("test-c2"));
+    c2.send(msg);
+    platform.delay(100);
+    assertTrue(l2.msgs.get(1) instanceof ParameterRsp);
+    l1.msgs.clear();
+    l2.msgs.clear();
+    msg = new Message();
+    msg.setRecipient(new AgentID("sharedTopic", true));
+    msg.setSender(new AgentID("test-c1"));
+    c1.send(msg);
+    platform.delay(100);
+    assertTrue(l2.msgs.get(0) instanceof Message);
+    platform.shutdown();
   }
 
   @Test
@@ -908,10 +959,12 @@ public class BasicTests {
   }
 
   private class MyMessageListener implements MessageListener {
+    public List<Message> msgs = new ArrayList<Message>();
     public int n = 0;
     public boolean eat = false;
     @Override
     public boolean onReceive(Message msg) {
+      msgs.add(msg);
       n++;
       return eat;
     }
