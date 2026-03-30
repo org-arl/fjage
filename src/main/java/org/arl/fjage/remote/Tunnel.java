@@ -71,11 +71,6 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
     add(new ParameterMessageBehavior(TunnelParam.class));
     if (ip == null) {
       server = new TcpServer(port, this);
-      if (port == 0) {
-        int p = server.getPort();
-        if (p > 0) port = p;
-        else log.warning("Failed to get TCP server port number");
-      }
     } else {
       connect();
       add(new TickerBehavior(MONITOR_PERIOD) {
@@ -260,6 +255,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
    * @return TCP port number for the tunnel.
    */
   public int getPort() {
+    if (port == 0) return server.getPort();
     return port;
   }
 
@@ -285,7 +281,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
     synchronized (this.agents) {
       this.agents.clear();
       if (agents == null) return;
-      for (AgentID aid : agents)
+      for (AgentID aid: agents)
         if (aid != null) this.agents.add(new AgentID(aid.getName(), aid.isTopic()));
     }
   }
