@@ -172,7 +172,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
         jmsg.message = msg;
         String json = jmsg.toJson();
         log.fine(id+" << "+json);
-        sendToRemote(c, json.getBytes());
+        sendToRemote(c, json.getBytes(StandardCharsets.UTF_8));
         return true;
       }
     }
@@ -184,7 +184,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
       @Override
       public void run() {
         String cname = c.getName();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream()), StandardCharsets.UTF_8)) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8))) {
           String line;
           while ((line = in.readLine()) != null) {
             log.fine(id+" >> "+line);
