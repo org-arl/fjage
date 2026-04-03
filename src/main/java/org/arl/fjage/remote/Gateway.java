@@ -106,7 +106,7 @@ public class Gateway implements Messenger, Closeable {
   }
 
   /**
-   * Creates a gateway based on an exsiting container.
+   * Creates a gateway based on an existing container.
    */
   public Gateway(Container container) {
     this.container = container;
@@ -117,7 +117,7 @@ public class Gateway implements Messenger, Closeable {
   protected void init() {
     agent = new Agent() {
       private Message rsp;
-      private Object sync = new Object();
+      private final Object sync = new Object();
       @Override
       public Message receive(final MessageFilter filter, long timeout) {
         if (Thread.currentThread().getId() == tid) return super.receive(filter, timeout);
@@ -188,7 +188,7 @@ public class Gateway implements Messenger, Closeable {
   }
 
   /**
-   * Closes the gateway. The gateway functionality may not longer be accessed after
+   * Closes the gateway. The gateway functionality may no longer be accessed after
    * this method is called.
    */
   @Override
@@ -235,7 +235,7 @@ public class Gateway implements Messenger, Closeable {
 
   @Override
   public Message receive(final Class<?> cls, long timeout) {
-    return receive(m -> cls.isInstance(m), timeout);
+    return receive(cls::isInstance, timeout);
   }
 
   @Override
@@ -248,7 +248,7 @@ public class Gateway implements Messenger, Closeable {
     if (container instanceof SlaveContainer)
       ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
     Message rsp = receive(new MessageFilter() {
-      private String mid = m.getMessageID();
+      private final String mid = m.getMessageID();
       @Override
       public boolean matches(Message m) {
         String s = m.getInReplyTo();
@@ -400,7 +400,7 @@ public class Gateway implements Messenger, Closeable {
    */
   public AgentID agentForService(Enum<?> service) {
     if (container == null) return null;
-    AgentID t = container.agentForService(service.getClass().getName()+"."+service.toString());
+    AgentID t = container.agentForService(service.getClass().getName()+"."+service);
     if (t == null) return null;
     return new AgentID(t, this);
   }
@@ -428,7 +428,7 @@ public class Gateway implements Messenger, Closeable {
    */
   public AgentID[] agentsForService(Enum<?> service) {
     if (container == null) return null;
-    AgentID[] t = container.agentsForService(service.getClass().getName()+"."+service.toString());
+    AgentID[] t = container.agentsForService(service.getClass().getName()+"."+service);
     if (t == null) return null;
     for (int i = 0; i < t.length; i++)
       t[i] = new AgentID(t[i], this);

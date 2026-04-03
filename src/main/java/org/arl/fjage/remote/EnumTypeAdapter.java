@@ -22,7 +22,7 @@ import com.google.gson.stream.*;
 public class EnumTypeAdapter extends TypeAdapter<Object> {
 
   private static ClassLoader classloader = null;
-  private static Logger log;
+  private static final Logger log;
 
   static {
     log = Logger.getLogger(EnumTypeAdapter.class.getName());
@@ -71,7 +71,7 @@ public class EnumTypeAdapter extends TypeAdapter<Object> {
   @Override public void write(JsonWriter out, Object value) throws IOException {
     if (value == null) out.value((String)null);
     else if (value instanceof NamedParameter) out.value(value.toString());
-    else out.value(value.getClass().getName().replace('$','.')+"."+value.toString());
+    else out.value(value.getClass().getName().replace('$','.')+"."+ value);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -86,8 +86,7 @@ public class EnumTypeAdapter extends TypeAdapter<Object> {
     String value = s.substring(pos+1);
     Class<? extends Enum> cls = enumClass(s.substring(0,pos));
     if (cls != null) return Enum.valueOf(cls, value);
-    if (value != null) return new NamedParameter(s);
-    return null;
+    return new NamedParameter(s);
   }
 
 }

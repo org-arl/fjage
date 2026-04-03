@@ -25,8 +25,8 @@ import com.google.gson.reflect.TypeToken;
  */
 class ArrayAdapterFactory implements TypeAdapterFactory {
 
-  private boolean bare;
-  private int threshold;
+  private final boolean bare;
+  private final int threshold;
 
   public ArrayAdapterFactory() {
     bare = false;
@@ -167,43 +167,37 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
 
       private void writeArray(JsonWriter out, byte[] arr) throws IOException {
         out.beginArray();
-        for (int i = 0; i < arr.length; i++)
-          out.value(arr[i]);
+        for (byte b : arr) out.value(b);
         out.endArray();
       }
 
       private void writeArray(JsonWriter out, int[] arr) throws IOException {
         out.beginArray();
-        for (int i = 0; i < arr.length; i++)
-          out.value(arr[i]);
+        for (int j : arr) out.value(j);
         out.endArray();
       }
 
       private void writeArray(JsonWriter out, short[] arr) throws IOException {
         out.beginArray();
-        for (int i = 0; i < arr.length; i++)
-          out.value(arr[i]);
+        for (short value : arr) out.value(value);
         out.endArray();
       }
 
       private void writeArray(JsonWriter out, long[] arr) throws IOException {
         out.beginArray();
-        for (int i = 0; i < arr.length; i++)
-          out.value(arr[i]);
+        for (long l : arr) out.value(l);
         out.endArray();
       }
 
       private void writeArray(JsonWriter out, float[] arr) throws IOException {
         out.beginArray();
-        for (int i = 0; i < arr.length; i++)
-          out.value(arr[i]);
+        for (float v : arr) out.value(v);
         out.endArray();
       }
 
       private void writeArray(JsonWriter out, double[] arr) throws IOException {
         out.beginArray();
-        for (int i = 0; i < arr.length; i++)
-          out.value(arr[i]);
+        for (double v : arr) out.value(v);
         out.endArray();
       }
 
