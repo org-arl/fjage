@@ -7,7 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import org.arl.fjage.*;
 import org.arl.fjage.param.*;
-import org.arl.fjage.remote.JsonMessage;
 import org.arl.fjage.connectors.*;
 
 /**
@@ -31,8 +30,8 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   protected int port;
 
   protected TcpServer server = null;
-  protected List<AgentID> agents = new ArrayList<>();
-  protected List<Connector> connectors = new ArrayList<>();
+  protected final List<AgentID> agents = new ArrayList<>();
+  protected final List<Connector> connectors = new ArrayList<>();
   protected ExecutorService writeExecutor = null;
   protected ExecutorService readExecutor = null;
   protected int connID = 0;
@@ -138,7 +137,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
     AgentID sender = msg.getSender();
     if (rcpt == null || sender == null) return false;
     if (sender.getName().contains("@")) return false;
-    boolean shouldForward = false;
+    boolean shouldForward;
     synchronized (agents) {
       shouldForward = agents.contains(rcpt);
     }
@@ -151,11 +150,11 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
         for (Connector c: connectors)
           sendToRemote(c, json.getBytes(StandardCharsets.UTF_8));
       }
-      if (!rcpt.isTopic()) return true;
+      return !rcpt.isTopic();
     } else if (!rcpt.isTopic() && rcpt.getName().contains("@")) {
-      int id = 0;
-      Connector c = null;
-      String rname = null;
+      int id;
+      Connector c;
+      String rname;
       try {
         String s = rcpt.getName();
         int i = s.lastIndexOf('@');
@@ -181,47 +180,41 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   }
 
   protected void monitor(int id, Connector c) {
-    readExecutor.submit(new Runnable() {
-      @Override
-      public void run() {
-        String cname = c.getName();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8))) {
-          String line;
-          while ((line = in.readLine()) != null) {
-            log.info(id+" >> "+line);
-            JsonMessage jmsg = JsonMessage.fromJson(line);
-            if (jmsg == null || jmsg.message == null) continue;
-            AgentID sender = jmsg.message.getSender();
-            if (sender == null) continue;
-            jmsg.message.setSender(new AgentID(sender.getName() + "@" + id));
-            getContainer().send(jmsg.message);
-          }
-        } catch (IOException ex) {
-          log.info("Read from "+cname+" failed: "+ex.getMessage());
-        } catch (Exception ex) {
-          log.log(Level.WARNING, "Exception on "+cname+": "+ex.getMessage(), ex);
+    readExecutor.submit(() -> {
+      String cname = c.getName();
+      try (BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8))) {
+        String line;
+        while ((line = in.readLine()) != null) {
+          log.info(id+" >> "+line);
+          JsonMessage jmsg = JsonMessage.fromJson(line);
+          if (jmsg == null || jmsg.message == null) continue;
+          AgentID sender = jmsg.message.getSender();
+          if (sender == null) continue;
+          jmsg.message.setSender(new AgentID(sender.getName() + "@" + id));
+          getContainer().send(jmsg.message);
         }
-        removeConnector(c);
+      } catch (IOException ex) {
+        log.info("Read from "+cname+" failed: "+ex.getMessage());
+      } catch (Exception ex) {
+        log.log(Level.WARNING, "Exception on "+cname+": "+ex.getMessage(), ex);
       }
+      removeConnector(c);
     });
   }
 
   protected void sendToRemote(Connector c, byte[] data) {
-    writeExecutor.submit(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          OutputStream out = c.getOutputStream();
-          if (out == null) removeConnector(c);
-          else synchronized (out) {
-            out.write(data);
-            out.write('\n');
-            out.flush();
-          }
-        } catch (IOException ex) {
-          log.warning("Write to "+c.getName()+" failed: "+ex.getMessage());
-          removeConnector(c);
+    writeExecutor.submit(() -> {
+      try {
+        OutputStream out = c.getOutputStream();
+        if (out == null) removeConnector(c);
+        else synchronized (out) {
+          out.write(data);
+          out.write('\n');
+          out.flush();
         }
+      } catch (IOException ex) {
+        log.warning("Write to "+c.getName()+" failed: "+ex.getMessage());
+        removeConnector(c);
       }
     });
   }
@@ -266,9 +259,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
    */
   public List<AgentID> getAgents() {
     synchronized (agents) {
-      List<AgentID> copy = new ArrayList<>();
-      for (AgentID aid: agents) copy.add(aid);
-      return copy;
+      return new ArrayList<>(agents);
     }
   }
 

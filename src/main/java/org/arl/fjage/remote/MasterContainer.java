@@ -32,7 +32,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   private TcpServer tcpListener = null;
   private WebSocketServer websocketListener = null;
-  private List<ConnectionHandler> slaves = new ArrayList<ConnectionHandler>();
+  private final List<ConnectionHandler> slaves = new ArrayList<>();
   private boolean needsCleanup = false;
   private Supplier<Firewall> fwSupplier = AllowAll.SUPPLIER;
 
@@ -249,7 +249,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   public AgentID[] getAgents() {
     AgentID[] aids = super.getAgents();
-    List<AgentID> rv = new ArrayList<AgentID>(Arrays.asList(aids));
+    List<AgentID> rv = new ArrayList<>(Arrays.asList(aids));
     JsonMessage rq = new JsonMessage();
     rq.action = Action.AGENTS;
     rq.id = UUID.randomUUID().toString();
@@ -273,7 +273,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   public String[] getServices() {
     String[] svc = super.getServices();
-    Set<String> rv = new HashSet<String>(Arrays.asList(svc));
+    Set<String> rv = new HashSet<>(Arrays.asList(svc));
     JsonMessage rq = new JsonMessage();
     rq.action = Action.SERVICES;
     rq.id = UUID.randomUUID().toString();
@@ -303,7 +303,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
         JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
-        if (rsp != null && rsp.agentID != null && rsp.agentID.getName().length() > 0) return rsp.agentID;
+        if (rsp != null && rsp.agentID != null && !rsp.agentID.getName().isEmpty()) return rsp.agentID;
       }
     }
     return null;
@@ -311,7 +311,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   @Override
   public AgentID[] agentsForService(String service) {
-    List<AgentID> rv = new ArrayList<AgentID>();
+    List<AgentID> rv = new ArrayList<>();
     AgentID[] aids = super.agentsForService(service);
     if (aids != null)
       rv.addAll(Arrays.asList(aids));

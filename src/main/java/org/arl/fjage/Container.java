@@ -45,10 +45,10 @@ public class Container {
 
   protected String name;
   protected Platform platform;
-  protected Map<AgentID,Agent> agents = new ConcurrentHashMap<AgentID,Agent>();
-  protected Map<AgentID,Agent> agentsToAdd = new ConcurrentHashMap<AgentID,Agent>();
-  protected Map<AgentID,Set<Agent>> topics = new HashMap<AgentID,Set<Agent>>();
-  protected Map<String,Set<AgentID>> services = new HashMap<String,Set<AgentID>>();
+  protected final Map<AgentID,Agent> agents = new ConcurrentHashMap<>();
+  protected Map<AgentID,Agent> agentsToAdd = new ConcurrentHashMap<>();
+  protected Map<AgentID,Set<Agent>> topics = new HashMap<>();
+  protected Map<String,Set<AgentID>> services = new HashMap<>();
   protected Logger log = Logger.getLogger(getClass().getName());
   protected boolean running = false;
   protected boolean initing = false;
@@ -56,8 +56,8 @@ public class Container {
   protected Object cloner;
   protected Method doClone;
   protected boolean autoclone = false;
-  protected Set<AgentID> idle = new HashSet<AgentID>();
-  protected Set<MessageListener> listeners = new HashSet<MessageListener>();
+  protected final Set<AgentID> idle = new HashSet<>();
+  protected final Set<MessageListener> listeners = new HashSet<>();
 
   //////////// Interface methods
 
@@ -149,7 +149,7 @@ public class Container {
         throw new FjageException("Unknown cloner name");
       }
     } catch (Exception ex) {
-      log.log(Level.WARNING, "Cloner creation failed: "+ex.toString(), ex);
+      log.log(Level.WARNING, "Cloner creation failed: "+ ex, ex);
       cloner = null;
       doClone = null;
       throw new FjageException("Cloner creation failed");
@@ -169,7 +169,7 @@ public class Container {
     try {
       return (T)doClone.invoke(cloner, obj);
     } catch (Exception ex) {
-      log.log(Level.WARNING, "Cloning failed: "+ex.toString(), ex);
+      log.log(Level.WARNING, "Cloning failed: "+ ex, ex);
       throw new FjageException("Cloning failed");
     }
   }
@@ -402,11 +402,7 @@ public class Container {
       log.warning("Unable to subscribe unknown agent "+aid+" to topic "+topic);
       return false;
     }
-    Set<Agent> subscribers = topics.get(topic);
-    if (subscribers == null) {
-      subscribers = new HashSet<Agent>();
-      topics.put(topic, subscribers);
-    }
+    Set<Agent> subscribers = topics.computeIfAbsent(topic, k -> new HashSet<>());
     subscribers.add(agent);
     return true;
   }
@@ -449,11 +445,7 @@ public class Container {
    * @return true on success, false on failure.
    */
   public synchronized boolean register(AgentID aid, String service) {
-    Set<AgentID> providers = services.get(service);
-    if (providers == null) {
-      providers = new HashSet<AgentID>();
-      services.put(service, providers);
-    }
+    Set<AgentID> providers = services.computeIfAbsent(service, k -> new HashSet<>());
     providers.add(aid);
     return true;
   }
@@ -476,7 +468,7 @@ public class Container {
    */
   public synchronized AgentID agentForService(String service) {
     Set<AgentID> providers = services.get(service);
-    if (providers == null || providers.size() == 0) return null;
+    if (providers == null || providers.isEmpty()) return null;
     return providers.iterator().next();
   }
 
@@ -488,7 +480,7 @@ public class Container {
    */
   public synchronized AgentID[] agentsForService(String service) {
     Set<AgentID> providers = services.get(service);
-    if (providers == null || providers.size() == 0) return null;
+    if (providers == null || providers.isEmpty()) return null;
     return providers.toArray(new AgentID[0]);
   }
 
@@ -526,7 +518,7 @@ public class Container {
       log.info("Initializing agents...");
       initing = true;
       synchronized (agents) {
-        SortedSet<AgentID> keys = new TreeSet<AgentID>(agents.keySet());
+        SortedSet<AgentID> keys = new TreeSet<>(agents.keySet());
         for (AgentID aid: keys) {
           log.fine("Starting agent "+aid);
           Agent a = agents.get(aid);
@@ -547,10 +539,10 @@ public class Container {
           initing = false;
           return;
         }
-        if (agentsToAdd.size() > 0) {
+        if (!agentsToAdd.isEmpty()) {
           synchronized (agents) {
             agents.putAll(agentsToAdd);
-            SortedSet<AgentID> keys = new TreeSet<AgentID>(agentsToAdd.keySet());
+            SortedSet<AgentID> keys = new TreeSet<>(agentsToAdd.keySet());
             for (AgentID aid: keys) {
               log.fine("Starting agent "+aid);
               Agent a = agents.get(aid);

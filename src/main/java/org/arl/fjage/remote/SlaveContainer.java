@@ -31,8 +31,10 @@ public class SlaveContainer extends RemoteContainer {
   private static final long TIMEOUT = 2000;
 
   private ConnectionHandler master;
-  private String hostname, settings;
-  private int port, baud;
+  private final String hostname;
+  private String settings;
+  private final int port;
+  private final int baud;
   private boolean quit = false;
   private String watchListCache = null;
 
@@ -45,7 +47,7 @@ public class SlaveContainer extends RemoteContainer {
    * @param hostname hostname of the master container.
    * @param port port on which the master container's TCP server runs.
    */
-  public SlaveContainer(Platform platform, String hostname, int port) throws IOException {
+  public SlaveContainer(Platform platform, String hostname, int port) {
     super(platform);
     this.hostname = hostname;
     this.port = port;
@@ -61,7 +63,7 @@ public class SlaveContainer extends RemoteContainer {
    * @param hostname hostname of the master container.
    * @param port port on which the master container's TCP server runs.
    */
-  public SlaveContainer(Platform platform, String name, String hostname, int port) throws IOException {
+  public SlaveContainer(Platform platform, String name, String hostname, int port) {
     super(platform, name);
     this.hostname = hostname;
     this.port = port;
@@ -77,7 +79,7 @@ public class SlaveContainer extends RemoteContainer {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public SlaveContainer(Platform platform, String devname, int baud, String settings) throws IOException {
+  public SlaveContainer(Platform platform, String devname, int baud, String settings) {
     super(platform);
     this.hostname = devname;
     this.port = -1;
@@ -97,7 +99,7 @@ public class SlaveContainer extends RemoteContainer {
    * @param baud baud rate for the RS232 port.
    * @param settings RS232 settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
-  public SlaveContainer(Platform platform, String name, String devname, int baud, String settings) throws IOException {
+  public SlaveContainer(Platform platform, String name, String devname, int baud, String settings) {
     super(platform, name);
     this.hostname = devname;
     this.port = -1;
@@ -169,7 +171,6 @@ public class SlaveContainer extends RemoteContainer {
       rq.relay = true;
       String json = rq.toJson();
       master.println(json);
-      return true;
     } else {
       if (super.send(m, false)) return true;
       if (!relay) return false;
@@ -180,8 +181,8 @@ public class SlaveContainer extends RemoteContainer {
       rq.relay = true;
       String json = rq.toJson();
       master.println(json);
-      return true;
     }
+    return true;
   }
 
   @Override
@@ -193,7 +194,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
-    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
+    if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentIDs;
   }
 
@@ -206,7 +207,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
-    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
+    if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.services;
   }
 
@@ -220,7 +221,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
-    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
+    if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentID;
   }
 
@@ -234,7 +235,7 @@ public class SlaveContainer extends RemoteContainer {
     String json = rq.toJson();
     JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
     if (rsp == null) return null;
-    if (rsp.auth != null && rsp.auth == false) throw new AuthFailureException();
+    if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentIDs;
   }
 
@@ -280,8 +281,9 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public String getState() {
     if (!running) return "Not running";
-    if (master == null) return "Running, connecting to "+hostname+(port>=0?":"+port:"@"+baud)+"...";
-    return "Running, connected to "+hostname+(port>=0?":"+port:"@"+baud);
+    String details = port >= 0 ? ":" + port : "@" + baud;
+    if (master == null) return "Running, connecting to " + displayhost(hostname, port, baud);
+    return "Running, connected to "+ displayhost(hostname, port, baud);
   }
 
   @Override
@@ -341,7 +343,7 @@ public class SlaveContainer extends RemoteContainer {
     master = new ConnectionHandler(conn, SlaveContainer.this);
   }
 
-  private void connectToMaster() throws IOException {
+  private void connectToMaster() {
     new Thread(getClass().getSimpleName()+">"+hostname) {
       @Override
       public void run() {
@@ -349,11 +351,12 @@ public class SlaveContainer extends RemoteContainer {
           while (!quit) {
             try {
               tryConnecting();
-              log.info("Connected to "+hostname+":"+(port>=0?":"+port:"@"+baud));
+              String details = port >= 0 ? ":" + port : "@" + baud;
+              log.info("Connected to "+ displayhost(hostname, port, baud));
               while (!quit && !inited) Thread.sleep(100);
               master.start();
               master.join();
-              log.info("Connection to "+hostname+(port>=0?":"+port:"@"+baud)+" lost");
+              log.info("Connection to "+  displayhost(hostname, port, baud) + " lost");
               synchronized (SlaveContainer.this) {
                 master = null;
               }
@@ -372,10 +375,9 @@ public class SlaveContainer extends RemoteContainer {
   private synchronized void updateWatchList() {
     if (master == null) return;
     List<AgentID> watchList = new ArrayList<>();
-    for (AgentID aid: getLocalAgents())
-      watchList.add(aid);
+    Collections.addAll(watchList, getLocalAgents());
     for (AgentID aid: topics.keySet())
-      if (topics.get(aid).size() > 0)
+      if (!topics.get(aid).isEmpty())
         watchList.add(aid);
     JsonMessage rq = new JsonMessage();
     rq.action = Action.WANTS_MESSAGES_FOR;
@@ -386,6 +388,10 @@ public class SlaveContainer extends RemoteContainer {
       master.println(json);
       watchListCache = json;
     }
+  }
+
+  private static String displayhost(String hostname, int port, int baud) {
+    return hostname + (port >= 0 ? ":" + port : "@" + baud);
   }
 
 }

@@ -14,6 +14,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.arl.fjage.AgentID;
 import org.arl.fjage.auth.*;
@@ -31,15 +32,17 @@ public class ConnectionHandler extends Thread {
 
   private Connector conn;
   private DataOutputStream out;
-  private Map<String,Object> pending = Collections.synchronizedMap(new HashMap<String,Object>());
-  private Deque<String> failed = new ArrayDeque<String>(FAILED_SIZE);
-  private Logger log = Logger.getLogger(getClass().getName());
-  private RemoteContainer container;
-  private boolean alive, keepAlive, closeOnDead;
-  private ExecutorService pool = Executors.newSingleThreadExecutor();
-  private Set<AgentID> watchList = new HashSet<>();
+  private final Map<String,Object> pending = Collections.synchronizedMap(new HashMap<>());
+  private final Deque<String> failed = new ArrayDeque<>(FAILED_SIZE);
+  private final Logger log = Logger.getLogger(getClass().getName());
+  private final RemoteContainer container;
+  private boolean alive;
+  private final boolean keepAlive;
+  private final boolean closeOnDead;
+  private final ExecutorService pool = Executors.newSingleThreadExecutor();
+  private final Set<AgentID> watchList = new HashSet<>();
   private String clientName = "-";
-  private Firewall fw;
+  private final Firewall fw;
 
   public ConnectionHandler(Connector conn, RemoteContainer container) {
     this.conn = conn;
@@ -154,7 +157,7 @@ public class ConnectionHandler extends Thread {
           else respondAuth(rq, false);
         }
       } catch(Exception ex) {
-        log.warning("Bad JSON request: "+ex.toString() + " in " + s);
+        log.log(Level.WARNING, "Failed to process message: "+s, ex);
       }
     }
     fw.signoff();
@@ -172,7 +175,7 @@ public class ConnectionHandler extends Thread {
   @Override
   public String toString() {
     if (conn == null) return super.toString() + " <" + clientName + ">";
-    return conn.toString() + " <" + clientName + ">";
+    return conn + " <" + clientName + ">";
   }
 
   private void respondAuth(JsonMessage rq, boolean auth) {
@@ -226,7 +229,7 @@ public class ConnectionHandler extends Thread {
       conn.waitOutputCompletion(1000);
     } catch(IOException ex) {
       if (!s.equals(SIGN_OFF)) {
-        log.warning("Write failed: "+ex.toString());
+        log.log(Level.WARNING, "Failed to send message: "+s, ex);
         close();
       }
     }
@@ -298,7 +301,7 @@ public class ConnectionHandler extends Thread {
 
   private class RemoteTask implements Runnable {
 
-    private JsonMessage rq;
+    private final JsonMessage rq;
 
     RemoteTask(JsonMessage rq) {
       this.rq = rq;
@@ -332,8 +335,7 @@ public class ConnectionHandler extends Thread {
         case WANTS_MESSAGES_FOR:
           synchronized(watchList) {
             watchList.clear();
-            for (AgentID aid: rq.agentIDs)
-              watchList.add(aid);
+            Collections.addAll(watchList, rq.agentIDs);
           }
           break;
       }
