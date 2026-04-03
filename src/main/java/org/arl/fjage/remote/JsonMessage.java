@@ -11,7 +11,12 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.util.Date;
+import java.time.Instant;
+import java.time.Duration;
 import com.google.gson.*;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import com.google.gson.stream.JsonToken;
 import org.arl.fjage.AgentID;
 import org.arl.fjage.Message;
 import org.arl.fjage.param.Parameter;
@@ -42,6 +47,8 @@ public class JsonMessage {
     .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (value, type, jsonSerializationContext) -> value.isNaN()?null:new JsonPrimitive(value))
     .registerTypeAdapter(Date.class, (JsonDeserializer<Date>) (json, typeOfT, context) -> new Date(json.getAsJsonPrimitive().getAsLong()))
     .registerTypeAdapter(Date.class, (JsonSerializer<Date>) (date, type, jsonSerializationContext) -> new JsonPrimitive(date.getTime()))
+    .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
+    .registerTypeAdapter(Duration.class, new DurationTypeAdapter())
     .registerTypeHierarchyAdapter(AgentID.class, new AgentIDAdapter())
     .registerTypeHierarchyAdapter(Parameter.class, new EnumTypeAdapter())
     .registerTypeAdapterFactory(new MessageAdapterFactory())
@@ -56,6 +63,11 @@ public class JsonMessage {
 
   public static void addTypeHierarchyAdapter(Class<?> cls, Object adapter) {
     gsonBuilder.registerTypeHierarchyAdapter(cls, adapter);
+    gson = gsonBuilder.create();
+  }
+
+  public static void addTypeAdapterFactory(TypeAdapterFactory factory) {
+    gsonBuilder.registerTypeAdapterFactory(factory);
     gson = gsonBuilder.create();
   }
 
