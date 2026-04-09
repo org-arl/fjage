@@ -83,7 +83,7 @@ public class ConnectionHandler extends Thread {
         (new Thread(getName()+":init") {
           @Override
           public void run() {
-            println(ALIVE);
+            send(ALIVE);
             try {
               Thread.sleep(TIMEOUT);
             } catch (InterruptedException ex) {
@@ -96,7 +96,7 @@ public class ConnectionHandler extends Thread {
           }
         }).start();
       } else {
-        println(ALIVE);
+        send(ALIVE);
       }
     }
     while (conn != null) {
@@ -119,7 +119,7 @@ public class ConnectionHandler extends Thread {
           continue;
         }
         if (s.equals(ALIVE)) {
-          if (container instanceof SlaveContainer) println(ALIVE);
+          if (container instanceof SlaveContainer) send(ALIVE);
           continue;
         }
       }
@@ -183,7 +183,7 @@ public class ConnectionHandler extends Thread {
     rsp.inResponseTo = rq.action;
     rsp.id = rq.id;
     rsp.auth = auth;
-    println(rsp.toJson());
+    send(rsp.toJson());
   }
 
   private void respond(JsonMessage rq, boolean answer) {
@@ -191,7 +191,7 @@ public class ConnectionHandler extends Thread {
     rsp.inResponseTo = rq.action;
     rsp.id = rq.id;
     rsp.answer = answer;
-    println(rsp.toJson());
+    send(rsp.toJson());
   }
 
   private void respond(JsonMessage rq, AgentID aid) {
@@ -199,7 +199,7 @@ public class ConnectionHandler extends Thread {
     rsp.inResponseTo = rq.action;
     rsp.id = rq.id;
     rsp.agentID = aid;
-    println(rsp.toJson());
+    send(rsp.toJson());
   }
 
   private void respond(JsonMessage rq, AgentID[] aid) {
@@ -210,7 +210,7 @@ public class ConnectionHandler extends Thread {
     rsp.agentTypes = aid == null ? new String[0] : new String[aid.length];
     for (int i = 0; i < rsp.agentTypes.length; i++)
       rsp.agentTypes[i] = aid[i].getType();
-    println(rsp.toJson());
+    send(rsp.toJson());
   }
 
   private void respond(JsonMessage rq, String[] svc) {
@@ -218,10 +218,10 @@ public class ConnectionHandler extends Thread {
     rsp.inResponseTo = rq.action;
     rsp.id = rq.id;
     rsp.services = svc;
-    println(rsp.toJson());
+    send(rsp.toJson());
   }
 
-  synchronized void println(String s) {
+  synchronized void send(String s) {
     if (out == null) return;
     try {
       out.write((s+"\n").getBytes(StandardCharsets.UTF_8));
@@ -235,33 +235,33 @@ public class ConnectionHandler extends Thread {
     }
   }
 
-  void printlnQueued(String s) {
-    if (pool != null && !pool.isShutdown()) pool.execute(() -> println(s));
+  void sendQueued(String s) {
+    if (pool != null && !pool.isShutdown()) pool.execute(() -> send(s));
   }
 
-  JsonMessage printlnAndGetResponse(String s, String id, long timeout) {
+  JsonMessage request(JsonMessage msg, long timeout) {
     if (conn == null) return null;
     if (keepAlive && !alive && container instanceof MasterContainer) return null;
-    pending.put(id, id);
+    pending.put(msg.id, msg.id);
     long deadline = System.currentTimeMillis() + timeout;
-    synchronized(id) {
-      println(s);
+    synchronized(msg.id) {
+      send(msg.toJson());
       long dt = deadline - System.currentTimeMillis();
       while (dt > 0) {
         try {
-          id.wait(dt);
+          msg.id.wait(dt);
         } catch (InterruptedException ex) {
           Thread.currentThread().interrupt();
         }
-        Object rv = pending.get(id);
+        Object rv = pending.get(msg.id);
         if (rv instanceof JsonMessage) {
-          pending.remove(id);
+          pending.remove(msg.id);
           return (JsonMessage)rv;
         }
         dt = deadline - System.currentTimeMillis();
       }
     }
-    pending.remove(id);
+    pending.remove(msg.id);
     if (keepAlive && alive) {
       alive = false;
       log.fine("Connection dead");
@@ -272,7 +272,7 @@ public class ConnectionHandler extends Thread {
 
   synchronized void close() {
     if (conn == null) return;
-    if (keepAlive && container instanceof SlaveContainer) println(SIGN_OFF);
+    if (keepAlive && container instanceof SlaveContainer) send(SIGN_OFF);
     conn.close();
     conn = null;
     out = null;
