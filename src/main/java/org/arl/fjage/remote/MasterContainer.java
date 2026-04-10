@@ -38,6 +38,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private final CopyOnWriteArrayList<ConnectionHandler> slaves = new CopyOnWriteArrayList<>();
   private boolean needsCleanup = false;
   private Supplier<Firewall> fwSupplier = AllowAll.SUPPLIER;
+  private AsyncExecutor async = new AsyncExecutor(10);
 
   ////////////// Constructors
 
@@ -202,12 +203,11 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   protected boolean isDuplicate(AgentID aid) {
     if (super.isDuplicate(aid)) return true;
     if (needsCleanup) cleanupSlaves();
-    return slaves.parallelStream().anyMatch(slave -> {
+    return async.firstMatch(slaves, slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.CONTAINS_AGENT);
       rq.agentID = aid;
-      JsonMessage rsp = slave.request(rq, TIMEOUT);
-      return rsp != null && Boolean.TRUE.equals(rsp.answer);
-    });
+      return slave.request(rq, TIMEOUT);
+    }, rsp -> rsp != null && Boolean.TRUE.equals(rsp.answer), TIMEOUT).isPresent();
   }
 
   @Override
@@ -227,70 +227,73 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     rq.relay = false;
     String json = rq.toJson();
     if (needsCleanup) cleanupSlaves();
-    slaves.parallelStream().filter(slave -> slave.wantsMessagesFor(aid)).forEach(slave -> slave.sendQueued(json));
+    async.runAll(slaves, slave -> {
+      if (slave.wantsMessagesFor(aid)) slave.sendQueued(json);
+    }, TIMEOUT);
     return true;
   }
 
   @Override
   public AgentID[] getAgents() {
     AgentID[] aids = super.getAgents();
-    JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS);
     if (needsCleanup) cleanupSlaves();
-    AgentID[] remoteAids = slaves.parallelStream()
-      .map(slave -> {
-        return slave.request(rq, TIMEOUT);
-      })
-      .filter(rsp -> rsp != null && rsp.agentIDs != null)
-      .flatMap(rsp -> {
-        if (rsp.agentTypes != null && rsp.agentTypes.length == rsp.agentIDs.length) {
-          for (int i = 0; i < rsp.agentIDs.length; i++)
-            rsp.agentIDs[i].setType(rsp.agentTypes[i]);
-        }
-        return Arrays.stream(rsp.agentIDs);
-      })
-      .toArray(AgentID[]::new);
+    AgentID[] remoteAids = async.concat(slaves, slave -> {
+      JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS);
+      JsonMessage rsp = slave.request(rq, TIMEOUT);
+      if (rsp == null || rsp.agentIDs == null) return new AgentID[0];
+      if (rsp.agentTypes != null && rsp.agentTypes.length == rsp.agentIDs.length) {
+        for (int i = 0; i < rsp.agentIDs.length; i++)
+          rsp.agentIDs[i].setType(rsp.agentTypes[i]);
+      }
+      return rsp.agentIDs;
+    }, AgentID[]::new, TIMEOUT);
     return Stream.concat(Arrays.stream(aids), Arrays.stream(remoteAids)).toArray(AgentID[]::new);
   }
 
   @Override
   public String[] getServices() {
-    String[] svcs = super.getServices();
-    JsonMessage rq = JsonMessage.createActionRequest(Action.SERVICES);
+    String[] services = super.getServices();
     if (needsCleanup) cleanupSlaves();
-    String[] remoteSvcs = slaves.parallelStream()
-      .map(slave -> slave.request(rq, TIMEOUT))
-      .filter(rsp -> rsp != null && rsp.services != null)
-      .flatMap(rsp -> Arrays.stream(rsp.services))
-      .toArray(String[]::new);
-    return Stream.concat(Arrays.stream(svcs), Arrays.stream(remoteSvcs)).toArray(String[]::new);
+    String[] remoteServices = async.concat(slaves, slave -> {
+      JsonMessage rq = JsonMessage.createActionRequest(Action.SERVICES);
+      JsonMessage rsp = slave.request(rq, TIMEOUT);
+      if (rsp == null || rsp.services == null) return new String[0];
+      return rsp.services;
+    }, String[]::new, TIMEOUT);
+    return Stream.concat(Arrays.stream(services), Arrays.stream(remoteServices)).toArray(String[]::new);
   }
 
   @Override
   public AgentID agentForService(String service) {
     AgentID aid = super.agentForService(service);
     if (aid != null) return aid;
-    JsonMessage rq = JsonMessage.createActionRequest(Action.AGENT_FOR_SERVICE);
     if (needsCleanup) cleanupSlaves();
-    Optional<AgentID> remoteAid = slaves.parallelStream()
-      .map(slave -> slave.request(rq, TIMEOUT))
-      .filter(rsp -> rsp != null && rsp.agentID != null && !rsp.agentID.getName().isEmpty())
+    return async.firstMatch(slaves, slave -> {
+      JsonMessage rq = JsonMessage.createActionRequest(Action.AGENT_FOR_SERVICE);
+      rq.service = service;
+      return slave.request(rq, TIMEOUT);
+    }, rsp -> rsp != null && rsp.agentID != null && !rsp.agentID.getName().isEmpty(), TIMEOUT)
       .map(rsp -> rsp.agentID)
-      .findFirst();
-    if (remoteAid.isPresent()) return remoteAid.get();
-    return null;
+      .orElse(null);
   }
 
+  /**
+   * Gets the agent IDs of all agents that provide a given service.s
+   * @param service name of the service.
+   * @return array of agent IDs, empty if no agents provide the service.
+   */
   @Override
   public AgentID[] agentsForService(String service) {
     AgentID[] aids = super.agentsForService(service);
-    JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS_FOR_SERVICE);
-    rq.service = service;
+    if (aids == null) aids = new AgentID[0];
     if (needsCleanup) cleanupSlaves();
-    AgentID[] remoteAids = slaves.parallelStream()
-      .map(slave -> slave.request(rq, TIMEOUT))
-      .filter(rsp -> rsp != null && rsp.agentIDs != null)
-      .flatMap(rsp -> Arrays.stream(rsp.agentIDs))
-      .toArray(AgentID[]::new);
+    AgentID[] remoteAids = async.concat(slaves, slave -> {
+      JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS_FOR_SERVICE);
+      rq.service = service;
+      JsonMessage rsp = slave.request(rq, TIMEOUT);
+      if (rsp == null || rsp.agentIDs == null) return new AgentID[0];
+      return rsp.agentIDs;
+    }, AgentID[]::new, TIMEOUT);
     return Stream.concat(Arrays.stream(aids), Arrays.stream(remoteAids)).toArray(AgentID[]::new);
   }
 
@@ -316,7 +319,9 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   @Override
   protected void initComplete() {
-    slaves.parallelStream().filter(slave -> !slave.isAlive()).forEach(ConnectionHandler::start);
+    async.runAll(slaves, slave -> {
+      if (!slave.isAlive()) slave.start();
+    }, TIMEOUT);
     if (!slaves.isEmpty()) {
       log.fine("Waiting for slaves...");
       boolean allAlive = false;
@@ -326,7 +331,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
         } catch(InterruptedException e) {
           Thread.currentThread().interrupt();
         }
-        allAlive = slaves.parallelStream().allMatch(ConnectionHandler::isAlive);
+        allAlive = async.allTrue(slaves, ConnectionHandler::isAlive, TIMEOUT);
       }
       if (allAlive) log.fine("All slaves are alive");
       else log.warning("Some slaves timed out!");
@@ -337,10 +342,10 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   public void shutdown() {
     if (!running) return;
     String json = JsonMessage.createActionRequest(Action.SHUTDOWN).toJson();
-    slaves.parallelStream().forEach(slave -> {
+    async.runAll(slaves, slave -> {
       slave.send(json);
       slave.close();
-    });
+    }, TIMEOUT);
     slaves.clear();
     needsCleanup = false;
     if (tcpListener != null) {
@@ -351,6 +356,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       websocketListener.close();
       websocketListener = null;
     }
+    async.close();
     super.shutdown();
   }
 

@@ -249,7 +249,7 @@ implements <a href="../../../../org/arl/fjage/connectors/ConnectionListener.html
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/arl/fjage/AgentID.html" title="class in org.arl.fjage">AgentID</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/arl/fjage/remote/MasterContainer.html#agentsForService-java.lang.String-">agentsForService</a></span>(java.lang.String&nbsp;service)</code>
-<div class="block">Finds all agents providing a named service.</div>
+<div class="block">Gets the agent IDs of all agents that provide a given service.s</div>
 </td>
 </tr>
 <tr id="i4" class="altColor">
@@ -713,15 +713,14 @@ implements <a href="../../../../org/arl/fjage/connectors/ConnectionListener.html
 <li class="blockList">
 <h4>agentsForService</h4>
 <pre>public&nbsp;<a href="../../../../org/arl/fjage/AgentID.html" title="class in org.arl.fjage">AgentID</a>[]&nbsp;agentsForService(java.lang.String&nbsp;service)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/arl/fjage/Container.html#agentsForService-java.lang.String-">Container</a></code></span></div>
-<div class="block">Finds all agents providing a named service.</div>
+<div class="block">Gets the agent IDs of all agents that provide a given service.s</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../../../../org/arl/fjage/Container.html#agentsForService-java.lang.String-">agentsForService</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/arl/fjage/Container.html" title="class in org.arl.fjage">Container</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>service</code> - name of the service.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>an array of agent ids for service providers, null if none found.</dd>
+<dd>array of agent IDs, empty if no agents provide the service.</dd>
 </dl>
 </li>
 </ul>
