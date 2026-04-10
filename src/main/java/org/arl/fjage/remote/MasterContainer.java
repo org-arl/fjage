@@ -260,7 +260,9 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       if (rsp == null || rsp.services == null) return new String[0];
       return rsp.services;
     }, String[]::new, TIMEOUT);
-    return Stream.concat(Arrays.stream(services), Arrays.stream(remoteServices)).toArray(String[]::new);
+    Set<String> allServices = new LinkedHashSet<>(Arrays.asList(services));
+    allServices.addAll(Arrays.asList(remoteServices));
+    return allServices.toArray(new String[0]);
   }
 
   @Override
@@ -331,7 +333,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
         } catch(InterruptedException e) {
           Thread.currentThread().interrupt();
         }
-        allAlive = async.allTrue(slaves, ConnectionHandler::isAlive, TIMEOUT);
+        allAlive = async.allTrue(slaves, ConnectionHandler::isConnectionAlive, TIMEOUT);
       }
       if (allAlive) log.fine("All slaves are alive");
       else log.warning("Some slaves timed out!");
