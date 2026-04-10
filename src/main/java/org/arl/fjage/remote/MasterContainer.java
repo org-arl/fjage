@@ -327,13 +327,20 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (!slaves.isEmpty()) {
       log.fine("Waiting for slaves...");
       boolean allAlive = false;
-      for (int i = 0; !allAlive && i < TIMEOUT/100; i++) {
+      // Bound startup sync to a short local wait; request timeouts are handled later.
+      for (int i = 0; !allAlive && i < 50; i++) {
         try {
           Thread.sleep(100);
         } catch(InterruptedException e) {
           Thread.currentThread().interrupt();
         }
-        allAlive = async.allTrue(slaves, ConnectionHandler::isConnectionAlive, TIMEOUT);
+        allAlive = true;
+        for (ConnectionHandler slave: slaves) {
+          if (!slave.isConnectionAlive()) {
+            allAlive = false;
+            break;
+          }
+        }
       }
       if (allAlive) log.fine("All slaves are alive");
       else log.warning("Some slaves timed out!");
