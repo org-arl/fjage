@@ -3,13 +3,11 @@ package org.arl.fjage.connectors;
 import org.eclipse.jetty.websocket.api.BatchMode;
 import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.WriteCallback;
 import org.eclipse.jetty.websocket.api.annotations.*;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -163,23 +161,28 @@ public class WebSocketConnector implements Connector{
 
     private void write(String s){
         try {
-            if (session != null && session.isOpen()) {
-                Future<Void> f = session.getRemote().sendStringByFuture(s);
-                try {
-                    f.get(2, TimeUnit.SECONDS);
-                } catch (TimeoutException e){
-                    log.fine("Sending timed out. Closing connection to " + session.getRemoteAddress());
-                    session.disconnect();
-                } catch (java.util.concurrent.ExecutionException e) {
-                    if (e.getCause() instanceof java.nio.channels.ClosedChannelException) {
-                        log.info("Unexpected "+ e.getCause().toString() + " while sending to " + session.getRemoteAddress() + ".");
+            Session currentSession = session;
+            if (currentSession != null && currentSession.isOpen()) {
+                currentSession.getRemote().sendString(s, new WriteCallback() {
+                    @Override
+                    public void writeFailed(Throwable cause) {
+                        try {
+                            if (cause instanceof java.nio.channels.ClosedChannelException) {
+                                log.info("Unexpected " + cause.toString() + " while sending to " + currentSession.getRemoteAddress() + ".");
+                            } else {
+                                log.log(Level.WARNING, "Error sending websocket message: ", cause);
+                            }
+                            if (currentSession.isOpen()) currentSession.disconnect();
+                        } catch (Exception e) {
+                            log.log(Level.WARNING, "Error handling websocket send failure: ", e);
+                        }
                     }
-                    else {
-                        log.log(Level.WARNING, "Error sending websocket message: ", e);
+
+                    @Override
+                    public void writeSuccess() {
+                        // nothing to do
                     }
-                } catch (Exception e){
-                    log.log(Level.WARNING, "Error sending websocket message: ", e);
-                }
+                });
             }
         } catch (Exception e) {
             log.log(Level.WARNING, "Error sending websocket message: ", e);
