@@ -11,6 +11,8 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.util.Date;
+import java.util.UUID;
+
 import com.google.gson.*;
 import org.arl.fjage.AgentID;
 import org.arl.fjage.Message;
@@ -65,6 +67,13 @@ public class JsonMessage {
 
   public String toJson() {
     return gson.toJson(this);
+  }
+
+  static JsonMessage createActionRequest(Action action) {
+    final JsonMessage msg = new JsonMessage();
+    msg.id = UUID.randomUUID().toString();
+    msg.action = action;
+    return msg;
   }
 
 }
