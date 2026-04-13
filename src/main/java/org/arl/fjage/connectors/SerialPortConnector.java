@@ -19,7 +19,7 @@ import com.fazecast.jSerialComm.SerialPort;
 /**
  * Serial port connector.
  */
-public class SerialPortConnector implements Connector {
+public class SerialPortConnector implements StreamingConnector {
 
   protected SerialPort com;
 

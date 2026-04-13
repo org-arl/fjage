@@ -23,16 +23,6 @@ public interface Connector extends Closeable {
   public String getName();
 
   /**
-   * Get the input stream to read data over.
-   */
-  public InputStream getInputStream();
-
-  /**
-   * Get the output stream to write data to.
-   */
-  public OutputStream getOutputStream();
-
-  /**
    * Check if a connection is relaible. A reliable connection
    * throws an exception if data written to the output stream cannot
    * be delivered.

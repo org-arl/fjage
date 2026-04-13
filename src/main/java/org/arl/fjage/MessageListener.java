@@ -10,8 +10,6 @@ for full license details.
 
 package org.arl.fjage;
 
-import org.arl.fjage.Message;
-
 /**
  * An interface for a client interested in monitoring messages.
  *

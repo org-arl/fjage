@@ -25,18 +25,16 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 /**
  * Web socket connector.
  */
-public class WebSocketHubConnector implements Connector, WebSocketCreator {
+public class WebSocketHubConnector implements FrameConnector, WebSocketCreator {
 
   protected String name;
   protected boolean linemode = false;
   protected WebServer server;
   protected ContextHandler handler;
   protected List<WSHandler> wsHandlers = new CopyOnWriteArrayList<WSHandler>();
-  protected OutputThread outThread = null;
-  protected final PseudoInputStream pin = new PseudoInputStream();
-  protected PseudoOutputStream pout = new PseudoOutputStream();
   protected ConnectionListener listener = null;
   protected Logger log = Logger.getLogger(getClass().getName());
+  private FrameListener frameListener;
 
   /**
    * Create a web socket connector and add it to a web server running on a
@@ -92,8 +90,6 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
       }
     });
     server.start();
-    outThread = new OutputThread();
-    outThread.start();
   }
 
   @Override
@@ -104,16 +100,6 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
   @Override
   public String getName() {
     return name;
-  }
-
-  @Override
-  public InputStream getInputStream() {
-    return pin;
-  }
-
-  @Override
-  public OutputStream getOutputStream() {
-    return pout;
   }
 
   @Override
@@ -141,13 +127,9 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
   @Override
   public void close() {
-    outThread.close();
-    outThread = null;
     server.removeHandler(handler);
     server = null;
     handler = null;
-    pin.close();
-    pout.close();
   }
 
   @Override
@@ -155,49 +137,20 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     return name;
   }
 
-  // thread to monitor incoming data on output stream and write to TCP clients
-
-  private class OutputThread extends Thread {
-
-    OutputThread() {
-      setName(getClass().getSimpleName()+":"+name);
-      setDaemon(true);
-      setPriority(MIN_PRIORITY);
+  @Override
+  public void sendFrame(Object frame) {
+    if (frame instanceof String) {
+      String s = (String) frame;
+      for (WSHandler t : wsHandlers)
+        t.write(s);
+    } else {
+      log.warning("Unsupported frame type: " + frame.getClass().getName());
     }
+  }
 
-    @Override
-    public void run() {
-      while (true) {
-        String s;
-        if (linemode) {
-          s = pout.readLine();
-          if (s == null) break;
-        } else {
-          byte[] buf = pout.readAvailable();
-          if (buf == null) break;
-          s = new String(buf);
-        }
-        for (WSHandler t: wsHandlers)
-          t.write(s);
-        try {
-          Thread.sleep(10);
-        } catch (InterruptedException ex) {
-          break;
-        }
-      }
-    }
-
-    void close() {
-      try {
-        if (pout != null) {
-          pout.close();
-          join();
-        }
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-      }
-    }
-
+  @Override
+  public void setFrameListener(FrameListener listener) {
+    this.frameListener = listener;
   }
 
   // POJO for each web socket connection
@@ -238,18 +191,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
     @OnWebSocketMessage
     public void onMessage(String message) {
-      byte[] buf = message.getBytes();
-      synchronized (conn.pin) {
-        for (int c : buf) {
-          if (c < 0) c += 256;
-          if (c == 4) continue;     // ignore ^D
-          try {
-            conn.pin.write(c);
-          } catch (IOException ex) {
-            // do nothing
-          }
-        }
-      }
+      if (frameListener != null) frameListener.onReceive(message);
     }
 
     void write(String s) {

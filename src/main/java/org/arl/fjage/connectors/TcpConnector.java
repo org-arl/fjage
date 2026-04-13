@@ -16,7 +16,7 @@ import java.net.*;
 /**
  * TCP client connector.
  */
-public class TcpConnector implements Connector {
+public class TcpConnector implements StreamingConnector {
 
   protected Socket sock;
   protected OutputStream out;

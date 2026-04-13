@@ -12,7 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @WebSocket(maxIdleTime = Integer.MAX_VALUE, batchMode = BatchMode.OFF)
-public class WebSocketConnector implements Connector{
+public class WebSocketConnector implements FrameConnector{
 
     private String name = "ws://[closed]";
     private final String context;
@@ -21,9 +21,7 @@ public class WebSocketConnector implements Connector{
     private ConnectionListener listener;
     protected Logger log = Logger.getLogger(getClass().getName());
 
-    private final PseudoInputStream pin = new PseudoInputStream();
-    private final PseudoOutputStream pout = new PseudoOutputStream();
-    private OutputThread outThread = null;
+    private FrameListener frameListener;
 
     public WebSocketConnector(String context) {
         this.context = context;
@@ -33,9 +31,6 @@ public class WebSocketConnector implements Connector{
     public void onWebSocketClose(int statusCode, String reason)  {
         this.session = null;
         this.remote = null;
-        pin.close();
-        pout.close();
-        outThread.close();
         log.finer("WebSocket Connector closed: " + statusCode + " " + reason);
         name = "websocket://[closed]";
     }
@@ -47,8 +42,6 @@ public class WebSocketConnector implements Connector{
         log.finer("WebSocket Connector connected: " + session.getRemoteAddress().getHostString() + ":" + session.getRemoteAddress().getPort());
         name = "ws://" + this.remote.getInetSocketAddress().getAddress().getHostAddress() + context + ":" + this.remote.getInetSocketAddress().getPort();
         if (listener != null) listener.connected(this);
-        outThread = new OutputThread();
-        outThread.start();
     }
 
     @OnWebSocketError
@@ -62,16 +55,7 @@ public class WebSocketConnector implements Connector{
 
     @OnWebSocketMessage
     public void onWebSocketText(String message) {
-        byte[] buf = message.getBytes();
-        synchronized (pin) {
-            // TODO: Check if we need any filters here.
-            // The WebSocketHubConnector filters for the likes of ^D
-            try {
-                pin.write(buf);
-            } catch (Throwable ignored){
-                // ignore exception
-            }
-        }
+        if (frameListener != null) frameListener.onReceive(message);
     }
 
     @Override
@@ -80,13 +64,42 @@ public class WebSocketConnector implements Connector{
     }
 
     @Override
-    public InputStream getInputStream() {
-        return pin;
+    public void sendFrame(Object frame) {
+        if (frame instanceof String) {
+            try {
+                Session currentSession = session;
+                if (currentSession != null && currentSession.isOpen()) {
+                    currentSession.getRemote().sendString((String) frame, new WriteCallback() {
+                        @Override
+                        public void writeFailed(Throwable cause) {
+                            try {
+                                if (cause instanceof java.nio.channels.ClosedChannelException) {
+                                    log.info("Unexpected " + cause.toString() + " while sending to " + currentSession.getRemoteAddress() + ".");
+                                } else {
+                                    log.log(Level.WARNING, "Error sending websocket message: ", cause);
+                                }
+                                if (currentSession.isOpen()) currentSession.disconnect();
+                            } catch (Exception e) {
+                                log.log(Level.WARNING, "Error handling websocket send failure: ", e);
+                            }
+                        }
+
+                        @Override
+                        public void writeSuccess() {
+                            // nothing to do
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Error sending websocket message: ", e);
+            }
+        }
+        else log.warning("Unsupported frame type: " + frame.getClass().getName());
     }
 
     @Override
-    public OutputStream getOutputStream() {
-        return pout;
+    public void setFrameListener(FrameListener listener) {
+        this.frameListener = listener;
     }
 
     @Override
@@ -113,80 +126,11 @@ public class WebSocketConnector implements Connector{
     @Override
     public void close() {
         if (this.session != null && this.session.isOpen()) this.session.close();
-        pin.close();
-        pout.close();
     }
 
     @Override
     public String toString() {
         return name;
-    }
-
-    /// internal classes and helpers
-
-    private class OutputThread extends Thread {
-
-        OutputThread() {
-            setName(getClass().getSimpleName()+":"+name);
-            setDaemon(true);
-            setPriority(MIN_PRIORITY);
-        }
-
-        @Override
-        public void run() {
-            while (true) {
-                String s;
-                s = pout.readLine();
-                if (s == null) break;
-                write(s);
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException ex) {
-                    break;
-                }
-            }
-        }
-
-        void close() {
-            try {
-                if (pout != null) {
-                    pout.close();
-                    join();
-                }
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-    private void write(String s){
-        try {
-            Session currentSession = session;
-            if (currentSession != null && currentSession.isOpen()) {
-                currentSession.getRemote().sendString(s, new WriteCallback() {
-                    @Override
-                    public void writeFailed(Throwable cause) {
-                        try {
-                            if (cause instanceof java.nio.channels.ClosedChannelException) {
-                                log.info("Unexpected " + cause.toString() + " while sending to " + currentSession.getRemoteAddress() + ".");
-                            } else {
-                                log.log(Level.WARNING, "Error sending websocket message: ", cause);
-                            }
-                            if (currentSession.isOpen()) currentSession.disconnect();
-                        } catch (Exception e) {
-                            log.log(Level.WARNING, "Error handling websocket send failure: ", e);
-                        }
-                    }
-
-                    @Override
-                    public void writeSuccess() {
-                        // nothing to do
-                    }
-                });
-            }
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Error sending websocket message: ", e);
-        }
     }
 
 }

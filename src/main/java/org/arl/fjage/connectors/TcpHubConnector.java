@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * into a single connector. All data in/out of the input/output streams of this
  * connector are common across all TCP clients.
  */
-public class TcpHubConnector extends Thread implements Connector {
+public class TcpHubConnector extends Thread implements StreamingConnector {
 
   protected int port;
   protected boolean telnet;
