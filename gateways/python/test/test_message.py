@@ -1,4 +1,23 @@
-from fjagepy import Message, AgentID, Performative, MessageClass
+from fjagepy import Message, AgentID, Performative, MessageClass, message
+
+
+@message
+class DecoratedMessage(Message):
+    pass
+
+
+@message('org.arl.fjage.test.DecoratedReq')
+class DecoratedReq(Message):
+    def __init__(self, value=None):
+        super().__init__()
+        self.value = value
+
+
+@message('org.arl.fjage.test.RequiredArgsMessage')
+class RequiredArgsMessage(Message):
+    def __init__(self, token):
+        super().__init__()
+        self.token = token
 
 def test_message_construction():
     """Message should be constructable."""
@@ -85,3 +104,26 @@ def test_message_decode_complex_array():
     msg = Message.from_json(js)
     assert isinstance(msg.signal, list)
     assert msg.signal == [1+2j, 3+4j, 5+6j]
+
+
+def test_message_decorator_registers_external_class():
+    """@message should register decorated classes for inflation."""
+    js = {"clazz": "DecoratedMessage", "data": {"value": 7}}
+    msg = Message.from_json(js)
+    assert isinstance(msg, DecoratedMessage)
+    assert msg.value == 7
+
+
+def test_message_decorator_sets_registered_clazz_and_perf():
+    """@message should apply the registered clazz to new instances."""
+    msg = DecoratedReq(value=9)
+    assert msg.__clazz__ == 'org.arl.fjage.test.DecoratedReq'
+    assert msg.perf == Performative.REQUEST
+
+
+def test_message_decorator_inflates_without_noarg_constructor():
+    """@message should inflate registered classes even if __init__ needs args."""
+    js = {"clazz": "org.arl.fjage.test.RequiredArgsMessage", "data": {"token": "abc"}}
+    msg = Message.from_json(js)
+    assert isinstance(msg, RequiredArgsMessage)
+    assert msg.token == 'abc'

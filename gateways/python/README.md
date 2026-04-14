@@ -106,6 +106,31 @@ important_msg = gw.receive(my_filter, timeout=1000)
 
 gw.close()
 ```
+
+### User-Defined Message Classes
+
+Use `@message` to register your own message subclasses so incoming JSON can be inflated back into the right Python type.
+
+```python
+from fjagepy import Message, message
+
+
+@message('org.example.CustomReq')
+class CustomReq(Message):
+    def __init__(self, text=None):
+        super().__init__()
+        self.text = text
+
+
+outgoing = CustomReq('hello')
+payload = outgoing.to_json()
+
+# Later, when a message with the same clazz arrives from fjage:
+incoming = Message.from_json(payload)
+assert isinstance(incoming, CustomReq)
+assert incoming.text == 'hello'
+```
+
 ## Advanced Usage
 
 ### Custom Connectors
