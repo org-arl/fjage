@@ -1,13 +1,72 @@
 import sys
 import logging
-from typing import Optional, Any, Dict, Type
+from typing import Optional, Any, Dict, Type, TYPE_CHECKING
 
 from .AgentID import AgentID
 from .Performative import Performative
 from .Utils import UUID7
 
+if TYPE_CHECKING:
+    from .Gateway import Gateway
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
+
+_MESSAGE_REGISTRY: Dict[str, Type["Message"]] = {}
+
+def _register_message_class(class_: Type["Message"], fqcn: Optional[str] = None) -> Type["Message"]:
+    sys.modules[__name__].__dict__[class_.__name__] = class_
+    _MESSAGE_REGISTRY[class_.__name__] = class_
+
+    clazz_name = fqcn or getattr(class_, '__clazz__', None)
+    if isinstance(clazz_name, str) and clazz_name:
+        _MESSAGE_REGISTRY[clazz_name] = class_
+        _MESSAGE_REGISTRY[clazz_name.split('.')[-1]] = class_
+
+    return class_
+
+def _instantiate_message(class_: Type["Message"]) -> "Message":
+    try:
+        return class_()
+    except TypeError:
+        instance = class_.__new__(class_)
+        if isinstance(instance, Message):
+            Message.__init__(instance)
+        return instance
+
+
+def message(arg: Optional[Any] = None):
+    """Decorator to register a Message subclass for JSON inflation.
+
+    Can be used as ``@message`` or ``@message('org.example.MyMessage')``.
+    """
+
+    def decorate(class_: Type["Message"], fqcn: Optional[str] = None) -> Type["Message"]:
+        if not issubclass(class_, Message):
+            raise TypeError('@message can only be used with Message subclasses')
+
+        clazz_name = fqcn or getattr(class_, '__clazz__', None) or class_.__name__
+        original_init = class_.__init__
+        if not getattr(original_init, '__fjage_message_wrapped__', False):
+            def __init__(self, *args, **kwargs):
+                original_init(self, *args, **kwargs)
+                self.__clazz__ = clazz_name
+                if clazz_name.endswith('Req') and getattr(self, 'perf', None) == Performative.INFORM:
+                    self.perf = Performative.REQUEST
+
+            __init__.__fjage_message_wrapped__ = True
+            class_.__init__ = __init__
+
+        class_.__clazz__ = clazz_name
+        return _register_message_class(class_, clazz_name)
+
+    if isinstance(arg, type):
+        return decorate(arg)
+
+    def decorator(class_: Type["Message"]) -> Type["Message"]:
+        return decorate(class_, arg)
+
+    return decorator
 
 # Attempt to import numpy for array handling
 # If numpy is not available, we don't need to
@@ -15,7 +74,7 @@ logger.addHandler(logging.NullHandler())
 try:
     import numpy
 
-    def _serialize_numpy_array(value: numpy.ndarray, key: str, props: Dict) -> list:
+    def _serialize_numpy_array(value: Any, key: str, props: Dict) -> list:
         """Convert a numpy array to a JSON-serializable dict, mark complex arrays."""
         if numpy.iscomplexobj(value):
             props[f"{key}__isComplex"] = True
@@ -81,15 +140,17 @@ class Message:
         qclazz = json_obj["clazz"]
         clazz_name = qclazz.split(".")[-1]
 
-        # Try to find the class in globals
-        module = sys.modules[__name__]
-        rv_cls = getattr(module, clazz_name, None)
+        rv_cls = _MESSAGE_REGISTRY.get(qclazz) or _MESSAGE_REGISTRY.get(clazz_name)
+
+        if rv_cls is None:
+            module = sys.modules[__name__]
+            rv_cls = getattr(module, clazz_name, None)
 
         # Else default to base Message class
         if rv_cls is None:
             rv_cls = Message
 
-        rv = rv_cls()
+        rv = _instantiate_message(rv_cls)
         rv.__clazz__ = qclazz
 
         for key, value in json_obj["data"].items():
@@ -162,24 +223,17 @@ def MessageClass(name: str, parent: Type[Message] = Message) -> Type[Message]:
         self.__clazz__ = name
         if name.endswith('Req'):
             self.perf = Performative.REQUEST
-        for k, v in kwargs.items():
-            if not k.startswith('_') and k.endswith('_'):
-                k = k[:-1]
-            setattr(self, k, v)
+        _update_attributes(self, kwargs)
 
     class_ = type(sname, (parent,), {"__init__": __init__})
-    sys.modules[__name__].__dict__[sname] = class_
-    return class_
+    return _register_message_class(class_, name)
 
 
-# Predefined message classes
-_ParameterReq = MessageClass("org.arl.fjage.param.ParameterReq")
-_ParameterRsp = MessageClass("org.arl.fjage.param.ParameterRsp")
-
-PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq')
-GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq')
-ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq')
-GetFileRsp = MessageClass('org.arl.fjage.shell.GetFileRsp')
+def _update_attributes(obj: Any, kwargs: Dict[str, Any]) -> None:
+    for key, value in kwargs.items():
+        if not key.startswith('_') and key.endswith('_'):
+            key = key[:-1]
+        setattr(obj, key, value)
 
 def _short(p):
     if p is None:
@@ -212,7 +266,8 @@ class _GenericObject:
     def _repr_pretty_(self, p, cycle):
         p.text(str(self) if not cycle else '...')
 
-class ParameterReq(_ParameterReq):
+@message('org.arl.fjage.param.ParameterReq')
+class ParameterReq(Message):
 
     def __init__(self, index=-1, **kwargs):
         super().__init__()
@@ -262,8 +317,8 @@ class ParameterReq(_ParameterReq):
     def _repr_pretty_(self, p, cycle):
         p.text(str(self) if not cycle else '...')
 
-
-class ParameterRsp(_ParameterRsp):
+@message("org.arl.fjage.param.ParameterRsp")
+class ParameterRsp(Message):
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -321,3 +376,54 @@ class ParameterRsp(_ParameterRsp):
 
     def _repr_pretty_(self, p, cycle):
         p.text(str(self) if not cycle else '...')
+
+@message('org.arl.fjage.shell.PutFileReq')
+class PutFileReq(Message):
+
+    def __init__(self, filename: Optional[str] = None, contents: Optional[list[int]] = None,
+                 offset: int = 0, **kwargs):
+        super().__init__(perf=Performative.REQUEST)
+        self.filename: Optional[str] = filename
+        self.contents: Optional[list[int]] = contents
+        self.offset: int = offset
+        _update_attributes(self, kwargs)
+
+
+@message('org.arl.fjage.shell.GetFileReq')
+class GetFileReq(Message):
+
+    def __init__(self, filename: Optional[str] = None, offset: int = 0,
+                 length: int = 0, **kwargs):
+        super().__init__(perf=Performative.REQUEST)
+        self.filename: Optional[str] = filename
+        self.offset: int = offset
+        self.length: int = length
+        _update_attributes(self, kwargs)
+
+
+@message('org.arl.fjage.shell.ShellExecReq')
+class ShellExecReq(Message):
+
+    def __init__(self, command: Optional[str] = None, script: Optional[str] = None,
+                 scriptArgs: Optional[list[str]] = None, ans: bool = False, **kwargs):
+        super().__init__(perf=Performative.REQUEST)
+        self._command: Optional[str] = None
+        self._script: Optional[str] = None
+        self.command = command
+        self.script = script
+        self.scriptArgs: Optional[list[str]] = scriptArgs
+        self.ans: bool = ans
+        _update_attributes(self, kwargs)
+
+
+@message('org.arl.fjage.shell.GetFileRsp')
+class GetFileRsp(Message):
+
+    def __init__(self, filename: Optional[str] = None, offset: int = 0,
+                 contents: Optional[list[int]] = None, directory: bool = False, **kwargs):
+        super().__init__(perf=Performative.INFORM)
+        self.filename: Optional[str] = filename
+        self.offset: int = offset
+        self.contents: Optional[list[int]] = contents
+        self.directory: bool = directory
+        _update_attributes(self, kwargs)
