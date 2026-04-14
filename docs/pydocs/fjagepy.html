@@ -13,7 +13,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=51b770b3"></script>
+      <script src="_static/documentation_options.js?v=c2377ec0"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -56,6 +56,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#basic-connection-and-communication">Basic Connection and Communication</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#request-response-pattern">Request-Response Pattern</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#message-filtering-and-reception">Message Filtering and Reception</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#user-defined-message-classes">User-Defined Message Classes</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#advanced-usage">Advanced Usage</a><ul>
@@ -211,6 +212,29 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <span class="n">important_msg</span> <span class="o">=</span> <span class="n">gw</span><span class="o">.</span><span class="n">receive</span><span class="p">(</span><span class="n">my_filter</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
 
 <span class="n">gw</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="user-defined-message-classes">
+<h3>User-Defined Message Classes<a class="headerlink" href="#user-defined-message-classes" title="Link to this heading"></a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">&#64;message</span></code> to register your own message subclasses so incoming JSON can be inflated back into the right Python type.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fjagepy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Message</span><span class="p">,</span> <span class="n">message</span>
+
+
+<span class="nd">@message</span><span class="p">(</span><span class="s1">&#39;org.example.CustomReq&#39;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CustomReq</span><span class="p">(</span><span class="n">Message</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+
+
+<span class="n">outgoing</span> <span class="o">=</span> <span class="n">CustomReq</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="n">outgoing</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+
+<span class="c1"># Later, when a message with the same clazz arrives from fjage:</span>
+<span class="n">incoming</span> <span class="o">=</span> <span class="n">Message</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">incoming</span><span class="p">,</span> <span class="n">CustomReq</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">incoming</span><span class="o">.</span><span class="n">text</span> <span class="o">==</span> <span class="s1">&#39;hello&#39;</span>
 </pre></div>
 </div>
 </section>
