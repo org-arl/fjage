@@ -106,6 +106,51 @@ def test_message_decode_complex_array():
     assert msg.signal == [1+2j, 3+4j, 5+6j]
 
 
+def test_message_runtime_assignment_normalizes_keyword_fields():
+    """Message should store Python-safe keyword names using wire names."""
+    msg = Message()
+    msg.from_ = "alpha"
+
+    assert msg.from_ == "alpha"
+    assert getattr(msg, 'from') == "alpha"
+    assert 'from' in msg.__dict__
+    assert 'from_' not in msg.__dict__
+
+
+def test_message_to_json_serializes_python_safe_keyword_fields():
+    """Message should serialize Python-safe keyword names to canonical wire names."""
+    msg = Message(from_="alpha")
+
+    js = msg.to_json()
+
+    assert js['data']['from'] == 'alpha'
+    assert 'from_' not in js['data']
+
+
+def test_message_from_json_normalizes_canonical_keyword_fields():
+    """Message should expose canonical wire keyword names via Python-safe accessors."""
+    js = {"clazz": "org.arl.fjage.Message", "data": {"from": "alpha"}}
+
+    msg = Message.from_json(js)
+
+    assert msg is not None
+    assert msg.from_ == 'alpha'
+    assert getattr(msg, 'from') == 'alpha'
+    assert 'from' in msg.__dict__
+    assert 'from_' not in msg.__dict__
+
+
+def test_message_keyword_field_round_trip_uses_wire_name():
+    """Message keyword fields should round-trip through JSON using canonical wire names."""
+    outgoing = Message(from_="alpha")
+
+    incoming = Message.from_json(outgoing.to_json())
+
+    assert incoming is not None
+    assert incoming.from_ == 'alpha'
+    assert getattr(incoming, 'from') == 'alpha'
+
+
 def test_message_decorator_registers_external_class():
     """@message should register decorated classes for inflation."""
     js = {"clazz": "DecoratedMessage", "data": {"value": 7}}
