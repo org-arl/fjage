@@ -1,3 +1,5 @@
+import inspect
+
 from fjagepy import Message, AgentID, Performative, MessageClass, message
 
 
@@ -164,6 +166,12 @@ def test_message_decorator_sets_registered_clazz_and_perf():
     msg = DecoratedReq(value=9)
     assert msg.__clazz__ == 'org.arl.fjage.test.DecoratedReq'
     assert msg.perf == Performative.REQUEST
+
+
+def test_message_decorator_preserves_constructor_signature():
+    """@message should not replace the decorated constructor signature."""
+    assert str(inspect.signature(DecoratedReq)) == '(value=None)'
+    assert str(inspect.signature(RequiredArgsMessage)) == '(token)'
 
 
 def test_message_decorator_inflates_without_noarg_constructor():

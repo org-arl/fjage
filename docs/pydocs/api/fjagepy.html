@@ -13,7 +13,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=c2377ec0"></script>
+      <script src="../_static/documentation_options.js?v=20623aea"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -627,14 +627,33 @@ will first check the internal queue for a matching message before blocking for n
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fjagepy.GetFileReq">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">GetFileReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#GetFileReq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.GetFileReq" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">GetFileReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#GetFileReq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.GetFileReq" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>offset</strong> (<em>int</em>)</p></li>
+<li><p><strong>length</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fjagepy.GetFileRsp">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">GetFileRsp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#GetFileRsp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.GetFileRsp" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">GetFileRsp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#GetFileRsp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.GetFileRsp" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>offset</strong> (<em>int</em>)</p></li>
+<li><p><strong>contents</strong> (<em>list</em><em>[</em><em>int</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>directory</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
@@ -778,7 +797,7 @@ can parse a JSON string into a JSONMessage object.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fjagepy.ParameterReq">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">ParameterReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ParameterReq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ParameterReq" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">ParameterReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ParameterReq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ParameterReq" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="fjagepy.ParameterReq.get">
@@ -809,7 +828,7 @@ can parse a JSON string into a JSONMessage object.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fjagepy.ParameterRsp">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">ParameterRsp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ParameterRsp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ParameterRsp" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">ParameterRsp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ParameterRsp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ParameterRsp" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="fjagepy.ParameterRsp.get">
@@ -906,8 +925,17 @@ can parse a JSON string into a JSONMessage object.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fjagepy.PutFileReq">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">PutFileReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#PutFileReq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.PutFileReq" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">PutFileReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#PutFileReq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.PutFileReq" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>contents</strong> (<em>list</em><em>[</em><em>int</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>offset</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
@@ -928,8 +956,18 @@ can parse a JSON string into a JSONMessage object.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fjagepy.ShellExecReq">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">ShellExecReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ShellExecReq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ShellExecReq" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fjagepy.</span></span><span class="sig-name descname"><span class="pre">ShellExecReq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">script</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scriptArgs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ans</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fjagepy/Message.html#ShellExecReq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fjagepy.ShellExecReq" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>command</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>script</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>scriptArgs</strong> (<em>list</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>ans</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
@@ -1016,7 +1054,10 @@ can parse a JSON string into a JSONMessage object.</p>
 <p>Can be used as <code class="docutils literal notranslate"><span class="pre">&#64;message</span></code> or <code class="docutils literal notranslate"><span class="pre">&#64;message('org.example.MyMessage')</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>arg</strong> (<em>Any</em><em> | </em><em>None</em>)</p>
+<dd class="field-odd"><p><strong>arg</strong> (<em>str</em><em> | </em><em>None</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>type[<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>] | <em>Callable</em>[[…], type[<a class="reference internal" href="#fjagepy.Message" title="fjagepy.Message.Message"><em>Message</em></a>]]</p>
 </dd>
 </dl>
 </dd></dl>
