@@ -1,7 +1,7 @@
 import sys
 import logging
 import keyword
-from typing import Callable, Optional, Any, Dict, Type, TYPE_CHECKING
+from typing import Callable, Optional, Any, Dict, Type, TYPE_CHECKING, Union
 
 from .AgentID import AgentID
 from .Performative import Performative
@@ -23,6 +23,13 @@ def _normalize_field_name(name: str) -> str:
     if not name.startswith('_') and name.endswith('_') and keyword.iskeyword(name[:-1]):
         return name[:-1]
     return name
+
+
+def _message_clazz(class_: Type["Message"]) -> str:
+    clazz_name = class_.__dict__.get('__clazz__')
+    if isinstance(clazz_name, str) and clazz_name:
+        return clazz_name
+    return "org.arl.fjage.Message"
 
 def _register_message_class(class_: Type["Message"], fqcn: Optional[str] = None) -> Type["Message"]:
     if not issubclass(class_, Message):
@@ -79,12 +86,15 @@ class Message:
 
     def __init__(self, in_reply_to_msg: Optional["Message"] = None,
                  perf: Performative = Performative.INFORM, **kwargs):
-        self.__clazz__ = "org.arl.fjage.Message"
+        self.__clazz__ = _message_clazz(type(self))
         self.msgID = str(UUID7.generate())
         self.perf = perf
         self.sender: Optional[AgentID] = None
         self.recipient: Optional[AgentID] = in_reply_to_msg.sender if in_reply_to_msg else None
         self.inReplyTo: Optional[str] = in_reply_to_msg.msgID if in_reply_to_msg else None
+
+        if self.__clazz__.endswith('Req') and self.perf == Performative.INFORM:
+            self.perf = Performative.REQUEST
 
         # Set extra kwargs
         for k, v in kwargs.items():
@@ -223,7 +233,7 @@ def MessageClass(name: str, parent: Type[Message] = Message) -> Type[Message]:
     return _register_message_class(class_, name)
 
 
-def message(arg: Optional[str] = None) -> type[Message] | Callable[..., type[Message]]:
+def message(arg: Optional[str] = None) -> Union[Type[Message], Callable[..., Type[Message]]]:
     """Decorator to register a Message subclass for JSON inflation.
 
     Can be used as ``@message`` or ``@message('org.example.MyMessage')``.
@@ -233,18 +243,7 @@ def message(arg: Optional[str] = None) -> type[Message] | Callable[..., type[Mes
         if not issubclass(class_, Message):
             raise TypeError('@message can only be used with Message subclasses')
 
-        clazz_name = fqcn or getattr(class_, '__clazz__', None) or class_.__name__
-        original_init = class_.__init__
-        if not getattr(original_init, '__fjage_message_wrapped__', False):
-            def __init__(self, *args, **kwargs):
-                original_init(self, *args, **kwargs)
-                self.__clazz__ = clazz_name
-                if clazz_name.endswith('Req') and getattr(self, 'perf', None) == Performative.INFORM:
-                    self.perf = Performative.REQUEST
-
-            __init__.__fjage_message_wrapped__ = True
-            class_.__init__ = __init__
-
+        clazz_name = fqcn or class_.__dict__.get('__clazz__') or class_.__name__
         class_.__clazz__ = clazz_name
         return _register_message_class(class_, clazz_name)
 
