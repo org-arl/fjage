@@ -25,6 +25,18 @@ def _normalize_field_name(name: str) -> str:
     return name
 
 def _register_message_class(class_: Type["Message"], fqcn: Optional[str] = None) -> Type["Message"]:
+    if not issubclass(class_, Message):
+        raise TypeError('@message can only be used with Message subclasses')
+
+    # check if something is already registered with the same name or clazz
+    if class_.__name__ in _MESSAGE_REGISTRY and _MESSAGE_REGISTRY[class_.__name__] != class_:
+        logger.warning(f"Overriding existing message class registered with name '{class_.__name__}': {_MESSAGE_REGISTRY[class_.__name__]} -> {class_}")
+    if fqcn:
+        if fqcn in _MESSAGE_REGISTRY and _MESSAGE_REGISTRY[fqcn] != class_:
+            logger.warning(f"Overriding existing message class registered with clazz '{fqcn}': {_MESSAGE_REGISTRY[fqcn]} -> {class_}")
+        if fqcn.split('.')[-1] in _MESSAGE_REGISTRY and _MESSAGE_REGISTRY[fqcn.split('.')[-1]] != class_:
+            logger.warning(f"Overriding existing message class registered with name '{fqcn.split('.')[-1]}': {_MESSAGE_REGISTRY[fqcn.split('.')[-1]]} -> {class_}")
+
     sys.modules[__name__].__dict__[class_.__name__] = class_
     _MESSAGE_REGISTRY[class_.__name__] = class_
 
@@ -43,40 +55,6 @@ def _instantiate_message(class_: Type["Message"]) -> "Message":
         if isinstance(instance, Message):
             Message.__init__(instance)
         return instance
-
-
-def message(arg: Optional[Any] = None) -> type[Message] | Callable[..., type[Message]]:
-    """Decorator to register a Message subclass for JSON inflation.
-
-    Can be used as ``@message`` or ``@message('org.example.MyMessage')``.
-    """
-
-    def decorate(class_: Type["Message"], fqcn: Optional[str] = None) -> Type["Message"]:
-        if not issubclass(class_, Message):
-            raise TypeError('@message can only be used with Message subclasses')
-
-        clazz_name = fqcn or getattr(class_, '__clazz__', None) or class_.__name__
-        original_init = class_.__init__
-        if not getattr(original_init, '__fjage_message_wrapped__', False):
-            def __init__(self, *args, **kwargs):
-                original_init(self, *args, **kwargs)
-                self.__clazz__ = clazz_name
-                if clazz_name.endswith('Req') and getattr(self, 'perf', None) == Performative.INFORM:
-                    self.perf = Performative.REQUEST
-
-            __init__.__fjage_message_wrapped__ = True
-            class_.__init__ = __init__
-
-        class_.__clazz__ = clazz_name
-        return _register_message_class(class_, clazz_name)
-
-    if isinstance(arg, type):
-        return decorate(arg)
-
-    def decorator(class_: Type["Message"]) -> Type["Message"]:
-        return decorate(class_, arg)
-
-    return decorator
 
 # Attempt to import numpy for array handling
 # If numpy is not available, we don't need to
@@ -174,7 +152,7 @@ class Message:
                 setattr(rv, normalized_key, AgentID.from_json(value, owner=owner))
             elif normalized_key == "perf" and isinstance(value, str):
                 setattr(rv, normalized_key, Performative(value))
-            elif isinstance(value, list) and any(k == f"{key}__isComplex" for k in json_obj["data"].keys()):
+            elif isinstance(value, list) and f"{key}__isComplex" in json_obj["data"]:
                 is_complex = json_obj["data"].get(f"{key}__isComplex", False)
                 if is_complex:
                     setattr(rv, normalized_key, [complex(value[i], value[i + 1]) for i in range(0, len(value), 2)])
@@ -245,6 +223,39 @@ def MessageClass(name: str, parent: Type[Message] = Message) -> Type[Message]:
     return _register_message_class(class_, name)
 
 
+def message(arg: Optional[str] = None) -> type[Message] | Callable[..., type[Message]]:
+    """Decorator to register a Message subclass for JSON inflation.
+
+    Can be used as ``@message`` or ``@message('org.example.MyMessage')``.
+    """
+
+    def decorate(class_: Type["Message"], fqcn: Optional[str] = None) -> Type["Message"]:
+        if not issubclass(class_, Message):
+            raise TypeError('@message can only be used with Message subclasses')
+
+        clazz_name = fqcn or getattr(class_, '__clazz__', None) or class_.__name__
+        original_init = class_.__init__
+        if not getattr(original_init, '__fjage_message_wrapped__', False):
+            def __init__(self, *args, **kwargs):
+                original_init(self, *args, **kwargs)
+                self.__clazz__ = clazz_name
+                if clazz_name.endswith('Req') and getattr(self, 'perf', None) == Performative.INFORM:
+                    self.perf = Performative.REQUEST
+
+            __init__.__fjage_message_wrapped__ = True
+            class_.__init__ = __init__
+
+        class_.__clazz__ = clazz_name
+        return _register_message_class(class_, clazz_name)
+
+    if isinstance(arg, type):
+        return decorate(arg)
+
+    def decorator(class_: Type["Message"]) -> Type["Message"]:
+        return decorate(class_, arg)
+
+    return decorator
+
 def _update_attributes(obj: Any, kwargs: Dict[str, Any]) -> None:
     for key, value in kwargs.items():
         setattr(obj, _normalize_field_name(key), value)
@@ -272,7 +283,7 @@ def _value(v):
 
 class _GenericObject:
     def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
+        _update_attributes(self, kwargs)
 
     def __str__(self):
         return self.__dict__['clazz'] + '(...)'
@@ -290,7 +301,7 @@ class ParameterReq(Message):
         self.perf = Performative.REQUEST
         self.param = None
         self.value = None
-        self.__dict__.update(kwargs)
+        _update_attributes(self, kwargs)
 
     def get(self, param: str):
         """ Request a parameter by name.
@@ -339,7 +350,7 @@ class ParameterRsp(Message):
         self.index = -1
         self.values = dict()
         self.perf = Performative.INFORM
-        self.__dict__.update(kwargs)
+        _update_attributes(self, kwargs)
 
     def get(self, param:str):# -> Any | AgentID | _GenericObject | dict | Any | None:
         """Get the value of a parameter by name from the response.
