@@ -1,5 +1,11 @@
 # Release Notes
 
+## 2.4.0
+* Add Tunnel agent
+* Add JSON serialization for Instant and Duration classes
+* Allow extending the JSON serialization with custom TypeAdapterFactories
+* Chore: refine some logging
+
 ## 2.3.0
 * Bugfix: Avoid race condition when creating store folder
 * Bugfix: Avoid DNS lookups when accepting new WebSocket connections
