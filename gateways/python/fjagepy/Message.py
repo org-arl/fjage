@@ -1,6 +1,7 @@
 import sys
 import logging
-from typing import Optional, Any, Dict, Type, TYPE_CHECKING
+import keyword
+from typing import Callable, Optional, Any, Dict, Type, TYPE_CHECKING
 
 from .AgentID import AgentID
 from .Performative import Performative
@@ -13,6 +14,15 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 _MESSAGE_REGISTRY: Dict[str, Type["Message"]] = {}
+
+
+def _normalize_field_name(name: str) -> str:
+    """
+    Normalize a field name by stripping trailing underscores from Python keywords.
+    """
+    if not name.startswith('_') and name.endswith('_') and keyword.iskeyword(name[:-1]):
+        return name[:-1]
+    return name
 
 def _register_message_class(class_: Type["Message"], fqcn: Optional[str] = None) -> Type["Message"]:
     sys.modules[__name__].__dict__[class_.__name__] = class_
@@ -35,7 +45,7 @@ def _instantiate_message(class_: Type["Message"]) -> "Message":
         return instance
 
 
-def message(arg: Optional[Any] = None):
+def message(arg: Optional[Any] = None) -> type[Message] | Callable[..., type[Message]]:
     """Decorator to register a Message subclass for JSON inflation.
 
     Can be used as ``@message`` or ``@message('org.example.MyMessage')``.
@@ -106,9 +116,13 @@ class Message:
         # Deal with attributes that are keywords in Python
         # by allowing them to be accessed with  a trailing underscore
         # e.g., msg.from --> msg.from_
-        if not name.startswith('_') and name.endswith('_'):
-            return object.__getattribute__(self, name[:-1])
+        normalized_name = _normalize_field_name(name)
+        if normalized_name != name:
+            return object.__getattribute__(self, normalized_name)
         return object.__getattribute__(self, name)
+
+    def __setattr__(self, name, value):
+        object.__setattr__(self, _normalize_field_name(name), value)
 
     def to_json(self) -> Dict[str, Any]:
         """Convert the message to a JSON-serializable dict.
@@ -119,12 +133,13 @@ class Message:
         for key, value in self.__dict__.items():
             if key.startswith("_"):
                 continue
+            wire_key = _normalize_field_name(key)
             if isinstance(value, AgentID):
-                props[key] = value.to_json()
+                props[wire_key] = value.to_json()
             elif numpy is not None and isinstance(value, numpy.ndarray):
-                props[key] = _serialize_numpy_array(value, key, props)
+                props[wire_key] = _serialize_numpy_array(value, wire_key, props)
             else:
-                props[key] = value
+                props[wire_key] = value
         return {"clazz": self.__clazz__, "data": props}
 
     @classmethod
@@ -154,20 +169,21 @@ class Message:
         rv.__clazz__ = qclazz
 
         for key, value in json_obj["data"].items():
-            if key in ("sender", "recipient") and isinstance(value, str):
-                setattr(rv, key, AgentID.from_json(value, owner=owner))
-            elif key == "perf" and isinstance(value, str):
-                setattr(rv, key, Performative(value))
+            normalized_key = _normalize_field_name(key)
+            if normalized_key in ("sender", "recipient") and isinstance(value, str):
+                setattr(rv, normalized_key, AgentID.from_json(value, owner=owner))
+            elif normalized_key == "perf" and isinstance(value, str):
+                setattr(rv, normalized_key, Performative(value))
             elif isinstance(value, list) and any(k == f"{key}__isComplex" for k in json_obj["data"].keys()):
                 is_complex = json_obj["data"].get(f"{key}__isComplex", False)
                 if is_complex:
-                    setattr(rv, key, [complex(value[i], value[i + 1]) for i in range(0, len(value), 2)])
+                    setattr(rv, normalized_key, [complex(value[i], value[i + 1]) for i in range(0, len(value), 2)])
                 else:
-                    setattr(rv, key, value)
+                    setattr(rv, normalized_key, value)
             elif key.endswith('__isComplex'):
                 continue
             else:
-                setattr(rv, key, value)
+                setattr(rv, normalized_key, value)
         return rv
 
     def __str__(self) -> str:
@@ -231,9 +247,7 @@ def MessageClass(name: str, parent: Type[Message] = Message) -> Type[Message]:
 
 def _update_attributes(obj: Any, kwargs: Dict[str, Any]) -> None:
     for key, value in kwargs.items():
-        if not key.startswith('_') and key.endswith('_'):
-            key = key[:-1]
-        setattr(obj, key, value)
+        setattr(obj, _normalize_field_name(key), value)
 
 def _short(p):
     if p is None:
