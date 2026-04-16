@@ -122,7 +122,7 @@ class Message:
             if key.startswith("_"):
                 continue
             wire_key = _normalize_field_name(key)
-            if isinstance(value, AgentID):
+            if hasattr(value, "to_json") and callable(getattr(value, "to_json")):
                 props[wire_key] = value.to_json()
             elif numpy is not None and isinstance(value, numpy.ndarray):
                 props[wire_key] = _serialize_numpy_array(value, wire_key, props)
