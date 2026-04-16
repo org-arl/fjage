@@ -36,7 +36,7 @@ public class ConnectionHandler extends Thread {
   private final Deque<String> failed = new ArrayDeque<>(FAILED_SIZE);
   private final Logger log = Logger.getLogger(getClass().getName());
   private final RemoteContainer container;
-  private boolean alive;
+  private volatile boolean alive;
   private final boolean keepAlive;
   private final boolean closeOnDead;
   private final ExecutorService pool = Executors.newSingleThreadExecutor();
@@ -233,10 +233,6 @@ public class ConnectionHandler extends Thread {
         close();
       }
     }
-  }
-
-  void sendQueued(String s) {
-    if (pool != null && !pool.isShutdown()) pool.execute(() -> send(s));
   }
 
   JsonMessage request(JsonMessage msg, long timeout) {
