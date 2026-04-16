@@ -38,7 +38,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private TcpServer tcpListener = null;
   private WebSocketServer websocketListener = null;
   private final CopyOnWriteArrayList<ConnectionHandler> slaves = new CopyOnWriteArrayList<>();
-  private boolean needsCleanup = false;
   private Supplier<Firewall> fwSupplier = AllowAll.SUPPLIER;
   private AsyncExecutor async = new AsyncExecutor(10);
 
@@ -204,7 +203,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   protected boolean isDuplicate(AgentID aid) {
     if (super.isDuplicate(aid)) return true;
-    if (needsCleanup) cleanupSlaves();
     return async.firstMatch(slaves, slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.CONTAINS_AGENT);
       rq.agentID = aid;
@@ -228,9 +226,8 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     rq.message = m;
     rq.relay = false;
     String json = rq.toJson();
-    if (needsCleanup) cleanupSlaves();
     async.runAll(slaves, slave -> {
-      if (slave.wantsMessagesFor(aid)) slave.sendQueued(json);
+      if (slave.wantsMessagesFor(aid)) slave.send(json);
     }, TIMEOUT);
     return true;
   }
@@ -238,7 +235,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   public AgentID[] getAgents() {
     AgentID[] aids = super.getAgents();
-    if (needsCleanup) cleanupSlaves();
     AgentID[] remoteAids = async.concat(slaves, slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS);
       JsonMessage rsp = slave.request(rq, TIMEOUT);
@@ -255,7 +251,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   public String[] getServices() {
     String[] services = super.getServices();
-    if (needsCleanup) cleanupSlaves();
     String[] remoteServices = async.concat(slaves, slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.SERVICES);
       JsonMessage rsp = slave.request(rq, TIMEOUT);
@@ -271,7 +266,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   public AgentID agentForService(String service) {
     AgentID aid = super.agentForService(service);
     if (aid != null) return aid;
-    if (needsCleanup) cleanupSlaves();
     return async.firstMatch(slaves, slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.AGENT_FOR_SERVICE);
       rq.service = service;
@@ -290,7 +284,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   public AgentID[] agentsForService(String service) {
     AgentID[] aids = super.agentsForService(service);
     if (aids == null) aids = new AgentID[0];
-    if (needsCleanup) cleanupSlaves();
     AgentID[] remoteAids = async.concat(slaves, slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS_FOR_SERVICE);
       rq.service = service;
@@ -357,7 +350,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       slave.close();
     }, TIMEOUT);
     slaves.clear();
-    needsCleanup = false;
     if (tcpListener != null) {
       tcpListener.close();
       tcpListener = null;
@@ -380,7 +372,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   public void connectionClosed(ConnectionHandler handler) {
     log.info("Connection "+handler.getName()+" closed");
-    needsCleanup = true;
+    slaves.remove(handler);
   }
 
   public boolean openWebSocketServer( int port, String context) {
@@ -423,11 +415,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private void openTcpServer(int port) {
     tcpListener = new TcpServer(port, this);
     log.info("Listening on port "+ tcpListener.getPort());
-  }
-
-  private void cleanupSlaves() {
-    slaves.removeIf(ConnectionHandler::isClosed);
-    needsCleanup = false;
   }
 
 }
