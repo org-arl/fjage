@@ -16,3 +16,6 @@ class Performative(Enum):
 
     def __str__(self):
         return self.value
+
+    def to_json(self):
+        return self.value
