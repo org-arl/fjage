@@ -31,12 +31,12 @@ public class SlaveContainer extends RemoteContainer {
   private static final long DIRECTORY_QUERY_TIMEOUT = 6000;
   private static final long REQUEST_TIMEOUT = 2000;
 
-  private ConnectionHandler master;
+  private volatile ConnectionHandler master;
   private final String hostname;
   private String settings;
   private final int port;
   private final int baud;
-  private boolean quit = false;
+  private volatile boolean quit = false;
   private String watchListCache = null;
 
   ////////////// Constructors
