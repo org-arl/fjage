@@ -35,7 +35,7 @@ public class WebSocketConnector implements Connector{
         this.remote = null;
         pin.close();
         pout.close();
-        outThread.close();
+        if (outThread != null) outThread.close();
         log.finer("WebSocket Connector closed: " + statusCode + " " + reason);
         name = "websocket://[closed]";
     }

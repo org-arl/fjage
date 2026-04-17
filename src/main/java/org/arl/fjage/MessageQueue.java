@@ -38,13 +38,13 @@ public class MessageQueue {
 
   public synchronized void setSize(int size) {
     maxQueueLen = size;
-    while (maxQueueLen > 0 && queue.size() >= maxQueueLen)
+    while (maxQueueLen > 0 && queue.size() > maxQueueLen)
       queue.remove();
   }
 
   public synchronized void add(Message m) {
     quarantine.offer(m);
-    while (maxQueueLen > 0 && quarantine.size() >= maxQueueLen)
+    while (maxQueueLen > 0 && quarantine.size() > maxQueueLen)
       quarantine.remove();
   }
 
@@ -64,7 +64,7 @@ public class MessageQueue {
         queue.offer(m);
       }
     }
-    while (maxQueueLen > 0 && queue.size() >= maxQueueLen)
+    while (maxQueueLen > 0 && queue.size() > maxQueueLen)
       queue.remove();
   }
 
@@ -89,7 +89,7 @@ public class MessageQueue {
     queue.clear();
   }
 
-  public int length() {
+  public synchronized int length() {
     return queue.size();
   }
 
