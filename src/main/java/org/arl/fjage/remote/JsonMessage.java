@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.util.Date;
+import java.util.Objects;
 import java.time.Instant;
 import java.time.Duration;
 import java.util.UUID;
@@ -81,6 +82,7 @@ public class JsonMessage {
   }
 
   static JsonMessage createActionRequest(Action action) {
+    Objects.requireNonNull(action, "action must not be null");
     final JsonMessage msg = new JsonMessage();
     msg.id = UUID.randomUUID().toString();
     msg.action = action;
