@@ -22,6 +22,8 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,6 +84,83 @@ public class AsyncTests {
     }
   }
 
+  @Test(timeout = 30000)
+  public void testMasterAgentForServiceReturnsResponsiveMatchWithoutWaitingForUnresponsiveHandler() throws Exception {
+    Platform platform = new RealTimePlatform();
+    MasterContainer master = new MasterContainer(platform);
+    SlaveContainer goodSlave = new SlaveContainer(platform, "localhost", master.getPort());
+    ServiceAgent goodAgent = new ServiceAgent();
+    AgentID goodAgentID = goodSlave.add("server", goodAgent);
+    BadConnector badConnector = new BadConnector("bad-connector");
+    try {
+      platform.start();
+
+      waitForService(master, "server", SETUP_TIMEOUT);
+
+      master.addConnector(badConnector);
+      waitForHandlerAlive(master, "bad-connector", SETUP_TIMEOUT);
+
+      long start = System.nanoTime();
+      AgentID result = master.agentForService("server");
+      long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+      assertNotNull(result);
+      assertEquals(goodAgentID.getName(), result.getName());
+      assertTrue("agentForService() waited " + elapsedMs + " ms for an unresponsive handler",
+        elapsedMs < MESSAGE_TIMEOUT);
+    } finally {
+      badConnector.close();
+      platform.shutdown();
+    }
+  }
+
+  @Test(timeout = 30000)
+  public void testMasterRemoteHelpersAggregateAcrossMasterAndResponsiveSlaves() throws Exception {
+    final String sharedService = "shared";
+    final String masterOnlyService = "masterOnly";
+    final String slaveOneOnlyService = "slaveOneOnly";
+    final String slaveTwoOnlyService = "slaveTwoOnly";
+
+    Platform platform = new RealTimePlatform();
+    MasterContainer master = new MasterContainer(platform);
+    AgentID masterAgentID = master.add("masterServer", new ServiceAgent(sharedService, masterOnlyService));
+    SlaveContainer slaveOne = new SlaveContainer(platform, "localhost", master.getPort());
+    AgentID slaveOneAgentID = slaveOne.add("slaveOneServer", new ServiceAgent(sharedService, slaveOneOnlyService));
+    SlaveContainer slaveTwo = new SlaveContainer(platform, "localhost", master.getPort());
+    AgentID slaveTwoAgentID = slaveTwo.add("slaveTwoServer", new ServiceAgent(sharedService, slaveTwoOnlyService));
+    try {
+      platform.start();
+
+      waitUntil(() -> master.agentsForService(sharedService).length == 3, SETUP_TIMEOUT);
+
+      assertAgentNamesContain(master.getAgents(), masterAgentID, slaveOneAgentID, slaveTwoAgentID);
+      assertServicesContain(master.getServices(), sharedService, masterOnlyService, slaveOneOnlyService, slaveTwoOnlyService);
+
+      AgentID[] sharedAgents = master.agentsForService(sharedService);
+      assertEquals(3, sharedAgents.length);
+      assertAgentNamesContain(sharedAgents, masterAgentID, slaveOneAgentID, slaveTwoAgentID);
+    } finally {
+      platform.shutdown();
+    }
+  }
+
+  private void assertAgentNamesContain(AgentID[] actualAgents, AgentID... expectedAgents) {
+    Set<String> agentNames = new LinkedHashSet<>();
+    for (AgentID aid: actualAgents) {
+      if (aid != null) agentNames.add(aid.getName());
+    }
+    for (AgentID expected: expectedAgents) {
+      assertTrue("Missing agent: " + expected.getName(), agentNames.contains(expected.getName()));
+    }
+  }
+
+  private void assertServicesContain(String[] actualServices, String... expectedServices) {
+    Set<String> services = new LinkedHashSet<>(Arrays.asList(actualServices));
+    for (String service: expectedServices) {
+      assertTrue("Missing service: " + service, services.contains(service));
+    }
+  }
+
   private AgentID waitForService(MasterContainer master, String service, long timeoutMs) throws InterruptedException {
     long deadline = System.currentTimeMillis() + timeoutMs;
     while (System.currentTimeMillis() < deadline) {
@@ -113,12 +192,21 @@ public class AsyncTests {
   }
 
   private static class ServiceAgent extends Agent {
+    private final String[] services;
     private final CountDownLatch nuisanceReceived = new CountDownLatch(1);
     private final AtomicInteger nuisanceCount = new AtomicInteger();
 
+    ServiceAgent() {
+      this("server");
+    }
+
+    ServiceAgent(String... services) {
+      this.services = services == null || services.length == 0 ? new String[] {"server"} : services.clone();
+    }
+
     @Override
     public void init() {
-      register("server");
+      for (String service: services) register(service);
       add(new MessageBehavior(NuisanceMessage.class) {
         @Override
         public void onReceive(Message msg) {
