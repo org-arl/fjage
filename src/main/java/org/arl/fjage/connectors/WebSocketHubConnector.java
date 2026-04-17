@@ -265,7 +265,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
                 } else {
                   log.log(Level.WARNING, "Error sending websocket message: ", cause);
                 }
-                if (currentSession.isOpen()) currentSession.disconnect();
+                currentSession.disconnect();
               } catch (Exception e) {
                 log.log(Level.WARNING, "Error handling websocket send failure: ", e);
               }
