@@ -37,6 +37,7 @@ public class SlaveContainer extends RemoteContainer {
   private final int port;
   private final int baud;
   private volatile boolean quit = false;
+  private volatile Thread connectionManager;
   private String watchListCache = null;
 
   ////////////// Constructors
@@ -256,13 +257,22 @@ public class SlaveContainer extends RemoteContainer {
   public void shutdown() {
     quit = true;
     if (master != null) master.close();
+    if (connectionManager != null) {
+      connectionManager.interrupt();
+      if (connectionManager != Thread.currentThread()) {
+        try {
+          connectionManager.join(TIMEOUT);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
     super.shutdown();
   }
 
   @Override
   public String getState() {
     if (!running) return "Not running";
-    String details = port >= 0 ? ":" + port : "@" + baud;
     if (master == null) return "Running, connecting to " + displayhost(hostname, port, baud);
     return "Running, connected to "+ displayhost(hostname, port, baud);
   }
@@ -325,14 +335,13 @@ public class SlaveContainer extends RemoteContainer {
   }
 
   private void connectToMaster() {
-    new Thread(getClass().getSimpleName()+">"+hostname) {
+    connectionManager = new Thread(getClass().getSimpleName()+">"+hostname) {
       @Override
       public void run() {
         try {
           while (!quit) {
             try {
               tryConnecting();
-              String details = port >= 0 ? ":" + port : "@" + baud;
               log.info("Connected to "+ displayhost(hostname, port, baud));
               while (!quit && !inited) Thread.sleep(100);
               master.start();
@@ -347,10 +356,16 @@ public class SlaveContainer extends RemoteContainer {
             if (!quit) Thread.sleep(1000);
           }
         } catch (InterruptedException ex) {
-          log.warning("Connection manager interrupted!");
+          if (!quit) log.warning("Connection manager interrupted!");
+        } finally {
+          synchronized (SlaveContainer.this) {
+            if (connectionManager == Thread.currentThread()) connectionManager = null;
+          }
         }
       }
-    }.start();
+    };
+    connectionManager.setDaemon(true);
+    connectionManager.start();
   }
 
   private synchronized void updateWatchList() {
@@ -360,10 +375,8 @@ public class SlaveContainer extends RemoteContainer {
     for (AgentID aid: topics.keySet())
       if (!topics.get(aid).isEmpty())
         watchList.add(aid);
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.WANTS_MESSAGES_FOR;
-    rq.agentIDs = new AgentID[watchList.size()];
-    rq.agentIDs = watchList.toArray(rq.agentIDs);
+    JsonMessage rq = JsonMessage.createActionRequest(Action.WANTS_MESSAGES_FOR);
+    rq.agentIDs = watchList.toArray(new AgentID[watchList.size()]);
     String json = rq.toJson();
     if (watchListCache == null || !watchListCache.equals(json)) {
       master.send(json);

@@ -25,6 +25,12 @@ import org.arl.fjage.connectors.*;
  */
 public class ConnectionHandler extends Thread {
 
+  private static final ScheduledExecutorService timeoutScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+    Thread t = new Thread(r, ConnectionHandler.class.getSimpleName()+":timeout");
+    t.setDaemon(true);
+    return t;
+  });
+
   private final String ALIVE = "{\"alive\": true}";
   private final String SIGN_OFF = "{\"alive\": false}";
   private final int TIMEOUT = 60000;
@@ -32,7 +38,7 @@ public class ConnectionHandler extends Thread {
 
   private Connector conn;
   private DataOutputStream out;
-  private final Map<String,Object> pending = Collections.synchronizedMap(new HashMap<>());
+  private final ConcurrentMap<String,CompletableFuture<JsonMessage>> pending = new ConcurrentHashMap<>();
   private final Deque<String> failed = new ArrayDeque<>(FAILED_SIZE);
   private final Logger log = Logger.getLogger(getClass().getName());
   private final RemoteContainer container;
@@ -44,16 +50,6 @@ public class ConnectionHandler extends Thread {
   private String clientName = "-";
   private final Firewall fw;
 
-  public ConnectionHandler(Connector conn, RemoteContainer container) {
-    this.conn = conn;
-    this.container = container;
-    this.fw = new AllowAll();
-    setName(conn.toString());
-    alive = false;
-    keepAlive = true;
-    closeOnDead = ((conn instanceof TcpConnector) || (conn instanceof WebSocketConnector)) && (container instanceof MasterContainer);
-  }
-
   public ConnectionHandler(Connector conn, RemoteContainer container, Firewall fw) {
     this.conn = conn;
     this.container = container;
@@ -62,6 +58,10 @@ public class ConnectionHandler extends Thread {
     alive = false;
     keepAlive = true;
     closeOnDead = ((conn instanceof TcpConnector) || (conn instanceof WebSocketConnector)) && (container instanceof MasterContainer);
+  }
+
+  public ConnectionHandler(Connector conn, RemoteContainer container) {
+    this(conn, container, new AllowAll());
   }
 
   /**
@@ -130,12 +130,9 @@ public class ConnectionHandler extends Thread {
         if (rq.action == null) {
           if (rq.id != null) {
             // response to some request
-            Object obj = pending.get(rq.id);
-            if (obj != null) {
-              pending.put(rq.id, rq);
-              synchronized(obj) {
-                obj.notify();
-              }
+            CompletableFuture<JsonMessage> future = pending.remove(rq.id);
+            if (future != null) {
+              future.complete(rq);
             } else if (rq.auth != null) {
               synchronized(failed) {
                 while (failed.size() >= FAILED_SIZE)
@@ -235,33 +232,39 @@ public class ConnectionHandler extends Thread {
     }
   }
 
-  JsonMessage request(JsonMessage msg, long timeout) {
-    if (conn == null) return null;
-    if (keepAlive && !alive && container instanceof MasterContainer) return null;
-    pending.put(msg.id, msg.id);
-    long deadline = System.currentTimeMillis() + timeout;
-    synchronized(msg.id) {
-      send(msg.toJson());
-      long dt = deadline - System.currentTimeMillis();
-      while (dt > 0) {
-        try {
-          msg.id.wait(dt);
-        } catch (InterruptedException ex) {
-          Thread.currentThread().interrupt();
-        }
-        Object rv = pending.get(msg.id);
-        if (rv instanceof JsonMessage) {
-          pending.remove(msg.id);
-          return (JsonMessage)rv;
-        }
-        dt = deadline - System.currentTimeMillis();
+  CompletableFuture<JsonMessage> requestAsync(JsonMessage msg) {
+    if (conn == null) return CompletableFuture.completedFuture(null);
+    if (keepAlive && !alive && container instanceof MasterContainer) return CompletableFuture.completedFuture(null);
+    CompletableFuture<JsonMessage> future = new CompletableFuture<>();
+    pending.put(msg.id, future);
+    send(msg.toJson());
+    return future;
+  }
+
+  CompletableFuture<JsonMessage> requestAsync(JsonMessage msg, long timeout) {
+    CompletableFuture<JsonMessage> future = requestAsync(msg);
+    if (timeout <= 0 || future.isDone()) return future;
+    ScheduledFuture<?> timeoutTask = timeoutScheduler.schedule(() -> {
+      if (!pending.remove(msg.id, future)) return;
+      future.complete(null);
+      if (keepAlive && alive) {
+        alive = false;
+        log.fine("Connection dead");
+        if (closeOnDead) closeAsync();
       }
-    }
-    pending.remove(msg.id);
-    if (keepAlive && alive) {
-      alive = false;
-      log.fine("Connection dead");
-      if (closeOnDead) close();
+    }, timeout, TimeUnit.MILLISECONDS);
+    future.whenComplete((rsp, ex) -> timeoutTask.cancel(false));
+    return future;
+  }
+
+  JsonMessage request(JsonMessage msg, long timeout) {
+    CompletableFuture<JsonMessage> future = requestAsync(msg, timeout);
+    try {
+      return future.get();
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException ex) {
+      log.log(Level.FINE, "Request failed: "+msg.id, ex.getCause());
     }
     return null;
   }
@@ -272,7 +275,15 @@ public class ConnectionHandler extends Thread {
     conn.close();
     conn = null;
     out = null;
+    pending.forEach((id, future) -> future.complete(null));
+    pending.clear();
     container.connectionClosed(this);
+  }
+
+  private void closeAsync() {
+    Thread t = new Thread(this::close, getName()+":close");
+    t.setDaemon(true);
+    t.start();
   }
 
   boolean isClosed() {
@@ -334,6 +345,8 @@ public class ConnectionHandler extends Thread {
             Collections.addAll(watchList, rq.agentIDs);
           }
           break;
+        default:
+          log.fine("Unknown action: "+rq.action);
       }
     }
 
