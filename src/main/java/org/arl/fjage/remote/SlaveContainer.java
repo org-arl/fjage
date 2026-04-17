@@ -261,7 +261,6 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public String getState() {
     if (!running) return "Not running";
-    String details = port >= 0 ? ":" + port : "@" + baud;
     if (master == null) return "Running, connecting to " + displayhost(hostname, port, baud);
     return "Running, connected to "+ displayhost(hostname, port, baud);
   }
@@ -331,7 +330,6 @@ public class SlaveContainer extends RemoteContainer {
           while (!quit) {
             try {
               tryConnecting();
-              String details = port >= 0 ? ":" + port : "@" + baud;
               log.info("Connected to "+ displayhost(hostname, port, baud));
               while (!quit && !inited) Thread.sleep(100);
               master.start();
@@ -359,10 +357,8 @@ public class SlaveContainer extends RemoteContainer {
     for (AgentID aid: topics.keySet())
       if (!topics.get(aid).isEmpty())
         watchList.add(aid);
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.WANTS_MESSAGES_FOR;
-    rq.agentIDs = new AgentID[watchList.size()];
-    rq.agentIDs = watchList.toArray(rq.agentIDs);
+    JsonMessage rq = JsonMessage.createActionRequest(Action.WANTS_MESSAGES_FOR);
+    rq.agentIDs = watchList.toArray(new AgentID[watchList.size()]);
     String json = rq.toJson();
     if (watchListCache == null || !watchListCache.equals(json)) {
       master.send(json);
