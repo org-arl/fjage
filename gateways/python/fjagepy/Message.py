@@ -1,7 +1,7 @@
 import sys
 import logging
 import keyword
-from typing import Callable, Optional, Any, Dict, Type, TYPE_CHECKING, Union
+from typing import Callable, Optional, Any, Dict, Type, TYPE_CHECKING, Union, get_type_hints
 
 from .AgentID import AgentID
 from .Performative import Performative
@@ -83,6 +83,13 @@ except ImportError:
 
 class Message:
     """Base class for messages transmitted by one agent to another."""
+    msgID: str
+    perf: Performative
+    sender: Optional[AgentID]
+    recipient: Optional[AgentID]
+    inReplyTo: Optional[str]
+    sentAt: Optional[int]
+    __clazz__: str
 
     def __init__(self, in_reply_to_msg: Optional["Message"] = None,
                  perf: Performative = Performative.INFORM, **kwargs):
@@ -92,6 +99,7 @@ class Message:
         self.sender: Optional[AgentID] = None
         self.recipient: Optional[AgentID] = in_reply_to_msg.sender if in_reply_to_msg else None
         self.inReplyTo: Optional[str] = in_reply_to_msg.msgID if in_reply_to_msg else None
+        self.sentAt: Optional[int] = None
 
         if self.__clazz__.endswith('Req') and self.perf == Performative.INFORM:
             self.perf = Performative.REQUEST
@@ -160,11 +168,13 @@ class Message:
             normalized_key = _normalize_field_name(key)
             if normalized_key in ("sender", "recipient") and isinstance(value, str):
                 setattr(rv, normalized_key, AgentID.from_json(value, owner=owner))
+            elif get_type_hints(rv_cls).get(normalized_key) == Optional[AgentID] and isinstance(value, str):
+                setattr(rv, normalized_key, AgentID.from_json(value, owner=owner))
             elif normalized_key == "perf" and isinstance(value, str):
                 setattr(rv, normalized_key, Performative(value))
             elif isinstance(value, list) and f"{key}__isComplex" in json_obj["data"]:
                 is_complex = json_obj["data"].get(f"{key}__isComplex", False)
-                if is_complex:
+                if is_complex and len(value) % 2 == 0:
                     setattr(rv, normalized_key, [complex(value[i], value[i + 1]) for i in range(0, len(value), 2)])
                 else:
                     setattr(rv, normalized_key, value)
@@ -292,6 +302,11 @@ class _GenericObject:
 
 @message('org.arl.fjage.param.ParameterReq')
 class ParameterReq(Message):
+    index: int
+    requests: list[dict]
+    perf: Performative
+    param: Optional[str]
+    value: Optional[Any]
 
     def __init__(self, index=-1, **kwargs):
         super().__init__()
@@ -343,6 +358,11 @@ class ParameterReq(Message):
 
 @message("org.arl.fjage.param.ParameterRsp")
 class ParameterRsp(Message):
+    index: int
+    values: Optional[dict]
+    perf: Performative
+    param: Optional[str]
+    value: Optional[Any]
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -403,6 +423,9 @@ class ParameterRsp(Message):
 
 @message('org.arl.fjage.shell.PutFileReq')
 class PutFileReq(Message):
+    filename: Optional[str]
+    contents: Optional[list[int]]
+    offset: int
 
     def __init__(self, filename: Optional[str] = None, contents: Optional[list[int]] = None,
                  offset: int = 0, **kwargs):
@@ -415,6 +438,9 @@ class PutFileReq(Message):
 
 @message('org.arl.fjage.shell.GetFileReq')
 class GetFileReq(Message):
+    filename: Optional[str]
+    offset: int
+    length: int
 
     def __init__(self, filename: Optional[str] = None, offset: int = 0,
                  length: int = 0, **kwargs):
@@ -427,6 +453,10 @@ class GetFileReq(Message):
 
 @message('org.arl.fjage.shell.ShellExecReq')
 class ShellExecReq(Message):
+    command: Optional[str]
+    script: Optional[str]
+    scriptArgs: Optional[list[str]]
+    ans: bool
 
     def __init__(self, command: Optional[str] = None, script: Optional[str] = None,
                  scriptArgs: Optional[list[str]] = None, ans: bool = False, **kwargs):
