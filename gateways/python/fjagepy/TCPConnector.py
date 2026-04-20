@@ -2,30 +2,28 @@ import socket
 import logging
 import threading
 import time
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional
 
 from .Connector import Connector
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+
+
 class TCPConnector(Connector):
     """Simple TCP connector using synchronous sockets."""
 
-    def __init__(
-        self,
-        host: str,
-        port: int,
-        reconnect_delay: float = 2.0,
-    ):
-        if not host or not isinstance(host, str):
+    def __init__(self, **kwargs: Any ):
+        self.host = kwargs.get("host")
+        if not self.host or not isinstance(self.host, str) or self.host.strip() == "":
             raise ValueError("host must be a non-empty string")
-        if not isinstance(port, int) or not (0 < port < 65536):
+        self.port:int = kwargs.get("port", 0)
+        if not isinstance(self.port, int) or not (0 < self.port < 65536):
             raise ValueError("port must be an integer 1-65535")
-
-        self.host = host
-        self.port = port
-        self.reconnect_delay = reconnect_delay
+        self.reconnect_delay:int = kwargs.get("reconnect_delay", -2)
+        if not isinstance(self.reconnect_delay, (int, float)) or self.reconnect_delay < -1:
+            raise ValueError("reconnect_delay must be a non-negative number or -1 for no reconnect")
 
         # Socket and connection state
         self._socket: Optional[socket.socket] = None
@@ -99,7 +97,10 @@ class TCPConnector(Connector):
                 self._cleanup_socket()
                 raise ConnectionError(f"Failed to send message: {e}")
 
-    def __str__(self):
+    def __details__(self):
+        return f"{self.host}:{self.port}"
+
+    def __repr__(self):
         return f"TCPConnector(host={self.host}, port={self.port}, connected={self.is_connected()})"
 
     # Internal methods
@@ -118,6 +119,9 @@ class TCPConnector(Connector):
         buffer = ""
 
         try:
+            if not self._socket:
+                return
+
             # Set socket to non-blocking for periodic stop checks
             self._socket.settimeout(0.1)
 

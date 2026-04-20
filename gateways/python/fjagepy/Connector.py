@@ -5,6 +5,10 @@ from typing import Any, Callable, List, Optional
 class Connector(ABC):
     """Abstract base class for fjåge transport connectors."""
 
+    def __init__(self, **kwargs: Any) -> None:
+        """ Initialize the connector with any necessary parameters. Subclasses can define their own parameters as needed. """
+        pass
+
     @abstractmethod
     def connect(self) -> None:
         """Establish the transport connection."""
@@ -38,4 +42,9 @@ class Connector(ABC):
         Args:
             callback: Function that receives a list of messages whenever new data arrives.
         """
+        pass
+
+    @abstractmethod
+    def __details__(self) -> str:
+        """Return a string with details about the connector (e.g., host and port)."""
         pass

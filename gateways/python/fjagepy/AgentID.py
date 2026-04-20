@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional, Any
+from typing import Optional, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .Gateway import Gateway
+    from .Message import Message
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -162,7 +166,7 @@ class AgentID:
         Returns:
             str: string representation of the agent id
         """
-        owner_str = f"Gateway({self.owner.connector.host}:{self.owner.connector.port})" if self.owner else 'none'
+        owner_str = f"Gateway({self.owner.__details__()})" if self.owner else 'none'
         return f"AgentID(name={self.name}, topic={self.topic}, owner={owner_str})"
 
     def _repr_pretty_(self, p, cycle) -> None:
@@ -198,7 +202,7 @@ class AgentID:
 
         # Then we split them into lists based on the prefix. Everything before the
         # final dot is considered a section.
-        sections = {}
+        sections: dict = {}
         for param in param_names:
             if '.' in param:
                 section, subparam = param.rsplit('.', 1)

@@ -23,5 +23,8 @@ testpaths = ["test"]
 addopts = "-ra -q"
 
 [project.optional-dependencies]
-dev = ["pytest==8.3.5", "numpy==2.3.0", ]
+dev = ["pytest==8.3.5", "numpy==2.3.0", "mypy==1.19.0"]
 docs = ["sphinx==8.2.3", "sphinx-rtd-theme==3.0.2", "myst-parser==4.0.1"]
+
+[tool.mypy]
+check_untyped_defs = true

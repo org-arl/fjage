@@ -3,7 +3,7 @@ import base64
 import struct
 import logging
 from enum import Enum
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Union
 
 from .AgentID import AgentID
 from .Message import Message
@@ -60,7 +60,7 @@ class JSONMessage:
                         logger.warning(f"Unknown attribute '{k}' in JSONMessage")
 
 
-    def _decode_base64(self, obj: dict) -> dict:
+    def _decode_base64(self, obj: dict) -> Union[dict, list]:
         if (
             isinstance(obj, dict)
             and obj.get("clazz", "").startswith("[")
@@ -138,7 +138,7 @@ class JSONMessage:
         return jm
 
     @staticmethod
-    def createAgentForService(service: str) -> "JSONMessage":
+    def createAgentForService(service: str | Enum) -> "JSONMessage":
         if not isinstance(service, str) or not service:
             raise ValueError("service must be a non-empty string")
         jm = JSONMessage()
@@ -147,7 +147,7 @@ class JSONMessage:
         return jm
 
     @staticmethod
-    def createAgentsForService(service: str) -> "JSONMessage":
+    def createAgentsForService(service: str | Enum) -> "JSONMessage":
         if not isinstance(service, str) or not service:
             raise ValueError("service must be a non-empty string")
         jm = JSONMessage()

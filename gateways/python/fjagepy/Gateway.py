@@ -16,7 +16,6 @@ from .JSONMessage import JSONMessage, Actions
 from .Message import Message
 from .Utils import UUID7
 
-DEFAULT_RECONNECT_DELAY = 2.0  # seconds
 DEFAULT_MAX_QUEUE_SIZE = 512
 
 logger = logging.getLogger(__name__)
@@ -66,10 +65,10 @@ class Gateway:
         self._pending_actions = ThreadSafeDict()
         self._pending_requests = ThreadSafeDict()
         self._queue = ThreadSafeDeque(maxlen=DEFAULT_MAX_QUEUE_SIZE)
-        self._subscriptions = dict()
+        self._subscriptions:dict[AgentID, bool] = dict()
         self._timeout = timeout
         self.aid = AgentID("gateway-" + str(uuid.uuid4()), owner=self)
-        self.connector = connector(hostname, port, -1 if not reconnect else DEFAULT_RECONNECT_DELAY)
+        self.connector = connector(host=hostname, port=port, reconnect_delay=5 if reconnect else -1)
         self.connector.set_receive_callback(self._msg_rx)
         try :
             self.connector.connect()
@@ -321,18 +320,18 @@ class Gateway:
                     rsp.inResponseTo = json_msg.action
                     if json_msg.action == Actions.AGENTS.value:
                         rsp.agentIDs = [self.aid]
+                        self._msg_tx(rsp)
                     elif json_msg.action == Actions.CONTAINS_AGENT.value:
                         rsp.answer = json_msg.agentID == self.aid
+                        self._msg_tx(rsp)
                     elif json_msg.action == Actions.SERVICES.value:
                         rsp.services = []
+                        self._msg_tx(rsp)
                     elif json_msg.action == Actions.AGENT_FOR_SERVICE.value:
                         rsp.agentID = None
+                        self._msg_tx(rsp)
                     elif json_msg.action == Actions.AGENTS_FOR_SERVICE.value:
                         rsp.agentIDs = []
-                    else:
-                        rsp = None
-
-                    if rsp:
                         self._msg_tx(rsp)
 
             except Exception as e:
@@ -351,7 +350,7 @@ class Gateway:
         logger.debug(f">>> {json_str}")
         self.connector.send(json_str)
 
-    def _msg_tx_rx(self, json_msg: JSONMessage, timeout: int = None) -> Optional[JSONMessage]:
+    def _msg_tx_rx(self, json_msg: JSONMessage, timeout: Optional[int] = None) -> Optional[JSONMessage]:
         """Sends a JSONMessage and waits for a response.
 
         Args:
@@ -408,8 +407,11 @@ class Gateway:
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.close()
 
+    def __details__(self):
+        return f"(host:{self.connector.__details__()} connected={self.is_connected()})"
+
     def __str__(self) -> str:
-        return f"Gateway(hostname={self.connector.host} port={self.connector.port} connected={self.is_connected()})"
+        return f"Gateway(self.__details__())"
 
     def _repr_pretty_(self, p, cycle):
         p.text(str(self) if not cycle else '...')
@@ -489,9 +491,13 @@ class ThreadSafeDeque(MutableSequence):
         with self._lock:
             self._dq.appendleft(item)
 
-    def pop(self):
+    def pop(self, index: int = -1):
         with self._lock:
-            return self._dq.pop()
+            if index == -1:
+                return self._dq.pop()
+            item = self._dq[index]
+            del self._dq[index]
+            return item
 
     def popleft(self):
         with self._lock:
