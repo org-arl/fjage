@@ -1,7 +1,7 @@
 import sys
 import logging
 import keyword
-from typing import Callable, Optional, Any, Dict, Type, TYPE_CHECKING, Union, get_type_hints
+from typing import Callable, Optional, Any, Dict, TYPE_CHECKING, Union, get_type_hints, overload
 
 from .AgentID import AgentID
 from .Performative import Performative
@@ -69,7 +69,7 @@ def _instantiate_message(class_: type["Message"]) -> "Message":
 try:
     import numpy
 
-    def _serialize_numpy_array(value: Any, key: str, props: Dict) -> list:
+    def _serialize_numpy_array(value: numpy.ndarray, key: str, props: Dict):
         """Convert a numpy array to a JSON-serializable dict, mark complex arrays."""
         if numpy.iscomplexobj(value):
             props[f"{key}__isComplex"] = True
@@ -78,7 +78,7 @@ try:
 
 except ImportError:
     numpy = None
-    def _serialize_numpy_array(value: Any, key: str, props: Dict) -> Any:
+    def _serialize_numpy_array(value: numpy.ndarray, key: str, props: Dict):
         return value
 
 class Message:
@@ -108,14 +108,14 @@ class Message:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    def __getattribute__(self, name):
+    def __getattr__(self, name):
         # Deal with attributes that are keywords in Python
         # by allowing them to be accessed with  a trailing underscore
         # e.g., msg.from --> msg.from_
         normalized_name = _normalize_field_name(name)
         if normalized_name != name:
-            return object.__getattribute__(self, normalized_name)
-        return object.__getattribute__(self, name)
+            return getattr(self, normalized_name)
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
         object.__setattr__(self, _normalize_field_name(name), value)
@@ -219,7 +219,7 @@ class GenericMessage(Message):
         self.__clazz__ = "org.arl.fjage.GenericMessage"
 
 
-def MessageClass(name: str, parent: Type[Message] = Message) -> Type[Message]:
+def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
     """Creates an unqualified message class based on a fully qualified name.
 
     Args:
@@ -242,14 +242,19 @@ def MessageClass(name: str, parent: Type[Message] = Message) -> Type[Message]:
     class_ = type(sname, (parent,), {"__init__": __init__})
     return _register_message_class(class_, name)
 
+@overload
+def message(arg: type[Message]) -> type[Message]: ...
 
-def message(arg: Optional[str] = None) -> Union[Type[Message], Callable[..., Type[Message]]]:
+@overload
+def message(arg: str) -> Callable[[type[Message]], type[Message]]: ...
+
+def message(arg: Optional[str] = None) -> Union[type[Message], Callable[..., type[Message]]]:
     """Decorator to register a Message subclass for JSON inflation.
 
     Can be used as ``@message`` or ``@message('org.example.MyMessage')``.
     """
 
-    def decorate(class_: Type["Message"], fqcn: Optional[str] = None) -> Type["Message"]:
+    def decorate(class_: type["Message"], fqcn: Optional[str] = None) -> type["Message"]:
         if not issubclass(class_, Message):
             raise TypeError('@message can only be used with Message subclasses')
 
@@ -260,7 +265,7 @@ def message(arg: Optional[str] = None) -> Union[Type[Message], Callable[..., Typ
     if isinstance(arg, type):
         return decorate(arg)
 
-    def decorator(class_: Type["Message"]) -> Type["Message"]:
+    def decorator(class_: type["Message"]) -> type["Message"]:
         return decorate(class_, arg)
 
     return decorator

@@ -73,7 +73,7 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">keyword</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">get_type_hints</span><span class="p">,</span> <span class="n">overload</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.AgentID</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentID</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.Performative</span><span class="w"> </span><span class="kn">import</span> <span class="n">Performative</span>
@@ -85,7 +85,7 @@
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
 
-<span class="n">_MESSAGE_REGISTRY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">_MESSAGE_REGISTRY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_field_name</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -97,13 +97,13 @@
     <span class="k">return</span> <span class="n">name</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_message_clazz</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_message_clazz</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="n">clazz_name</span> <span class="o">=</span> <span class="n">class_</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;__clazz__&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">clazz_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">clazz_name</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">clazz_name</span>
     <span class="k">return</span> <span class="s2">&quot;org.arl.fjage.Message&quot;</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_register_message_class</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">],</span> <span class="n">fqcn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_register_message_class</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">],</span> <span class="n">fqcn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">]:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">Message</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;@message can only be used with Message subclasses&#39;</span><span class="p">)</span>
 
@@ -126,7 +126,7 @@
 
     <span class="k">return</span> <span class="n">class_</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_instantiate_message</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;Message&quot;</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_instantiate_message</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;Message&quot;</span><span class="p">:</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">class_</span><span class="p">()</span>
     <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
@@ -141,7 +141,7 @@
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_serialize_numpy_array</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">props</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_serialize_numpy_array</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">props</span><span class="p">:</span> <span class="n">Dict</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a numpy array to a JSON-serializable dict, mark complex arrays.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">iscomplexobj</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
             <span class="n">props</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">__isComplex&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -150,13 +150,20 @@
 
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">numpy</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_serialize_numpy_array</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">props</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_serialize_numpy_array</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">props</span><span class="p">:</span> <span class="n">Dict</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">value</span>
 
 <div class="viewcode-block" id="Message">
 <a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.Message">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Message</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for messages transmitted by one agent to another.&quot;&quot;&quot;</span>
+    <span class="n">msgID</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">perf</span><span class="p">:</span> <span class="n">Performative</span>
+    <span class="n">sender</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AgentID</span><span class="p">]</span>
+    <span class="n">recipient</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AgentID</span><span class="p">]</span>
+    <span class="n">inReplyTo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">sentAt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">__clazz__</span><span class="p">:</span> <span class="nb">str</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_reply_to_msg</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">perf</span><span class="p">:</span> <span class="n">Performative</span> <span class="o">=</span> <span class="n">Performative</span><span class="o">.</span><span class="n">INFORM</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -166,6 +173,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AgentID</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">recipient</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AgentID</span><span class="p">]</span> <span class="o">=</span> <span class="n">in_reply_to_msg</span><span class="o">.</span><span class="n">sender</span> <span class="k">if</span> <span class="n">in_reply_to_msg</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inReplyTo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">in_reply_to_msg</span><span class="o">.</span><span class="n">msgID</span> <span class="k">if</span> <span class="n">in_reply_to_msg</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sentAt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__clazz__</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;Req&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">perf</span> <span class="o">==</span> <span class="n">Performative</span><span class="o">.</span><span class="n">INFORM</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">perf</span> <span class="o">=</span> <span class="n">Performative</span><span class="o">.</span><span class="n">REQUEST</span>
@@ -174,14 +182,14 @@
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="c1"># Deal with attributes that are keywords in Python</span>
         <span class="c1"># by allowing them to be accessed with  a trailing underscore</span>
         <span class="c1"># e.g., msg.from --&gt; msg.from_</span>
         <span class="n">normalized_name</span> <span class="o">=</span> <span class="n">_normalize_field_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">normalized_name</span> <span class="o">!=</span> <span class="n">name</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">normalized_name</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">normalized_name</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&#39; object has no attribute &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_normalize_field_name</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="n">value</span><span class="p">)</span>
@@ -196,7 +204,7 @@
             <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
                 <span class="k">continue</span>
             <span class="n">wire_key</span> <span class="o">=</span> <span class="n">_normalize_field_name</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">AgentID</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;to_json&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;to_json&quot;</span><span class="p">)):</span>
                 <span class="n">props</span><span class="p">[</span><span class="n">wire_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
             <span class="k">elif</span> <span class="n">numpy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
                 <span class="n">props</span><span class="p">[</span><span class="n">wire_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_serialize_numpy_array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">wire_key</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
@@ -234,11 +242,13 @@
             <span class="n">normalized_key</span> <span class="o">=</span> <span class="n">_normalize_field_name</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">normalized_key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;sender&quot;</span><span class="p">,</span> <span class="s2">&quot;recipient&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="nb">setattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="n">normalized_key</span><span class="p">,</span> <span class="n">AgentID</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="n">owner</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">get_type_hints</span><span class="p">(</span><span class="n">rv_cls</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">normalized_key</span><span class="p">)</span> <span class="o">==</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AgentID</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="n">normalized_key</span><span class="p">,</span> <span class="n">AgentID</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="n">owner</span><span class="p">))</span>
             <span class="k">elif</span> <span class="n">normalized_key</span> <span class="o">==</span> <span class="s2">&quot;perf&quot;</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="nb">setattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="n">normalized_key</span><span class="p">,</span> <span class="n">Performative</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">__isComplex&quot;</span> <span class="ow">in</span> <span class="n">json_obj</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]:</span>
                 <span class="n">is_complex</span> <span class="o">=</span> <span class="n">json_obj</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">__isComplex&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">is_complex</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">is_complex</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="nb">setattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="n">normalized_key</span><span class="p">,</span> <span class="p">[</span><span class="nb">complex</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">value</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="mi">2</span><span class="p">)])</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="nb">setattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="n">normalized_key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -286,7 +296,7 @@
 
 <div class="viewcode-block" id="MessageClass">
 <a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.MessageClass">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">MessageClass</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Message</span><span class="p">]</span> <span class="o">=</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">Message</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">MessageClass</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Message</span><span class="p">]</span> <span class="o">=</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">Message</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates an unqualified message class based on a fully qualified name.</span>
 
 <span class="sd">    Args:</span>
@@ -310,16 +320,21 @@
     <span class="k">return</span> <span class="n">_register_message_class</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
 
 
+<span class="nd">@overload</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">message</span><span class="p">(</span><span class="n">arg</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Message</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">Message</span><span class="p">]:</span> <span class="o">...</span>
+
+<span class="nd">@overload</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">message</span><span class="p">(</span><span class="n">arg</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">type</span><span class="p">[</span><span class="n">Message</span><span class="p">]],</span> <span class="nb">type</span><span class="p">[</span><span class="n">Message</span><span class="p">]]:</span> <span class="o">...</span>
 
 <div class="viewcode-block" id="message">
 <a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.message">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">message</span><span class="p">(</span><span class="n">arg</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">Message</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">type</span><span class="p">[</span><span class="n">Message</span><span class="p">]]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">message</span><span class="p">(</span><span class="n">arg</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">type</span><span class="p">[</span><span class="n">Message</span><span class="p">]]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to register a Message subclass for JSON inflation.</span>
 
 <span class="sd">    Can be used as ``@message`` or ``@message(&#39;org.example.MyMessage&#39;)``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">decorate</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">],</span> <span class="n">fqcn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decorate</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">],</span> <span class="n">fqcn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">]:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">Message</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;@message can only be used with Message subclasses&#39;</span><span class="p">)</span>
 
@@ -330,7 +345,7 @@
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">decorate</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;Message&quot;</span><span class="p">]:</span>
         <span class="k">return</span> <span class="n">decorate</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">decorator</span></div>
@@ -375,6 +390,11 @@
 <a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.ParameterReq">[docs]</a>
 <span class="nd">@message</span><span class="p">(</span><span class="s1">&#39;org.arl.fjage.param.ParameterReq&#39;</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ParameterReq</span><span class="p">(</span><span class="n">Message</span><span class="p">):</span>
+    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">requests</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span>
+    <span class="n">perf</span><span class="p">:</span> <span class="n">Performative</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -435,6 +455,11 @@
 <a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.ParameterRsp">[docs]</a>
 <span class="nd">@message</span><span class="p">(</span><span class="s2">&quot;org.arl.fjage.param.ParameterRsp&quot;</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ParameterRsp</span><span class="p">(</span><span class="n">Message</span><span class="p">):</span>
+    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">values</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span>
+    <span class="n">perf</span><span class="p">:</span> <span class="n">Performative</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -473,7 +498,7 @@
 
 <div class="viewcode-block" id="ParameterRsp.parameters">
 <a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.ParameterRsp.parameters">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all parameters in the response as a dictionary.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;values&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -504,6 +529,9 @@
 <a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.PutFileReq">[docs]</a>
 <span class="nd">@message</span><span class="p">(</span><span class="s1">&#39;org.arl.fjage.shell.PutFileReq&#39;</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PutFileReq</span><span class="p">(</span><span class="n">Message</span><span class="p">):</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">contents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>
+    <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">contents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -519,6 +547,9 @@
 <a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.GetFileReq">[docs]</a>
 <span class="nd">@message</span><span class="p">(</span><span class="s1">&#39;org.arl.fjage.shell.GetFileReq&#39;</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">GetFileReq</span><span class="p">(</span><span class="n">Message</span><span class="p">):</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">length</span><span class="p">:</span> <span class="nb">int</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
                  <span class="n">length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -534,6 +565,10 @@
 <a class="viewcode-back" href="../../api/fjagepy.html#fjagepy.ShellExecReq">[docs]</a>
 <span class="nd">@message</span><span class="p">(</span><span class="s1">&#39;org.arl.fjage.shell.ShellExecReq&#39;</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ShellExecReq</span><span class="p">(</span><span class="n">Message</span><span class="p">):</span>
+    <span class="n">command</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">script</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">scriptArgs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+    <span class="n">ans</span><span class="p">:</span> <span class="nb">bool</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">script</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">scriptArgs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ans</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
