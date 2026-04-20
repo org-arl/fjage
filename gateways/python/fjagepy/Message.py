@@ -31,7 +31,7 @@ def _message_clazz(class_: type["Message"]) -> str:
         return clazz_name
     return "org.arl.fjage.Message"
 
-def _register_message_class(class_: Type["Message"], fqcn: Optional[str] = None) -> Type["Message"]:
+def _register_message_class(class_: type["Message"], fqcn: Optional[str] = None) -> type["Message"]:
     if not issubclass(class_, Message):
         raise TypeError('@message can only be used with Message subclasses')
 
