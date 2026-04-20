@@ -34,7 +34,7 @@ public class BasicTests {
   private static final int DELAY = 1000;
 
   private final Random rnd = new Random();
-  private final Logger log = Logger.getLogger(getClass().getName());
+  private static final Logger log = Logger.getLogger(BasicTests.class.getName());
 
   @Before
   public void beforeTesting() {
