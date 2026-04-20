@@ -66,8 +66,8 @@ class fjagejsTest {
     def ret = 0
     def sout, serr;
     if (System.getProperty('manualJSTest') == null){
-      // Run Jasmine based test in puppeteer.
-      println "Running automated tests using puppeteer"
+      // Run Jasmine based test in playwright.
+      println "Running automated tests using playwright"
       def cmd = System.properties['os.name'].toLowerCase().contains("windows") ? "npm.cmd" : "npm"
       def proc = [cmd, '--prefix', 'gateways/js/', 'run', 'test'].execute()
       sout = new StringBuilder()

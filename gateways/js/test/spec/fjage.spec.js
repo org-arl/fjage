@@ -132,7 +132,8 @@ describe('A Gateway', function () {
 
   it('should close the socket when close is called on it', async function () {
     const gw = new Gateway(gwOpts);
-    await delay(300);
+    await delay(700);
+    expect(gw.connected).toBe(true);
     gw.close();
     await delay(300);
     expect([gw.connector.sock.CLOSED, 'closed']).toContain(gw.connector.sock.readyState);
