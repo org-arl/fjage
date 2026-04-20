@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-_MESSAGE_REGISTRY: Dict[str, Type["Message"]] = {}
+_MESSAGE_REGISTRY: Dict[str, type["Message"]] = {}
 
 
 def _normalize_field_name(name: str) -> str:
