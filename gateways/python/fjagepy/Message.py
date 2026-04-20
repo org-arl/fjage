@@ -54,7 +54,7 @@ def _register_message_class(class_: Type["Message"], fqcn: Optional[str] = None)
 
     return class_
 
-def _instantiate_message(class_: Type["Message"]) -> "Message":
+def _instantiate_message(class_: type["Message"]) -> "Message":
     try:
         return class_()
     except TypeError:
