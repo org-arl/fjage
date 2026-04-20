@@ -396,7 +396,7 @@ class ParameterRsp(Message):
                     return _value(self.values[v])
         return None
 
-    def parameters(self) -> dict[str, any]:
+    def parameters(self) -> dict[str, Any]:
         """Get all parameters in the response as a dictionary."""
         if 'values' in self.__dict__ and self.values is not None:
             p = self.values.copy()
