@@ -14,7 +14,26 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 _MESSAGE_REGISTRY: Dict[str, type["Message"]] = {}
+_NUMPY_AVAILABLE:bool = False
 
+# Attempt to import numpy for array handling
+# If numpy is not available, we don't need to
+# handle numpy arrays in Message
+try:
+    import numpy
+    _NUMPY_AVAILABLE = True
+
+    def _serialize_numpy_array(value: numpy.ndarray, key: str, props: Dict):
+        """Convert a numpy array to a JSON-serializable dict, mark complex arrays."""
+        if numpy.iscomplexobj(value):
+            props[f"{key}__isComplex"] = True
+            return numpy.vstack((value.real, value.imag)).reshape((-1,), order='F').tolist()
+        return value.tolist()
+
+except ImportError:
+    _NUMPY_AVAILABLE = False
+    def _serialize_numpy_array(value: numpy.ndarray, key: str, props: Dict):
+        return value
 
 def _normalize_field_name(name: str) -> str:
     """
@@ -62,24 +81,6 @@ def _instantiate_message(class_: type["Message"]) -> "Message":
         if isinstance(instance, Message):
             Message.__init__(instance)
         return instance
-
-# Attempt to import numpy for array handling
-# If numpy is not available, we don't need to
-# handle numpy arrays in Message
-try:
-    import numpy
-
-    def _serialize_numpy_array(value: numpy.ndarray, key: str, props: Dict):
-        """Convert a numpy array to a JSON-serializable dict, mark complex arrays."""
-        if numpy.iscomplexobj(value):
-            props[f"{key}__isComplex"] = True
-            return numpy.vstack((value.real, value.imag)).reshape((-1,), order='F').tolist()
-        return value.tolist()
-
-except ImportError:
-    numpy = None
-    def _serialize_numpy_array(value: numpy.ndarray, key: str, props: Dict):
-        return value
 
 class Message:
     """Base class for messages transmitted by one agent to another."""
@@ -132,7 +133,7 @@ class Message:
             wire_key = _normalize_field_name(key)
             if hasattr(value, "to_json") and callable(getattr(value, "to_json")):
                 props[wire_key] = value.to_json()
-            elif numpy is not None and isinstance(value, numpy.ndarray):
+            elif _NUMPY_AVAILABLE is True and isinstance(value, numpy.ndarray):
                 props[wire_key] = _serialize_numpy_array(value, wire_key, props)
             else:
                 props[wire_key] = value
@@ -248,7 +249,7 @@ def message(arg: type[Message]) -> type[Message]: ...
 @overload
 def message(arg: str) -> Callable[[type[Message]], type[Message]]: ...
 
-def message(arg: Optional[str] = None) -> Union[type[Message], Callable[..., type[Message]]]:
+def message(arg: type[Message] | str)  -> Union[type[Message], Callable[..., type[Message]]]:
     """Decorator to register a Message subclass for JSON inflation.
 
     Can be used as ``@message`` or ``@message('org.example.MyMessage')``.

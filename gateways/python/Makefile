@@ -1,8 +1,11 @@
-docs:
-	sphinx-build docs ../../docs/pydocs/
-
 build: docs
 	PIP_USER=0 python3 -m build
+
+docs: lint
+	sphinx-build docs ../../docs/pydocs/
+
+lint:
+	mypy -p fjagepy
 
 testupload: build
 	twine upload --verbose --repository testpypi dist/*

@@ -12,7 +12,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../_static/documentation_options.js?v=20623aea"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -88,7 +88,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.Message</span><span class="w"> </span><span class="kn">import</span> <span class="n">Message</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.Utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">UUID7</span>
 
-<span class="n">DEFAULT_RECONNECT_DELAY</span> <span class="o">=</span> <span class="mf">2.0</span>  <span class="c1"># seconds</span>
 <span class="n">DEFAULT_MAX_QUEUE_SIZE</span> <span class="o">=</span> <span class="mi">512</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -140,10 +139,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_pending_actions</span> <span class="o">=</span> <span class="n">ThreadSafeDict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pending_requests</span> <span class="o">=</span> <span class="n">ThreadSafeDict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span> <span class="o">=</span> <span class="n">ThreadSafeDeque</span><span class="p">(</span><span class="n">maxlen</span><span class="o">=</span><span class="n">DEFAULT_MAX_QUEUE_SIZE</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_subscriptions</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_subscriptions</span><span class="p">:</span><span class="nb">dict</span><span class="p">[</span><span class="n">AgentID</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span> <span class="o">=</span> <span class="n">timeout</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aid</span> <span class="o">=</span> <span class="n">AgentID</span><span class="p">(</span><span class="s2">&quot;gateway-&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span> <span class="n">owner</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">connector</span> <span class="o">=</span> <span class="n">connector</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">reconnect</span> <span class="k">else</span> <span class="n">DEFAULT_RECONNECT_DELAY</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connector</span> <span class="o">=</span> <span class="n">connector</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span> <span class="n">reconnect_delay</span><span class="o">=</span><span class="mi">5</span> <span class="k">if</span> <span class="n">reconnect</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">set_receive_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_msg_rx</span><span class="p">)</span>
         <span class="k">try</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -452,18 +451,18 @@
                     <span class="n">rsp</span><span class="o">.</span><span class="n">inResponseTo</span> <span class="o">=</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span>
                     <span class="k">if</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">Actions</span><span class="o">.</span><span class="n">AGENTS</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
                         <span class="n">rsp</span><span class="o">.</span><span class="n">agentIDs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">aid</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx</span><span class="p">(</span><span class="n">rsp</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">Actions</span><span class="o">.</span><span class="n">CONTAINS_AGENT</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
                         <span class="n">rsp</span><span class="o">.</span><span class="n">answer</span> <span class="o">=</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">agentID</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">aid</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx</span><span class="p">(</span><span class="n">rsp</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">Actions</span><span class="o">.</span><span class="n">SERVICES</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
                         <span class="n">rsp</span><span class="o">.</span><span class="n">services</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx</span><span class="p">(</span><span class="n">rsp</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">Actions</span><span class="o">.</span><span class="n">AGENT_FOR_SERVICE</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
                         <span class="n">rsp</span><span class="o">.</span><span class="n">agentID</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx</span><span class="p">(</span><span class="n">rsp</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">json_msg</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="n">Actions</span><span class="o">.</span><span class="n">AGENTS_FOR_SERVICE</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
                         <span class="n">rsp</span><span class="o">.</span><span class="n">agentIDs</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">rsp</span> <span class="o">=</span> <span class="kc">None</span>
-
-                    <span class="k">if</span> <span class="n">rsp</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_msg_tx</span><span class="p">(</span><span class="n">rsp</span><span class="p">)</span>
 
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -482,7 +481,7 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&gt;&gt;&gt; </span><span class="si">{</span><span class="n">json_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json_str</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_msg_tx_rx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_msg</span><span class="p">:</span> <span class="n">JSONMessage</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">JSONMessage</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_msg_tx_rx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_msg</span><span class="p">:</span> <span class="n">JSONMessage</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">JSONMessage</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a JSONMessage and waits for a response.</span>
 
 <span class="sd">        Args:</span>
@@ -545,8 +544,11 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">__details__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(host:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">__details__</span><span class="p">()</span><span class="si">}</span><span class="s2"> connected=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">is_connected</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Gateway(hostname=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">host</span><span class="si">}</span><span class="s2"> port=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">port</span><span class="si">}</span><span class="s2"> connected=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">is_connected</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Gateway(self.__details__())&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">):</span>
         <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">cycle</span> <span class="k">else</span> <span class="s1">&#39;...&#39;</span><span class="p">)</span></div>
@@ -627,9 +629,13 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_dq</span><span class="o">.</span><span class="n">appendleft</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dq</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dq</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dq</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dq</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">item</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">popleft</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>

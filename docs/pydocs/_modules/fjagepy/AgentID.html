@@ -12,7 +12,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../_static/documentation_options.js?v=20623aea"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -73,7 +73,11 @@
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.Gateway</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gateway</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.Message</span><span class="w"> </span><span class="kn">import</span> <span class="n">Message</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
@@ -251,7 +255,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            str: string representation of the agent id</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">owner_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Gateway(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">owner</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">owner</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">port</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">owner</span> <span class="k">else</span> <span class="s1">&#39;none&#39;</span>
+        <span class="n">owner_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Gateway(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">owner</span><span class="o">.</span><span class="n">__details__</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">owner</span> <span class="k">else</span> <span class="s1">&#39;none&#39;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;AgentID(name=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, topic=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">topic</span><span class="si">}</span><span class="s2">, owner=</span><span class="si">{</span><span class="n">owner_str</span><span class="si">}</span><span class="s2">)&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_repr_pretty_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">cycle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -287,7 +291,7 @@
 
         <span class="c1"># Then we split them into lists based on the prefix. Everything before the</span>
         <span class="c1"># final dot is considered a section.</span>
-        <span class="n">sections</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">sections</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">param_names</span><span class="p">:</span>
             <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">param</span><span class="p">:</span>
                 <span class="n">section</span><span class="p">,</span> <span class="n">subparam</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
