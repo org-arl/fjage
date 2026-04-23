@@ -240,32 +240,25 @@ class AgentID:
         new_aid._timeout = self._timeout
         return new_aid
 
-# Magic methods to support dynamic parameter access using dot notation
+    # Magic methods to support dynamic parameter access using dot notation
+    def __getattr__(self, param: str) -> None | Any:
+        if param in ['name', 'owner', 'topic', 'index', '_timeout'] or param.startswith('_ipython'):
+            return self.__dict__[param]
 
-def __getter(self, param: str) -> None | Any:
-    if param in ['name', 'owner', 'topic', 'index', '_timeout'] or param.startswith('_ipython'):
-        return self.__dict__[param]
+        from .Message import ParameterReq
 
-    from .Message import ParameterReq
+        rsp = self.request(ParameterReq(index=self.index).get(param))
+        if rsp is None or 'param' not in rsp.__dict__ or 'value' not in rsp.__dict__:
+            return None
+        return rsp.__dict__.get('value', None)
 
-    rsp = self.request(ParameterReq(index=self.index).get(param))
-    if rsp is None or 'param' not in rsp.__dict__ or 'value' not in rsp.__dict__:
-        return None
-    return rsp.__dict__.get('value', None)
+    def __setattr__(self, param : str, value : Any) -> Any | None:
+        if param in ['name', 'owner', 'topic', 'index', '_timeout']:
+            self.__dict__[param] = value
+            return value
 
-
-setattr(AgentID, '__getattr__', __getter)
-
-
-def __setter(self, param : str, value : Any) -> Any | None:
-    if param in ['name', 'owner', 'topic', 'index', '_timeout']:
-        self.__dict__[param] = value
-        return value
-
-    from .Message import ParameterReq
-    rsp = self.request(ParameterReq(index=self.index).set(param, value))
-    if rsp is None or 'param' not in rsp.__dict__ or 'value' not in rsp.__dict__:
-        return None
-    return rsp.__dict__.get('value', None)
-
-setattr(AgentID, '__setattr__', __setter)
+        from .Message import ParameterReq
+        rsp = self.request(ParameterReq(index=self.index).set(param, value))
+        if rsp is None or 'param' not in rsp.__dict__ or 'value' not in rsp.__dict__:
+            return None
+        return rsp.__dict__.get('value', None)
