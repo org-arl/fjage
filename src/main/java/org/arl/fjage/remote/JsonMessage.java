@@ -11,8 +11,10 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.util.Date;
+import java.util.Objects;
 import java.time.Instant;
 import java.time.Duration;
+import java.util.UUID;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
@@ -77,6 +79,14 @@ public class JsonMessage {
 
   public String toJson() {
     return gson.toJson(this);
+  }
+
+  static JsonMessage createActionRequest(Action action) {
+    Objects.requireNonNull(action, "action must not be null");
+    final JsonMessage msg = new JsonMessage();
+    msg.id = UUID.randomUUID().toString();
+    msg.action = action;
+    return msg;
   }
 
 }
