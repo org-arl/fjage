@@ -1,4 +1,5 @@
 import inspect
+import pytest
 
 from fjagepy import Message, AgentID, Performative, MessageClass, message
 
@@ -81,7 +82,7 @@ def test_messageclass_name_req():
 
 def test_message_encode_numpy_array():
     """Message should encode numpy arrays correctly."""
-    import numpy as np
+    np = pytest.importorskip("numpy")
     arr = np.array([1, 2, 3])
     msg = Message()
     msg.data = arr
@@ -91,7 +92,7 @@ def test_message_encode_numpy_array():
 
 def test_message_encode_complex_array():
     """Message should encode complex arrays correctly."""
-    import numpy as np
+    np = pytest.importorskip("numpy")
     arr = np.array([1+2j, 3+4j, 5+6j])
     msg = Message()
     msg.data = arr
