@@ -32,8 +32,6 @@ try:
 
 except ImportError:
     _NUMPY_AVAILABLE = False
-    def _serialize_numpy_array(value: numpy.ndarray, key: str, props: Dict):
-        return value
 
 def _normalize_field_name(name: str) -> str:
     """
