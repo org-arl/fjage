@@ -5,7 +5,7 @@ docs: lint
 	sphinx-build docs ../../docs/pydocs/
 
 lint:
-	mypy -p fjagepy
+	python3 -m mypy fjagepy
 
 testupload: build
 	twine upload --verbose --repository testpypi dist/*

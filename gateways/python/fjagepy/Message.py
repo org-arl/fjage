@@ -20,7 +20,7 @@ _NUMPY_AVAILABLE:bool = False
 # If numpy is not available, we don't need to
 # handle numpy arrays in Message
 try:
-    import numpy
+    import numpy # type: ignore[import-not-found]
     _NUMPY_AVAILABLE = True
 
     def _serialize_numpy_array(value: numpy.ndarray, key: str, props: Dict):
