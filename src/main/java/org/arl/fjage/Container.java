@@ -50,9 +50,9 @@ public class Container {
   protected Map<AgentID,Set<Agent>> topics = new HashMap<>();
   protected Map<String,Set<AgentID>> services = new HashMap<>();
   protected Logger log = Logger.getLogger(getClass().getName());
-  protected boolean running = false;
+  protected volatile boolean running = false;
   protected boolean initing = false;
-  protected boolean inited = false;
+  protected volatile boolean inited = false;
   protected Object cloner;
   protected Method doClone;
   protected boolean autoclone = false;
