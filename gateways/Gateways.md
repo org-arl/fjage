@@ -52,7 +52,7 @@ All gateway agents should use names prefixed with `gateway-`.
 - Must not **block** if timeout is 0.
 - Must **block** indefinitely if timeout is -1.
 - Must **block** for timeout milliseconds otherwise.
-- Must default timeout to 0 millisecond if not specified.
+- Must default timeout to 0 milliseconds if not specified.
 
 ### `request()` :: Message, (Int timeout) -> Message
 
@@ -60,24 +60,24 @@ All gateway agents should use names prefixed with `gateway-`.
 - Must not **block** if timeout is 0.
 - Must **block** indefinitely if timeout is -1.
 - Must **block** for timeout milliseconds otherwise.
-- Must default timeout to 1000 millisecond if not specified.
+- Must default timeout to 1000 milliseconds if not specified.
 - The default timeout may be configurable at a Gateway level.
 
 ### `agents()` :: (Int timeout) -> [AgentID]
 
 - Finds all agents visible through the gateway.
-- Must default timeout to 6000 millisecond if not specified.
+- Must default timeout to 6000 milliseconds if not specified.
 - Returns an array/list.
 
 ### `containsAgent()` :: AgentID, (Int timeout) -> Boolean
 
 - Checks if an agent is visible through the gateway.
-- Must default timeout to 6000 millisecond if not specified.
+- Must default timeout to 6000 milliseconds if not specified.
 
 ### `services()` :: (Int timeout) -> [String]
 
 - Finds all services visible through the gateway.
-- Must default timeout to 6000 millisecond if not specified.
+- Must default timeout to 6000 milliseconds if not specified.
 - Returns an array/list.
 
 ### `topic()` :: (AgentID/String topic), (String topic2) -> AgentID
@@ -107,12 +107,12 @@ All gateway agents should use names prefixed with `gateway-`.
 ### `agentForService()` :: String -> AgentID
 
 - Finds an agent that provides a named service.
-- Must default timeout to 6000 millisecond if not specified.
+- Must default timeout to 6000 milliseconds if not specified.
 
 ### `agentsForService()` :: String -> [AgentID]
 
 - Find all agents that provides a named service.
-- Must default timeout to 6000 millisecond if not specified.
+- Must default timeout to 6000 milliseconds if not specified.
 - Returns an array/list.
 
 ### `flush()` :: Void -> Void

@@ -319,7 +319,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   protected void initComplete() {
     runAll(slaves, slave -> {
       if (!slave.isAlive()) slave.start();
-    }, REQUEST_TIMEOUT);
+    }, INIT_COMPLETE_TIMEOUT);
     if (!slaves.isEmpty()) {
       log.fine("Waiting for slaves...");
       boolean allAlive = false;
@@ -350,7 +350,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     runAll(slaves, slave -> {
       slave.send(json);
       slave.close();
-    }, REQUEST_TIMEOUT);
+    }, INIT_COMPLETE_TIMEOUT);
     slaves.clear();
     if (tcpListener != null) {
       tcpListener.close();

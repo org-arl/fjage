@@ -51,7 +51,7 @@ class Gateway:
             port : port of the fjage container. Defaults to 1100.
             connector : Connector class to use. Defaults to TCPConnector.
             reconnect : whether to keep the connection alive. Defaults to True.
-            timeout : default timeout in milliseconds for request() and receive(). Defaults to 1000.
+            timeout : default timeout in milliseconds for request(). Defaults to 1000.
             directory_timeout : default timeout in milliseconds for directory queries. Defaults to 6000.
         """
         if not isinstance(hostname, str) or not hostname:
