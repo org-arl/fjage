@@ -62,6 +62,23 @@ All gateway agents should use names prefixed with `gateway-`.
 - Must **block** for timeout milliseconds otherwise.
 - Must default timeout to 1000 millisecond if not specified.
 
+### `agents()` :: (Int timeout) -> [AgentID]
+
+- Finds all agents visible through the gateway.
+- Must default timeout to 6000 millisecond if not specified.
+- Returns an array/list.
+
+### `containsAgent()` :: AgentID, (Int timeout) -> Boolean
+
+- Checks if an agent is visible through the gateway.
+- Must default timeout to 6000 millisecond if not specified.
+
+### `services()` :: (Int timeout) -> [String]
+
+- Finds all services visible through the gateway.
+- Must default timeout to 6000 millisecond if not specified.
+- Returns an array/list.
+
 ### `topic()` :: (AgentID/String topic), (String topic2) -> AgentID
 
 - Returns an object representing a named notification topic for an agent.
@@ -89,10 +106,12 @@ All gateway agents should use names prefixed with `gateway-`.
 ### `agentForService()` :: String -> AgentID
 
 - Finds an agent that provides a named service.
+- Must default timeout to 6000 millisecond if not specified.
 
 ### `agentsForService()` :: String -> [AgentID]
 
 - Find all agents that provides a named service.
+- Must default timeout to 6000 millisecond if not specified.
 - Returns an array/list.
 
 ### `flush()` :: Void -> Void

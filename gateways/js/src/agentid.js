@@ -3,7 +3,7 @@ import { ParameterReq  } from './message.js';
 import { Gateway } from './gateway.js';  // import Gateway class for type checking. Remove if not needed.
 import { Message } from './message.js';  // import Message class for type checking. Remove if not needed.
 
-const DEFAULT_TIMEOUT = 10000; // Default timeout for non-owned AgentIDs
+const DEFAULT_TIMEOUT = 1000; // Default timeout for non-owned AgentIDs
 
 
 /**

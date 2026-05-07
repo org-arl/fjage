@@ -17,6 +17,8 @@ from .Message import Message
 from .Utils import UUID7
 
 DEFAULT_MAX_QUEUE_SIZE = 512
+DEFAULT_REQUEST_TIMEOUT = 1000
+DEFAULT_DIRECTORY_TIMEOUT = 6000
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -41,7 +43,7 @@ class Gateway:
     NON_BLOCKING = 0
     BLOCKING = -1
 
-    def __init__(self, hostname: str = 'localhost', port: int = 1100, connector: Type[Connector] = TCPConnector, reconnect: bool = True, timeout: int = 10000) -> None:
+    def __init__(self, hostname: str = 'localhost', port: int = 1100, connector: Type[Connector] = TCPConnector, reconnect: bool = True, timeout: int = DEFAULT_REQUEST_TIMEOUT, directory_timeout: int = DEFAULT_DIRECTORY_TIMEOUT) -> None:
         """Creates a new Gateway instance.
 
         Args:
@@ -49,7 +51,8 @@ class Gateway:
             port : port of the fjage container. Defaults to 1100.
             connector : Connector class to use. Defaults to TCPConnector.
             reconnect : whether to keep the connection alive. Defaults to True.
-            timeout : default timeout in milliseconds for requests. Defaults to 10000.
+            timeout : default timeout in milliseconds for request() and receive(). Defaults to 1000.
+            directory_timeout : default timeout in milliseconds for directory queries. Defaults to 6000.
         """
         if not isinstance(hostname, str) or not hostname:
             raise ValueError("hostname must be a non-empty string")
@@ -61,12 +64,15 @@ class Gateway:
             raise ValueError("reconnect must be a boolean")
         if not isinstance(timeout, int) or timeout <= 0:
             raise ValueError("timeout must be a positive integer")
+        if not isinstance(directory_timeout, int) or directory_timeout <= 0:
+            raise ValueError("directory_timeout must be a positive integer")
 
         self._pending_actions = ThreadSafeDict()
         self._pending_requests = ThreadSafeDict()
         self._queue = ThreadSafeDeque(maxlen=DEFAULT_MAX_QUEUE_SIZE)
         self._subscriptions:dict[AgentID, bool] = dict()
         self._timeout = timeout
+        self._directory_timeout = directory_timeout
         self.aid = AgentID("gateway-" + str(uuid.uuid4()), owner=self)
         self.connector = connector(host=hostname, port=port, reconnect_delay=5 if reconnect else -1)
         self.connector.set_receive_callback(self._msg_rx)
@@ -196,7 +202,7 @@ class Gateway:
     def agents(self, timeout: Optional[int] = None) -> list[AgentID]:
         """Gets the list of all agents connected to the fjage container"""
         if timeout is None:
-            timeout = self._timeout
+            timeout = self._directory_timeout
         json_msg = JSONMessage.createAgents()
         rsp = self._msg_tx_rx(json_msg, timeout)
         if rsp is not None and hasattr(rsp, 'agentIDs') and isinstance(rsp.agentIDs, list):
@@ -211,7 +217,7 @@ class Gateway:
     def containsAgent(self, agentID: AgentID, timeout: Optional[int] = None) -> bool:
         """Checks if the given agent is connected to the fjage container"""
         if timeout is None:
-            timeout = self._timeout
+            timeout = self._directory_timeout
         json_msg = JSONMessage.createContainsAgent(agentID=agentID)
         rsp = self._msg_tx_rx(json_msg, timeout)
         if rsp is not None and hasattr(rsp, 'answer') and isinstance(rsp.answer, bool):
@@ -226,7 +232,7 @@ class Gateway:
     def agentForService(self, service: Union[str, enum.Enum], timeout: Optional[int] = None) -> Optional[AgentID]:
         """Finds an agent that provides the given service."""
         if timeout is None:
-            timeout = self._timeout
+            timeout = self._directory_timeout
         if isinstance(service, enum.Enum):
             service = service.value
         json_msg = JSONMessage.createAgentForService(service=service)
@@ -243,7 +249,7 @@ class Gateway:
     def agentsForService(self, service: Union[str, enum.Enum], timeout: Optional[int] = None) -> list[AgentID]:
         """Retrieves a list of all agents that provide the given service."""
         if timeout is None:
-            timeout = self._timeout
+            timeout = self._directory_timeout
         if isinstance(service, enum.Enum):
             service = service.value
         json_msg = JSONMessage.createAgentsForService(service=service)

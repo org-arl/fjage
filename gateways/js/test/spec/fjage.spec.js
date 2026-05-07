@@ -123,6 +123,14 @@ describe('A Gateway', function () {
     gw.close();
   });
 
+  it('should use split default timeouts for requests and directory queries', async function () {
+    const gw = new Gateway(gwOpts);
+    expect(gw._timeout).toBe(1000);
+    expect(gw._directoryTimeout).toBe(6000);
+    expect(gw.agent('test')._timeout).toBe(1000);
+    gw.close();
+  });
+
   it('should register itself with the global fjage object', async function () {
     if (!isBrowser) return;
     var gw = new Gateway(gwOpts);

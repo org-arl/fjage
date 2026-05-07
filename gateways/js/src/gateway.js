@@ -9,11 +9,13 @@ import TCPConnector from './tcpconnector.js';
 import WSConnector from './wsconnector.js';
 import { JSONMessage, Actions } from './jsonmessage.js';
 
-const DEFAULT_QUEUE_SIZE = 128;        // max number of old unreceived messages to store
-const DEFAULT_TIMEOUT = 10000;         // default timeout for requests in milliseconds
+const DEFAULT_QUEUE_SIZE = 128;              // max number of old unreceived messages to store
+const DEFAULT_REQUEST_TIMEOUT = 1000;        // default timeout for requests/receives in milliseconds
+const DEFAULT_DIRECTORY_TIMEOUT = 6000;      // default timeout for directory queries in milliseconds
 
 const GATEWAY_DEFAULTS = {
-  'timeout': DEFAULT_TIMEOUT,
+  'timeout': DEFAULT_REQUEST_TIMEOUT,
+  'directoryTimeout': DEFAULT_DIRECTORY_TIMEOUT,
   'keepAlive' : true,
   'queueSize': DEFAULT_QUEUE_SIZE,
   'returnNullOnFailedResponse': true
@@ -77,7 +79,8 @@ export function init(){
 * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
 * @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
 * @param {number} [opts.queueSize=128]      - size of the _queue of received messages that haven't been consumed yet
-* @param {number} [opts.timeout=10000]       - timeout for fjage level messages in ms
+* @param {number} [opts.timeout=1000]        - default timeout for request() and receive() in ms
+* @param {number} [opts.directoryTimeout=6000] - default timeout for directory queries in ms
 * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
 * @param {boolean} [opts.cancelPendingOnDisconnect=false] - cancel pending requests on disconnects
 */
@@ -94,7 +97,8 @@ export class Gateway {
     url.pathname = opts.pathname;
     let existing = this._getGWCache(url);
     if (existing) return existing;
-    this._timeout = opts.timeout;         // timeout for fjage level messages (agentForService etc)
+    this._timeout = opts.timeout;         // timeout for request() and receive()
+    this._directoryTimeout = opts.directoryTimeout; // timeout for directory queries
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
     this._queueSize = opts.queueSize;     // size of _queue
     this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
@@ -528,7 +532,7 @@ export class Gateway {
   * @param {number} [timeout=opts.timeout] - timeout in milliseconds
   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids when resolved
   */
-  async agents(timeout=this._timeout) {
+  async agents(timeout=this._directoryTimeout) {
     let jsonMsg = JSONMessage.createAgents();
     let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp || !Array.isArray(rsp.agentIDs)) throw new Error('Unable to get agents');
@@ -542,7 +546,7 @@ export class Gateway {
   * @param {number} [timeout=opts.timeout] - timeout in milliseconds
   * @returns {Promise<boolean>} - a promise which returns true if the agent exists when resolved
   */
-  async containsAgent(agentID, timeout=this._timeout) {
+  async containsAgent(agentID, timeout=this._directoryTimeout) {
     let jsonMsg = JSONMessage.createContainsAgent(agentID instanceof AgentID ? agentID : new AgentID(agentID));
     let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
@@ -560,7 +564,7 @@ export class Gateway {
   * @param {number} [timeout=opts.timeout] - timeout in milliseconds
   * @returns {Promise<?AgentID>} - a promise which returns an agent id for an agent that provides the service when resolved
   */
-  async agentForService(service, timeout=this._timeout) {
+  async agentForService(service, timeout=this._directoryTimeout) {
     let jsonMsg = JSONMessage.createAgentForService(service);
     let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
@@ -577,7 +581,7 @@ export class Gateway {
   * @param {number} [timeout=opts.timeout] - timeout in milliseconds
   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
   */
-  async agentsForService(service, timeout=this._timeout) {
+  async agentsForService(service, timeout=this._directoryTimeout) {
     let jsonMsg = JSONMessage.createAgentsForService(service);
     let rsp = await this._msgTxRx(jsonMsg, timeout);
     if (!rsp) {
@@ -629,10 +633,10 @@ export class Gateway {
   *
   * @param {function|Message|typeof Message} filter - original message to which a response is expected, or a MessageClass of the type
   * of message to match, or a closure to use to match against the message
-  * @param {number} [timeout=0] - timeout in milliseconds
+  * @param {number} [timeout=1000] - timeout in milliseconds
   * @returns {Promise<Message|void>} - received response message, null on timeout
   */
-  async receive(filter, timeout=0) {
+  async receive(filter, timeout=this._timeout) {
     return new Promise(resolve => {
       let msg = this._getMessageFromQueue.call(this,filter);
       if (msg) {
