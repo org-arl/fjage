@@ -144,6 +144,60 @@ public class AsyncTests {
     }
   }
 
+  @Test(timeout = 30000)
+  public void testSlaveAgentsForServiceWaitsLongEnoughForMasterDirectoryTimeout() throws Exception {
+    Platform platform = new RealTimePlatform();
+    MasterContainer master = new MasterContainer(platform);
+    SlaveContainer slave = new SlaveContainer(platform, "localhost", master.getPort());
+    AgentID goodAgentID = slave.add("server", new ServiceAgent());
+    BadConnector badConnector = new BadConnector("bad-connector");
+    try {
+      platform.start();
+
+      waitForService(master, "server", SETUP_TIMEOUT);
+
+      master.addConnector(badConnector);
+      waitForHandlerAlive(master, "bad-connector", SETUP_TIMEOUT);
+
+      long start = System.nanoTime();
+      AgentID[] result = slave.agentsForService("server");
+      long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+      assertNotNull("Slave lookup timed out before the master returned partial results", result);
+      assertTrue(Arrays.stream(result).anyMatch(aid -> aid != null && goodAgentID.getName().equals(aid.getName())));
+      assertTrue("Slave lookup exceeded the expected 6000 ms default timeout window: " + elapsedMs + " ms",
+        elapsedMs < 6500);
+    } finally {
+      badConnector.close();
+      platform.shutdown();
+    }
+  }
+
+  @Test(timeout = 30000)
+  public void testSlaveAgentForServiceWaitsLongEnoughForMasterDirectoryTimeout() throws Exception {
+    Platform platform = new RealTimePlatform();
+    MasterContainer master = new MasterContainer(platform);
+    SlaveContainer slave = new SlaveContainer(platform, "localhost", master.getPort());
+    BadConnector badConnector = new BadConnector("bad-connector");
+    try {
+      platform.start();
+
+      master.addConnector(badConnector);
+      waitForHandlerAlive(master, "bad-connector", SETUP_TIMEOUT);
+
+      long start = System.nanoTime();
+      AgentID result = slave.agentForService("missing-service");
+      long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+      assertNull("Slave lookup should return null once the master exhausts its directory-query timeout", result);
+      assertTrue("Slave lookup exceeded the expected 6000 ms default timeout window: " + elapsedMs + " ms",
+        elapsedMs < 6500);
+    } finally {
+      badConnector.close();
+      platform.shutdown();
+    }
+  }
+
   private void assertAgentNamesContain(AgentID[] actualAgents, AgentID... expectedAgents) {
     Set<String> agentNames = new LinkedHashSet<>();
     for (AgentID aid: actualAgents) {

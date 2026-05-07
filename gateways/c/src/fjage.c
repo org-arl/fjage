@@ -206,6 +206,7 @@ static void sthandler(int sig) {
 #define BUFLEN            65536
 
 #define PARAM_REQ         "org.arl.fjage.param.ParameterReq"
+#define DIRECTORY_QUERY_TIMEOUT 6000
 #define PARAM_TIMEOUT     1000
 
 // poll_data() API return values
@@ -764,7 +765,7 @@ fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
   fgw->aid_count = 0;
   fgw->aids = NULL;
   flush_interrupts(fgw);
-  json_reader(gw, uuid, 1000);
+  if (json_reader(gw, uuid, DIRECTORY_QUERY_TIMEOUT) < 0) return NULL;
   if (fgw->aid_count == 0) return NULL;
   return (fjage_aid_t)(fgw->aids);
 }
@@ -782,7 +783,7 @@ int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* ag
   fgw->aid_count = 0;
   fgw->aids = NULL;
   flush_interrupts(fgw);
-  json_reader(gw, uuid, 1000);
+  if (json_reader(gw, uuid, DIRECTORY_QUERY_TIMEOUT) < 0) return 0;
   if (fgw->aid_count == 0) return 0;
   for (int i = 0; i < fgw->aid_count; i++) {
     if (i < max) agents[i] = fgw->aids[i];

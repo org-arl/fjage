@@ -35,7 +35,9 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   ////////////// Private attributes
 
-  private static final long TIMEOUT = 15000;
+  private static final long REQUEST_TIMEOUT = 1000;
+  private static final long DIRECTORY_QUERY_TIMEOUT = 5000;
+  private static final long INIT_COMPLETE_TIMEOUT = 15000;
 
   private TcpServer tcpListener = null;
   private WebSocketServer websocketListener = null;
@@ -208,7 +210,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     return firstMatch(slaves, slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.CONTAINS_AGENT);
       rq.agentID = aid;
-      return slave.requestAsync(rq, TIMEOUT);
+      return slave.requestAsync(rq, DIRECTORY_QUERY_TIMEOUT);
     }, rsp -> rsp != null && Boolean.TRUE.equals(rsp.answer)).isPresent();
   }
 
@@ -230,7 +232,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     String json = rq.toJson();
     runAll(slaves, slave -> {
       if (slave.wantsMessagesFor(aid)) slave.send(json);
-    }, TIMEOUT);
+    }, REQUEST_TIMEOUT);
     return true;
   }
 
@@ -239,7 +241,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     AgentID[] aids = super.getAgents();
     AgentID[] remoteAids = concat(slaves, slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS);
-      return slave.requestAsync(rq, TIMEOUT).thenApply(rsp -> {
+      return slave.requestAsync(rq, DIRECTORY_QUERY_TIMEOUT).thenApply(rsp -> {
         if (rsp == null || rsp.agentIDs == null) return new AgentID[0];
         if (rsp.agentTypes != null && rsp.agentTypes.length == rsp.agentIDs.length) {
           for (int i = 0; i < rsp.agentIDs.length; i++)
@@ -256,7 +258,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     String[] services = super.getServices();
     String[] remoteServices = concat(slaves, slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.SERVICES);
-      return slave.requestAsync(rq, TIMEOUT).thenApply(rsp -> rsp == null || rsp.services == null ? new String[0] : rsp.services);
+      return slave.requestAsync(rq, DIRECTORY_QUERY_TIMEOUT).thenApply(rsp -> rsp == null || rsp.services == null ? new String[0] : rsp.services);
     }, String[]::new);
     Set<String> allServices = new LinkedHashSet<>(Arrays.asList(services));
     allServices.addAll(Arrays.asList(remoteServices));
@@ -270,7 +272,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     return firstMatch(slaves, slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.AGENT_FOR_SERVICE);
       rq.service = service;
-      return slave.requestAsync(rq, TIMEOUT);
+      return slave.requestAsync(rq, DIRECTORY_QUERY_TIMEOUT);
     }, rsp -> rsp != null && rsp.agentID != null && !rsp.agentID.getName().isEmpty())
       .map(rsp -> rsp.agentID)
       .orElse(null);
@@ -288,7 +290,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     AgentID[] remoteAids = concat(slaves, slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS_FOR_SERVICE);
       rq.service = service;
-      return slave.requestAsync(rq, TIMEOUT).thenApply(rsp -> rsp == null || rsp.agentIDs == null ? new AgentID[0] : rsp.agentIDs);
+      return slave.requestAsync(rq, DIRECTORY_QUERY_TIMEOUT).thenApply(rsp -> rsp == null || rsp.agentIDs == null ? new AgentID[0] : rsp.agentIDs);
     }, AgentID[]::new);
     return Stream.concat(Arrays.stream(aids), Arrays.stream(remoteAids)).toArray(AgentID[]::new);
   }
@@ -317,14 +319,16 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   protected void initComplete() {
     runAll(slaves, slave -> {
       if (!slave.isAlive()) slave.start();
-    }, TIMEOUT);
+    }, INIT_COMPLETE_TIMEOUT);
     if (!slaves.isEmpty()) {
       log.fine("Waiting for slaves...");
       boolean allAlive = false;
-      // Bound startup sync to a short local wait; request timeouts are handled later.
-      for (int i = 0; !allAlive && i < 50; i++) {
+      // Poll for slave readiness; total wait is bounded by INIT_COMPLETE_TIMEOUT.
+      final long POLL_INTERVAL_MS = 100;
+      int maxPolls = (int) (INIT_COMPLETE_TIMEOUT / POLL_INTERVAL_MS);
+      for (int i = 0; !allAlive && i < maxPolls; i++) {
         try {
-          Thread.sleep(100);
+          Thread.sleep(POLL_INTERVAL_MS);
         } catch(InterruptedException e) {
           Thread.currentThread().interrupt();
         }
@@ -348,7 +352,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     runAll(slaves, slave -> {
       slave.send(json);
       slave.close();
-    }, TIMEOUT);
+    }, INIT_COMPLETE_TIMEOUT);
     slaves.clear();
     if (tcpListener != null) {
       tcpListener.close();
