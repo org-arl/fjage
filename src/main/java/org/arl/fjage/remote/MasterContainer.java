@@ -323,10 +323,12 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (!slaves.isEmpty()) {
       log.fine("Waiting for slaves...");
       boolean allAlive = false;
-      // Bound startup sync to a short local wait; request timeouts are handled later.
-      for (int i = 0; !allAlive && i < 50; i++) {
+      // Poll for slave readiness; total wait is bounded by INIT_COMPLETE_TIMEOUT.
+      final long POLL_INTERVAL_MS = 100;
+      int maxPolls = (int) (INIT_COMPLETE_TIMEOUT / POLL_INTERVAL_MS);
+      for (int i = 0; !allAlive && i < maxPolls; i++) {
         try {
-          Thread.sleep(INIT_COMPLETE_TIMEOUT/50);
+          Thread.sleep(POLL_INTERVAL_MS);
         } catch(InterruptedException e) {
           Thread.currentThread().interrupt();
         }

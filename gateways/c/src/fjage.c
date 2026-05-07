@@ -765,7 +765,7 @@ fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
   fgw->aid_count = 0;
   fgw->aids = NULL;
   flush_interrupts(fgw);
-  json_reader(gw, uuid, DIRECTORY_QUERY_TIMEOUT);
+  if (json_reader(gw, uuid, DIRECTORY_QUERY_TIMEOUT) < 0) return NULL;
   if (fgw->aid_count == 0) return NULL;
   return (fjage_aid_t)(fgw->aids);
 }
@@ -783,7 +783,7 @@ int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* ag
   fgw->aid_count = 0;
   fgw->aids = NULL;
   flush_interrupts(fgw);
-  json_reader(gw, uuid, DIRECTORY_QUERY_TIMEOUT);
+  if (json_reader(gw, uuid, DIRECTORY_QUERY_TIMEOUT) < 0) return 0;
   if (fgw->aid_count == 0) return 0;
   for (int i = 0; i < fgw->aid_count; i++) {
     if (i < max) agents[i] = fgw->aids[i];

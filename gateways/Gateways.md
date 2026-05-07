@@ -104,12 +104,12 @@ All gateway agents should use names prefixed with `gateway-`.
 
 - Unsubscribes the gateway from a given topic.
 
-### `agentForService()` :: String -> AgentID
+### `agentForService()` :: String, Int -> AgentID
 
 - Finds an agent that provides a named service.
 - Must default timeout to 6000 milliseconds if not specified.
 
-### `agentsForService()` :: String -> [AgentID]
+### `agentsForService()` :: String, Int -> [AgentID]
 
 - Find all agents that provides a named service.
 - Must default timeout to 6000 milliseconds if not specified.
