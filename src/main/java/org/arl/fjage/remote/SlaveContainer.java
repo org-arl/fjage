@@ -30,12 +30,12 @@ public class SlaveContainer extends RemoteContainer {
 
   private static final long TIMEOUT = 2000;
 
-  private ConnectionHandler master;
+  private volatile ConnectionHandler master;
   private final String hostname;
   private String settings;
   private final int port;
   private final int baud;
-  private boolean quit = false;
+  private volatile boolean quit = false;
   private String watchListCache = null;
 
   ////////////// Constructors
@@ -118,12 +118,9 @@ public class SlaveContainer extends RemoteContainer {
    */
   public boolean authenticate(String creds) {
     if (master == null) return false;
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.AUTH;
+    JsonMessage rq = JsonMessage.createActionRequest(Action.AUTH);
     rq.creds = creds;
-    rq.id = UUID.randomUUID().toString();
-    String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rsp = master.request(rq, TIMEOUT);
     return rsp != null && rsp.auth != null && rsp.auth;
   }
 
@@ -142,12 +139,9 @@ public class SlaveContainer extends RemoteContainer {
   protected boolean isDuplicate(AgentID aid) {
     if (super.isDuplicate(aid)) return true;
     if (master == null) return false;
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.CONTAINS_AGENT;
+    JsonMessage rq = JsonMessage.createActionRequest(Action.CONTAINS_AGENT);
     rq.agentID = aid;
-    rq.id = UUID.randomUUID().toString();
-    String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rsp = master.request(rq, TIMEOUT);
     return rsp != null && rsp.answer != null && rsp.answer;
   }
 
@@ -164,23 +158,21 @@ public class SlaveContainer extends RemoteContainer {
     if (aid == null) return false;
     if (aid.isTopic()) {
       if (!relay) return super.send(m, false);
-      JsonMessage rq = new JsonMessage();
-      rq.action = Action.SEND;
+      JsonMessage rq = JsonMessage.createActionRequest(Action.SEND);
       rq.id = m.getMessageID();
       rq.message = m;
       rq.relay = true;
       String json = rq.toJson();
-      master.println(json);
+      master.send(json);
     } else {
       if (super.send(m, false)) return true;
       if (!relay) return false;
-      JsonMessage rq = new JsonMessage();
-      rq.action = Action.SEND;
+      JsonMessage rq = JsonMessage.createActionRequest(Action.SEND);
       rq.id = m.getMessageID();
       rq.message = m;
       rq.relay = true;
       String json = rq.toJson();
-      master.println(json);
+      master.send(json);
     }
     return true;
   }
@@ -188,11 +180,8 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public AgentID[] getAgents() {
     if (master == null) return null;
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.AGENTS;
-    rq.id = UUID.randomUUID().toString();
-    String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS);
+    JsonMessage rsp = master.request(rq, TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentIDs;
@@ -201,11 +190,8 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public String[] getServices() {
     if (master == null) return null;
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.SERVICES;
-    rq.id = UUID.randomUUID().toString();
-    String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rq = JsonMessage.createActionRequest(Action.SERVICES);
+    JsonMessage rsp = master.request(rq, TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.services;
@@ -214,12 +200,9 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public AgentID agentForService(String service) {
     if (master == null) return null;
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.AGENT_FOR_SERVICE;
+    JsonMessage rq = JsonMessage.createActionRequest(Action.AGENT_FOR_SERVICE);
     rq.service = service;
-    rq.id = UUID.randomUUID().toString();
-    String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rsp = master.request(rq, TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentID;
@@ -228,12 +211,9 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public AgentID[] agentsForService(String service) {
     if (master == null) return null;
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.AGENTS_FOR_SERVICE;
+    JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS_FOR_SERVICE);
     rq.service = service;
-    rq.id = UUID.randomUUID().toString();
-    String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rsp = master.request(rq, TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentIDs;
@@ -281,7 +261,6 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public String getState() {
     if (!running) return "Not running";
-    String details = port >= 0 ? ":" + port : "@" + baud;
     if (master == null) return "Running, connecting to " + displayhost(hostname, port, baud);
     return "Running, connected to "+ displayhost(hostname, port, baud);
   }
@@ -351,7 +330,6 @@ public class SlaveContainer extends RemoteContainer {
           while (!quit) {
             try {
               tryConnecting();
-              String details = port >= 0 ? ":" + port : "@" + baud;
               log.info("Connected to "+ displayhost(hostname, port, baud));
               while (!quit && !inited) Thread.sleep(100);
               master.start();
@@ -379,13 +357,11 @@ public class SlaveContainer extends RemoteContainer {
     for (AgentID aid: topics.keySet())
       if (!topics.get(aid).isEmpty())
         watchList.add(aid);
-    JsonMessage rq = new JsonMessage();
-    rq.action = Action.WANTS_MESSAGES_FOR;
-    rq.agentIDs = new AgentID[watchList.size()];
-    rq.agentIDs = watchList.toArray(rq.agentIDs);
+    JsonMessage rq = JsonMessage.createActionRequest(Action.WANTS_MESSAGES_FOR);
+    rq.agentIDs = watchList.toArray(new AgentID[watchList.size()]);
     String json = rq.toJson();
     if (watchListCache == null || !watchListCache.equals(json)) {
-      master.println(json);
+      master.send(json);
       watchListCache = json;
     }
   }
