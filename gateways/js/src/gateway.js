@@ -529,7 +529,7 @@ export class Gateway {
 
   /**
   * Gets a list of all agents in the container.
-  * @param {number} [timeout=opts.timeout] - timeout in milliseconds
+  * @param {number} [timeout=opts.directoryTimeout] - timeout in milliseconds
   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids when resolved
   */
   async agents(timeout=this._directoryTimeout) {
@@ -543,7 +543,7 @@ export class Gateway {
   * Check if an agent with a given name exists in the container.
   *
   * @param {AgentID|string} agentID - the agent id to check
-  * @param {number} [timeout=opts.timeout] - timeout in milliseconds
+  * @param {number} [timeout=opts.directoryTimeout] - timeout in milliseconds
   * @returns {Promise<boolean>} - a promise which returns true if the agent exists when resolved
   */
   async containsAgent(agentID, timeout=this._directoryTimeout) {
@@ -561,7 +561,7 @@ export class Gateway {
   * to provide a given service, any of the agents' id may be returned.
   *
   * @param {string} service - the named service of interest
-  * @param {number} [timeout=opts.timeout] - timeout in milliseconds
+  * @param {number} [timeout=opts.directoryTimeout] - timeout in milliseconds
   * @returns {Promise<?AgentID>} - a promise which returns an agent id for an agent that provides the service when resolved
   */
   async agentForService(service, timeout=this._directoryTimeout) {
@@ -578,7 +578,7 @@ export class Gateway {
   * Finds all agents that provides a named service.
   *
   * @param {string} service - the named service of interest
-  * @param {number} [timeout=opts.timeout] - timeout in milliseconds
+  * @param {number} [timeout=opts.directoryTimeout] - timeout in milliseconds
   * @returns {Promise<AgentID[]>} - a promise which returns an array of all agent ids that provides the service when resolved
   */
   async agentsForService(service, timeout=this._directoryTimeout) {
@@ -633,10 +633,10 @@ export class Gateway {
   *
   * @param {function|Message|typeof Message} filter - original message to which a response is expected, or a MessageClass of the type
   * of message to match, or a closure to use to match against the message
-  * @param {number} [timeout=1000] - timeout in milliseconds
+  * @param {number} [timeout=0] - timeout in milliseconds
   * @returns {Promise<Message|void>} - received response message, null on timeout
   */
-  async receive(filter, timeout=this._timeout) {
+  async receive(filter, timeout=0) {
     return new Promise(resolve => {
       let msg = this._getMessageFromQueue.call(this,filter);
       if (msg) {

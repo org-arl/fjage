@@ -52,7 +52,7 @@ All gateway agents should use names prefixed with `gateway-`.
 - Must not **block** if timeout is 0.
 - Must **block** indefinitely if timeout is -1.
 - Must **block** for timeout milliseconds otherwise.
-- Must default timeout to 1000 millisecond if not specified.
+- Must default timeout to 0 millisecond if not specified.
 
 ### `request()` :: Message, (Int timeout) -> Message
 
@@ -61,6 +61,7 @@ All gateway agents should use names prefixed with `gateway-`.
 - Must **block** indefinitely if timeout is -1.
 - Must **block** for timeout milliseconds otherwise.
 - Must default timeout to 1000 millisecond if not specified.
+- The default timeout may be configurable at a Gateway level.
 
 ### `agents()` :: (Int timeout) -> [AgentID]
 

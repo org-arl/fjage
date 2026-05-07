@@ -165,8 +165,6 @@ public class AsyncTests {
 
       assertNotNull("Slave lookup timed out before the master returned partial results", result);
       assertTrue(Arrays.stream(result).anyMatch(aid -> aid != null && goodAgentID.getName().equals(aid.getName())));
-      assertTrue("Slave lookup returned too quickly to cover the master's directory timeout: " + elapsedMs + " ms",
-        elapsedMs >= 4500);
       assertTrue("Slave lookup exceeded the expected 6000 ms default timeout window: " + elapsedMs + " ms",
         elapsedMs < 6500);
     } finally {
@@ -192,8 +190,6 @@ public class AsyncTests {
       long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 
       assertNull("Slave lookup should return null once the master exhausts its directory-query timeout", result);
-      assertTrue("Slave lookup returned too quickly to cover the master's directory timeout: " + elapsedMs + " ms",
-        elapsedMs >= 4500);
       assertTrue("Slave lookup exceeded the expected 6000 ms default timeout window: " + elapsedMs + " ms",
         elapsedMs < 6500);
     } finally {

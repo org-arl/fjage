@@ -96,19 +96,17 @@ class Gateway:
         json_msg = JSONMessage.createSend(msg=msg, relay=True)
         self._msg_tx(json_msg)
 
-    def receive(self, msg_filter: Union[Callable, Type[Message], Message, None]=None, timeout: Optional[int] = None, **kwargs) -> Any:
+    def receive(self, msg_filter: Union[Callable, Type[Message], Message, None]=None, timeout: int = NON_BLOCKING, **kwargs) -> Any:
         """Receives a message from the fjage container.
 
         Args:
             msg_filter : a filter to apply to incoming messages
-            timeout : timeout in milliseconds. Defaults to None, which uses the gateway's default timeout.
+            timeout : timeout in milliseconds. Defaults to NON_BLOCKING (0 ms).
 
         Returns:
             Message or None: received message or None if timeout
         """
 
-        if timeout is None:
-            timeout = self._timeout
         if not isinstance(timeout, int):
             raise ValueError("timeout must be an integer")
 

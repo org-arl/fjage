@@ -247,7 +247,7 @@ describe('A Gateway', function () {
     }
 
     for (type = 1; type <= NMSG; type++){
-      let m = await gw.receive(m => m instanceof SendMsgRsp,2000);
+      let m = await gw.receive(m => m instanceof SendMsgRsp, 2000);
       if (m && m.type){
         rxed[m.type-1] = true;
       }else{

@@ -35,6 +35,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   ////////////// Private attributes
 
+  private static final long REQUEST_TIMEOUT = 1000;
   private static final long DIRECTORY_QUERY_TIMEOUT = 5000;
   private static final long INIT_COMPLETE_TIMEOUT = 15000;
 
@@ -231,7 +232,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     String json = rq.toJson();
     runAll(slaves, slave -> {
       if (slave.wantsMessagesFor(aid)) slave.send(json);
-    }, DIRECTORY_QUERY_TIMEOUT);
+    }, REQUEST_TIMEOUT);
     return true;
   }
 
@@ -318,14 +319,14 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   protected void initComplete() {
     runAll(slaves, slave -> {
       if (!slave.isAlive()) slave.start();
-    }, INIT_COMPLETE_TIMEOUT);
+    }, REQUEST_TIMEOUT);
     if (!slaves.isEmpty()) {
       log.fine("Waiting for slaves...");
       boolean allAlive = false;
       // Bound startup sync to a short local wait; request timeouts are handled later.
       for (int i = 0; !allAlive && i < 50; i++) {
         try {
-          Thread.sleep(100);
+          Thread.sleep(INIT_COMPLETE_TIMEOUT/50);
         } catch(InterruptedException e) {
           Thread.currentThread().interrupt();
         }
@@ -349,7 +350,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     runAll(slaves, slave -> {
       slave.send(json);
       slave.close();
-    }, INIT_COMPLETE_TIMEOUT);
+    }, REQUEST_TIMEOUT);
     slaves.clear();
     if (tcpListener != null) {
       tcpListener.close();
