@@ -36,6 +36,7 @@ public class SlaveContainer extends RemoteContainer {
   private final int port;
   private final int baud;
   private volatile boolean quit = false;
+  private volatile Thread connectionManager;
   private String watchListCache = null;
 
   ////////////// Constructors
@@ -255,6 +256,16 @@ public class SlaveContainer extends RemoteContainer {
   public void shutdown() {
     quit = true;
     if (master != null) master.close();
+    if (connectionManager != null) {
+      connectionManager.interrupt();
+      if (connectionManager != Thread.currentThread()) {
+        try {
+          connectionManager.join(TIMEOUT);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
     super.shutdown();
   }
 
@@ -323,7 +334,7 @@ public class SlaveContainer extends RemoteContainer {
   }
 
   private void connectToMaster() {
-    new Thread(getClass().getSimpleName()+">"+hostname) {
+    connectionManager = new Thread(getClass().getSimpleName()+">"+hostname) {
       @Override
       public void run() {
         try {
@@ -344,10 +355,16 @@ public class SlaveContainer extends RemoteContainer {
             if (!quit) Thread.sleep(1000);
           }
         } catch (InterruptedException ex) {
-          log.warning("Connection manager interrupted!");
+          if (!quit) log.warning("Connection manager interrupted!");
+        } finally {
+          synchronized (SlaveContainer.this) {
+            if (connectionManager == Thread.currentThread()) connectionManager = null;
+          }
         }
       }
-    }.start();
+    };
+    connectionManager.setDaemon(true);
+    connectionManager.start();
   }
 
   private synchronized void updateWatchList() {
