@@ -137,6 +137,7 @@
     const HIDE_CURSOR = "\x1B[?25l"; // hide cursor
     const CLEAR_LINE = '\x1B[1G\x1B[2K'; // clear line
     const CONNECTION_LOST = "\x1B[1G\x1B[2K\x1B[31m\x1B[2m(connection lost)\x1B[0m"; // connection lost message
+    const IFRAME_BRIDGE_EVENT = 'fjage:shell-toggle';
 
     let currentScheme = null;
     let userScheme = false; // true if the user manually changed the scheme
@@ -265,6 +266,18 @@
           fitAddon.fit();
         }, RESIZE_DELAY);
       });
+
+      if (window.parent !== window) {
+        window.addEventListener('keydown', (event) => {
+          if (!event.ctrlKey || event.altKey || event.metaKey || event.code !== 'Backquote') return;
+          event.preventDefault();
+          window.parent.postMessage({
+            type: IFRAME_BRIDGE_EVENT,
+            action: 'toggle'
+          }, window.location.origin);
+        }, true);
+      }
+
     });
 
 
