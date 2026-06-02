@@ -6,7 +6,7 @@
 - window.prefersColorScheme : 'dark'/'light' used to set the default colour scheme (and disable toggle)
 - receive window.postMessage({type: IFRAME_COLOUR_EVENT, scheme: 'dark'/'light'}) : to set the colour scheme dynamically
 - receive window.postMessage({type: IFRAME_FOCUS_EVENT}) : to focus the shell (only when in an iframe)
-- will transmit a window.postMessage({type: IFRAME_BRIDGE_EVENT, action: 'toggle'}) : if a (Ctrl+)Backquote key is pressed while the shell is focused
+- will transmit a window.postMessage({type: IFRAME_TOGGLE_EVENT, action: 'toggle'}) : if a Ctrl+Backquote key is pressed while the shell is focused
 
 -->
 <html>
