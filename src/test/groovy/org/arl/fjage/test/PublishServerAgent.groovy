@@ -14,7 +14,7 @@ public class PublishServerAgent extends Agent {
       if (!tick) return
       GenericMessage msg = new GenericMessage(Performative.INFORM)
       msg.recipient = topic("test-topic")
-      msg.tempearture = Math.random() * 100
+      msg.temperature = Math.random() * 100
       send msg
     }))
   }

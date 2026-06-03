@@ -2,6 +2,7 @@ import sys
 import logging
 import keyword
 from typing import Callable, Optional, Any, Dict, TYPE_CHECKING, Union, get_type_hints, overload
+from warnings import deprecated
 
 from .AgentID import AgentID
 from .Performative import Performative
@@ -217,7 +218,7 @@ class GenericMessage(Message):
         super().__init__()
         self.__clazz__ = "org.arl.fjage.GenericMessage"
 
-
+@deprecated("Use @message decorator or registerMessageClass instead to register message classes for JSON inflation.")
 def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
     """Creates an unqualified message class based on a fully qualified name.
 

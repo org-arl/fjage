@@ -1,12 +1,49 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass, registerMessageClass, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, ShellExecReq*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
 const TEST_STRING = 'this is a test';
 const NEW_STRING = 'new test';
-const SendMsgReq = MessageClass('org.arl.fjage.test.SendMsgReq');
-const SendMsgRsp = MessageClass('org.arl.fjage.test.SendMsgRsp');
-const TestCompleteNtf = MessageClass('org.arl.fjage.test.TestCompleteNtf');
+
+ const TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq');
+
+class SendMsgReq extends Message {
+  num = 0;
+  type = 0;
+  constructor(fields={}) {
+    super(fields);
+    this.perf = Performative.REQUEST;
+  }
+}
+registerMessageClass(SendMsgReq, 'org.arl.fjage.test.SendMsgReq');
+
+class SendMsgRsp extends Message {
+  id = 0;
+  type = 0;
+  constructor(fields={}) {
+    super(fields);
+  }
+}
+registerMessageClass(SendMsgRsp, 'org.arl.fjage.test.SendMsgRsp');
+
+class TestCompleteNtf extends Message {
+  status = null;
+  trace = null;
+  type = null;
+  constructor(fields={}) {
+    super(fields);
+  }
+}
+registerMessageClass(TestCompleteNtf, 'org.arl.fjage.test.TestCompleteNtf');
+
+class TestMessage extends Message {
+  data = null;
+  constructor(fields={}) {
+    super(fields);
+  }
+}
+registerMessageClass(TestMessage, 'org.arl.fjage.test.TestMessage');
+
 
 const ValidFjageActions = ['agents', 'containsAgent', 'services', 'agentForService', 'agentsForService', 'send', 'shutdown'];
 const ValidFjagePerformatives = ['REQUEST', 'AGREE', 'REFUSE', 'FAILURE', 'INFORM', 'CONFIRM', 'DISCONFIRM', 'QUERY_IF', 'NOT_UNDERSTOOD', 'CFP', 'PROPOSE', 'CANCEL', ];
@@ -556,7 +593,6 @@ describe('An AgentID setup to reject promises', function () {
 
 describe('A JSONMessage', function () {
   it('should serialise and deserialise correctly', function () {
-    const TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq');
     const txMsg = new TxFrameReq();
     const jsonMsg = new JSONMessage();
     jsonMsg.action = 'send';
@@ -597,7 +633,6 @@ describe('A Message', function () {
   it('should serialise and deserialise correctly', function () {
     const msg1 = new Message();
     const msg2 = Message.fromJSON(msg1.toJSON());
-    const TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq');
     const txMsg = new TxFrameReq();
     expect(msg1).toEqual(msg2);
     expect(Message.fromJSON(txMsg.toJSON())).toEqual(txMsg);
@@ -610,8 +645,8 @@ describe('A MessageClass', function () {
       let msgName = 'NewMessage';
       const NewMessage = MessageClass(msgName);
       expect(typeof NewMessage).toEqual('function');
-      expect(NewMessage.__clazz__).toEqual(msgName);
-      new NewMessage();
+      const nm = new NewMessage();
+      expect(nm.__clazz__).toEqual(msgName);
     }).not.toThrow();
   });
 
@@ -622,8 +657,8 @@ describe('A MessageClass', function () {
       const ParentMessage = MessageClass(parentName);
       const NewMessage = MessageClass(msgName, ParentMessage);
       expect(typeof NewMessage).toEqual('function');
-      expect(NewMessage.__clazz__).toEqual(msgName);
       let nm = new NewMessage();
+      expect(nm.__clazz__).toEqual(msgName);
       expect(nm instanceof NewMessage).toBeTruthy();
       expect(nm instanceof ParentMessage).toBeTruthy();
     }).not.toThrow();

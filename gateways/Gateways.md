@@ -46,7 +46,7 @@ All gateway agents should use names prefixed with `gateway-`.
 
 - Returns a _Message_ received by the agent.
 - May accept optional filter and timeout arguments.
-- May support filter of type `MessageClass class` to filter for a message of a specific class.
+- May support filter of type `Message class` to filter for a message of a specific class.
 - May support filter of type `String id` to filter for a response to a specific message `id`.
 - May support filter of type `Callback` to let the user implement a filter function.
 - Must not **block** if timeout is 0.
@@ -154,11 +154,20 @@ All gateway agents should use names prefixed with `gateway-`.
 
 - When serializing an AgentID, a `#` must be prepended to the AgentID name if the AgentID is a topic.
 
-## MessageClass Class
+## MessageClass
 
 ### `MessageClass()` :: String -> Class
 
 - Creates a unqualified message class based on a fully qualified name.
+- Registers the message class in a global registry of message classes, so that when a message of this class is received, an instance of this class is created to represent the message.
+- Deprecated since June 2026. Use _registerMessageClass_ instead.
+
+## registerMessageClass() :: String name, Class messageClass -> Void
+
+- Registers a message class in a global registry of message classes, so that when a message of this class is received, an instance of this class is created to represent the message.
+- The `messageClass` must extend the base _Message_ class.
+- The `name` is the fully qualified name of the message class, and is used to identify the message class when a message of this class is received.
+- A Gateway may extend this function to support additional features decorators or annotations for message classes if supported by the language.
 
 ## Message Class
 
