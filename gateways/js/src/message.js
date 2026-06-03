@@ -75,9 +75,9 @@ export class Message {
 
   /**
   * Create a message from a object parsed from the JSON representation of the message.
-  *
+  * @template {Message} T
   * @param {MessageJSON} jsonObj - JS Object parsed from the Message's JSON string with `.clazz` (string) and `.data` (object with string keys)
-  * @returns {Message} - A message created from the Object
+  * @returns {Message|*} - A message created from the Object
   *
   */
   static fromJSON(jsonObj) {
@@ -194,7 +194,7 @@ registerMessageClass(GenericMessage, 'org.arl.fjage.GenericMessage');
 /**
 * @typedef {Object} ParameterReq.Entry
 * @property {string} param - parameter name
-* @property {Object} value - parameter value
+* @property {Object} [value] - parameter value
 * @exports ParameterReq.Entry
 */
 
