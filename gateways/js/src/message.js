@@ -48,12 +48,19 @@ export class Message {
     return p + ': ' + this.__clazz__.replace(/^.*\./, '');
   }
 
+
+  /**
+  * @typedef {Object} MessageJSON
+  * @property {string} clazz - Fully qualified class name of the message
+  * @property {Object.<string, *>} data - Message data as key-value pairs with string keys
+  */
+
   /** Convert a message into a object for JSON serialization.
   *
   * NOTE: we don't do any base64 encoding for TX as
   *       we don't know what data type is intended
   *
-  * @return {Object} - JSON string representation of the message
+  * @return {MessageJSON} - JSON string representation of the message
   */
   toJSON() {
     let props = {};
@@ -69,7 +76,7 @@ export class Message {
   /**
   * Create a message from a object parsed from the JSON representation of the message.
   *
-  * @param {Object} jsonObj - Object containing all the properties of the message
+  * @param {MessageJSON} jsonObj - JS Object parsed from the Message's JSON string with `.clazz` (string) and `.data` (object with string keys)
   * @returns {Message} - A message created from the Object
   *
   */
@@ -77,9 +84,7 @@ export class Message {
     if (!( 'clazz' in jsonObj) || !( 'data' in jsonObj)) {
       throw new Error(`Invalid Object for Message : ${jsonObj}`);
     }
-    let qclazz = jsonObj.clazz;
-    let clazz = qclazz.replace(/^.*\./, '');
-
+    let clazz = jsonObj.clazz.replace(/^.*\./, '');
     let rv = _MESSAGE_REGISTRY[clazz] ? new _MESSAGE_REGISTRY[clazz]() : new Message();
 
     // copy all properties from the data object
@@ -94,7 +99,7 @@ export class Message {
       } else if (rv instanceof GenericMessage) {
         rv[key] = jsonObj.data[key];
       } else {
-        console.warn(`Property '${key}' in JSON data is not a valid field for message class '${qclazz}'`);
+        console.warn(`Property '${key}' in JSON data is not a valid field for message class '${jsonObj.clazz}'`);
       }
     }
     return rv;
@@ -218,6 +223,7 @@ registerMessageClass(GenericMessage, 'org.arl.fjage.GenericMessage');
 export class ParameterReq extends Message {
   param = null;
   value = null;
+  /** @type {Array<ParameterReq.Entry>} */
   requests = [];
   index = -1;
 }
@@ -245,6 +251,7 @@ export class ParameterRsp extends Message {
   param = null;
   value = null;
   values = {};
+  /** @type {Array<boolean>} */
   readonly = [];
   index = -1;
 }
