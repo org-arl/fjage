@@ -1,5 +1,8 @@
 # Release Notes
 
+## 2.4.1
+* Adding new postMessage events WebShell
+
 ## 2.4.0
 * Add Tunnel agent
 * Add JSON serialization for Instant and Duration classes
