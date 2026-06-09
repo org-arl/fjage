@@ -1,5 +1,6 @@
 # Release Notes
 
+
 ### 2.5.0
 
 * Add support for 2D integer arrays in the C gateway
