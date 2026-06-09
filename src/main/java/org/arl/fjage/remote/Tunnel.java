@@ -34,7 +34,17 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   protected final List<Connector> connectors = new ArrayList<>();
   protected ExecutorService writeExecutor = null;
   protected ExecutorService readExecutor = null;
+  /**
+   * Monotonically increasing connection id counter. The numeric ids are part
+   * of the external API: they are included in connection notifications and
+   * returned via the `connIDs` parameter.
+   */
   protected int connID = 0;
+
+  /**
+   * Map of connection id to Connector. `connIDs` parameter exposes the
+   * keys of this map as a read-only snapshot.
+   */
   protected Map<Integer,Connector> connIDs = new HashMap<>();
 
   //// constructors
@@ -58,7 +68,9 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
     "### @@.agents - list of remote agents/topics visible through the tunnel\n\n" +
     "Example:\n  @@.agents = [agent('remoteAgent'), topic('remoteTopic')]\n\n" +
     "### @@.ip - IP address of the server to connect to (null for servers)\n" +
-    "### @@.port - TCP port number\n";
+    "### @@.port - TCP port number\n" +
+    "### @@.connIDs - list of currently connected connection IDs (read-only)\n" +
+    "Each element is an integer connID assigned to a connector when a connection is established.\n";
 
   //// agent methods
 
@@ -107,22 +119,31 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   @Override
   public void connected(Connector connector) {
     log.info("Incoming connection: "+connector.getName());
+    ConnectionNotification n;
     synchronized (connectors) {
       connectors.add(connector);
       connIDs.put(++connID, connector);
       monitor(connID, connector);
+      n = new ConnectionNotification("connected", connID, connector.getName());
     }
+    n.setRecipient(topic());
+    send(n);
   }
 
   protected void connect() {
     try {
       Connector c = new TcpConnector(ip, port);
       log.info("Connected to "+ip+":"+port);
+      int id;
+      ConnectionNotification n;
       synchronized (connectors) {
         connectors.add(c);
         connIDs.put(++connID, c);
         monitor(connID, c);
+        n = new ConnectionNotification("connected", connID, c.getName());
       }
+      n.setRecipient(topic());
+      send(n);
     } catch (IOException ex) {
       log.info("Failed to connect to "+ip+":"+port+": "+ex.getMessage());
     }
@@ -222,12 +243,32 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   protected void removeConnector(Connector c) {
     synchronized (connectors) {
       connectors.remove(c);
-      connIDs.values().removeIf(v -> v.equals(c));
+      Optional<Map.Entry<Integer, Connector>> entryToRemove = connIDs.entrySet().stream()
+                .filter(entry -> entry.getValue() == c)
+                .findFirst();
+      if (entryToRemove.isPresent()) {
+        int id = entryToRemove.get().getKey();
+        connIDs.remove(id);
+        ConnectionNotification n = new ConnectionNotification("closed", id, c.getName());
+        n.setRecipient(topic());
+        send(n);
+      }
     }
     c.close();
   }
 
   //// parameters
+
+  /**
+   * Get the list of currently connected connection IDs.
+   *
+   * @return List of connection ids currently active on this tunnel.
+   */
+  public List<Integer> getConnIDs() {
+    synchronized (connectors) {
+      return new ArrayList<>(connIDs.keySet());
+    }
+  }
 
   /**
    * Get IP address for the tunnel. In case of a client tunnel, this is the IP

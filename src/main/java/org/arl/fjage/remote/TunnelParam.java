@@ -23,4 +23,14 @@ public enum TunnelParam implements Parameter {
    */
   agents
 
+  ,
+
+  /**
+   * List of currently connected connection IDs (read-only).
+   * Each element is an integer `connID` assigned to a Connector when the
+   * connection was established. Used to disambiguate agents with the same
+   * name on different containers connected by a tunnel.
+   */
+  connIDs
+
 }
