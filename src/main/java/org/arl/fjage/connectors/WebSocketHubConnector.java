@@ -14,9 +14,6 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jetty.websocket.api.*;
@@ -257,16 +254,28 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
     void write(String s) {
       try {
-        if (session != null && session.isOpen()) {
-          Future<Void> f = session.getRemote().sendStringByFuture(s);
-          try {
-            f.get(2, TimeUnit.SECONDS);
-          } catch (TimeoutException e){
-            log.fine("Sending timed out. Closing connection to " + session.getRemoteAddress());
-            session.disconnect();
-          } catch (Exception e){
-            log.log(Level.WARNING, "Error sending websocket message: ", e);
-          }
+        Session currentSession = session;
+        if (currentSession != null && currentSession.isOpen()) {
+          currentSession.getRemote().sendString(s, new WriteCallback() {
+            @Override
+            public void writeFailed(Throwable cause) {
+              try {
+                if (cause instanceof java.nio.channels.ClosedChannelException) {
+                  log.info("Unexpected " + cause.toString() + " while sending to " + currentSession.getRemoteAddress() + ".");
+                } else {
+                  log.log(Level.WARNING, "Error sending websocket message: ", cause);
+                }
+                currentSession.disconnect();
+              } catch (Exception e) {
+                log.log(Level.WARNING, "Error handling websocket send failure: ", e);
+              }
+            }
+
+            @Override
+            public void writeSuccess() {
+              // nothing to do
+            }
+          });
         }
       } catch (Exception e) {
         log.log(Level.WARNING, "Error sending websocket message: ", e);
