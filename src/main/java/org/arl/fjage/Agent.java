@@ -470,6 +470,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
           if (!yieldDuringReceive || !executeBehavior()) block();
         } else if (!yieldDuringReceive || !executeBehavior()) {
           long t = deadline - currentTimeMillis();
+          if (t <= 0) break;   // timeout expired; fall out of the loop
           block(t);
         }
         exclusions.pop();
@@ -1139,7 +1140,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
         extends Behavior {
 
       private final MessageFilter filter;
-      private boolean quit = false;
+      private volatile boolean quit = false;
 
       public StoppableMessageBehavior() {
         this((MessageFilter) null);
