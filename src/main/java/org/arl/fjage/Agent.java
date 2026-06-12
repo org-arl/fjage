@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.arl.fjage.persistence.Store;
 import org.arl.fjage.remote.SlaveContainer;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Base class to be extended by all agents. An agent must be added to a container
@@ -84,7 +85,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   private AgentID aid = null;
   private volatile AgentState state = AgentState.INIT;
   private volatile AgentState oldState = AgentState.NONE;
-  private Queue<Behavior> newBehaviors = new ArrayDeque<>();
+  private ConcurrentLinkedQueue<Behavior> newBehaviors = new ConcurrentLinkedQueue<>();
   private Queue<Behavior> activeBehaviors = new PriorityQueue<>();
   private Queue<Behavior> blockedBehaviors = new ArrayDeque<>();
   private Stack<MessageFilter> exclusions = new Stack<>();
@@ -800,9 +801,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       if (ignoreExceptions) log.log(Level.WARNING, "Exception in agent: "+aid, ex);
       else throw(ex);
     }
-    synchronized (this) {
-      return (newBehaviors.size() > 0);
-    }
+    return !newBehaviors.isEmpty();
   }
 
   /**
