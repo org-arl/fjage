@@ -12,17 +12,21 @@ package org.arl.fjage.connectors;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
 
 /**
  * TCP server. For each incoming connection, this invokes a listener callback with a
  * TcpConnector object for that connection.
  */
-public class TcpServer extends Thread implements Closeable {
+public class TcpServer implements Runnable, Closeable {
 
   protected int port;
+  protected String name;
   protected ServerSocket sock = null;
   protected ConnectionListener listener;
+  protected final CountDownLatch portReady = new CountDownLatch(1);
+  protected final Thread thread;
   protected Logger log = Logger.getLogger(getClass().getName());
 
   /**
@@ -33,24 +37,30 @@ public class TcpServer extends Thread implements Closeable {
   public TcpServer(int port, ConnectionListener listener) {
     this.port = port;
     this.listener = listener;
-    setName("tcpserver:[listening on port "+port+"]");
-    setDaemon(true);
-    start();
+    name = "tcpserver:[listening on port "+port+"]";
+    thread = new Thread(this, name);
+    thread.setDaemon(true);
+    thread.start();
   }
 
   /**
    * Get the TCP port on which the server listens for connections.
    */
-  public synchronized int getPort() {
-    if (port == 0) {
-      try {
-        wait(100);
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-        return -1;
-      }
+  public int getPort() {
+    try {
+      portReady.await();
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      return -1;
     }
     return port;
+  }
+
+  /**
+   * Get the name of the TCP server.
+   */
+  public String getName() {
+    return name;
   }
 
   /**
@@ -70,16 +80,18 @@ public class TcpServer extends Thread implements Closeable {
   @Override
   public void run() {
     try {
-      synchronized (this) {
+      try {
         sock = new ServerSocket(port);
         port = sock.getLocalPort();
-        notify();
+      } finally {
+        portReady.countDown();    // also on failure, so getPort() never blocks forever
       }
       try {
-        setName("tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port);
+        name = "tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port;
       } catch (UnknownHostException ex) {
-        setName("tcp://0.0.0.0:"+port);
+        name = "tcp://0.0.0.0:"+port;
       }
+      thread.setName(name);
       log.info("Listening on port "+port);
       while (sock != null) {
         try {
@@ -96,7 +108,7 @@ public class TcpServer extends Thread implements Closeable {
 
   @Override
   public String toString() {
-    return getName();
+    return name;
   }
 
 }

@@ -59,7 +59,9 @@ public interface ScriptEngine {
    * @param script script file to execute.
    * @return true if executed successfully, false if busy or error.
    */
-  public boolean exec(File script);
+  public default boolean exec(File script) {
+    return false;
+  }
 
   /**
    * Execute a script file. The method waits for execution to be completed.
@@ -68,7 +70,9 @@ public interface ScriptEngine {
    * @param args arguments to pass to script.
    * @return true if executed successfully, false if busy or error.
    */
-  public boolean exec(File script, List<String> args);
+  public default boolean exec(File script, List<String> args) {
+    return false;
+  }
 
   /**
    * Execute a precompiled script. The method waits for execution to be completed.
@@ -76,7 +80,9 @@ public interface ScriptEngine {
    * @param script script class to execute.
    * @return true if executed successfully, false if busy or error or unable to instantiate class.
    */
-  public boolean exec(Class<?> script);
+  public default boolean exec(Class<?> script) {
+    return false;
+  }
 
   /**
    * Execute a precomplied script. The method waits for execution to be completed.
@@ -85,7 +91,9 @@ public interface ScriptEngine {
    * @param args arguments to pass to script.
    * @return true if executed successfully, false if busy or error or unable to instantiate class.
    */
-  public boolean exec(Class<?> script, List<String> args);
+  public default boolean exec(Class<?> script, List<String> args) {
+    return false;
+  }
 
   /**
    * Execute a script from a reader. The method waits for execution to be completed.
@@ -94,7 +102,9 @@ public interface ScriptEngine {
    * @param name reader name for logging.
    * @return true if executed successfully, false if busy or error.
    */
-  public boolean exec(Reader reader, String name);
+  public default boolean exec(Reader reader, String name) {
+    return false;
+  }
 
   /**
    * Execute a script from a reader. The method waits for execution to be completed.
@@ -104,7 +114,9 @@ public interface ScriptEngine {
    * @param args arguments to pass to script.
    * @return true if executed successfully, false if busy or error.
    */
-  public boolean exec(Reader reader, String name, List<String> args);
+  public default boolean exec(Reader reader, String name, List<String> args) {
+    return false;
+  }
 
   /**
    * Deliver message to user, typically by displaying it on the shell in an appropriate format.
@@ -119,7 +131,9 @@ public interface ScriptEngine {
    * @param s string input
    * @return true if consumed, false otherwise
    */
-  public boolean offer(String s);
+  public default boolean offer(String s) {
+    return false;
+  }
 
   /**
    * Gets an input offered by {@link #offer(String)}. Blocks until an input is available or
@@ -127,7 +141,9 @@ public interface ScriptEngine {
    *
    * @return input string, or null if input not supported
    */
-  public String input() throws InterruptedException;
+  public default String input() throws InterruptedException {
+    return null;
+  }
 
   /**
    * Check if script is currently being executed.
@@ -145,7 +161,9 @@ public interface ScriptEngine {
    * @param name name of script variable.
    * @param value of script variable.
    */
-  public void setVariable(String name, Object value);
+  public default void setVariable(String name, Object value) {
+    // do nothing
+  }
 
   /**
    * Get value of script variable.
@@ -153,18 +171,24 @@ public interface ScriptEngine {
    * @param name name of script variable.
    * @return value of script variable.
    */
-  public Object getVariable(String name);
+  public default Object getVariable(String name) {
+    return null;
+  }
 
   /**
    * Make classes accessible from script without qualified names.
    *
    * @param clazz qualified class name (with wildcards).
    */
-  public void importClasses(String clazz);
+  public default void importClasses(String clazz) {
+    // do nothing
+  }
 
   /**
    * Terminate the scripting engine.
    */
-  public void shutdown();
+  public default void shutdown() {
+    // do nothing
+  }
 
 }

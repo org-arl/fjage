@@ -56,8 +56,8 @@ public class Container {
   protected Object cloner;
   protected Method doClone;
   protected boolean autoclone = false;
-  protected final Set<AgentID> idle = new HashSet<>();
-  protected final Set<MessageListener> listeners = new HashSet<>();
+  protected final Set<AgentID> idle = ConcurrentHashMap.newKeySet();
+  protected final Set<MessageListener> listeners = new CopyOnWriteArraySet<>();
 
   //////////// Interface methods
 
@@ -141,7 +141,7 @@ public class Container {
         doClone = Class.forName(SERIAL_CLONER).getDeclaredMethod("clone", Serializable.class);
       } else if (name.equals(FAST_CLONER)) {
         Class<?> cls = Class.forName(FAST_CLONER);
-        cloner = cls.newInstance();
+        cloner = cls.getDeclaredConstructor().newInstance();
         doClone = cls.getMethod("deepClone", Object.class);
       } else {
         cloner = null;
@@ -298,12 +298,17 @@ public class Container {
       Agent agent = agents.get(aid);
       if (agent == null) return false;
       agent.stop();
-      agents.remove(aid);
+      // remove from idle first: the transient "in agents but not idle" state reads
+      // as busy, never as a false-positive idle container
       idle.remove(aid);
+      agents.remove(aid);
       unsubscribe(aid);
       deregister(aid);
       notify();   // if we are waiting for shutdown
     }
+    // removing an agent may have turned the container idle; without this notify a
+    // platform that read a transient not-idle state during the removal would wait forever
+    if (running && isIdle()) platform.idle();
     return true;
   }
 
@@ -326,9 +331,7 @@ public class Container {
    * @return true if successfully added, false otherwise.
    */
   public boolean addListener(MessageListener listener) {
-    synchronized (listeners) {
-      return listeners.add(listener);
-    }
+    return listeners.add(listener);
   }
 
   /**
@@ -338,9 +341,7 @@ public class Container {
    * @return true if successfully removed, false otherwise.
    */
   public boolean removeListener(MessageListener listener) {
-    synchronized (listeners) {
-      return listeners.remove(listener);
-    }
+    return listeners.remove(listener);
   }
 
   /**
@@ -366,10 +367,8 @@ public class Container {
   public boolean send(Message m, boolean relay) {
     if (relay) log.warning("Container does not support relaying");
     if (m.getSentAt() == null) m.setSentAt(platform.currentTimeMillis());
-    synchronized (listeners) {
-      for (MessageListener listener: listeners)
-        if (listener.onReceive(m)) return true;
-    }
+    for (MessageListener listener: listeners)
+      if (listener.onReceive(m)) return true;
     AgentID aid = m.getRecipient();
     if (aid == null) return false;
     if (aid.isTopic()) {
@@ -431,10 +430,7 @@ public class Container {
   public synchronized void unsubscribe(AgentID aid) {
     Agent agent = agents.get(aid);
     if (agent == null) return;
-    for (AgentID topic: topics.keySet()) {
-      Set<Agent> subscribers = topics.get(topic);
-      subscribers.remove(agent);
-    }
+    topics.values().forEach(subscribers -> subscribers.remove(agent));
   }
 
   /**
@@ -503,10 +499,7 @@ public class Container {
    * @param aid id of agent to deregister.
    */
   public synchronized void deregister(AgentID aid) {
-    for (String service: services.keySet()) {
-      Set<AgentID> providers = services.get(service);
-      providers.remove(aid);
-    }
+    services.values().forEach(providers -> providers.remove(aid));
   }
 
   /**
@@ -592,35 +585,28 @@ public class Container {
    */
   public void shutdown() {
     if (!running) return;
-    while (true) {
-      try {
-        log.info("Initiating shutdown...");
-        for (Agent a: agents.values())
-          a.stop();
-        log.fine("Waiting for agents to shutdown...");
-        synchronized (this) {
-          while (!agents.isEmpty()) {
-            try {
-              wait(100);   // wait for all agents to kill themselves
-            } catch (InterruptedException ex) {
-              log.warning("Shutdown interrupted!");
-              Thread.currentThread().interrupt();
-              agents.clear();
-              idle.clear();
-              running = false;
-              return;
-            }
-          }
+    log.info("Initiating shutdown...");
+    for (Agent a: agents.values())
+      a.stop();
+    log.fine("Waiting for agents to shutdown...");
+    synchronized (this) {
+      while (!agents.isEmpty()) {
+        try {
+          wait(100);   // wait for all agents to kill themselves
+        } catch (InterruptedException ex) {
+          log.warning("Shutdown interrupted!");
+          Thread.currentThread().interrupt();
+          agents.clear();
+          idle.clear();
+          running = false;
+          return;
         }
-        log.info("All agents have shutdown");
-        agents.clear();
-        idle.clear();
-        running = false;
-        return;
-      } catch (ConcurrentModificationException ex) {
-        // do nothing, try again
       }
     }
+    log.info("All agents have shutdown");
+    agents.clear();
+    idle.clear();
+    running = false;
   }
 
   /**
@@ -638,10 +624,7 @@ public class Container {
    * @return true if all agents are idle, false otherwise.
    */
   public boolean isIdle() {
-    int nAgents = agents.size();
-    synchronized (idle) {
-      return nAgents == idle.size();
-    }
+    return agents.size() == idle.size();
   }
 
   /**
@@ -701,9 +684,7 @@ public class Container {
    * @param aid agent that is idle.
    */
   void reportIdle(AgentID aid) {
-    synchronized (idle) {
-      idle.add(aid);
-    }
+    idle.add(aid);
     if (running && isIdle()) platform.idle();
   }
 
@@ -713,9 +694,7 @@ public class Container {
    * @param aid agent that is busy.
    */
   void reportBusy(AgentID aid) {
-    synchronized (idle) {
-      idle.remove(aid);
-    }
+    idle.remove(aid);
   }
 
 }

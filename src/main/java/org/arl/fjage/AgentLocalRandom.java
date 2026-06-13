@@ -10,10 +10,9 @@ for full license details.
 
 package org.arl.fjage;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -31,7 +30,8 @@ public class AgentLocalRandom extends Random {
   private static Logger log = Logger.getLogger(AgentLocalRandom.class.getName());
 
   private static AgentLocalRandom root = new AgentLocalRandom();
-  private static Map<Object,AgentLocalRandom> rng = Collections.synchronizedMap(new HashMap<Object,AgentLocalRandom>());
+  private static final Map<Object,AgentLocalRandom> rng = new ConcurrentHashMap<>();
+  private static final ThreadLocal<AgentLocalRandom> tlr = new ThreadLocal<>();
 
   /**
    * Returns the current agent's AgentLocalRandom.
@@ -39,10 +39,14 @@ public class AgentLocalRandom extends Random {
    * @return current agent's random number generator.
    */
   public static AgentLocalRandom current() {
-    Thread tid = Thread.currentThread();
-    AgentLocalRandom r = rng.get(tid);
+    AgentLocalRandom r = tlr.get();
     if (r != null) return r;
-    return root;
+    // claim the generator bound to this thread (if any) into the thread-local,
+    // so subsequent calls avoid the shared map entirely
+    r = rng.remove(Thread.currentThread());
+    if (r == null) return root;
+    tlr.set(r);
+    return r;
   }
 
   //// private operations for agent/container to use
@@ -68,11 +72,12 @@ public class AgentLocalRandom extends Random {
 
   static void unbind() {
     unbind(Thread.currentThread());
+    tlr.remove();
   }
 
   /**
    * Sets root random number generator seed. This should be set once, at the start of the simulation
-   * if repeatable random number sequences are desired.
+   * (before any agents are started) if repeatable random number sequences are desired.
    *
    * @param seed random number seed.
    */

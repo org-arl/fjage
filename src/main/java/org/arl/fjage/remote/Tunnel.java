@@ -2,6 +2,7 @@ package org.arl.fjage.remote;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
@@ -65,8 +66,17 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   @Override
   public void init() {
     register(org.arl.fjage.shell.Services.DOCUMENTATION);
-    readExecutor = Executors.newCachedThreadPool();
-    writeExecutor = Executors.newSingleThreadExecutor();
+    final AtomicInteger readerNum = new AtomicInteger(1);
+    readExecutor = Executors.newCachedThreadPool(r -> {
+      Thread t = new Thread(r, getName()+":reader-"+readerNum.getAndIncrement());
+      t.setDaemon(true);
+      return t;
+    });
+    writeExecutor = Executors.newSingleThreadExecutor(r -> {
+      Thread t = new Thread(r, getName()+":writer");
+      t.setDaemon(true);
+      return t;
+    });
     add(new ParameterMessageBehavior(TunnelParam.class));
     if (ip == null) {
       server = new TcpServer(port, this);

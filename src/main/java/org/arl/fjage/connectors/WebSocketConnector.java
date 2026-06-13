@@ -7,6 +7,7 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,7 +65,7 @@ public class WebSocketConnector implements Connector{
 
     @OnWebSocketMessage
     public void onWebSocketText(String message) {
-        byte[] buf = message.getBytes();
+        byte[] buf = message.getBytes(StandardCharsets.UTF_8);
         synchronized (pin) {
             // TODO: Check if we need any filters here.
             // The WebSocketHubConnector filters for the likes of ^D

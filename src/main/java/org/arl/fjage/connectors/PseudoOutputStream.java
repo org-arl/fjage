@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.connectors;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 /**
  * An output stream backed by a byte buffer that can be read from.
@@ -89,7 +90,7 @@ public class PseudoOutputStream extends OutputStream {
     if (q == null) return null;
     byte[] buf = q.readDelimited((byte)10);
     if (buf == null) return null;
-    return new String(buf);
+    return new String(buf, StandardCharsets.UTF_8);
   }
 
   /**

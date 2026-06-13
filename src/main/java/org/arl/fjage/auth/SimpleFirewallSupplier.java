@@ -16,6 +16,7 @@ import org.arl.fjage.remote.Action;
 import org.arl.fjage.remote.JsonMessage;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -46,8 +47,8 @@ public class SimpleFirewallSupplier
    */
   public static final String POLICY_ID_ALLOW_ALL = "AllowAll";
 
-  private final Map<String, User> userMap = Collections.synchronizedMap(new HashMap<>());
-  private final Map<String, Policy> policyMap = Collections.synchronizedMap(new HashMap<>());
+  private final Map<String, User> userMap = new ConcurrentHashMap<>();
+  private final Map<String, Policy> policyMap = new ConcurrentHashMap<>();
 
   /**
    * Add/update a user.
@@ -89,6 +90,7 @@ public class SimpleFirewallSupplier
    * @param username User name.
    */
   public void removeUser(String username) {
+    if (username == null) return;
     userMap.remove(username);
   }
 
@@ -101,6 +103,7 @@ public class SimpleFirewallSupplier
     if (Strings.CS.equals(policyId, POLICY_ID_ALLOW_ALL)) {
       throw new IllegalArgumentException(String.format("%s is a reserved policy ID", policyId));
     }
+    if (policyId == null) return;
     policyMap.remove(policyId);
   }
 

@@ -10,8 +10,10 @@ for full license details.
 
 package org.arl.fjage;
 
-import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A platform that runs the agents in its containers in real-time.  The notion
@@ -34,7 +36,13 @@ public final class RealTimePlatform extends Platform {
 
   /////////// Private attributes
 
-  private Timer timer = new Timer("fjage-timer", true);
+  // a ScheduledThreadPoolExecutor is used rather than a java.util.Timer, as it
+  // survives exceptions thrown by scheduled tasks
+  private final ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(r -> {
+    Thread t = new Thread(r, "fjage-timer");
+    t.setDaemon(true);
+    return t;
+  });
 
   /////////// Implementation methods
 
@@ -50,7 +58,7 @@ public final class RealTimePlatform extends Platform {
 
   @Override
   public void schedule(TimerTask task, long millis) {
-    timer.schedule(task, millis);
+    timer.schedule(task, millis, TimeUnit.MILLISECONDS);
   }
 
   @Override

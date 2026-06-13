@@ -41,7 +41,12 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private WebSocketServer websocketListener = null;
   private final CopyOnWriteArrayList<ConnectionHandler> slaves = new CopyOnWriteArrayList<>();
   private Supplier<Firewall> fwSupplier = AllowAll.SUPPLIER;
-  private final ExecutorService executor = Executors.newFixedThreadPool(10);
+  private final AtomicInteger executorThreadNum = new AtomicInteger(1);
+  private final ExecutorService executor = Executors.newFixedThreadPool(10, r -> {
+    Thread t = new Thread(r, "fjage-master-"+executorThreadNum.getAndIncrement());
+    t.setDaemon(true);
+    return t;
+  });
 
   ////////////// Constructors
 
@@ -316,7 +321,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   protected void initComplete() {
     runAll(slaves, slave -> {
-      if (!slave.isAlive()) slave.start();
+      if (!slave.isStarted()) slave.start();
     }, TIMEOUT);
     if (!slaves.isEmpty()) {
       log.fine("Waiting for slaves...");
