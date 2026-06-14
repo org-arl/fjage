@@ -179,11 +179,6 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
         }
         for (WSHandler t: wsHandlers)
           t.write(s);
-        try {
-          Thread.sleep(10);
-        } catch (InterruptedException ex) {
-          break;
-        }
       }
     }
 
@@ -207,6 +202,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
     Session session = null;
     WebSocketHubConnector conn;
+    private WebSocketWriter writer = null;
 
     public WSHandler(WebSocketHubConnector conn) {
       this.conn = conn;
@@ -216,6 +212,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     public void onConnect(Session session) {
       log.fine("New connection from "+session.getRemoteAddress());
       this.session = session;
+      writer = new WebSocketWriter(session, null, log);
       wsHandlers.add(this);
       if (listener != null) listener.connected(conn);
     }
@@ -223,6 +220,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     @OnWebSocketClose
     public void onClose(int statusCode, String reason) {
       log.fine("Connection from "+session.getRemoteAddress()+" closed");
+      if (writer != null) writer.close();
       session = null;
       wsHandlers.remove(this);
     }
@@ -253,33 +251,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     }
 
     void write(String s) {
-      try {
-        Session currentSession = session;
-        if (currentSession != null && currentSession.isOpen()) {
-          currentSession.getRemote().sendString(s, new WriteCallback() {
-            @Override
-            public void writeFailed(Throwable cause) {
-              try {
-                if (cause instanceof java.nio.channels.ClosedChannelException) {
-                  log.info("Unexpected " + cause.toString() + " while sending to " + currentSession.getRemoteAddress() + ".");
-                } else {
-                  log.log(Level.WARNING, "Error sending websocket message: ", cause);
-                }
-                currentSession.disconnect();
-              } catch (Exception e) {
-                log.log(Level.WARNING, "Error handling websocket send failure: ", e);
-              }
-            }
-
-            @Override
-            public void writeSuccess() {
-              // nothing to do
-            }
-          });
-        }
-      } catch (Exception e) {
-        log.log(Level.WARNING, "Error sending websocket message: ", e);
-      }
+      if (writer != null) writer.enqueue(s);
     }
   }
 }
