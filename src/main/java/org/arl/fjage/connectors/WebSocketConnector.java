@@ -3,7 +3,6 @@ package org.arl.fjage.connectors;
 import org.eclipse.jetty.websocket.api.BatchMode;
 import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.WriteCallback;
 import org.eclipse.jetty.websocket.api.annotations.*;
 
 import java.io.InputStream;
@@ -24,6 +23,7 @@ public class WebSocketConnector implements Connector{
     private final PseudoInputStream pin = new PseudoInputStream();
     private final PseudoOutputStream pout = new PseudoOutputStream();
     private OutputThread outThread = null;
+    private WebSocketWriter writer = null;
 
     public WebSocketConnector(String context) {
         this.context = context;
@@ -33,6 +33,7 @@ public class WebSocketConnector implements Connector{
     public void onWebSocketClose(int statusCode, String reason)  {
         this.session = null;
         this.remote = null;
+        if (writer != null) writer.close();
         pin.close();
         pout.close();
         if (outThread != null) outThread.close();
@@ -47,6 +48,7 @@ public class WebSocketConnector implements Connector{
         log.finer("WebSocket Connector connected: " + session.getRemoteAddress().getHostString() + ":" + session.getRemoteAddress().getPort());
         name = "ws://" + this.remote.getInetSocketAddress().getAddress().getHostAddress() + context + ":" + this.remote.getInetSocketAddress().getPort();
         if (listener != null) listener.connected(this);
+        writer = new WebSocketWriter(session, null, log);
         outThread = new OutputThread();
         outThread.start();
     }
@@ -139,11 +141,6 @@ public class WebSocketConnector implements Connector{
                 s = pout.readLine();
                 if (s == null) break;
                 write(s);
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException ex) {
-                    break;
-                }
             }
         }
 
@@ -160,33 +157,7 @@ public class WebSocketConnector implements Connector{
     }
 
     private void write(String s){
-        try {
-            Session currentSession = session;
-            if (currentSession != null && currentSession.isOpen()) {
-                currentSession.getRemote().sendString(s, new WriteCallback() {
-                    @Override
-                    public void writeFailed(Throwable cause) {
-                        try {
-                            if (cause instanceof java.nio.channels.ClosedChannelException) {
-                                log.info("Unexpected " + cause.toString() + " while sending to " + currentSession.getRemoteAddress() + ".");
-                            } else {
-                                log.log(Level.WARNING, "Error sending websocket message: ", cause);
-                            }
-                            if (currentSession.isOpen()) currentSession.disconnect();
-                        } catch (Exception e) {
-                            log.log(Level.WARNING, "Error handling websocket send failure: ", e);
-                        }
-                    }
-
-                    @Override
-                    public void writeSuccess() {
-                        // nothing to do
-                    }
-                });
-            }
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Error sending websocket message: ", e);
-        }
+        if (writer != null) writer.enqueue(s);
     }
 
 }
