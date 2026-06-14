@@ -279,7 +279,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   }
 
   /**
-   * Gets the agent IDs of all agents that provide a given service.s
+   * Gets the agent IDs of all agents that provide a given service.
    * @param service name of the service.
    * @return array of agent IDs, empty if no agents provide the service.
    */
