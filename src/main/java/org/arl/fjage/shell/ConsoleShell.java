@@ -11,6 +11,8 @@ package org.arl.fjage.shell;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -155,27 +157,31 @@ public class ConsoleShell implements Shell, ConnectionListener {
       console.setVariable(LineReader.DISABLE_COMPLETION, true);
       return;
     }
-    if (scriptEngine == null)
-      console = LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).build();
-    else {
-      if (historyFile == null) {
-        console = LineReaderBuilder.builder().terminal(term).build();
-      } else {
-        console = LineReaderBuilder.builder().terminal(term).history(new DefaultHistory()).build();
-        console.setVariable(LineReader.HISTORY_FILE, historyFile); // set history file
-        console.setVariable(LineReader.HISTORY_SIZE, 1000); // set history size
+    // LineReaderBuilder may need to perform privileged operations
+    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+      if (scriptEngine == null)
+        console = LineReaderBuilder.builder().terminal(term).option(LineReader.Option.AUTO_FRESH_LINE, true).build();
+      else {
+        if (historyFile == null) {
+          console = LineReaderBuilder.builder().terminal(term).build();
+        } else {
+          console = LineReaderBuilder.builder().terminal(term).history(new DefaultHistory()).build();
+          console.setVariable(LineReader.HISTORY_FILE, historyFile); // set history file
+          console.setVariable(LineReader.HISTORY_SIZE, 1000); // set history size
+        }
+        AutosuggestionWidgets autosuggestionWidgets = new AutosuggestionWidgets(console);
+        autosuggestionWidgets.enable();
+        console.setVariable(LineReader.DISABLE_COMPLETION, true);
+        console.setOpt(LineReader.Option.ERASE_LINE_ON_FINISH);
+        console.getWidgets().put(FORCE_BRACKETED_PASTE_ON, () -> {
+          console.getTerminal().writer().write(BRACKETED_PASTE_ON);
+          console.getTerminal().writer().write(APPLICATION_CURSOR);
+          console.getTerminal().flush();
+          return true;
+        });
       }
-      AutosuggestionWidgets autosuggestionWidgets = new AutosuggestionWidgets(console);
-      autosuggestionWidgets.enable();
-      console.setVariable(LineReader.DISABLE_COMPLETION, true);
-      console.setOpt(LineReader.Option.ERASE_LINE_ON_FINISH);
-      console.getWidgets().put(FORCE_BRACKETED_PASTE_ON, () -> {
-        console.getTerminal().writer().write(BRACKETED_PASTE_ON);
-        console.getTerminal().writer().write(APPLICATION_CURSOR);
-        console.getTerminal().flush();
-        return true;
-      });
-    }
+      return null;
+    });
   }
 
   @Override
