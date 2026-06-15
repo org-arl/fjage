@@ -44,7 +44,7 @@ public class BlockingByteQueue {
     rlen = 0;
     rpos = 0;
     bytes = 0;
-    notify();
+    notifyAll();
   }
 
   /**
@@ -61,7 +61,7 @@ public class BlockingByteQueue {
     wbuf[wlen++] = (byte)c;
     if (rbuf == wbuf) rlen = wlen;
     bytes++;
-    notify();
+    notifyAll();
   }
 
   /**
@@ -73,14 +73,14 @@ public class BlockingByteQueue {
     bytes += buf.length;
     if (wlen == 0 && buf.length > BLOCK_SIZE) {
       queue.add(buf);
-      notify();
+      notifyAll();
       return;
     }
     if (wlen+buf.length < BLOCK_SIZE) {
       System.arraycopy(buf, 0, wbuf, wlen, buf.length);
       wlen += buf.length;
       if (rbuf == wbuf) rlen = wlen;
-      notify();
+      notifyAll();
       return;
     }
     int len1 = BLOCK_SIZE - wlen;
@@ -94,13 +94,13 @@ public class BlockingByteQueue {
       queue.add(wbuf);
       wbuf = new byte[BLOCK_SIZE];
       wlen = 0;
-      notify();
+      notifyAll();
       return;
     }
     wbuf = new byte[BLOCK_SIZE];
     System.arraycopy(buf, len1, wbuf, 0, len2);
     wlen = len2;
-    notify();
+    notifyAll();
   }
 
   /**
@@ -128,6 +128,7 @@ public class BlockingByteQueue {
     int c = rbuf[rpos++];
     if (c < 0) c += 256;
     bytes--;
+    if (bytes == 0) notifyAll();
     return c;
   }
 
@@ -193,6 +194,27 @@ public class BlockingByteQueue {
    */
   public synchronized int available() {
     return bytes;
+  }
+
+  /**
+   * Blocks until the queue is drained empty or the timeout elapses.
+   *
+   * @param timeout maximum time to wait in milliseconds.
+   * @return true if the queue is empty, false on timeout or interrupt.
+   */
+  public synchronized boolean awaitEmpty(long timeout) {
+    long deadline = System.currentTimeMillis() + timeout;
+    while (bytes > 0) {
+      long remaining = deadline - System.currentTimeMillis();
+      if (remaining <= 0) return false;
+      try {
+        wait(remaining);
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+        return false;
+      }
+    }
+    return true;
   }
 
 }

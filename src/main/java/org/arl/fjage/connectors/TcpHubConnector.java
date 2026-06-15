@@ -113,17 +113,9 @@ public class TcpHubConnector implements Connector, Runnable {
 
   @Override
   public boolean waitOutputCompletion(long timeout) {
-    long t = System.currentTimeMillis() + timeout;
-    while (pout != null && pout.available() > 0) {
-      if (System.currentTimeMillis() > t) return false;
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-        return false;
-      }
-    }
-    return true;
+    PseudoOutputStream p = pout;    // capture: close() can null it out concurrently
+    if (p == null) return true;
+    return p.awaitEmpty(timeout);
   }
 
   @Override

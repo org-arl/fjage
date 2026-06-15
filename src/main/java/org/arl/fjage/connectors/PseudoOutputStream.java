@@ -103,6 +103,18 @@ public class PseudoOutputStream extends OutputStream {
     return q.available();
   }
 
+  /**
+   * Blocks until all buffered data has been drained from the stream, or the
+   * timeout elapses.
+   *
+   * @param timeout maximum time to wait in milliseconds.
+   * @return true if the stream buffer is empty, false on timeout or interrupt.
+   */
+  public boolean awaitEmpty(long timeout) {
+    BlockingByteQueue q = this.q;
+    return q == null || q.awaitEmpty(timeout);
+  }
+
   @Override
   public void close() {
     if (q == null) return;
