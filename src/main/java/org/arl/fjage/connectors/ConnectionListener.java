@@ -14,6 +14,7 @@ package org.arl.fjage.connectors;
  * Interface to be implemented by clients wishing to listen to incoming
  * connections.
  */
+@FunctionalInterface
 public interface ConnectionListener {
   public void connected(Connector connector);
 }

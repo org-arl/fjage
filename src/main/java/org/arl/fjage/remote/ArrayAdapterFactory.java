@@ -112,33 +112,33 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
       private T decodeString(String s) {
         byte[] data = Base64.getDecoder().decode(s);
         if (compType.equals(byte.class)) return (T)data;
-        ByteBuffer buf = ByteBuffer.wrap(data);
+        ByteBuffer buf = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
         if (compType.equals(int.class)) {
-          IntBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
+          IntBuffer buf2 = buf.asIntBuffer();
           int[] array = new int[buf2.limit()];
           buf2.get(array);
           return (T)array;
         }
         if (compType.equals(short.class)) {
-          ShortBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+          ShortBuffer buf2 = buf.asShortBuffer();
           short[] array = new short[buf2.limit()];
           buf2.get(array);
           return (T)array;
         }
         if (compType.equals(long.class)) {
-          LongBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).order(ByteOrder.LITTLE_ENDIAN).asLongBuffer();
+          LongBuffer buf2 = buf.asLongBuffer();
           long[] array = new long[buf2.limit()];
           buf2.get(array);
           return (T)array;
         }
         if (compType.equals(float.class)) {
-          FloatBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer();
+          FloatBuffer buf2 = buf.asFloatBuffer();
           float[] array = new float[buf2.limit()];
           buf2.get(array);
           return (T)array;
         }
         if (compType.equals(double.class)) {
-          DoubleBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).order(ByteOrder.LITTLE_ENDIAN).asDoubleBuffer();
+          DoubleBuffer buf2 = buf.asDoubleBuffer();
           double[] array = new double[buf2.limit()];
           buf2.get(array);
           return (T)array;

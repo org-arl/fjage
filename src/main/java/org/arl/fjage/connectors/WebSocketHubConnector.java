@@ -12,6 +12,7 @@ package org.arl.fjage.connectors;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
@@ -175,7 +176,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
         } else {
           byte[] buf = pout.readAvailable();
           if (buf == null) break;
-          s = new String(buf);
+          s = new String(buf, StandardCharsets.UTF_8);
         }
         for (WSHandler t: wsHandlers)
           t.write(s);
@@ -236,7 +237,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
     @OnWebSocketMessage
     public void onMessage(String message) {
-      byte[] buf = message.getBytes();
+      byte[] buf = message.getBytes(StandardCharsets.UTF_8);
       synchronized (conn.pin) {
         for (int c : buf) {
           if (c < 0) c += 256;

@@ -11,6 +11,11 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.io.*;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import org.arl.fjage.*;
 
 /**
@@ -116,30 +121,40 @@ public class Gateway implements Messenger, Closeable {
 
   protected void init() {
     agent = new Agent() {
-      private Message rsp;
-      private final Object sync = new Object();
+      private final Set<CompletableFuture<Message>> pending = ConcurrentHashMap.newKeySet();
+      private volatile boolean closed = false;
       @Override
-      public Message receive(final MessageFilter filter, long timeout) {
+      public Message receive(final MessageFilter filter, final long timeout) {
         if (Thread.currentThread().getId() == tid) return super.receive(filter, timeout);
-        synchronized (sync) {
-          rsp = null;
-          try {
-            add(new OneShotBehavior() {
-              @Override
-              public void action() {
-                rsp = receive(filter, timeout);
-                synchronized (sync) {
-                  sync.notify();
-                }
-              }
-            });
-            sync.wait();
-          } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            thread.interrupt();
-          }
-          return rsp;
+        final CompletableFuture<Message> rsp = new CompletableFuture<>();
+        pending.add(rsp);
+        try {
+          // if the agent shut down before we registered, complete the future
+          // ourselves, since shutdown() may have already drained pending
+          if (closed) rsp.complete(null);
+          else add(new OneShotBehavior() {
+            @Override
+            public void action() {
+              rsp.complete(receive(filter, timeout));
+            }
+          });
+          return rsp.get();
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+          thread.interrupt();
+          return null;
+        } catch (ExecutionException ex) {
+          return null;
+        } finally {
+          pending.remove(rsp);
         }
+      }
+      @Override
+      protected void shutdown() {
+        closed = true;
+        // release any threads waiting on cross-thread receives
+        for (CompletableFuture<Message> rsp: pending)
+          rsp.complete(null);
       }
     };
     container.add(getAgentID().getName(), agent);
@@ -203,20 +218,17 @@ public class Gateway implements Messenger, Closeable {
 
   @Override
   public boolean send(final Message m) {
-    if (agent == null) return false;
-    agent.add(new OneShotBehavior() {
-      @Override
-      public void action() {
-        agent.send(m);
-      }
-    });
+    final Agent a = agent;      // snapshot, as close() may set agent to null
+    if (a == null) return false;
+    a.add(new OneShotBehavior(() -> a.send(m)));
     return true;
   }
 
   @Override
   public synchronized Message receive(final MessageFilter filter, long timeout) {
-    if (agent == null) return null;
-    return agent.receive(filter, timeout);
+    Agent a = agent;            // snapshot, as close() may set agent to null
+    if (a == null) return null;
+    return a.receive(filter, timeout);
   }
 
   public Message receive(final MessageFilter filter) {
@@ -247,15 +259,8 @@ public class Gateway implements Messenger, Closeable {
   public Message receive(final Message m, long timeout) {
     if (container instanceof SlaveContainer)
       ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
-    Message rsp = receive(new MessageFilter() {
-      private final String mid = m.getMessageID();
-      @Override
-      public boolean matches(Message m) {
-        String s = m.getInReplyTo();
-        if (s == null) return false;
-        return s.equals(mid);
-      }
-    }, timeout);
+    final String mid = m.getMessageID();
+    Message rsp = receive(m1 -> m1.getInReplyTo() != null && Objects.equals(m1.getInReplyTo(), mid), timeout);
     if (rsp != null) return rsp;
     if (container instanceof SlaveContainer)
       ((SlaveContainer)container).checkAuthFailure(m.getMessageID());

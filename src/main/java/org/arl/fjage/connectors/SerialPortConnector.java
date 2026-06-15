@@ -87,8 +87,10 @@ public class SerialPortConnector implements Connector {
 
   @Override
   public boolean waitOutputCompletion(long timeout) {
+    SerialPort c = com;    // capture: close() can null it out concurrently
+    if (c == null) return true;
     long t = System.currentTimeMillis() + timeout;
-    while (com.bytesAwaitingWrite() > 0) {
+    while (c.bytesAwaitingWrite() > 0) {
       if (System.currentTimeMillis() > t) return false;
       try {
         Thread.sleep(100);

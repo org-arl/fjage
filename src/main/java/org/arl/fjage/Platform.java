@@ -11,10 +11,10 @@ for full license details.
 package org.arl.fjage;
 
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.Collections;
 import java.util.List;
 import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -28,7 +28,7 @@ public abstract class Platform implements TimestampProvider {
 
   /////////// Private attributes
 
-  protected List<Container> containers = new ArrayList<Container>();
+  protected List<Container> containers = new CopyOnWriteArrayList<>();
   protected boolean running = false;
   private String hostname = null;
   private int port = 1099;
@@ -144,15 +144,15 @@ public abstract class Platform implements TimestampProvider {
    */
   public String getHostname() {
     if (hostname != null) return hostname;
+    if (nif != null) {
+      return Collections.list(nif.getInetAddresses()).stream()
+          .filter(a -> !(a instanceof Inet6Address))
+          .findFirst()
+          .map(InetAddress::getHostAddress)
+          .orElse("localhost");
+    }
     try {
-      InetAddress addr;
-      if (nif == null) addr = InetAddress.getLocalHost();
-      else {
-        Enumeration<InetAddress> alist = nif.getInetAddresses();
-        addr = alist.nextElement();
-        while (addr instanceof Inet6Address)
-          addr = alist.nextElement();
-      }
+      InetAddress addr = InetAddress.getLocalHost();
       if (addr == null) return "localhost";
       return addr.getHostAddress();
     } catch (UnknownHostException ex) {

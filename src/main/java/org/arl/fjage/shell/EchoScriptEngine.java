@@ -12,11 +12,6 @@ package org.arl.fjage.shell;
 
 import org.arl.fjage.Message;
 
-import java.io.File;
-import java.io.Reader;
-import java.util.List;
-
-
 /**
  * Implements a simple script engine that simply echoes whatever is sent to it.
  * This is useful for testing purposes.
@@ -62,48 +57,8 @@ public class EchoScriptEngine implements ScriptEngine {
   }
 
   @Override
-  public boolean exec(File script) {
-    return false;
-  }
-
-  @Override
-  public boolean exec(File script, List<String> args) {
-    return false;
-  }
-
-  @Override
-  public boolean exec(Class<?> script) {
-    return false;
-  }
-
-  @Override
-  public boolean exec(Class<?> script, List<String> args) {
-    return false;
-  }
-
-  @Override
-  public boolean exec(Reader reader, String name) {
-    return false;
-  }
-
-  @Override
-  public boolean exec(Reader reader, String name, List<String> args) {
-    return false;
-  }
-
-  @Override
   public void deliver(Message msg) {
     if (shell != null) shell.notify(msg.getSender().getName() + " >> " + msg.toString());
-  }
-
-  @Override
-  public boolean offer(String s) {
-    return false;
-  }
-
-  @Override
-  public String input() {
-    return null;
   }
 
   @Override
@@ -116,26 +71,6 @@ public class EchoScriptEngine implements ScriptEngine {
     synchronized(this) {
       notify();
     }
-  }
-
-  @Override
-  public void setVariable(String name, Object value) {
-    // do nothing
-  }
-
-  @Override
-  public Object getVariable(String name) {
-    return null;
-  }
-
-  @Override
-  public void importClasses(String clazz) {
-    // do nothing
-  }
-
-  @Override
-  public void shutdown() {
-    // do nothing
   }
 
 }

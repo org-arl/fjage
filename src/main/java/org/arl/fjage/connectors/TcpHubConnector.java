@@ -13,6 +13,7 @@ package org.arl.fjage.connectors;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
 
 /**
@@ -20,11 +21,14 @@ import java.util.logging.Logger;
  * into a single connector. All data in/out of the input/output streams of this
  * connector are common across all TCP clients.
  */
-public class TcpHubConnector extends Thread implements Connector {
+public class TcpHubConnector implements Connector, Runnable {
 
   protected int port;
   protected boolean telnet;
+  protected String name;
   protected ServerSocket sock = null;
+  protected final CountDownLatch portReady = new CountDownLatch(1);
+  protected final Thread thread;
   protected OutputThread outThread = null;
   protected List<ClientThread> clientThreads = Collections.synchronizedList(new ArrayList<ClientThread>());
   protected Logger log = Logger.getLogger(getClass().getName());
@@ -43,12 +47,13 @@ public class TcpHubConnector extends Thread implements Connector {
     this.port = port;
     this.telnet = telnet;
     try {
-      setName("tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port);
+      name = "tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port;
     } catch (UnknownHostException ex) {
-      setName("tcp://0.0.0.0:"+port);
+      name = "tcp://0.0.0.0:"+port;
     }
-    setDaemon(true);
-    start();
+    thread = new Thread(this, name);
+    thread.setDaemon(true);
+    thread.start();
   }
 
   /**
@@ -63,14 +68,12 @@ public class TcpHubConnector extends Thread implements Connector {
   /**
    * Get the TCP port on which the server listens for connections.
    */
-  public synchronized int getPort() {
-    if (port == 0) {
-      try {
-        wait(100);
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-        return -1;
-      }
+  public int getPort() {
+    try {
+      portReady.await();
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      return -1;
     }
     return port;
   }
@@ -104,18 +107,15 @@ public class TcpHubConnector extends Thread implements Connector {
   }
 
   @Override
+  public String getName() {
+    return name;
+  }
+
+  @Override
   public boolean waitOutputCompletion(long timeout) {
-    long t = System.currentTimeMillis() + timeout;
-    while (pout != null && pout.available() > 0) {
-      if (System.currentTimeMillis() > t) return false;
-      try {
-        sleep(10);
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-        return false;
-      }
-    }
-    return true;
+    PseudoOutputStream p = pout;    // capture: close() can null it out concurrently
+    if (p == null) return true;
+    return p.awaitEmpty(timeout);
   }
 
   @Override
@@ -123,16 +123,18 @@ public class TcpHubConnector extends Thread implements Connector {
     outThread = new OutputThread();
     outThread.start();
     try {
-      synchronized (this) {
+      try {
         sock = new ServerSocket(port);
         port = sock.getLocalPort();
-        notify();
+      } finally {
+        portReady.countDown();    // also on failure, so getPort() never blocks forever
       }
       try {
-        setName("tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port);
+        name = "tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port;
       } catch (UnknownHostException ex) {
-        setName("tcp://0.0.0.0:"+port);
+        name = "tcp://0.0.0.0:"+port;
       }
+      thread.setName(name);
       log.info("Listening on port "+port);
       while (sock != null) {
         try {
@@ -174,7 +176,7 @@ public class TcpHubConnector extends Thread implements Connector {
 
   @Override
   public String toString() {
-    return getName();
+    return name;
   }
 
   // thread to monitor incoming data on output stream and write to TCP clients

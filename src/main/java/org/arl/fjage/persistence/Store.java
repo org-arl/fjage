@@ -88,18 +88,13 @@ public class Store implements Closeable {
     } catch (Exception ex) {
       // ignore, and try next approach
     }
-    ByteArrayOutputStream baos = null;
-    ObjectOutputStream oos = null;
-    try {
-      baos = new ByteArrayOutputStream();
-      oos = new ObjectOutputStream(baos);
+    try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+         ObjectOutputStream oos = new ObjectOutputStream(baos)) {
       oos.writeObject(obj);
+      oos.flush();
       return sha(baos.toByteArray());
     } catch (Exception ex) {
       return String.valueOf(obj.hashCode());
-    } finally {
-      closeQuietly(oos);
-      closeQuietly(baos);
     }
   }
 
@@ -111,19 +106,13 @@ public class Store implements Closeable {
     File d = new File(root, obj.getClass().getName());
     if (!d.mkdirs() && !d.exists()) throw new FjageException("Cannot create directory " + d);
     File f = new File(d, getId(obj));
-    FileOutputStream fout = null;
-    ObjectOutputStream out = null;
-    try {
-      fout = new FileOutputStream(f);
-      out = new ObjectOutputStream(fout);
+    try (FileOutputStream fout = new FileOutputStream(f);
+         ObjectOutputStream out = new ObjectOutputStream(fout)) {
       out.writeObject(obj);
       out.flush();
       fout.getFD().sync();
     } catch (Exception ex) {
       throw new FjageException(ex.toString());
-    } finally {
-      closeQuietly(out);
-      closeQuietly(fout);
     }
   }
 
@@ -131,17 +120,13 @@ public class Store implements Closeable {
    * Loads a stored object from a file.
    */
   protected <T> T load(Class<T> type, File f) {
-    FileInputStream fin = null;
-    ObjectInputStream in = null;
-    try {
-      fin = new FileInputStream(f);
-      if (clazzLoader == null) in = new ObjectInputStream(fin);
-      else in = new ObjectInputStream(fin) {
-        @Override
-        protected Class<?> resolveClass(ObjectStreamClass objectStreamClass) throws IOException, ClassNotFoundException {
-            return Class.forName(objectStreamClass.getName(), false, clazzLoader);
-        }
-      };
+    try (FileInputStream fin = new FileInputStream(f);
+         ObjectInputStream in = clazzLoader == null ? new ObjectInputStream(fin) : new ObjectInputStream(fin) {
+           @Override
+           protected Class<?> resolveClass(ObjectStreamClass objectStreamClass) throws IOException, ClassNotFoundException {
+             return Class.forName(objectStreamClass.getName(), false, clazzLoader);
+           }
+         }) {
       @SuppressWarnings("unchecked")
       T rv = (T) in.readObject();
       return rv;
@@ -149,9 +134,6 @@ public class Store implements Closeable {
       return null;
     } catch (Exception ex) {
       throw new FjageException(ex.toString());
-    } finally {
-      closeQuietly(in);
-      closeQuietly(fin);
     }
   }
 
@@ -265,32 +247,6 @@ public class Store implements Closeable {
     }
     clazz = null;
     root = null;
-  }
-
-  /**
-   * Closes input stream quietly.
-   */
-  protected static void closeQuietly(InputStream is) {
-    if (is == null)
-      return;
-    try {
-      is.close();
-    } catch (IOException ex) {
-      // do nothing
-    }
-  }
-
-  /**
-   * Closes output stream quietly.
-   */
-  protected static void closeQuietly(OutputStream os) {
-    if (os == null)
-      return;
-    try {
-      os.close();
-    } catch (IOException ex) {
-      // do nothing
-    }
   }
 
 }

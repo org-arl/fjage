@@ -63,7 +63,12 @@ public class WebServer {
       @Override public Logger getLogger(String name)            { return this;      }
       @Override public boolean isDebugEnabled()                 { return false;     }
       @Override public void warn(String msg, Object... args)    {
-        if (msg.contains("{}")) for (Object a: args) msg = msg.replaceFirst("\\{}", a.toString());
+        // splice arguments in literally; replaceFirst() would interpret '$'/'\' in them
+        for (Object a: args) {
+          int i = msg.indexOf("{}");
+          if (i < 0) break;
+          msg = msg.substring(0, i) + a + msg.substring(i+2);
+        }
         log.warning(msg);
       }
       @Override public void warn(Throwable t)                   { log.log(Level.WARNING, "", t); }

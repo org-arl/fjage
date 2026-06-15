@@ -23,7 +23,7 @@ import org.arl.fjage.connectors.*;
 /**
  * Handles a JSON/TCP connection with remote container.
  */
-public class ConnectionHandler extends Thread {
+public class ConnectionHandler implements Runnable {
 
   private static final ScheduledExecutorService timeoutScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
     Thread t = new Thread(r, ConnectionHandler.class.getSimpleName()+":timeout");
@@ -45,16 +45,24 @@ public class ConnectionHandler extends Thread {
   private volatile boolean alive;
   private final boolean keepAlive;
   private final boolean closeOnDead;
-  private final ExecutorService pool = Executors.newSingleThreadExecutor();
+  private final ExecutorService pool = Executors.newSingleThreadExecutor(r -> {
+    Thread t = new Thread(r, "fjage-connection-worker");
+    t.setDaemon(true);
+    return t;
+  });
   private final Set<AgentID> watchList = new HashSet<>();
   private String clientName = "-";
   private final Firewall fw;
+  private final Thread thread;
+  private String name;
 
   public ConnectionHandler(Connector conn, RemoteContainer container, Firewall fw) {
     this.conn = conn;
     this.container = container;
     this.fw = fw;
-    setName(conn.toString());
+    name = conn.toString();
+    thread = new Thread(this, name);
+    thread.setDaemon(true);
     alive = false;
     keepAlive = true;
     closeOnDead = ((conn instanceof TcpConnector) || (conn instanceof WebSocketConnector)) && (container instanceof MasterContainer);
@@ -74,29 +82,47 @@ public class ConnectionHandler extends Thread {
     return alive;
   }
 
+  /**
+   * Starts the connection handler thread.
+   */
+  public void start() {
+    thread.start();
+  }
+
+  /**
+   * Waits for the connection handler thread to terminate.
+   */
+  public void join() throws InterruptedException {
+    thread.join();
+  }
+
+  /**
+   * Checks if the connection handler thread has been started.
+   */
+  public boolean isStarted() {
+    return thread.getState() != Thread.State.NEW;
+  }
+
+  /**
+   * Gets the name of the connection handler.
+   */
+  public String getName() {
+    return name;
+  }
+
   @Override
   public void run() {
-    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
     out = new DataOutputStream(conn.getOutputStream());
     if (keepAlive) {
+      send(ALIVE);
       if (closeOnDead) {
-        (new Thread(getName()+":init") {
-          @Override
-          public void run() {
-            send(ALIVE);
-            try {
-              Thread.sleep(TIMEOUT);
-            } catch (InterruptedException ex) {
-              // do nothing
-            }
-            if (!alive) {
-              log.fine("Connection dead");
-              close();
-            }
+        timeoutScheduler.schedule(() -> {
+          if (!alive) {
+            log.fine("Connection dead");
+            closeAsync();
           }
-        }).start();
-      } else {
-        send(ALIVE);
+        }, TIMEOUT, TimeUnit.MILLISECONDS);
       }
     }
     while (conn != null) {
@@ -281,9 +307,7 @@ public class ConnectionHandler extends Thread {
   }
 
   private void closeAsync() {
-    Thread t = new Thread(this::close, getName()+":close");
-    t.setDaemon(true);
-    t.start();
+    CompletableFuture.runAsync(this::close);
   }
 
   boolean isClosed() {

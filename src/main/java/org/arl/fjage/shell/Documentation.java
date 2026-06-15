@@ -18,15 +18,15 @@ import org.arl.fjage.param.*;
 
 public class Documentation {
 
-  protected List<String> doc = new ArrayList<String>();
-  protected Map<String,String> cache = new HashMap<String,String>();
+  protected List<String> doc = new ArrayList<>();
+  protected Map<String,String> cache = new HashMap<>();
   protected int staticSize = 0;
 
   protected static final Pattern heading = Pattern.compile("^#+ +([^ ]+) +-.*$");
   protected static final Pattern section = Pattern.compile("^#+ (.*)$");
-  protected static final String crlf = "\\r?\\n";
-  protected static final String header = "^#+ +";
-  protected static final String gaps = "\\n+$";
+  protected static final Pattern crlf = Pattern.compile("\\r?\\n");
+  protected static final Pattern header = Pattern.compile("^#+ +");
+  protected static final Pattern gaps = Pattern.compile("\\n+$");
   protected static final String placeholder = "@@";    // to be replaced by agent name
 
   /**
@@ -36,9 +36,7 @@ public class Documentation {
    */
   public void add(String s) {
     if (doc.size() > staticSize) doc.subList(staticSize, doc.size()).clear();
-    String[] lines = s.split(crlf);
-    for (String line: lines)
-      doc.add(line);
+    Collections.addAll(doc, crlf.split(s));
     staticSize = doc.size();
   }
 
@@ -84,7 +82,7 @@ public class Documentation {
       }
     }
     if (count == 0) search(sb, keyword);
-    return sb.toString().replaceAll(gaps, "\n");
+    return gaps.matcher(sb).replaceAll("\n");
   }
 
   /**
@@ -95,14 +93,14 @@ public class Documentation {
    */
   protected void search(StringBuilder sb, String keyword) {
     keyword = keyword.toLowerCase();
-    Set<String> topics = new HashSet<String>();
+    Set<String> topics = new HashSet<>();
     String topic = null;
     for (String s: doc) {
       Matcher m = section.matcher(s);
-      if (m.matches()) topic = s.replaceAll(header, "- ");
+      if (m.matches()) topic = header.matcher(s).replaceAll("- ");
       if (s.toLowerCase().contains(keyword)) topics.add(topic);
     }
-    if (topics.size() == 0) return;
+    if (topics.isEmpty()) return;
     sb.append("Possible topics:\n");
     for (String s: topics) {
       sb.append(s);
@@ -122,7 +120,7 @@ public class Documentation {
     if (level <= 0) return;
     int endlevel = level;
     if (s.startsWith("# ")) sb.append(s);
-    else sb.append(s.replaceAll(header, ""));
+    else sb.append(header.matcher(s).replaceAll(""));
     sb.append('\n');
     int skip = 0;
     for (int i = pos+1; i < doc.size(); i++) {
@@ -136,7 +134,7 @@ public class Documentation {
         if (skip == 0 || level <= skip) {
           if (skip > 0) nl = true;
           skip = 0;
-          s = s.replaceAll(header, "");
+          s = header.matcher(s).replaceAll("");
         }
         if (m.matches()) {
           skip = level;
@@ -177,11 +175,7 @@ public class Documentation {
       if (a.getType() != null) key += "::" + a.getType();
       if (cache.containsKey(key)) {
         String s = cache.get(key);
-        if (s != null) {
-          String[] lines = s.split(crlf);
-          for (String line: lines)
-            doc.add(line);
-        }
+        if (s != null) Collections.addAll(doc, crlf.split(s));
         continue;
       }
       ParameterReq req = new ParameterReq();
@@ -191,12 +185,11 @@ public class Documentation {
       if (rsp != null && rsp instanceof ParameterRsp) {
         Object docstr = ((ParameterRsp)rsp).get(new NamedParameter("__doc__"));
         if (docstr != null) {
-          String s = docstr.toString().replaceAll(placeholder, a.getName());
+          // literal replacement: agent names must not be treated as regex replacements
+          String s = docstr.toString().replace(placeholder, a.getName());
           if (s.startsWith("[no-cache]")) s = s.substring(10);
           else cache.put(key, s);
-          String[] lines = s.split(crlf);
-          for (String line: lines)
-            doc.add(line);
+          Collections.addAll(doc, crlf.split(s));
         }
       } else {
         // no documentation available for agent

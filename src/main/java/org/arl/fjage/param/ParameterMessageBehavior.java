@@ -54,21 +54,19 @@ public class ParameterMessageBehavior extends MessageBehavior {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public ParameterMessageBehavior(Class ... paramEnumClasses) {
     super(ParameterReq.class);
-    params = new ArrayList<Parameter>();
-    for (int i = 0; i < paramEnumClasses.length; i++)
-      params.addAll(EnumSet.allOf(paramEnumClasses[i]));
+    List<Parameter> p = new ArrayList<>();
+    for (Class cls: paramEnumClasses)
+      p.addAll(EnumSet.allOf(cls));
+    params = p;
   }
 
   @Override
   public void onReceive(Message msg) {
     final ParameterReq req = (ParameterReq)msg;
-    agent.add(new OneShotBehavior() {
-      @Override
-      public void action() {
-        ParameterRsp rsp = processParameterReq(req, null);
-        if (rsp != null) agent.send(rsp);
-      }
-    });
+    agent.add(new OneShotBehavior(() -> {
+      ParameterRsp rsp = processParameterReq(req, null);
+      if (rsp != null) agent.send(rsp);
+    }));
   }
 
   /**

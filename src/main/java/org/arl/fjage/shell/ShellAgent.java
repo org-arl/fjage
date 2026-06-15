@@ -14,9 +14,13 @@ import org.arl.fjage.*;
 import org.arl.fjage.param.ParameterMessageBehavior;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
@@ -52,17 +56,6 @@ public class ShellAgent extends Agent {
     }
   }
 
-  protected class InputStreamCacheEntry {
-    InputStream is;
-    long lastUsed;
-    long pos;
-    InputStreamCacheEntry(InputStream is, long pos) {
-      this.is = is;
-      this.pos = pos;
-      this.lastUsed = currentTimeMillis();
-    }
-  }
-
   ////// private attributes
 
   protected Shell shell;
@@ -70,9 +63,8 @@ public class ShellAgent extends Agent {
   protected ScriptEngine engine;
   protected Callable<Void> exec = null;
   protected CyclicBehavior executor = null;
-  protected List<MessageListener> listeners = new ArrayList<MessageListener>();
-  protected List<InitScript> initScripts = new ArrayList<InitScript>();
-  protected Map<String,InputStreamCacheEntry> isCache = new HashMap<String,InputStreamCacheEntry>();
+  protected List<MessageListener> listeners = new ArrayList<>();
+  protected List<InitScript> initScripts = new ArrayList<>();
   protected boolean quit = false;
   protected boolean ephemeral = false;
   protected boolean enabled = true;
@@ -225,7 +217,7 @@ public class ShellAgent extends Agent {
                   synchronized(executor) {
                     exec = () -> {
                       log.fine("> "+cmd);
-                      shell.input(p1+cmd.replaceAll("\n", p2));
+                      shell.input(p1+cmd.replace("\n", p2));
                       try {
                         engine.exec(cmd);
                       } catch (Throwable ex) {
@@ -266,42 +258,19 @@ public class ShellAgent extends Agent {
     });
 
     // behavior to manage init scripts
-    add(new OneShotBehavior() {
-      @Override
-      public void action() {
-        try {
-          for (InitScript script: initScripts) {
-            if (script.file != null) engine.exec(script.file);
-            else if (script.reader != null) engine.exec(script.reader, script.name);
-            else if (script.cls != null) engine.exec(script.cls);
-          }
-        } catch (Throwable ex) {
-          log.log(Level.WARNING, "Init script failure: "+ex.toString(), ex);
+    add(new OneShotBehavior(() -> {
+      try {
+        for (InitScript script: initScripts) {
+          if (script.file != null) engine.exec(script.file);
+          else if (script.reader != null) engine.exec(script.reader, script.name);
+          else if (script.cls != null) engine.exec(script.cls);
         }
-        if (ephemeral) stop();
-        else if (consoleThread != null) consoleThread.start();
+      } catch (Throwable ex) {
+        log.log(Level.WARNING, "Init script failure: "+ex.toString(), ex);
       }
-    });
-
-    // behavior to manage cached input streams (idle timeout after 60 seconds)
-    add(new TickerBehavior(60000) {
-      @Override
-      public void onTick() {
-        long t = currentTimeMillis() - 60000;
-        Iterator<Map.Entry<String,InputStreamCacheEntry>> it = isCache.entrySet().iterator();
-        while (it.hasNext()) {
-          Map.Entry<String,InputStreamCacheEntry> pair = it.next();
-          if (pair.getValue().lastUsed < t) {
-            try {
-              pair.getValue().is.close();
-            } catch (IOException ex) {
-              // do nothing
-            }
-            it.remove();
-          }
-        }
-      }
-    });
+      if (ephemeral) stop();
+      else if (consoleThread != null) consoleThread.start();
+    }));
 
   }
 
@@ -466,12 +435,12 @@ public class ShellAgent extends Agent {
    * @return description.
    */
   public String getDescription() {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     if (shell != null) sb.append("Interactive ");
     else if (ephemeral) sb.append("Ephemeral ");
     else sb.append("Non-interactive ");
     String lang = getLanguage();
-    if (lang != null) sb.append(lang+" ");
+    if (lang != null) sb.append(lang).append(' ');
     sb.append("shell");
     if (!enabled) sb.append(" (disabled)");
     return sb.toString();
@@ -547,7 +516,6 @@ public class ShellAgent extends Agent {
       filename = filename.substring(0, filename.length()-1);
     File f = new File(filename);
     GetFileRsp rsp = null;
-    InputStream is = null;
     try {
       if (f.isDirectory()) {
         File[] files = f.listFiles();
@@ -565,60 +533,31 @@ public class ShellAgent extends Agent {
         }
         rsp = new GetFileRsp(req);
         rsp.setDirectory(true);
-        rsp.setContents(sb.toString().getBytes());
+        rsp.setContents(sb.toString().getBytes(StandardCharsets.UTF_8));
       } else if (f.canRead()) {
         long ofs = req.getOffset();
         long len = req.getLength();
         long length = f.length();
-        if (ofs > length) {
+        if (ofs < 0) ofs += length;       // negative offset is relative to end of file
+        if (ofs < 0 || ofs > length) {
           send(new Message(req, Performative.REFUSE));
           return;
         }
-        if (len <= 0) len = length-ofs;
-        else if (ofs+len > length) len = length-ofs;
+        if (len <= 0 || ofs+len > length) len = length-ofs;
         if (len > Integer.MAX_VALUE) throw new IOException("File is too large!");
         byte[] bytes = new byte[(int)len];
-        InputStreamCacheEntry isce = isCache.get(filename);
-        if (isce != null) {
-          if (isce.pos == ofs) {
-            isce.lastUsed = currentTimeMillis();
-            isce.pos += len;
-            is = isce.is;
-          } else {
-            isce.is.close();
-            isCache.remove(filename);
-          }
+        ByteBuffer buf = ByteBuffer.wrap(bytes);
+        try (SeekableByteChannel ch = Files.newByteChannel(f.toPath(), StandardOpenOption.READ)) {
+          ch.position(ofs);
+          while (buf.hasRemaining())
+            if (ch.read(buf) < 0) throw new IOException("File read incomplete!");
         }
-        int offset = 0;
-        int numRead;
-        if (is == null) {
-          is = new FileInputStream(f);
-          if (ofs > 0) is.skip(ofs);
-          else if (ofs < 0) is.skip(length-ofs);
-        }
-        while (offset < bytes.length && (numRead = is.read(bytes, offset, bytes.length-offset)) >= 0)
-          offset += numRead;
-        if (offset < bytes.length) throw new IOException("File read incomplete!");
         rsp = new GetFileRsp(req);
         rsp.setOffset(ofs);
         rsp.setContents(bytes);
-        if (ofs != 0) {
-          if (!isCache.containsKey(filename))
-            isCache.put(filename, new InputStreamCacheEntry(is, ofs+bytes.length));
-          is = null;
-        }
       }
     } catch (IOException ex) {
       log.log(Level.WARNING, "File read failure: "+ex.toString(), ex);
-    } finally {
-      if (is != null) {
-        try {
-          is.close();
-        } catch (IOException ex) {
-          // do nothing
-        }
-        isCache.remove(filename);
-      }
     }
     if (rsp != null) send(rsp);
     else send(new Message(req, Performative.FAILURE));
@@ -633,7 +572,6 @@ public class ShellAgent extends Agent {
     byte[] contents = req.getContents();
     File f = new File(filename);
     Message rsp = null;
-    Closeable os = null;
     long ofs = req.getOffset();
     try {
       boolean fileIsDir = filename.endsWith("/") || filename.endsWith(File.separator);
@@ -654,44 +592,34 @@ public class ShellAgent extends Agent {
         }
       } else {
         if (contents == null && ofs == 0) {
-          if (isCache.containsKey(filename)){
-            isCache.get(filename).is.close();
-            isCache.remove(filename);
-          }
           if (f.delete()) rsp = new Message(req, Performative.AGREE);
         } else if (contents == null) {
-          os = new RandomAccessFile(f, "rw");
-          ((RandomAccessFile) os).setLength(ofs);
+          try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
+            raf.setLength(ofs);
+          }
           rsp = new Message(req, Performative.AGREE);
         } else {
           if (ofs == f.length()) {
-            // Append if ofs != 0
-            os = new FileOutputStream(f, ofs != 0);
-            ((FileOutputStream) os).write(contents);
-            ((FileOutputStream) os).flush();
-            ((FileOutputStream) os).getFD().sync();
+            // overwrite if ofs == 0, append otherwise; SYNC forces data to disk
+            if (ofs == 0) Files.write(f.toPath(), contents, StandardOpenOption.CREATE,
+                StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.SYNC);
+            else Files.write(f.toPath(), contents, StandardOpenOption.CREATE,
+                StandardOpenOption.WRITE, StandardOpenOption.APPEND, StandardOpenOption.SYNC);
           } else {
-            // Overwrite if ofs == 0
-            os = new RandomAccessFile(f, "rw");
-            if(ofs >= 0)((RandomAccessFile) os).setLength(ofs + contents.length);
-            if (ofs > 0) ((RandomAccessFile) os).skipBytes((int) ofs);
-            else if (ofs < 0) ((RandomAccessFile) os).skipBytes((int) (f.length() + ofs));
-            ((RandomAccessFile) os).write(contents);
-            ((RandomAccessFile) os).getFD().sync();
+            // positioned write; negative offset is relative to end of file
+            long pos = ofs >= 0 ? ofs : f.length() + ofs;
+            try (RandomAccessFile raf = new RandomAccessFile(f, "rw")) {
+              if (ofs >= 0) raf.setLength(ofs + contents.length);
+              raf.seek(pos);          // seek() is exact, unlike skipBytes()
+              raf.write(contents);
+              raf.getFD().sync();
+            }
           }
           rsp = new Message(req, Performative.AGREE);
         }
       }
     } catch (IOException ex) {
       log.log(Level.WARNING, "File write failure: "+ex.toString(), ex);
-    } finally {
-      if (os != null) {
-        try {
-          os.close();
-        } catch (IOException ex) {
-          // do nothing
-        }
-      }
     }
     if (rsp == null) rsp = new Message(req, Performative.FAILURE);
     send(rsp);
