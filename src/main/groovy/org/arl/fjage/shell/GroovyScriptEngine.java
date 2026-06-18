@@ -137,16 +137,54 @@ public class GroovyScriptEngine implements ScriptEngine {
   public boolean isComplete(String cmd) {
     if (cmd == null || cmd.trim().length() == 0) return true;
     try {
-      groovy.parse(cmd);
-      return true;
+      return parse(cmd) == null;
     } catch (MultipleCompilationErrorsException ex) {
-      String s = ex.getMessage();
-      if (s == null) return true;
-      if (s.contains("unexpected token")) return false;
-      if (s.contains("expecting")) return false;
-      return true;
+      return !isIncomplete(ex);
     } catch (Throwable ex) {
       return true;
+    }
+  }
+
+  @Override
+  public MultipleCompilationErrorsException parse(String cmd) {
+    if (cmd == null || cmd.trim().length() == 0) return null;
+    synchronized(this) {
+      try {
+        busy = Thread.currentThread();
+        try {
+          groovy.parse(cmd);
+          return null;
+        } catch (MultipleCompilationErrorsException ex) {
+          return ex;
+        } catch (Throwable ex) {
+          throw rethrowParseFailure(ex);
+        }
+      } finally {
+        Thread.interrupted();
+        busy = null;
+      }
+    }
+  }
+
+  @Override
+  public MultipleCompilationErrorsException parse(File script) {
+    if (script == null) return null;
+    synchronized(this) {
+      try {
+        busy = Thread.currentThread();
+        try {
+          groovy.getClassLoader().clearCache();
+          groovy.parse(script);
+          return null;
+        } catch (MultipleCompilationErrorsException ex) {
+          return ex;
+        } catch (Throwable ex) {
+          throw rethrowParseFailure(ex);
+        }
+      } finally {
+        Thread.interrupted();
+        busy = null;
+      }
     }
   }
 
@@ -398,6 +436,21 @@ public class GroovyScriptEngine implements ScriptEngine {
     if (ex instanceof GroovyBugError) ex = resolveGroovyBug(ex);
     if (out != null) out.error(ex);
     else log.log(Level.WARNING, "Groovy execution failed", ex);
+  }
+
+  private boolean isIncomplete(MultipleCompilationErrorsException ex) {
+    String s = ex.getMessage();
+    if (s == null) return false;
+    if (s.contains("unexpected token")) return true;
+    if (s.contains("expecting")) return true;
+    return false;
+  }
+
+  private RuntimeException rethrowParseFailure(Throwable ex) {
+    if (ex instanceof GroovyBugError) ex = resolveGroovyBug(ex);
+    if (ex instanceof MultipleCompilationErrorsException) return (MultipleCompilationErrorsException) ex;
+    if (ex instanceof RuntimeException) return (RuntimeException) ex;
+    return new RuntimeException(ex);
   }
 
   private Throwable resolveGroovyBug(Throwable ex) {

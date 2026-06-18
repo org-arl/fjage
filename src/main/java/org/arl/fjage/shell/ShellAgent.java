@@ -10,8 +10,15 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import org.arl.fjage.*;
 import org.arl.fjage.param.ParameterMessageBehavior;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -66,6 +73,7 @@ public class ShellAgent extends Agent {
   ////// private attributes
 
   protected Shell shell;
+  protected static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
   protected Thread consoleThread = null;
   protected ScriptEngine engine;
   protected Callable<Void> exec = null;
@@ -250,6 +258,7 @@ public class ShellAgent extends Agent {
       @Override
       public void onReceive(Message msg) {
         if (msg instanceof ShellExecReq) handleExecReq((ShellExecReq)msg);
+        else if (msg instanceof ShellCheckReq) handleCheckReq((ShellCheckReq)msg);
         else if (msg instanceof GetFileReq) handleGetFileReq((GetFileReq)msg);
         else if (msg instanceof PutFileReq) handlePutFileReq((PutFileReq)msg);
         else if (msg.getPerformative() == Performative.REQUEST) send(new Message(msg, Performative.NOT_UNDERSTOOD));
@@ -547,6 +556,55 @@ public class ShellAgent extends Agent {
     send(rsp);
   }
 
+  private void handleCheckReq(final ShellCheckReq req) {
+    Message rsp;
+    if (engine == null || engine.isBusy()) {
+      log.info("Syntax check failure: engine is busy");
+      rsp = new Message(req, Performative.REFUSE);
+    }
+    else {
+      try {
+        MultipleCompilationErrorsException ex;
+        if (req.isScript()) {
+          String filename = req.getFilename();
+          if (filename == null) {
+            log.info("Syntax check failure: filename is null");
+            send(new Message(req, Performative.REFUSE));
+            return;
+          }
+          if (filename.endsWith("/") || filename.endsWith(File.separator)) {
+            log.info("Syntax check failure: filename " + filename + " is a directory");
+            send(new Message(req, Performative.REFUSE));
+            return;
+          }
+          File file = new File(filename);
+          if (!file.exists()) {
+            log.info("Syntax check failure: file " + filename + " not found");
+            send(new Message(req, Performative.REFUSE));
+            return;
+          }
+          ex = engine.parse(file);
+        } else {
+          String cmd = req.getCommand();
+          if (cmd == null) {
+            log.info("Syntax check failure: command is null");
+            send(new Message(req, Performative.REFUSE));
+            return;
+          }
+          ex = engine.parse(cmd);
+        }
+        ShellCheckRsp checkRsp = new ShellCheckRsp(req);
+        checkRsp.setValid(ex == null);
+        if (ex != null) checkRsp.setDiagnostics(toDiagnosticsJson(ex));
+        rsp = checkRsp;
+      } catch (Throwable ex) {
+        log.log(Level.WARNING, "Command parse failure: "+ex.toString(), ex);
+        rsp = new Message(req, Performative.FAILURE);
+      }
+    }
+    send(rsp);
+  }
+
   private void handleGetFileReq(final GetFileReq req) {
     String filename = req.getFilename();
     if (filename == null) {
@@ -705,6 +763,34 @@ public class ShellAgent extends Agent {
     }
     if (rsp == null) rsp = new Message(req, Performative.FAILURE);
     send(rsp);
+  }
+
+  private String toDiagnosticsJson(MultipleCompilationErrorsException ex) {
+    JsonObject root = new JsonObject();
+    root.addProperty("message", ex.getMessage());
+    JsonArray errors = new JsonArray();
+    root.add("errors", errors);
+    if (ex.getErrorCollector() != null) {
+      for (Object obj: ex.getErrorCollector().getErrors()) {
+        JsonObject err = new JsonObject();
+        err.addProperty("type", obj.getClass().getSimpleName());
+        if (obj instanceof SyntaxErrorMessage) {
+          SyntaxException syntax = ((SyntaxErrorMessage)obj).getCause();
+          if (syntax != null) {
+            err.addProperty("message", syntax.getOriginalMessage());
+            err.addProperty("line", syntax.getStartLine());
+            err.addProperty("column", syntax.getStartColumn());
+            err.addProperty("endLine", syntax.getEndLine());
+            err.addProperty("endColumn", syntax.getEndColumn());
+            if (syntax.getSourceLocator() != null) err.addProperty("source", syntax.getSourceLocator());
+          } else err.addProperty("message", obj.toString());
+        } else {
+          err.addProperty("message", obj.toString());
+        }
+        errors.add(err);
+      }
+    }
+    return gson.toJson(root);
   }
 
 }
