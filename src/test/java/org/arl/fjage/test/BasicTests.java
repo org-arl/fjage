@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.test;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -345,6 +346,47 @@ public class BasicTests {
     assertTrue("Get file (offset 27, len 1, out of bounds) failed", agent.get4);
     assertTrue("Directory listing failed", agent.dir);
     assertTrue("Delete file failed", agent.del);
+  }
+
+  @Test
+  public void testShellCheck() throws IOException {
+    log.info("testShellCheck");
+    Platform platform = new RealTimePlatform();
+    Container container = new Container(platform);
+    container.add("shell", new ShellAgent(new GroovyScriptEngine()));
+    File markerFile = File.createTempFile("fjage-shell-check-marker", ".txt");
+    markerFile.delete();
+    File invalidScript = File.createTempFile("fjage-shell-check-invalid", ".groovy");
+    try (FileWriter writer = new FileWriter(invalidScript)) {
+      writer.write("def x =\n");
+    }
+    ShellCheckTestAgent agent = new ShellCheckTestAgent(markerFile, invalidScript);
+    container.add("test", agent);
+    platform.start();
+    while (!agent.done)
+      platform.delay(1000);
+    platform.shutdown();
+    assertTrue("Valid shell check failed", agent.valid);
+    assertTrue("Shell check executed code unexpectedly", agent.notExecuted);
+    assertTrue("Invalid inline shell check failed", agent.invalid);
+    assertTrue("Invalid file shell check failed", agent.invalidFile);
+    markerFile.delete();
+    invalidScript.delete();
+  }
+
+  @Test
+  public void testShellCheckRefuse() {
+    log.info("testShellCheckRefuse");
+    Platform platform = new RealTimePlatform();
+    Container container = new Container(platform);
+    container.add("shell", new ShellAgent((ScriptEngine)null));
+    ShellCheckRefuseTestAgent agent = new ShellCheckRefuseTestAgent();
+    container.add("test", agent);
+    platform.start();
+    while (!agent.done)
+      platform.delay(1000);
+    platform.shutdown();
+    assertTrue("Shell check refuse path failed", agent.refused);
   }
 
   @Test
@@ -1095,6 +1137,63 @@ public class BasicTests {
             File f = new File(DIRNAME+File.separator+FILENAME);
             if (!f.exists()) del = true;
           }
+          done = true;
+        }
+      });
+    }
+  }
+
+  private static class ShellCheckTestAgent extends Agent {
+    private final File markerFile;
+    private final File invalidScript;
+    public boolean valid = false, invalid = false, invalidFile = false, notExecuted = false, done = false;
+
+    ShellCheckTestAgent(File markerFile, File invalidScript) {
+      this.markerFile = markerFile;
+      this.invalidScript = invalidScript;
+    }
+
+    @Override
+    public void init() {
+      add(new OneShotBehavior() {
+        @Override
+        public void action() {
+          AgentID shell = new AgentID("shell");
+          String markerPath = markerFile.getAbsolutePath().replace("\\", "\\\\").replace("'", "\\'");
+          Message rsp = request(new ShellCheckReq(shell, "new File('"+markerPath+"').text = 'x'"));
+          if (rsp instanceof ShellCheckRsp) {
+            ShellCheckRsp checkRsp = (ShellCheckRsp)rsp;
+            valid = checkRsp.isValid() && checkRsp.getDiagnostics() == null;
+            notExecuted = !markerFile.exists();
+          }
+          rsp = request(new ShellCheckReq(shell, "def x =\n"));
+          if (rsp instanceof ShellCheckRsp) {
+            ShellCheckRsp checkRsp = (ShellCheckRsp)rsp;
+            invalid = !checkRsp.isValid() && checkRsp.getDiagnostics() != null && checkRsp.getDiagnostics().contains("\"errors\"");
+          }
+          ShellCheckReq fileReq = new ShellCheckReq(shell);
+          fileReq.setFilename(invalidScript.getAbsolutePath());
+          rsp = request(fileReq);
+          if (rsp instanceof ShellCheckRsp) {
+            ShellCheckRsp checkRsp = (ShellCheckRsp)rsp;
+            invalidFile = !checkRsp.isValid() && checkRsp.getDiagnostics() != null && checkRsp.getDiagnostics().contains("\"errors\"");
+          }
+          done = true;
+        }
+      });
+    }
+  }
+
+  private static class ShellCheckRefuseTestAgent extends Agent {
+    public boolean refused = false, done = false;
+
+    @Override
+    public void init() {
+      add(new OneShotBehavior() {
+        @Override
+        public void action() {
+          Message rsp = request(new ShellCheckReq(new AgentID("shell"), "println 'hello'"));
+          refused = rsp != null && rsp.getPerformative() == Performative.REFUSE;
           done = true;
         }
       });

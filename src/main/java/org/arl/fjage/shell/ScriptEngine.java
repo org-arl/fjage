@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.shell;
 
 import org.arl.fjage.Message;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 
 import java.io.File;
 import java.io.Reader;
@@ -44,6 +45,22 @@ public interface ScriptEngine {
    * @return true if complete, false if incomplete.
    */
   public boolean isComplete(String cmd);
+
+  /**
+   * Parse a command in the script engine context without executing it.
+   *
+   * @param cmd command to parse.
+   * @return compilation errors if parsing fails, null otherwise.
+   */
+  public MultipleCompilationErrorsException parse(String cmd);
+
+  /**
+   * Parse a script file in the script engine context without executing it.
+   *
+   * @param script script file to parse.
+   * @return compilation errors if parsing fails, null otherwise.
+   */
+  public MultipleCompilationErrorsException parse(File script);
 
   /**
    * Execute a command. The method waits for execution to be completed.
