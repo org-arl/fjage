@@ -75,7 +75,7 @@ static fjage_msg_t fjage_msg_from_json(const char* json);
 static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg);
 static void fjage_msg_set_sender(fjage_msg_t msg, fjage_aid_t aid);
 static long get_time_ms(void);
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(_WIN32)
 static void sthandler(int sig) __attribute__ ((unused));
 #endif
 
@@ -186,6 +186,7 @@ static long get_time_ms(void) {
   return (long)(tv.tv_sec-_t0)*1000 + (long)(tv.tv_usec)/1000;
 }
 
+#ifndef _WIN32
 static void sthandler(int sig) {
   void *array[10];
   size_t size;
@@ -198,6 +199,7 @@ static void sthandler(int sig) {
   backtrace_symbols_fd(array, size, STDERR_FILENO);
   exit(1);
 }
+#endif
 
 //// gateway API
 
