@@ -145,7 +145,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
       JsonMessage jmsg = new JsonMessage();
       jmsg.message = msg;
       String json = jmsg.toJson();
-      log.info("* << "+json);
+      log.finer("* << "+json);
       synchronized (connectors) {
         for (Connector c: connectors)
           sendToRemote(c, json.getBytes(StandardCharsets.UTF_8));
@@ -171,7 +171,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
         JsonMessage jmsg = new JsonMessage();
         jmsg.message = msg;
         String json = jmsg.toJson();
-        log.info(id+" << "+json);
+        log.finer(id+" << "+json);
         sendToRemote(c, json.getBytes(StandardCharsets.UTF_8));
         return true;
       }
@@ -185,7 +185,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
       try (BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8))) {
         String line;
         while ((line = in.readLine()) != null) {
-          log.info(id+" >> "+line);
+          log.finer(id+" >> "+line);
           JsonMessage jmsg = JsonMessage.fromJson(line);
           if (jmsg == null || jmsg.message == null) continue;
           AgentID sender = jmsg.message.getSender();
