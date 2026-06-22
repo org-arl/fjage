@@ -1,5 +1,11 @@
 # Release Notes
 
+### 2.4.2
+* Chore: Make Tunnel agent logs log.finer by default
+* Skip sthandler in fjage.c for Windows
+* Set TCP_NODELAY for TCPConnector sockets
+* Run JLine LineReader in privileged context
+
 ## 2.4.1
 * Adding new postMessage events WebShell
 
