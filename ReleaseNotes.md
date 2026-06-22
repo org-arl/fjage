@@ -1,5 +1,13 @@
 # Release Notes
 
+## Unreleased
+
+* Make `connID` an externally exposed API on the `Tunnel` agent. Added new
+	`ConnectionNotification` message (Performative.INFORM) emitted on connection
+	open/close with fields `event`, `connID`, `name`, and `timestamp`.
+* Added `connIDs` read-only parameter to `TunnelParam` exposing currently
+	connected connection ids.
+
 ## 2.4.1
 * Adding new postMessage events WebShell
 
