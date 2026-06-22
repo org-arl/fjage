@@ -7,9 +7,6 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,6 +23,7 @@ public class WebSocketConnector implements Connector{
     private final PseudoInputStream pin = new PseudoInputStream();
     private final PseudoOutputStream pout = new PseudoOutputStream();
     private OutputThread outThread = null;
+    private WebSocketWriter writer = null;
 
     public WebSocketConnector(String context) {
         this.context = context;
@@ -35,9 +33,10 @@ public class WebSocketConnector implements Connector{
     public void onWebSocketClose(int statusCode, String reason)  {
         this.session = null;
         this.remote = null;
+        if (writer != null) writer.close();
         pin.close();
         pout.close();
-        outThread.close();
+        if (outThread != null) outThread.close();
         log.finer("WebSocket Connector closed: " + statusCode + " " + reason);
         name = "websocket://[closed]";
     }
@@ -49,6 +48,7 @@ public class WebSocketConnector implements Connector{
         log.finer("WebSocket Connector connected: " + session.getRemoteAddress().getHostString() + ":" + session.getRemoteAddress().getPort());
         name = "ws://" + this.remote.getInetSocketAddress().getAddress().getHostAddress() + context + ":" + this.remote.getInetSocketAddress().getPort();
         if (listener != null) listener.connected(this);
+        writer = new WebSocketWriter(session, null, log);
         outThread = new OutputThread();
         outThread.start();
     }
@@ -141,11 +141,6 @@ public class WebSocketConnector implements Connector{
                 s = pout.readLine();
                 if (s == null) break;
                 write(s);
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException ex) {
-                    break;
-                }
             }
         }
 
@@ -162,28 +157,7 @@ public class WebSocketConnector implements Connector{
     }
 
     private void write(String s){
-        try {
-            if (session != null && session.isOpen()) {
-                Future<Void> f = session.getRemote().sendStringByFuture(s);
-                try {
-                    f.get(2, TimeUnit.SECONDS);
-                } catch (TimeoutException e){
-                    log.fine("Sending timed out. Closing connection to " + session.getRemoteAddress());
-                    session.disconnect();
-                } catch (java.util.concurrent.ExecutionException e) {
-                    if (e.getCause() instanceof java.nio.channels.ClosedChannelException) {
-                        log.info("Unexpected "+ e.getCause().toString() + " while sending to " + session.getRemoteAddress() + ".");
-                    }
-                    else {
-                        log.log(Level.WARNING, "Error sending websocket message: ", e);
-                    }
-                } catch (Exception e){
-                    log.log(Level.WARNING, "Error sending websocket message: ", e);
-                }
-            }
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Error sending websocket message: ", e);
-        }
+        if (writer != null) writer.enqueue(s);
     }
 
 }

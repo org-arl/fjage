@@ -984,7 +984,10 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       final Future<Message> future = send();
       try {
         return future.get();
-      } catch (ExecutionException | InterruptedException e) {
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return null;
+      } catch (ExecutionException e) {
         return null;
       }
     }
