@@ -5,6 +5,59 @@ const DEFAULT_RECONNECT_TIME = 5000;       // ms, delay between retries to conne
 * @ignore
 */
 class WSConnector {
+  /**
+   * WebSocket URL of the master container to connect to
+   * @type {URL}
+   */
+  url;
+
+  /**
+   * Whether to try to reconnect if the connection is lost
+   * @type {boolean}
+   */
+  keepAlive;
+
+  /**
+   * Time in milliseconds before a reconnection is attempted after an error
+   * @type {number}
+   */
+  _reconnectTime;
+
+  /**
+   * Whether to log debug info to the console
+   * @type {boolean}
+   */
+  debug;
+
+  /**
+   * Whether the Gateway has managed to connect to a server before
+   * @type {boolean}
+   */
+  _firstConn;
+
+  /**
+   * Whether the Gateway has attempted to reconnect to a server before
+   * @type {boolean}
+   */
+  _firstReConn;
+
+  /**
+   * List of callbacks make as soon as gateway is open
+   * @type {(() => void)[]}
+   */
+  pendingOnOpen;
+
+  /**
+   * @callback ConnectionListener
+   * @param {boolean} val
+   * @returns {void}
+   */
+
+  /**
+   * External listeners wanting to listen connection events
+   * @type {ConnectionListener[]}
+   */
+  connListeners;
 
   /**
   * Create an WSConnector to connect to a fjage master over WebSockets
@@ -25,20 +78,26 @@ class WSConnector {
     this.url.pathname = opts.pathname || '/';
     this._keepAlive = opts.keepAlive;
     this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
-    this.debug = opts.debug || false;      // debug info to be logged to console?
-    this._firstConn = true;               // if the Gateway has managed to connect to a server before
-    this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
-    this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
-    this.connListeners = [];              // external listeners wanting to listen connection events
+    this.debug = opts.debug || false;
+    this._firstConn = true;
+    this._firstReConn = true;
+    this.pendingOnOpen = [];
+    this.connListeners = [];
     this._websockSetup(this.url);
   }
 
+  /**
+   * @param {boolean} val
+   */
   _sendConnEvent(val) {
     this.connListeners.forEach(l => {
       l && {}.toString.call(l) === '[object Function]' && l(val);
     });
   }
 
+  /**
+   * @param {string | URL} url
+   */
   _websockSetup(url){
     try {
       this.sock = new WebSocket(url);
@@ -98,8 +157,9 @@ class WSConnector {
 
   /**
   * @callback WSConnectorReadCallback
-  * @ignore
   * @param {string} s - incoming message string
+  * @returns {void}
+  * @ignore
   */
 
   /**
@@ -113,7 +173,7 @@ class WSConnector {
 
   /**
   * Add listener for connection events
-  * @param {function} listener - a listener callback that is called when the connection is opened/closed
+  * @param {ConnectionListener} listener - a listener callback that is called when the connection is opened/closed
   */
   addConnectionListener(listener){
     this.connListeners.push(listener);
@@ -121,7 +181,7 @@ class WSConnector {
 
   /**
   * Remove listener for connection events
-  * @param {function} listener - remove the listener for connection
+  * @param {ConnectionListener} listener - remove the listener for connection
   * @return {boolean} - true if the listner was removed successfully
   */
   removeConnectionListener(listener) {
