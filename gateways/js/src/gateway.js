@@ -19,7 +19,10 @@ const GATEWAY_DEFAULTS = {
   'returnNullOnFailedResponse': true
 };
 
+/** @type URL */
 let DEFAULT_URL;
+
+/** @type {{ fjage?: {gateways?: Gateway[]} } & Partial<typeof globalThis>} */
 let gObj = {};
 
 /**
@@ -35,8 +38,8 @@ export function init(){
   if (isBrowser || isWebWorker){
     gObj = window;
     Object.assign(GATEWAY_DEFAULTS, {
-      'hostname': gObj.location.hostname,
-      'port': gObj.location.port,
+      'hostname': window.location.hostname,
+      'port': window.location.port,
       'pathname' : '/ws/'
     });
     DEFAULT_URL = new URL('ws://localhost');
@@ -64,25 +67,104 @@ export function init(){
 *
 * @example <caption>Connects to the origin</caption>
 * const gw = new Gateway();
-*
-* @class
-* @property {AgentID} aid - agent id of the gateway
-* @property {boolean} connected - true if the gateway is connected to the master container
-* @property {boolean} debug - true if debug messages should be logged to the console
-*
-* Constructor arguments:
-* @param {Object} opts
-* @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
-* @param {number} [opts.port=1100]          - port number of the master container to connect to
-* @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
-* @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
-* @param {number} [opts.queueSize=128]      - size of the _queue of received messages that haven't been consumed yet
-* @param {number} [opts.timeout=10000]       - timeout for fjage level messages in ms
-* @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
-* @param {boolean} [opts.cancelPendingOnDisconnect=false] - cancel pending requests on disconnects
 */
 export class Gateway {
+  /**
+   * Agent ID of the gateway
+   * @type {AgentID}
+   */
+  aid;
 
+  /**
+   * Whether the gateway is connected to the master container
+   * @type {boolean}
+   */
+  connected;
+
+  /**
+   * Whether debug messages should be logged to the console
+   * @type {boolean}
+   */
+  debug;
+
+/**
+   * Timeout for fjage level messages (agentForService, etc.)
+   * @packagee @type {number}
+   */
+  _timeout;
+
+  /**
+   * Whether to reconnect if connection gets closed/errored
+   * @private @type {boolean}
+   */
+  _keepAlive;
+
+  /**
+   * Size of {@link Gateway._queue}
+   * @private @type {number}
+   */
+  _queueSize;
+
+  /**
+   * Whether to return null instead of throwing an error when a parameter is not found
+   * @package @type {boolean}
+   */
+  _returnNullOnFailedResponse;
+
+  /**
+   * Whether to cancel pending requests on disconnect
+   * @private @type {boolean}
+   */
+  _cancelPendingOnDisconnect;
+
+  /**
+   * Map of message IDs to callbacks for pending actions
+   * @private @type {Record<string, (msg: JSONMessage) => void>}
+   */
+  _pending_actions;
+
+  /**
+   * Map for all topics that are subscribed
+   * @private @type {Record<string, boolean>}
+   */
+  _subscriptions;
+
+  /**
+   * Map of UUIDs to callbacks mapping for pending receives
+   * @private @type {Record<string, (msg: Message) => boolean>}
+   */
+  _pending_receives;
+
+  /**
+   * @callback EventListener
+   * @param {unknown} value
+   * @returns {void}
+   */
+  /**
+   * External listeners wanting to listen internal events
+   * @private @type {Record<string, EventListener[]>}
+   */
+  _eventListeners;
+
+  /**
+   * incoming message _queue
+   * @private @type {Array}
+   */
+  _queue;
+
+  /**
+   * Construct a gateway.
+   *
+   * @param {Object} opts
+   * @param {string} [opts.hostname="localhost"] - hostname/ip address of the master container to connect to
+   * @param {number} [opts.port=1100]          - port number of the master container to connect to
+   * @param {string} [opts.pathname=""]        - path of the master container to connect to (for WebSockets)
+   * @param {boolean} [opts.keepAlive=true]     - try to reconnect if the connection is lost
+   * @param {number} [opts.queueSize=128]      - size of the _queue of received messages that haven't been consumed yet
+   * @param {number} [opts.timeout=10000]       - timeout for fjage level messages in ms
+   * @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
+   * @param {boolean} [opts.cancelPendingOnDisconnect=false] - cancel pending requests on disconnects
+   */
   constructor(opts = {}) {
     // Similar to Object.assign but also overwrites `undefined` and empty strings with defaults
     for (var key in GATEWAY_DEFAULTS){
@@ -90,23 +172,23 @@ export class Gateway {
     }
     var url = DEFAULT_URL;
     url.hostname = opts.hostname;
-    url.port = opts.port;
+    url.port = opts.port.toString();
     url.pathname = opts.pathname;
     let existing = this._getGWCache(url);
     if (existing) return existing;
-    this._timeout = opts.timeout;         // timeout for fjage level messages (agentForService etc)
-    this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
-    this._queueSize = opts.queueSize;     // size of _queue
-    this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
-    this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect; // cancel pending requests on disconnect
-    this._pending_actions = {};            // msgid to callback mapping for pending actions
-    this._subscriptions = {};              // map for all topics that are subscribed
-    this._pending_receives = {};           // uuid to callbacks mapping for pending receives
-    this._eventListeners = {};             // external listeners wanting to listen internal events
-    this._queue = [];                      // incoming message _queue
-    this.connected = false;               // connection status
-    this.debug = false;                   // debug info to be logged to console?
-    this.aid = new AgentID('gateway-'+_guid(4));         // gateway agent name
+    this._timeout = opts.timeout;
+    this._keepAlive = opts.keepAlive;
+    this._queueSize = opts.queueSize;
+    this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse;
+    this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect;
+    this._pending_actions = {};
+    this._subscriptions = {};
+    this._pending_receives = {};
+    this._eventListeners = {};
+    this._queue = [];
+    this.connected = false;
+    this.debug = false;
+    this.aid = new AgentID('gateway-'+_guid(4));
     this.connector = this._createConnector(url);
     this._addGWCache(this);
   }
@@ -115,7 +197,7 @@ export class Gateway {
   * Sends an event to all registered listeners of the given type.
   * @private
   * @param {string} type - type of event
-  * @param {Object|Message|string} val - value to be sent to the listeners
+  * @param {unknown} val - value to be sent to the listeners
   */
   _sendEvent(type, val) {
     if (!Array.isArray(this._eventListeners[type])) return;
@@ -359,7 +441,7 @@ export class Gateway {
   * Gets a cached gateway object for the given URL (if it exists).
   * @private
   * @param {URL} url - URL object of the master container to connect to
-  * @returns {Gateway|void} - gateway object for the given URL
+  * @returns {Gateway|null} - gateway object for the given URL
   */
   _getGWCache(url){
     if (!gObj.fjage || !gObj.fjage.gateways) return null;
@@ -401,7 +483,7 @@ export class Gateway {
   * Add an event listener to listen to various events happening on this Gateway
   *
   * @param {string} type - type of event to be listened to
-  * @param {function} listener - new callback/function to be called when the event happens
+  * @param {EventListener} listener - new callback/function to be called when the event happens
   * @returns {void}
   */
   addEventListener(type, listener) {
@@ -415,7 +497,7 @@ export class Gateway {
   * Remove an event listener.
   *
   * @param {string} type - type of event the listener was for
-  * @param {function} listener - callback/function which was to be called when the event happens
+  * @param {EventListener} listener - callback/function which was to be called when the event happens
   * @returns {void}
   */
   removeEventListener(type, listener) {
@@ -427,7 +509,7 @@ export class Gateway {
   /**
   * Add a new listener to listen to all {Message}s sent to this Gateway
   *
-  * @param {function} listener - new callback/function to be called when a {Message} is received
+  * @param {EventListener} listener - new callback/function to be called when a {Message} is received
   * @returns {void}
   */
   addMessageListener(listener) {
@@ -437,7 +519,7 @@ export class Gateway {
   /**
   * Remove a message listener.
   *
-  * @param {function} listener - removes a previously registered listener/callback
+  * @param {EventListener} listener - removes a previously registered listener/callback
   * @returns {void}
   */
   removeMessageListener(listener) {
@@ -447,7 +529,7 @@ export class Gateway {
   /**
   * Add a new listener to get notified when the connection to master is created and terminated.
   *
-  * @param {function} listener - new callback/function to be called connection to master is created and terminated
+  * @param {EventListener} listener - new callback/function to be called connection to master is created and terminated
   * @returns {void}
   */
   addConnListener(listener) {
@@ -457,7 +539,7 @@ export class Gateway {
   /**
   * Remove a connection listener.
   *
-  * @param {function} listener - removes a previously registered listener/callback
+  * @param {EventListener} listener - removes a previously registered listener/callback
   * @returns {void}
   */
   removeConnListener(listener) {
@@ -491,7 +573,8 @@ export class Gateway {
   * @returns {AgentID} - object representing the topic
   */
   topic(topic, topic2) {
-    if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic, true, this);
+    if (topic instanceof String) topic = topic.valueOf(); // Convert to primitive string
+    if (typeof topic == 'string') return new AgentID(topic, true, this);
     if (topic instanceof AgentID) {
       if (topic.isTopic()) return topic;
       return new AgentID(topic.getName()+(topic2 ? '__' + topic2 : '')+'__ntf', true, this);
@@ -616,7 +699,7 @@ export class Gateway {
   *
   * @param {Message} msg - message to send
   * @param {number} [timeout=opts.timeout] - timeout in milliseconds
-  * @returns {Promise<Message|void>} - a promise which resolves with the received response message, null on timeout
+  * @returns {Promise<Message|undefined>} - a promise which resolves with the received response message, undefined on timeout
   */
   async request(msg, timeout=this._timeout) {
     this.send(msg);
@@ -627,10 +710,10 @@ export class Gateway {
   * Returns a response message received by the gateway. This method returns a {Promise} which resolves when
   * a response is received or if no response is received after the timeout.
   *
-  * @param {function|Message|typeof Message} filter - original message to which a response is expected, or a MessageClass of the type
+  * @param {((val: Message) => boolean)|Message|typeof Message} filter - original message to which a response is expected, or a MessageClass of the type
   * of message to match, or a closure to use to match against the message
   * @param {number} [timeout=0] - timeout in milliseconds
-  * @returns {Promise<Message|void>} - received response message, null on timeout
+  * @returns {Promise<Message|undefined>} - received response message, undefined on timeout
   */
   async receive(filter, timeout=0) {
     return new Promise(resolve => {
@@ -641,7 +724,7 @@ export class Gateway {
       }
       if (timeout == 0) {
         if (this.debug) console.log('Receive Timeout : ' + filter);
-        resolve();
+        resolve(undefined);
         return;
       }
       let lid = UUID7.generate().toString();
@@ -650,7 +733,7 @@ export class Gateway {
         timer = setTimeout(() => {
           this._pending_receives[lid] && delete this._pending_receives[lid];
           if (this.debug) console.log('Receive Timeout : ' + filter);
-          resolve();
+          resolve(undefined);
         }, timeout);
       }
       // listener for each pending receive

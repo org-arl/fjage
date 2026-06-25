@@ -4,6 +4,9 @@ import { UUID7 } from './utils.js';
 import { AgentID } from './agentid.js';
 import { Message } from './message.js';
 
+/** @import { MessageJSON } from './message.js' */
+/** @import { Gateway } from './gateway.js' */
+
 /**
 * Class representing a fjage's on-the-wire JSON message. A JSONMessage object
 * contains all the fields that can be a part of a fjage JSON message. The class
@@ -29,29 +32,90 @@ import { Message } from './message.js';
 * const jsonString = '{"id":"1234",...}'; // JSON string representation of a JSONMessage
 * const jsonMsg = new JSONMessage(jsonString); // Parses the JSON string into a JSONMessage object
 * jsonMsg.message; // Access the Message object contained in the JSONMessage
-*
-* @class
-* @property {string} [id] - A UUID assigned to each JSONMessage object.
-* @property {string} [action] - Denotes the main action the object is supposed to perform.
-* @property {string} [inResponseTo] - This attribute contains the action to which this object is a response to.
-* @property {AgentID} [agentID] - An AgentID. This attribute is populated in objects which are responses to objects requesting the ID of an agent providing a specific service.
-* @property {Array<AgentID>} [agentIDs] - This attribute is populated in objects which are responses to objects requesting the IDs of agents providing a specific service, or objects which are responses to objects requesting a list of all agents running in a container.
-* @property {Array<string>} [agentTypes] - This attribute is optionally populated in objects which are responses to objects requesting a list of all agents running in a container. If populated, it contains a list of agent types running in the container, with a one-to-one mapping to the agent IDs in the "agentIDs" attribute.
-* @property {string} [service] - Used in conjunction with "action" : "agentForService" and "action" : "agentsForService" to query for agent(s) providing this specific service.
-* @property {Array<string>} [services] - This attribute is populated in objects which are responses to objects requesting the services available with "action" : "services".
-* @property {boolean} [answer] - This attribute is populated in objects which are responses to query objects with "action" : "containsAgent".
-* @property {Message} [message] - This holds the main payload of the message. The structure and format of this object is discussed in the {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation}.
-* @property {boolean} [relay] - This attribute defines if the target container should relay (forward) the message to other containers it is connected to or not.
-* @property {Object} [creds] - Credentials to be used for authentication.
-* @property {Object} [auth] - Authentication information to be used for the message.
-*
-*
 */
 export class JSONMessage {
+  /**
+   * A UUID assigned to each JSONMessage object.
+   * @type {string}
+   */
+  id;
 
   /**
-  * @param {String} [jsonString] - JSON string to be parsed into a JSONMessage object.
-  * @param {Object} [owner] - The owner of the JSONMessage object, typically the Gateway instance.
+   * Denotes the main action the object is supposed to perform.
+   * @type {(typeof Actions)[keyof typeof Actions]}
+   */
+  action;
+
+  /**
+   * This attribute contains the action to which this object is a response to.
+   * @type {string}
+   */
+  inResponseTo;
+
+  /**
+   * An AgentID. This attribute is populated in objects which are responses to objects requesting the ID of an agent providing a specific service.
+   * @type {AgentID | undefined}
+   */
+  agentID;
+
+  /**
+   * This attribute is populated in objects which are responses to objects requesting the IDs of agents providing a specific service, or objects which are responses to objects requesting a list of all agents running in a container.
+   * @type {Array<AgentID> | undefined}
+   */
+  agentIDs;
+
+  /**
+   * This attribute is optionally populated in objects which are responses to objects requesting a list of all agents running in a container. If populated, it contains a list of agent types running in the container, with a one-to-one mapping to the agent IDs in the "agentIDs" attribute.
+   * @type {Array<string>}
+   */
+  agentTypes;
+
+  /**
+   * Used in conjunction with "action" : "agentForService" and "action" : "agentsForService" to query for agent(s) providing this specific service.
+   * @type {string}
+   */
+  service;
+
+  /**
+   * This attribute is populated in objects which are responses to objects requesting the services available with "action" : "services".
+   * @type {Array<string>}
+   */
+  services;
+
+  /**
+   * This attribute is populated in objects which are responses to query objects with "action" : "containsAgent".
+   * @type {boolean}
+   */
+  answer;
+
+  /**
+   * This holds the main payload of the message.
+   * The structure and format of this object is discussed in the {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation}.
+   * @type {Message | undefined}
+   */
+  message;
+
+  /**
+   * This attribute defines if the target container should relay (forward) the message to other containers it is connected to or not.
+   * @type {boolean}
+   */
+  relay;
+
+  /**
+   * Credentials to be used for authentication.
+   * @type {Object}
+   */
+  creds;
+
+  /**
+   * Authentication information to be used for the message.
+   * @type {Object}
+   */
+  auth;
+
+  /**
+  * @param {string} [jsonString] - JSON string to be parsed into a JSONMessage object.
+  * @param {Gateway} [owner] - The owning {@link Gateway} of the JSONMessage object.
   */
   constructor(jsonString, owner) {
     this.id = UUID7.generate().toString(); // unique JSON message ID
@@ -70,14 +134,21 @@ export class JSONMessage {
     this.name =  null;
     if (jsonString && typeof jsonString === 'string') {
       try {
-        const parsed = JSON.parse(jsonString, _decodeBase64);
-        if (parsed.message) parsed.message = Message.fromJSON(parsed.message);
-        if (parsed.agentID) parsed.agentID = AgentID.fromJSON(parsed.agentID, owner);
-        if (parsed.agentIDs) parsed.agentIDs = parsed.agentIDs.map(id => AgentID.fromJSON(id, owner));
+        /** @type {{ message?: MessageJSON; agentID?: string, agentIDs?: string[]}} */
+        const partial = JSON.parse(jsonString, _decodeBase64);
+        /** @type {{ message?: Message; agentID?: AgentID, agentIDs?: AgentID[]}} */
+        const parsed = {
+          ...partial,
+          message: partial.message ? Message.fromJSON(partial.message) : undefined,
+          agentID: partial.agentID ? AgentID.fromJSON(partial.agentID, owner) : undefined,
+          agentIDs: partial.agentIDs ? partial.agentIDs.map(id => AgentID.fromJSON(id, owner)) : undefined,
+        };
         Object.assign(this, parsed);
       } catch (e) {
         throw new Error('Invalid JSON string: ' + e.message);
       }
+    } else {
+        throw new Error('Invalid JSON string: ' + jsonString);
     };
   }
 
@@ -225,7 +296,7 @@ export class JSONMessage {
 *
 * @enum {string} Actions
 */
-export const Actions = {
+export const Actions = /** @type {const} */ ({
   AGENTS : 'agents',
   CONTAINS_AGENT : 'containsAgent',
   SERVICES : 'services',
@@ -234,7 +305,7 @@ export const Actions = {
   SEND : 'send',
   WANTS_MESSAGES_FOR : 'wantsMessagesFor',
   SHUTDOWN : 'shutdown'
-};
+});
 
 ////// private utilities
 
@@ -244,17 +315,49 @@ export const Actions = {
 *
 * @private
 *
+* @template Data
 * @param {string} _k - key (unused)
-* @param {any} d - data
-* @returns {Array} - decoded data in array format
+* @param {Data} d - data
+* @returns {number[] | bigint[] | Data} - decoded data in array format, or the untouched data if it could not be decoded
 * */
 function _decodeBase64(_k, d) {
   if (d === null) return null;
-  if (typeof d == 'object' && 'clazz' in d && 'data' in d && d.clazz.startsWith('[') && d.clazz.length == 2) {
+  if (
+      typeof d == 'object' &&
+      'clazz' in d &&
+      typeof d.clazz === 'string' &&
+      'data' in d &&
+      typeof d.data === 'string' &&
+      (d.clazz === '[B' || d.clazz === '[S' || d.clazz === '[I' || d.clazz === '[F' || d.clazz === '[D' || d.clazz === '[J')
+  ) {
     return _b64toArray(d.data, d.clazz) || d;
   }
   return d;
 }
+
+/**
+ * @overload
+ * @param {string} base64
+ * @param {'[B' | '[S' | '[I' | '[F' | '[D'} dtype
+ * @param {boolean} [littleEndian=true]
+ * @returns {number[]}
+ */
+
+/**
+ * @overload
+ * @param {string} base64
+ * @param {'[J'} dtype
+ * @param {boolean} [littleEndian=true]
+ * @returns {bigint[]}
+ */
+
+/**
+ * @overload
+ * @param {string} base64
+ * @param {string} dtype
+ * @param {boolean} [littleEndian=true]
+ * @returns {number[] | bigint[] | undefined}
+ */
 
 /**
 * Convert a base64 encoded string to an array of numbers of the specified data type.
@@ -264,6 +367,7 @@ function _decodeBase64(_k, d) {
 * @param {string} base64 - base64 encoded string
 * @param {string} dtype - data type, e.g. '[B' for byte array, '[S' for short array, etc.
 * @param {boolean} [littleEndian=true] - whether to use little-endian byte order
+* @returns {number[] | bigint[] | undefined}
 */
 function _b64toArray(base64, dtype, littleEndian=true) {
   let s = _atob(base64);
@@ -277,37 +381,37 @@ function _b64toArray(base64, dtype, littleEndian=true) {
     case '[B': // byte array
     for (i = 0; i < len; i++)
       rv.push(view.getUint8(i));
-    break;
+    return rv;
     case '[S': // short array
     for (i = 0; i < len; i+=2)
       rv.push(view.getInt16(i, littleEndian));
-    break;
+    return rv;
     case '[I': // integer array
     for (i = 0; i < len; i+=4)
       rv.push(view.getInt32(i, littleEndian));
-    break;
+    return rv;
     case '[J': // long array
     for (i = 0; i < len; i+=8)
       rv.push(view.getBigInt64(i, littleEndian));
-    break;
+    return rv;
     case '[F': // float array
     for (i = 0; i < len; i+=4)
       rv.push(view.getFloat32(i, littleEndian));
-    break;
+    return rv;
     case '[D': // double array
     for (i = 0; i < len; i+=8)
       rv.push(view.getFloat64(i, littleEndian));
-    break;
+    return rv;
     default:
-    return;
+    return undefined;
   }
-  return rv;
 }
 
 // node.js safe atob function
 /**
 * @private
 * @param {string} a
+* @returns {string}
 */
 export function _atob(a){
   if (isBrowser || isWebWorker) return window.atob(a);
