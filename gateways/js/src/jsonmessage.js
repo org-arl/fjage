@@ -4,6 +4,8 @@ import { UUID7 } from './utils.js';
 import { AgentID } from './agentid.js';
 import { Message } from './message.js';
 
+/** @typedef {import('./gateway.js').Gateway} Gateway */
+
 /**
 * Class representing a fjage's on-the-wire JSON message. A JSONMessage object
 * contains all the fields that can be a part of a fjage JSON message. The class
@@ -49,9 +51,51 @@ import { Message } from './message.js';
 */
 export class JSONMessage {
 
+  /** @type {string} */
+  id;
+
+  /** @type {string|null} */
+  action;
+
+  /** @type {string|null} */
+  inResponseTo;
+
+  /** @type {AgentID|null} */
+  agentID;
+
+  /** @type {AgentID[]|null} */
+  agentIDs;
+
+  /** @type {string[]|null} */
+  agentTypes;
+
+  /** @type {string|null} */
+  service;
+
+  /** @type {string[]|null} */
+  services;
+
+  /** @type {boolean|null} */
+  answer;
+
+  /** @type {Message|null} */
+  message;
+
+  /** @type {boolean|null} */
+  relay;
+
+  /** @type {Record<string, unknown>|null} */
+  creds;
+
+  /** @type {Record<string, unknown>|null} */
+  auth;
+
+  /** @type {string|null} */
+  name;
+
   /**
-  * @param {String} [jsonString] - JSON string to be parsed into a JSONMessage object.
-  * @param {Object} [owner] - The owner of the JSONMessage object, typically the Gateway instance.
+  * @param {string} [jsonString] - JSON string to be parsed into a JSONMessage object.
+  * @param {Gateway} [owner] - The owner of the JSONMessage object, typically the Gateway instance.
   */
   constructor(jsonString, owner) {
     this.id = UUID7.generate().toString(); // unique JSON message ID

@@ -3,6 +3,7 @@
     "compilerOptions": {
         "allowJs": true,
         "checkJs": true,
+        "noEmit": true,
         "declaration": true,
         "target": "es2020",
         "resolveJsonModule": true,

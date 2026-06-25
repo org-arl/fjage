@@ -79,7 +79,7 @@ export class AgentID {
   *
   * @param {Message} msg - request to send
   * @param {number} [timeout=owner.timeout] - timeout in milliseconds
-  * @returns {Promise<Message>} - response
+  * @returns {Promise<Message|void>} - response, or no value on timeout
   */
   async request(msg, timeout=this._timeout) {
     msg.recipient = this;

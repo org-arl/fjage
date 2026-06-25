@@ -47,6 +47,24 @@ export function init(){
 }
 
 /**
+ * @typedef {Object} GatewayOptions
+ * @property {string} [hostname="localhost"] - hostname/ip address of the master container
+ * @property {number|string} [port=1100] - port number of the master container
+ * @property {string} [pathname=""] - WebSocket path of the master container
+ * @property {boolean} [keepAlive=true] - reconnect if the connection is lost
+ * @property {number} [queueSize=128] - maximum number of queued received messages
+ * @property {number} [timeout=1000] - default request timeout in milliseconds
+ * @property {number} [directoryTimeout=6000] - default directory-query timeout in milliseconds
+ * @property {boolean} [cancelPendingOnDisconnect=false] - cancel pending requests on disconnect
+ */
+
+/**
+ * @callback EventListener
+ * @param {unknown} value
+ * @returns {void}
+ */
+
+/**
 * A gateway for connecting to a fjage master container. This class provides methods to
 * send and receive messages, subscribe to topics, and manage connections to the master container.
 * It can be used to connect to a fjage master container over WebSockets or TCP.
@@ -79,18 +97,62 @@ export function init(){
 */
 export class Gateway {
 
+  /** @type {AgentID} */
+  aid;
+
+  /** @type {boolean} */
+  connected;
+
+  /** @type {boolean} */
+  debug;
+
+  /** @type {number} */
+  _timeout;
+
+  /** @type {number} */
+  _directoryTimeout;
+
+  /** @type {boolean} */
+  _keepAlive;
+
+  /** @type {number} */
+  _queueSize;
+
+  /** @type {boolean} */
+  _cancelPendingOnDisconnect;
+
+  /** @type {Record<string, (msg: JSONMessage) => void>} */
+  _pending_actions;
+
+  /** @type {Record<string, boolean>} */
+  _subscriptions;
+
+  /** @type {Record<string, (msg: Message) => boolean>} */
+  _pending_receives;
+
+  /** @type {Record<string, EventListener[]>} */
+  _eventListeners;
+
+  /** @type {Message[]} */
+  _queue;
+
+  /** @type {TCPConnector|WSConnector} */
+  connector;
+
   /**
   * Registers a message class for JSON serialization and inflation. The registry is shared by
   * all gateways.
   *
   * @param {string} className - fully qualified message class name
-  * @param {Function} messageClass - Message subclass to register
-  * @returns {Function} registered message class
+  * @template {typeof Message} T
+  * @param {T} messageClass - Message subclass to register
+  * @returns {T} registered message class
   */
   static registerMessage(className, messageClass) {
     return registerMessageClass(className, messageClass);
   }
 
+  /** @param {GatewayOptions} [opts] */
   constructor(opts = {}) {
     // Similar to Object.assign but also overwrites `undefined` and empty strings with defaults
     for (var key in GATEWAY_DEFAULTS){
@@ -207,7 +269,7 @@ export class Gateway {
         rsp.services = [];
         break;
         case 'agentForService':
-        rsp.agentID = '';
+        rsp.agentID = null;
         break;
         case 'agentsForService':
         rsp.agentIDs = [];
@@ -370,7 +432,7 @@ export class Gateway {
   * Add an event listener to listen to various events happening on this Gateway
   *
   * @param {string} type - type of event to be listened to
-  * @param {function} listener - new callback/function to be called when the event happens
+  * @param {EventListener} listener - new callback/function to be called when the event happens
   * @returns {void}
   */
   addEventListener(type, listener) {
@@ -384,7 +446,7 @@ export class Gateway {
   * Remove an event listener.
   *
   * @param {string} type - type of event the listener was for
-  * @param {function} listener - callback/function which was to be called when the event happens
+  * @param {EventListener} listener - callback/function which was to be called when the event happens
   * @returns {void}
   */
   removeEventListener(type, listener) {
@@ -396,7 +458,7 @@ export class Gateway {
   /**
   * Add a new listener to listen to all {Message}s sent to this Gateway
   *
-  * @param {function} listener - new callback/function to be called when a {Message} is received
+  * @param {EventListener} listener - new callback/function to be called when a {Message} is received
   * @returns {void}
   */
   addMessageListener(listener) {
@@ -406,7 +468,7 @@ export class Gateway {
   /**
   * Remove a message listener.
   *
-  * @param {function} listener - removes a previously registered listener/callback
+  * @param {EventListener} listener - removes a previously registered listener/callback
   * @returns {void}
   */
   removeMessageListener(listener) {
@@ -416,7 +478,7 @@ export class Gateway {
   /**
   * Add a new listener to get notified when the connection to master is created and terminated.
   *
-  * @param {function} listener - new callback/function to be called connection to master is created and terminated
+  * @param {EventListener} listener - new callback/function to be called connection to master is created and terminated
   * @returns {void}
   */
   addConnListener(listener) {
@@ -426,7 +488,7 @@ export class Gateway {
   /**
   * Remove a connection listener.
   *
-  * @param {function} listener - removes a previously registered listener/callback
+  * @param {EventListener} listener - removes a previously registered listener/callback
   * @returns {void}
   */
   removeConnListener(listener) {
@@ -460,7 +522,7 @@ export class Gateway {
   * @returns {AgentID} - object representing the topic
   */
   topic(topic, topic2) {
-    if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic, true, this);
+    if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic.toString(), true, this);
     if (topic instanceof AgentID) {
       if (topic.isTopic()) return topic;
       return new AgentID(topic.getName()+(topic2 ? '__' + topic2 : '')+'__ntf', true, this);

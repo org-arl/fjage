@@ -2,6 +2,7 @@ import { Performative } from './performative.js';
 import { UUID7 } from './utils.js';
 import { AgentID } from './agentid.js';
 
+/** @type {Record<string, typeof Message>} */
 const MESSAGE_REGISTRY = Object.create(null);
 
 /**
@@ -10,7 +11,7 @@ const MESSAGE_REGISTRY = Object.create(null);
  * back to a class registered for the same unqualified name in a different package.
  *
  * @param {string} name - qualified or unqualified message class name
- * @returns {Function|undefined} registered message class
+ * @returns {typeof Message|undefined} registered message class
  */
 export function messageClassForName(name) {
   return MESSAGE_REGISTRY[name];
@@ -20,8 +21,9 @@ export function messageClassForName(name) {
  * Registers a message class for JSON serialization and inflation.
  *
  * @param {string} className - fully qualified message class name
- * @param {Function} messageClass - Message subclass to register
- * @returns {Function} registered message class
+ * @template {typeof Message} T
+ * @param {T} messageClass - Message subclass to register
+ * @returns {T} registered message class
  */
 export function registerMessageClass(className, messageClass) {
   if (typeof className !== 'string' || className.trim() === '') {
@@ -159,8 +161,8 @@ registerMessageClass('org.arl.fjage.Message', Message);
  * Creates an unqualified message class based on a fully qualified name.
  *
  * @param {string} name - fully qualified message class name
- * @param {Function} [parent] - parent Message class
- * @returns {Function} message class
+ * @param {typeof Message} [parent] - parent Message class
+ * @returns {typeof Message} message class
  */
 export function MessageClass(name, parent=Message) {
   if (!(parent === Message || parent.prototype instanceof Message)) {
