@@ -140,6 +140,10 @@ int main(int argc, char* argv[]) {
   fjage_msg_add_int_array(msg, "myidata", idata, 8);
   float signal[6] = { 3,1,4,1,5,9 };
   fjage_msg_add_float_array(msg, "mysignal", signal, 6);
+  // Add int 2d array
+  int32_t myi2data[5] = { 10,11,12,13,14 };  // Flattened 2D array for [[10, 11], [12, 13, 14]]
+  int lengths[2] = { 2, 3 };  // Lengths of each row
+  fjage_msg_add_int_array_2d(msg, "myi2data", (int32_t*)myi2data, 5, lengths, 2);
   unsigned char ldata[100];
   int32_t lidata[100];
   float lsignal[100];
@@ -169,15 +173,22 @@ int main(int argc, char* argv[]) {
   test_assert("msg_get_byte_array (long len)", fjage_msg_get_byte_array(msg, "myldata", NULL, 0) == 100);
   test_assert("msg_get_int_array (long len)", fjage_msg_get_int_array(msg, "mylidata", NULL, 0) == 100);
   test_assert("msg_get_float_array (long len)", fjage_msg_get_float_array(msg, "mylsignal", NULL, 0) == 100);
+  int i2lengths[2] = { 0, 0 };
+  test_assert("msg_get_int_array_2d (len)", fjage_msg_get_int_array_2d(msg, "myi2data", NULL, 0, i2lengths, 2) == 5 && i2lengths[0] == 2 && i2lengths[1] == 3);
   memset(data, 0, sizeof(data));
   memset(idata, 0, sizeof(idata));
   memset(signal, 0, sizeof(signal));
   fjage_msg_get_byte_array(msg, "mydata", data, 7);
   fjage_msg_get_int_array(msg, "myidata", idata, 8);
   fjage_msg_get_float_array(msg, "mysignal", signal, 6);
+  memset(myi2data, 0, sizeof(myi2data));
+  i2lengths[0] = 0;
+  i2lengths[1] = 0;
+  fjage_msg_get_int_array_2d(msg, "myi2data", myi2data, 5, i2lengths, 2);
   test_assert("msg_get_byte_array", data[0] == 7 && data[1] == 6 && data[2] == 5 && data[3] == 4 && data[4] == 3 && data[5] == 2 && data[6] == 1);
   test_assert("msg_get_int_array", idata[0] == 7 && idata[1] == 6 && idata[2] == 5 && idata[3] == 4 && idata[4] == 3 && idata[5] == 2 && idata[6] == 1 && idata[7] == 0);
   test_assert("msg_get_float_array", signal[0] == 3 && signal[1] == 1 && signal[2] == 4 && signal[3] == 1 && signal[4] == 5 && signal[5] == 9);
+  test_assert("msg_get_int_array_2d", i2lengths[0] == 2 && i2lengths[1] == 3 && myi2data[0] == 10 && myi2data[1] == 11 && myi2data[2] == 12 && myi2data[3] == 13 && myi2data[4] == 14);
   memset(ldata, 0, sizeof(ldata));
   memset(lidata, 0, sizeof(lidata));
   memset(lsignal, 0, sizeof(lsignal));

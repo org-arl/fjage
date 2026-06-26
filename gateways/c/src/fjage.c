@@ -1209,6 +1209,44 @@ static const int fjage_msg_get_array(fjage_msg_t msg, const char* key, const cha
   return -1;
 }
 
+static int token_span(const jsmntok_t* tokens, int index) {
+  int count = 1;
+  if (tokens[index].type == JSMN_ARRAY) {
+    int child = index + 1;
+    for (int i = 0; i < tokens[index].size; i++) {
+      int span = token_span(tokens, child);
+      count += span;
+      child += span;
+    }
+  } else if (tokens[index].type == JSMN_OBJECT) {
+    int child = index + 1;
+    for (int i = 0; i < tokens[index].size; i++) {
+      int key_span = token_span(tokens, child);
+      child += key_span;
+      count += key_span;
+      int value_span = token_span(tokens, child);
+      child += value_span;
+      count += value_span;
+    }
+  }
+  return count;
+}
+
+static int json_object_get_value_token(_fjage_msg_t* m, int object_token, const char* key) {
+  if (m == NULL || key == NULL) return -1;
+  if (m->tokens[object_token].type != JSMN_OBJECT) return -1;
+  int child = object_token + 1;
+  int limit = object_token + token_span(m->tokens, object_token);
+  while (child + 1 < limit) {
+    if (m->tokens[child].type != JSMN_STRING) return -1;
+    char* t = m->data + m->tokens[child].start;
+    t[m->tokens[child].end-m->tokens[child].start] = 0;
+    if (!strcmp(t, key)) return child + 1;
+    child += 1 + token_span(m->tokens, child + 1);
+  }
+  return -1;
+}
+
 int fjage_msg_get_int(fjage_msg_t msg, const char* key, int defval) {
   const char* t = fjage_msg_get_string(msg, key);
   if (t == NULL) return defval;
@@ -1269,6 +1307,72 @@ int fjage_msg_get_int_array(fjage_msg_t msg, const char* key, int32_t* value, in
   return buflen/sizeof(int32_t);
 }
 
+int fjage_msg_get_int_array_2d(fjage_msg_t msg, const char* key, int32_t* value, int maxlen, int* lengths, int maxrows) {
+  if (msg == NULL) return -1;
+  _fjage_msg_t* m = msg;
+  int skip = -1;
+  for (int i = 1; i < m->ntokens-1; i += 2) {
+    char* t = m->data + m->tokens[i].start;
+    if (skip == 0 && m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_ARRAY && !strcmp(t, key)) {
+      int total = 0;
+      int row = 0;
+      int token = i + 2;
+      for (int j = 0; j < m->tokens[i+1].size; j++) {
+        if (token >= m->ntokens) return -1;
+        if (m->tokens[token].type == JSMN_ARRAY) {
+          int rowlen = m->tokens[token].size;
+          if (lengths != NULL && row < maxrows) lengths[row] = rowlen;
+          row++;
+          int element = token + 1;
+          for (int k = 0; k < rowlen; k++) {
+            if (element >= m->ntokens) return -1;
+            if (value != NULL && total < maxlen) {
+              int32_t x = 0;
+              sscanf(m->data + m->tokens[element].start, "%d", &x);
+              value[total] = x;
+            }
+            total++;
+            element += token_span(m->tokens, element);
+          }
+        } else if (m->tokens[token].type == JSMN_OBJECT) {
+          int data_token = json_object_get_value_token(m, token, "data");
+          if (data_token < 0 || m->tokens[data_token].type != JSMN_STRING) return -1;
+          char* s = m->data + m->tokens[data_token].start;
+          s[m->tokens[data_token].end-m->tokens[data_token].start] = 0;
+          size_t buflen;
+          void* buf = b64_decode_ex(s, strlen(s), &buflen);
+          if (buf == NULL || buflen % sizeof(int32_t) != 0) {
+            free(buf);
+            return -1;
+          }
+          int rowlen = buflen/sizeof(int32_t);
+          if (lengths != NULL && row < maxrows) lengths[row] = rowlen;
+          row++;
+          if (value != NULL && total < maxlen) {
+            int copylen = rowlen;
+            if (total + copylen > maxlen) copylen = maxlen - total;
+            memcpy(value + total, buf, copylen*sizeof(int32_t));
+          }
+          total += rowlen;
+          free(buf);
+        } else {
+          return -1;
+        }
+        token += token_span(m->tokens, token);
+      }
+      return total;
+    }
+    if (skip > 0) skip--;
+    if (m->tokens[i+1].type == JSMN_ARRAY) i += m->tokens[i+1].size;
+    else if (m->tokens[i+1].type == JSMN_OBJECT) {
+      if (skip < 0) skip = 0;
+      else skip += m->tokens[i+1].size;
+    }
+  }
+  return -1;
+}
+
+
 int fjage_msg_get_float_array(fjage_msg_t msg, const char* key, float* value, int maxlen) {
   int n = fjage_msg_get_array(msg, key, "%f", value, sizeof(float), maxlen);
   if (n >= 0) return n;
@@ -1291,6 +1395,25 @@ void fjage_msg_add_string(fjage_msg_t msg, const char* key, const char* value) {
 void fjage_msg_add_int(fjage_msg_t msg, const char* key, int value) {
   char* s = msg_append(msg, strlen(key)+16);
   if (s != NULL) sprintf(s, "\"%s\": %d, ", key, value);
+}
+
+void fjage_msg_add_int_array_2d(fjage_msg_t msg, const char* key, int32_t* values, int vallen, int* lengths, int lenlen) {
+  char* s = msg_append(msg, strlen(key)+vallen*12+lenlen*4+16);
+  if (s != NULL) {
+    char* p = s;
+    p += sprintf(p, "\"%s\": [", key);
+    int vndx = 0;
+    for (int i = 0; i < lenlen; i++) {
+      p += sprintf(p, "[");
+      for (int j = 0; j < lengths[i]; j++) {
+        p += sprintf(p, "%d", values[vndx++]);
+        if (j < lengths[i]-1) p += sprintf(p, ",");
+      }
+      p += sprintf(p, "]");
+      if (i < lenlen-1) p += sprintf(p, ",");
+    }
+    p += sprintf(p, "], ");
+  }
 }
 
 void fjage_msg_add_long(fjage_msg_t msg, const char* key, long value) {

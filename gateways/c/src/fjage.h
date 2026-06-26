@@ -317,6 +317,15 @@ void fjage_msg_add_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, 
 
 void fjage_msg_add_int_array(fjage_msg_t msg, const char* key, int32_t* value, int len);
 
+/// Add a 2D integer array value to a message.
+/// @param msg            Message in write-only mode
+/// @param key            Key
+/// @param value          Pointer to the 2D int array (flattened)
+/// @param vallen         Length of the flattened int array (number of ints)
+/// @param lengths        Pointer to an array of lengths for each row (number of rows = number of elements in lengths array)
+/// @param lenlen         Length of the lengths array (number of rows)
+void fjage_msg_add_int_array_2d(fjage_msg_t msg, const char* key, int32_t* values, int vallen, int* lengths, int lenlen);
+
 /// Add a floating point array value to a message.
 ///
 /// @param msg            Message in write-only mode
@@ -447,6 +456,23 @@ int fjage_msg_get_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, i
 /// @return               Number of ints in the byte array
 
 int fjage_msg_get_int_array(fjage_msg_t msg, const char* key, int32_t* value, int maxlen);
+
+/// Get a 2D integer array value encoded as a JSON list of lists. The array is
+/// returned in flattened row-major order in value, and the length of each row
+/// is returned in lengths. If only the lengths are desired, value may be NULL
+/// and maxlen set to 0. If only the total number of values is desired, lengths
+/// may be NULL and maxrows set to 0.
+///
+/// @param msg            Message in read-only mode
+/// @param key            Key
+/// @param value          Pointer to a flattened int array to receive data, or NULL
+/// @param maxlen         The maximum number of ints to receive, or 0 if value is NULL
+/// @param lengths        Pointer to an array to receive row lengths, or NULL
+/// @param maxrows        The maximum number of rows to receive, or 0 if lengths is NULL
+/// @return               Total number of ints in the 2D array
+
+int fjage_msg_get_int_array_2d(fjage_msg_t msg, const char* key, int32_t* value, int maxlen, int* lengths, int maxrows);
+
 
 /// Get a floating point array value. If only the length of the array is desired (so that
 /// an array can be allocated), passing NULL as value and 0 as maxlen returns
