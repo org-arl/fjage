@@ -5,10 +5,19 @@ import org.arl.fjage.remote.*
 import org.arl.fjage.shell.*
 import org.arl.fjage.connectors.*
 import org.junit.Test
+import java.util.logging.Logger
 
 import static org.junit.Assert.assertEquals
 
 class fjagecTest {
+
+  private static final Logger log = Logger.getLogger(fjagecTest.class.name)
+
+  private static void logProcessOutput(String prefix, CharSequence output) {
+    output.toString().eachLine { line ->
+      log.info(prefix + line)
+    }
+  }
 
   @Test
   void fjageCTest() {
@@ -39,13 +48,15 @@ class fjagecTest {
     Thread.sleep(5)
     def ret = 0
     if (System.getProperty('manualCTest') == null){
-      println "Running automated tests."
+      log.info('Running automated tests.')
       def proc = "make -C gateways/c clean test runtest".execute()
       def sout = new StringBuilder(), serr = new StringBuilder()
       proc.consumeProcessOutput(sout, serr)
       proc.waitFor()
       ret = proc.exitValue()
-      println "C : out = $sout \n err = $serr \n ret = $ret"
+      logProcessOutput('C stdout> ', sout)
+      logProcessOutput('C stderr> ', serr)
+      log.info("C exit code: $ret")
     }else{
       println "waiting for user to run manual tests"
       while (testPending){
