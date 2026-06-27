@@ -272,7 +272,7 @@ abstract class BaseGroovyScript extends Script {
       Agent a = binding.getVariable('__agent__')
       return a.topic(s)
     }
-    return null
+    return new AgentID(s, true)
   }
 
  /**
