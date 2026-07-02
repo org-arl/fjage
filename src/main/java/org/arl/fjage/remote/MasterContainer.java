@@ -41,8 +41,11 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private WebSocketServer websocketListener = null;
   private final CopyOnWriteArrayList<ConnectionHandler> slaves = new CopyOnWriteArrayList<>();
   private Supplier<Firewall> fwSupplier = AllowAll.SUPPLIER;
-  private final ExecutorService executor = Executors.newFixedThreadPool(10);
-
+  private final ExecutorService executor = Executors.newFixedThreadPool(10, r -> {
+    Thread t = new Thread(r, getClass().getSimpleName()+":async");
+    t.setDaemon(true);
+    return t;
+  });
   ////////////// Constructors
 
   /**
