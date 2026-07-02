@@ -81,7 +81,7 @@ class WebSocketWriter {
     synchronized (lock) {
       if (closed) return;
       if (queue.size() >= maxQueue) {
-        log.warning("WebSocket write queue overflow (>" + maxQueue + "), disconnecting " + remoteAddress());
+        log.warning("WebSocket write queue overflow (>=" + maxQueue + "), disconnecting " + remoteAddress());
         forceClose();
         return;
       }
