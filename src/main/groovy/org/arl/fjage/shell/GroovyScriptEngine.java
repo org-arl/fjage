@@ -388,7 +388,7 @@ public class GroovyScriptEngine implements ScriptEngine {
     String str = s.toString();
     int n = str.length();
     if (n > MAX_RESULT_LEN) str = str.substring(0,RESULT_SNIPPET_LEN) + " <<snip>> " + str.substring(n-RESULT_SNIPPET_LEN);
-    log.fine("RESULT: "+str);
+    if (!(out instanceof LoggingShell)) log.fine("RESULT: "+str);
     // Mostly log the String version, but for messages, log it so that GUI can display details
     // Be careful not to ever log AgentIDs otherwise the toString() extensions can get called too often by GUI!
     if (out != null) out.println((s instanceof Message)?s:str);
