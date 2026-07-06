@@ -119,6 +119,7 @@ public class ShellAgent extends Agent {
    * @param engine script engine to use
    */
   public ShellAgent(Shell shell, ScriptEngine engine) {
+    if (shell != null && !(shell instanceof LoggingShell)) shell = new LoggingShell(shell, () -> log);
     this.shell = shell;
     this.engine = engine;
     this.ignoreExceptions = true;
@@ -449,6 +450,15 @@ public class ShellAgent extends Agent {
     String lang = engine.getClass().getSimpleName();
     if (lang.endsWith("ScriptEngine")) lang = lang.substring(0, lang.length()-"ScriptEngine".length());
     return lang;
+  }
+
+  /**
+   * Get the log level of the shell agent.
+   *
+   * @return log level, or null if inherited from parent logger.
+   */
+  public Level getLogLevel() {
+    return log.getLevel();
   }
 
   /**
