@@ -1,6 +1,8 @@
 package org.arl.fjage.test
 
+import groovy.transform.CompileStatic
 import org.arl.fjage.*
+import org.arl.fjage.groovy.FSMBuilder
 import org.junit.Assert
 import org.junit.Test
 
@@ -285,5 +287,137 @@ class GroovyBehaviorTest
 
     // ---- run ----
     run(Duration.ofMinutes(5))
+  }
+
+  @Test
+  void testFSMBuilder() {
+    // ---- given ----
+    getContainer().add(new Agent() {
+
+      @Override
+      protected void init() {
+        super.init()
+
+        int count = 0
+        int ticks = 0
+        add(FSMBuilder.build {
+          state("tick") {
+            onEnter {
+              ticks++
+              if (ticks > 5) terminate()
+              else emitTestEvent("TICK")
+            }
+            after(1.0) {
+              setNextState("tock")
+            }
+          }
+          state("tock") {
+            onEnter {
+              emitTestEvent("TOCK")
+              after(1.0) {
+                setNextState("tick")
+              }
+            }
+            onExit {
+              count++
+            }
+          }
+        })
+        add(new WakerBehavior(11000, {
+          emitTestEvent("COUNT:" + count)
+        }))
+      }
+    })
+
+    // ---- expect ----
+    expectEventCount("TICK", 5)
+    expectEventCount("TOCK", 5)
+    expectElapsedTimeBetweenEvents("TICK", "TOCK", 1000, 1000)
+    expectElapsedTimeBetweenEvents("TOCK", 2000, 2000)
+    expectOneAndOnlyOneEvent("COUNT:5")
+
+    // ---- run ----
+    run(Duration.ofMinutes(5))
+  }
+
+  // FSM definition in a statically compiled agent: regression test for the DSL working
+  // under @CompileStatic, in particular unqualified access to fields of the enclosing
+  // class from state closures (broken when the DSL delegate classes were nested Groovy
+  // classes carrying synthetic propertyMissing/methodMissing bridges)
+  @CompileStatic
+  static class StaticFSMAgent extends Agent {
+
+    enum S { TICK, TOCK }
+    enum E { RESET }
+
+    Closure<?> emit
+    int tocks = 0
+    FSMBehavior fsm
+
+    @Override
+    protected void init() {
+      super.init()
+
+      long ticks = 0                              // captured local variable
+      fsm = FSMBuilder.build {
+        state(S.TICK) {
+          onEnter {
+            ticks++
+            if (ticks > 5) terminate()
+            else emit.call("TICK:" + ticks)       // unqualified enclosing-class field access
+          }
+          after(1.0) {
+            setNextState(S.TOCK)
+          }
+          action {
+            block()
+          }
+          onEvent(E.RESET) { info ->
+            emit.call("RESET:" + info + ":" + getCurrentState() + ":" + agent.name)
+            tocks = 0
+          }
+        }
+        state(S.TOCK) {
+          onEnter {
+            emit.call("TOCK")
+            after(1.0) {                          // temporary timer form
+              setNextState(S.TICK)
+            }
+          }
+          onExit {
+            tocks++
+          }
+        }
+      }
+      add(fsm)
+      add(new WakerBehavior(2500) {
+
+        @Override
+        void onWake() {
+          fsm.trigger(E.RESET, 42)
+        }
+      })
+    }
+  }
+
+  @Test
+  void testFSMBuilderStatic() {
+    // ---- given ----
+    final StaticFSMAgent agent = new StaticFSMAgent()
+    agent.emit = { String s -> emitTestEvent(s) }
+    getContainer().add("fsm", agent)
+
+    // ---- expect ----
+    (1..5).each { expectOneAndOnlyOneEvent("TICK:" + it) }
+    expectEventCount("TOCK", 5)
+    expectElapsedTimeBetweenEvents("TOCK", 2000, 2000)
+    expectOneAndOnlyOneEvent("RESET:42:TICK:fsm")
+
+    // ---- run ----
+    run(Duration.ofMinutes(5))
+
+    // ---- verify ----
+    // TOCK exited at t = 2, 4, 6, 8, 10s; counter reset by RESET trigger at t = 2.5s
+    Assert.assertEquals(4, agent.tocks)
   }
 }

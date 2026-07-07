@@ -369,5 +369,54 @@ public class FSMBehavior extends Behavior {
       if (fsm == null) return false;
       return fsm.isBlocked();
     }
+
+    /**
+     * Requests re-entry of the current state in the FSM.
+     * @see org.arl.fjage.FSMBehavior#reenterState()
+     */
+    public void reenterState() {
+      if (fsm != null) fsm.reenterState();
+    }
+
+    /**
+     * Gets the current state name of the FSM.
+     *
+     * @return current state name, or null if the state is not part of a FSM.
+     */
+    public Object getCurrentState() {
+      if (fsm == null) return null;
+      return fsm.getCurrentState();
+    }
+
+    /**
+     * Triggers an event on the FSM.
+     *
+     * @param event an object naming the event.
+     * @see org.arl.fjage.FSMBehavior#trigger(Object)
+     */
+    public void trigger(Object event) {
+      if (fsm != null) fsm.trigger(event);
+    }
+
+    /**
+     * Triggers an event on the FSM.
+     *
+     * @param event an object naming the event.
+     * @param eventInfo an object providing extra information on the event.
+     * @see org.arl.fjage.FSMBehavior#trigger(Object, Object)
+     */
+    public void trigger(Object event, Object eventInfo) {
+      if (fsm != null) fsm.trigger(event, eventInfo);
+    }
+
+    /**
+     * Gets the agent that owns the FSM.
+     *
+     * @return owning agent, or null if the state is not part of a running FSM.
+     */
+    public Agent getAgent() {
+      if (fsm == null) return null;
+      return fsm.agent;
+    }
   }
 }
