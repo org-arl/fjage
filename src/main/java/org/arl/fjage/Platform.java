@@ -57,10 +57,11 @@ public abstract class Platform implements TimestampProvider {
   public abstract long nanoTime();
 
   /**
-   * Schedules a task to be executed at a given platform time.
+   * Schedules a task to be executed after a given delay. A non-positive delay
+   * causes the task to be executed as soon as possible.
    *
    * @param task task to be executed.
-   * @param millis time at which to execute the task.
+   * @param millis delay in milliseconds after which to execute the task.
    */
   public abstract void schedule(TimerTask task, long millis);
 
