@@ -81,11 +81,7 @@ public class FSMBuilder extends FSMBehavior {
 
   public static class StateBuilder {
 
-    public FSMState state;
-
-    public StateBuilder() {
-      // for use with property-style initialization
-    }
+    private final FSMState state;
 
     public StateBuilder(FSMState state) {
       this.state = state;
@@ -107,12 +103,12 @@ public class FSMBuilder extends FSMBehavior {
       long millis = Math.round(delay.doubleValue()*1000);
       c.setDelegate(state);
       c.setResolveStrategy(Closure.DELEGATE_FIRST);
-      WakerBehavior timer = new WakerBehavior(millis, new Runnable() {
+      WakerBehavior timer = new WakerBehavior(millis) {
         @Override
-        public void run() {
+        public void onWake() {
           c.call();
         }
-      });
+      };
       state.timers.add(timer);
       return timer;
     }
