@@ -22,10 +22,6 @@ import org.arl.fjage.param.*
 class GroovyExtensions {
   static void enable() {
 
-    AgentID.metaClass.leftShift = { Message msg ->
-      request(msg)
-    }
-
     Agent.metaClass.receive = { Closure filter, long timeout = 1000 ->
       MessageFilter f = new MessageFilter() {
         boolean matches(Message m) {
