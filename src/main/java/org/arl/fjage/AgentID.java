@@ -174,6 +174,19 @@ public class AgentID implements Serializable, Comparable<AgentID> {
 
   /**
    * Sends a request to the agent represented by this id and waits for
+   * a return message for 1 second. This method implements the Groovy
+   * {@code <<} operator, so that {@code agentID << msg} works in both
+   * dynamically and statically compiled Groovy agents.
+   *
+   * @param msg request to send.
+   * @return response.
+   */
+  public Message leftShift(Message msg) {
+    return request(msg);
+  }
+
+  /**
+   * Sends a request to the agent represented by this id and waits for
    * a return message for a specified timeout.
    *
    * @param msg request to send.
