@@ -1,5 +1,12 @@
 # Release Notes
 
+### 2.5.0
+
+* Add support for 2D integer arrays in the C gateway
+* Improve support for statically compiled Groovy code, including `AgentID <<`, `topic()`, and FSM definitions
+* Add shell output logging and a hidden `logLevel` parameter
+* Bugfix: Clamp negative schedule delays to zero in `RealTimePlatform`
+
 ### 2.4.2
 * Chore: Make Tunnel agent logs log.finer by default
 * Skip sthandler in fjage.c for Windows
