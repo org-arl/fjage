@@ -50,7 +50,7 @@ public final class RealTimePlatform extends Platform {
 
   @Override
   public void schedule(TimerTask task, long millis) {
-    timer.schedule(task, millis);
+    timer.schedule(task, Math.max(0, millis));
   }
 
   @Override
