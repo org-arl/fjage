@@ -422,13 +422,14 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     log.info("Listening on port "+ tcpListener.getPort());
   }
 
-  /**
-   * Utility method to run a function on all connection handlers, with a timeout for each.
-   *
-   * @param handlers collection of connection handlers.
-   * @param fn function to run on each handler.
-   * @param timeoutMs timeout in milliseconds for each handler.
-   */
+   /**
+    * Utility method to run a function on all connection handlers, waiting up to {@code timeoutMs}
+    * total for the whole batch.
+    *
+    * @param handlers collection of connection handlers.
+    * @param fn function to run on each handler.
+    * @param timeoutMs total timeout in milliseconds to wait for the whole batch.
+    */
   private void runAll(Collection<ConnectionHandler> handlers, java.util.function.Consumer<ConnectionHandler> fn, long timeoutMs) {
     List<Callable<Void>> tasks = new ArrayList<>(handlers.size());
     for (ConnectionHandler handler: handlers) {
