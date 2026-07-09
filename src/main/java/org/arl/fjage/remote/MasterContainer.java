@@ -229,9 +229,9 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     rq.message = m;
     rq.relay = false;
     String json = rq.toJson();
-    runAll(slaves, slave -> {
-      if (slave.wantsMessagesFor(aid)) slave.send(json);
-    }, TIMEOUT);
+    for (ConnectionHandler slave: slaves) {
+      if (slave.wantsMessagesFor(aid)) executor.execute(() -> slave.send(json));
+    }
     return true;
   }
 
