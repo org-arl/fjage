@@ -256,11 +256,12 @@ public class SlaveContainer extends RemoteContainer {
   public void shutdown() {
     quit = true;
     if (master != null) master.close();
-    if (connectionManager != null) {
-      connectionManager.interrupt();
-      if (connectionManager != Thread.currentThread()) {
+    Thread t = connectionManager;
+    if (t != null) {
+      t.interrupt();
+      if (t != Thread.currentThread()) {
         try {
-          connectionManager.join(TIMEOUT);
+          t.join(TIMEOUT);
         } catch (InterruptedException ex) {
           Thread.currentThread().interrupt();
         }
