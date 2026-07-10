@@ -172,13 +172,6 @@ test {
 
 javadoc {
   options.addStringOption('Xdoclint:none', '-quiet')
-  doLast {
-    mkdir 'docs/javadoc'
-    copy {
-      from javadoc.destinationDir
-      into 'docs/javadoc'
-    }
-  }
 }
 
 ////// tasks for MavenCentral deployment

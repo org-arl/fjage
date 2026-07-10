@@ -1,0 +1,94 @@
+---
+title: "JavaScript Gateway"
+---
+
+## Introduction
+
+The JavaScript Gateway allows web applications to access fjåge agents. While the JavaScript API is very similar to the Python Gateway API, there are a few additional steps required to setup the web services needed for the JavaScript API to work. Being limited by the single threaded browser model, the JavaScript API uses promises and callbacks to deliver results from APIs that may incur latency.
+
+The JavaScript gateway (`fjage.js`) lives in the [gateways/js](https://github.com/org-arl/fjage/tree/master/gateways/js) folder of the fjåge repository, and is published as the [fjage npm package](https://www.npmjs.com/package/fjage):
+
+``` sh
+npm install fjage
+```
+
+The same package works in the browser (connecting to fjåge over web sockets) and in Node.js (connecting over TCP). At runtime, fjage.js checks its context and picks the appropriate connector automatically.
+
+## Enable the web sockets connector
+
+First the web sockets connector has to be enabled (let's say on port 8080), so that fjåge can be accessed over web sockets from a browser:
+
+``` groovy
+import org.arl.fjage.*
+import org.arl.fjage.remote.*
+import org.arl.fjage.shell.*
+import org.arl.fjage.connectors.*
+
+platform = new RealTimePlatform()
+container = new MasterContainer(platform, 5081)
+def websvr = WebServer.getInstance(8080)
+websvr.addStatic('/', '/org/arl/fjage/web')
+// add any other contexts needed to serve your application here
+container.openWebSocketServer(8080, '/ws')
+container.add 'shell', new ShellAgent(new GroovyScriptEngine())
+// add other agents to the container here
+platform.start()
+```
+
+Here `WebServer.addStatic()` serves the static web resources bundled in the fjåge jar, and `openWebSocketServer()` opens a WebSocket endpoint (at `ws://hostname:8080/ws`) that fjage.js gateways connect to. If you just want to try things out, running `./fjage.sh -web` in the fjåge repository sets up an equivalent web-enabled container for you.
+
+## Use the JavaScript module
+
+fjage.js is distributed as ready-to-use bundles for the common JavaScript module systems (ESM, CommonJS and UMD). In a web application built with a bundler, you simply `import { Gateway, MessageClass } from 'fjage'`; in a plain web page, you can either load the UMD bundle with `<script src="fjage.min.js"></script>`, or import the ESM bundle (`dist/esm/fjage.js`) directly from a `<script type="module">`. Examples for each module system are available in the [examples](https://github.com/org-arl/fjage/tree/master/gateways/js/examples) directory.
+
+It is easiest to illustrate the use of the JavaScript API though a simple code example:
+
+``` javascript
+import { Gateway, MessageClass } from 'fjage';
+
+const gw = new Gateway();
+
+const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
+let shell;
+
+gw.agentForService('org.arl.fjage.shell.Services.SHELL').then((aid) => {
+    shell = aid;
+    gw.subscribe(gw.topic(shell));
+    makeRq(shell);
+}).catch((ex) => {
+    console.log('Could not find SHELL: '+ex);
+});
+
+gw.addMessageListener((msg) => {
+    console.log(msg);
+    return false;
+});
+
+function makeRq(shell) {
+    let req = new ShellExecReq();
+    req.recipient = shell;
+    req.command = 'ps';
+    gw.request(req).then((msg) => {
+        console.log(msg);
+    }).catch((ex) => {
+        console.log('Could not execute command: '+ex);
+    });
+}
+```
+
+This code first opens a gateway through the web socket interface back to the web server that served this JavaScript (in the browser, `new Gateway()` defaults to the hostname and port of the page, with the WebSocket endpoint at `/ws/`; these can be overridden by passing `{ hostname, port, pathname }` options). It then creates the `org.arl.fjage.shell.ShellExecReq` message class, and looks for an agent providing the `org.arl.fjage.shell.Services.SHELL` service. If found, it subscribes to messages from that service and calls `makeRq()` to make a command execution request to the agent providing that service. The request is to execute a command `"ps"` and simply log the response to the browser's console.
+
+## Use from Node.js
+
+The same API works in Node.js, where the gateway connects to the master container's TCP port instead of a web socket:
+
+``` javascript
+const { Gateway, MessageClass } = require('fjage');
+
+const gw = new Gateway({
+    hostname: 'localhost',
+    port: 5081
+});
+```
+
+The user should refer to the [detailed API description](https://org-arl.github.io/fjage/jsdoc/) for the JavaScript API for more information.

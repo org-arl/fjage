@@ -254,9 +254,9 @@ To build the documentation locally:
 # Install documentation dependencies
 pip install -e ".[docs]"
 # Build docs
-sphinx-build -b html docs/ ../../docs/pydocs/
+sphinx-build -b html docs/ ../../build/docs/pydocs/
 # View in browser
-open ../../docs/pydocs/index.html
+open ../../build/docs/pydocs/index.html
 ```
 
 ## Compatibility
@@ -283,7 +283,7 @@ This project is licensed under the BSD 3-Clause License. See the [LICENSE](../..
 
 ## Support
 
-- **Documentation**: [fjåge Documentation](https://fjage.readthedocs.io/)
+- **Documentation**: [fjåge Documentation](https://org-arl.github.io/fjage/)
 - **Issues**: [GitHub Issues](https://github.com/org-arl/fjage/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/org-arl/fjage/discussions)
 
