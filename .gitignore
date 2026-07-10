@@ -9,7 +9,9 @@ tmp
 logs
 build
 test_fjage
-docs/doc
+docs/_site
+/.quarto/
+docs/.quarto
 
 .fjage-shell-history
 gradle.properties

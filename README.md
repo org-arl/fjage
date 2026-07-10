@@ -5,7 +5,7 @@ fjåge
 Introduction
 ------------
 
-fjåge provides a **lightweight** and **easy-to-learn** framework for [agent-oriented software development](http://en.wikipedia.org/wiki/Agent-oriented_programming) in Java and Groovy. Although most of the functionality of the framework can be used in pure-Java projects, the adoption of Groovy in the project simplifies development immensely. Typically, initialization scripts, shell interaction and command scripts are written in Groovy. Agents and support classes may be written in Java or Groovy.
+fjåge provides a **lightweight** and **easy-to-learn** framework for [agent-oriented software development](https://en.wikipedia.org/wiki/Agent-oriented_programming) in Java and Groovy. Although most of the functionality of the framework can be used in pure-Java projects, the adoption of Groovy in the project simplifies development immensely. Typically, initialization scripts, shell interaction and command scripts are written in Groovy. Agents and support classes may be written in Java or Groovy.
 
 Key Features
 ------------
@@ -22,15 +22,15 @@ Documentation
 -------------
 
 * [Release Notes](ReleaseNotes.md)
-* [Getting Started](https://fjage.readthedocs.io/en/latest/quickstart.html)
-* [Developer's Guide](https://fjage.readthedocs.io/en/latest/)
-* [API documentation](http://org-arl.github.io/fjage/javadoc/)
+* [Getting Started](https://org-arl.github.io/fjage/quickstart.html)
+* [Developer's Guide](https://org-arl.github.io/fjage/)
+* [API documentation](https://org-arl.github.io/fjage/javadoc/)
 
 Support
 -------
 
-* [Project Home](http://github.com/org-arl/fjage)
-* [Issue Tracking](http://github.com/org-arl/fjage/issues)
+* [Project Home](https://github.com/org-arl/fjage)
+* [Issue Tracking](https://github.com/org-arl/fjage/issues)
 
 Maven dependency (Github Maven repository)
 ------------------------
@@ -46,7 +46,7 @@ From version 2.1.0 onwards, fjåge will be published in the [Github Maven reposi
 Versions
 -------------
 
-fjåge follows [Semantic Versioning](http://semver.org/). The current major version is 2.x.y.
+fjåge follows [Semantic Versioning](https://semver.org/). The current major version is 2.x.y.
 
 The main changes in the version 2.0.0 compared to the previous 1.x series are:
 
@@ -82,8 +82,8 @@ Building:
 
 * `gradle` to build the jars including resources (webshell, fjage.js, etc.)
 * `gradle test` to run all regression tests (automated through Github actions CI)
-* `gradle publish` to upload jars to Maven staging (requires credentials)
-* `make html` to build developer's documentation (automated through ReadTheDocs)
+* `gradle publish` to publish jars to the Github Maven repository (requires credentials)
+* `quarto render docs` to build developer's documentation (published via GitHub Actions to GitHub Pages)
 * `gradle javadoc` to build the Java API documentation
 * `gradle jsdoc` to build the Javascript API documentation
 
@@ -91,4 +91,4 @@ License
 -------
 
 fjåge is licensed under the Simplified (3-clause) BSD license.
-See [LICENSE.txt](http://github.com/org-arl/fjage/blob/master/LICENSE.txt) for more details.
+See [LICENSE](https://github.com/org-arl/fjage/blob/master/LICENSE) for more details.

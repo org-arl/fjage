@@ -189,13 +189,13 @@ All gateway agents should use names prefixed with `gateway-`.
 
 ## JSON Protocol
 
-- Gateways must support encoding and decoding Messages to and from the [fjåge JSON Protocol](https://fjage.readthedocs.io/en/latest/protocol.html).
+- Gateways must support encoding and decoding Messages to and from the [fjåge JSON Protocol](https://org-arl.github.io/fjage/protocol.html).
 
 ### Custom JSON fields
 
 - Must add a `boolean` true field with a suffix `__isComplex` if the message contains any arrays of complex numbers. For example, if a field `signal` is a complex array, a field `signal__isComplex = true` is added to the JSON message. This is only applicable for languages that support complex numbers natively.
 
-- Numerical arrays may be encoded by Fjåge Containers in a compressed [base64](https://en.wikipedia.org/wiki/Base64) format. The Gateways must support decoding the [compressed base64 representation](https://fjage.readthedocs.io/en/latest/protocol.html#json-message-without-base64-encoding-to-transmit-a-signal) of numerical arrays. For example, a numerical array which would normally be encoded in JSON as follows :
+- Numerical arrays may be encoded by Fjåge Containers in a compressed [base64](https://en.wikipedia.org/wiki/Base64) format. The Gateways must support decoding the [compressed base64 representation](https://org-arl.github.io/fjage/protocol.html#json-message-without-base64-encoding-to-transmit-a-signal) of numerical arrays. For example, a numerical array which would normally be encoded in JSON as follows :
 
 ```json
 "paramValues": {

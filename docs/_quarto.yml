@@ -1,0 +1,76 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - "*.qmd"
+  resources:
+    - fjage_quickstart.sh
+
+website:
+  title: "fjåge"
+  description: "Framework for Java and Groovy Agents"
+  favicon: images/favicon.ico
+  site-url: https://org-arl.github.io/fjage/
+  repo-url: https://github.com/org-arl/fjage
+  search:
+    location: navbar
+    type: overlay
+  navbar:
+    background: primary
+    left:
+      - text: "Developer's Guide"
+        href: index.qmd
+      - text: "API Reference"
+        menu:
+          - text: "Java/Groovy (javadoc)"
+            href: https://org-arl.github.io/fjage/javadoc/
+          - text: "JavaScript (jsdoc)"
+            href: https://org-arl.github.io/fjage/jsdoc/
+          - text: "Python (fjagepy)"
+            href: https://org-arl.github.io/fjage/pydocs/
+          - text: "Julia (Fjage.jl)"
+            href: https://org-arl.github.io/Fjage.jl/stable/
+    right:
+      - icon: github
+        href: https://github.com/org-arl/fjage
+        aria-label: GitHub
+  sidebar:
+    style: docked
+    contents:
+      - index.qmd
+      - section: "Getting started"
+        contents:
+          - introduction.qmd
+          - quickstart.qmd
+      - section: "Agent development"
+        contents:
+          - behaviors.qmd
+          - messages.qmd
+          - services.qmd
+          - params.qmd
+      - section: "Advanced topics"
+        contents:
+          - remote.qmd
+          - shell.qmd
+          - simulation.qmd
+      - section: "Gateways"
+        contents:
+          - gateways.qmd
+          - pythongw.qmd
+          - jsgw.qmd
+          - cgw.qmd
+          - juliagw.qmd
+          - protocol.qmd
+      - faq.qmd
+  page-footer:
+    center: "© 2013–2026 Mandar Chitre, Acoustic Research Laboratory"
+
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: darkly
+    highlight-style: github
+    code-copy: true
+    toc: true
+    link-external-newwindow: true

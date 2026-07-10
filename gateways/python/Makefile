@@ -2,7 +2,7 @@ build: docs
 	PIP_USER=0 python3 -m build
 
 docs: lint
-	sphinx-build docs ../../docs/pydocs/
+	sphinx-build docs ../../build/docs/pydocs/
 
 lint:
 	python3 -m mypy fjagepy
@@ -15,7 +15,7 @@ upload: build
 
 clean:
 	rm -rf dist fjagepy.egg-info
-	rm -rf ../../docs/pydocs/*
+	rm -rf ../../build/docs/pydocs/*
 
 .PHONY: docs build testupload upload clean
 

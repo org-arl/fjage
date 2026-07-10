@@ -1,0 +1,20 @@
+---
+title: "fjåge Developer's Guide"
+toc: false
+---
+
+fjåge provides a **lightweight** and **easy-to-learn** framework for [agent-oriented software development](https://en.wikipedia.org/wiki/Agent-oriented_programming) in Java and Groovy, with gateway APIs for Python, JavaScript, C and Julia.
+
+This guide walks you through developing agent-based applications with fjåge:
+
+- New to fjåge? Start with the [Introduction](introduction.qmd) and the [Getting Started](quickstart.qmd) tutorial.
+- The core concepts are covered in [Agents and Behaviors](behaviors.qmd), [Messaging](messages.qmd), [Directory Services](services.qmd) and [Parameters](params.qmd).
+- [Distributed Agents](remote.qmd), [The Shell Agent](shell.qmd) and [Simulation](simulation.qmd) cover advanced topics.
+- Interfacing with fjåge from other languages is covered in the [Gateways](gateways.qmd) chapters and the [JSON Protocol Specifications](protocol.qmd).
+
+## Useful links
+
+- [fjåge GitHub home](https://github.com/org-arl/fjage)
+- [fjåge API documentation (javadoc)](https://org-arl.github.io/fjage/javadoc/)
+- [fjåge issue tracking](https://github.com/org-arl/fjage/issues)
+- [Release notes](https://github.com/org-arl/fjage/blob/master/ReleaseNotes.md)

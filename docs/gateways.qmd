@@ -1,0 +1,110 @@
+---
+title: "Gateways"
+---
+
+## Interfacing with fjåge from other languages
+
+While fjåge agents are developed in Java or Groovy, applications written in other languages can interact with them through a *Gateway*. A gateway connects to a fjåge [master container](remote.qmd) over a TCP/IP (or WebSocket) connection, and lets the application send and receive messages, look up agents providing specific services, and subscribe to topics — just as an agent would. Under the hood, all gateways speak the same [JSON protocol](protocol.qmd), so a gateway can be developed for any language with a network stack and a JSON library.
+
+From the master container's perspective, a gateway appears as a slave container holding a single gateway agent that proxies messages on behalf of the connected application.
+
+## Supported languages
+
+| Language | Guide | API documentation | Package |
+|----------|-------|-------------------|---------|
+| Java / Groovy | this chapter (below) | [javadoc](https://org-arl.github.io/fjage/javadoc/org/arl/fjage/remote/Gateway.html) | [GitHub Packages](https://github.com/org-arl/fjage/packages) |
+| Python 3 | [Python Gateway](pythongw.qmd) | [fjagepy](https://org-arl.github.io/fjage/pydocs/) | [PyPI](https://pypi.org/project/fjagepy/) (`pip install fjagepy`) |
+| JavaScript | [JavaScript Gateway](jsgw.qmd) | [fjage.js](https://org-arl.github.io/fjage/jsdoc/) | [npm](https://www.npmjs.com/package/fjage) (`npm install fjage`) |
+| C | [C Gateway](cgw.qmd) | [fjage.h](https://github.com/org-arl/fjage/blob/master/gateways/c/src/fjage.h) | build from [gateways/c](https://github.com/org-arl/fjage/tree/master/gateways/c) |
+| Julia | [Julia Gateway](juliagw.qmd) | [Fjage.jl](https://org-arl.github.io/Fjage.jl/stable/) | [Julia registry](https://github.com/org-arl/Fjage.jl) (`pkg> add Fjage`) |
+
+The Python, JavaScript and C gateways live in the [gateways/](https://github.com/org-arl/fjage/tree/master/gateways) folder of the fjåge repository; the Julia gateway is maintained separately as [Fjage.jl](https://github.com/org-arl/Fjage.jl). The formal specification that all gateway implementations follow is in [Gateways.md](https://github.com/org-arl/fjage/blob/master/gateways/Gateways.md).
+
+## The Java/Groovy gateway
+
+Java and Groovy applications that are not themselves fjåge containers can use the `org.arl.fjage.remote.Gateway` class directly:
+
+```groovy
+import org.arl.fjage.*
+import org.arl.fjage.remote.Gateway
+
+def gw = new Gateway('localhost', 1100)
+def shell = gw.agentForService(org.arl.fjage.shell.Services.SHELL)
+gw.send(new Message(shell, Performative.REQUEST))
+gw.close()
+```
+
+The `Gateway` class supports the same messaging methods as an agent (`send()`, `receive()`, `request()`, `subscribe()`, `agentForService()`, etc.), described in the [Messaging](messages.qmd) chapter.
+
+## A common example
+
+All gateways follow the same pattern: open a connection to the master container, exchange messages, and close. The per-language chapters develop this in detail, but the skeleton looks alike everywhere:
+
+::: {.panel-tabset}
+
+## Python
+
+```python
+from fjagepy import Gateway, MessageClass
+
+ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq')
+gw = Gateway('localhost', 1100)
+shell = gw.agentForService('org.arl.fjage.shell.Services.SHELL')
+rsp = gw.request(ShellExecReq(recipient=shell, command='ps'))
+print(rsp.performative)
+gw.close()
+```
+
+## JavaScript
+
+```javascript
+import { Gateway, MessageClass } from 'fjage';
+
+const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
+const gw = new Gateway({ hostname: 'localhost', port: 1100 });
+const shell = await gw.agentForService('org.arl.fjage.shell.Services.SHELL');
+const rsp = await gw.request(new ShellExecReq({ recipient: shell, command: 'ps' }));
+console.log(rsp.perf);
+gw.close();
+```
+
+## Julia
+
+```julia
+using Fjage
+
+gw = Gateway("localhost", 1100)
+shell = agentforservice(gw, "org.arl.fjage.shell.Services.SHELL")
+rsp = request(gw, ShellExecReq(recipient=shell, command="ps"))
+println(rsp.performative)
+close(gw)
+```
+
+## C
+
+```c
+#include "fjage.h"
+
+fjage_gw_t gw = fjage_tcp_open("localhost", 1100);
+fjage_aid_t shell = fjage_agent_for_service(gw, "org.arl.fjage.shell.Services.SHELL");
+fjage_msg_t req = fjage_msg_create("org.arl.fjage.shell.ShellExecReq", FJAGE_REQUEST);
+fjage_msg_set_recipient(req, shell);
+fjage_msg_add_string(req, "command", "ps");
+fjage_msg_t rsp = fjage_request(gw, req, 1000);
+if (rsp != NULL) fjage_msg_destroy(rsp);
+fjage_aid_destroy(shell);
+fjage_close(gw);
+```
+
+:::
+
+To try any of these, start a fjåge master container with a TCP port open (see [Distributed Agents](remote.qmd)):
+
+```groovy
+import org.arl.fjage.*
+import org.arl.fjage.remote.MasterContainer
+
+def platform = new RealTimePlatform()
+def container = new MasterContainer(platform, 1100)
+platform.start()
+```
