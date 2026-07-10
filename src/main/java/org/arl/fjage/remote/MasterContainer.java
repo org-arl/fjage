@@ -15,7 +15,6 @@ import org.arl.fjage.*;
 import org.arl.fjage.auth.*;
 import org.arl.fjage.connectors.*;
 
-import java.util.concurrent.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
@@ -37,11 +36,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private WebSocketServer websocketListener = null;
   private final CopyOnWriteArrayList<ConnectionHandler> slaves = new CopyOnWriteArrayList<>();
   private Supplier<Firewall> fwSupplier = AllowAll.SUPPLIER;
-  private final ExecutorService executor = Executors.newFixedThreadPool(10, r -> {
-    Thread t = new Thread(r, getClass().getSimpleName()+":async");
-    t.setDaemon(true);
-    return t;
-  });
   ////////////// Constructors
 
   /**
@@ -230,7 +224,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     rq.relay = false;
     String json = rq.toJson();
     for (ConnectionHandler slave: slaves) {
-      if (slave.wantsMessagesFor(aid)) executor.execute(() -> slave.send(json));
+      if (slave.wantsMessagesFor(aid)) slave.send(json);
     }
     return true;
   }
@@ -320,9 +314,8 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   @Override
   protected void initComplete() {
-    runAll(slaves, slave -> {
+    for (ConnectionHandler slave: slaves)
       if (!slave.isAlive()) slave.start();
-    }, TIMEOUT);
     if (!slaves.isEmpty()) {
       log.fine("Waiting for slaves...");
       boolean allAlive = false;
@@ -350,10 +343,10 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   public void shutdown() {
     if (!running) return;
     String json = JsonMessage.createActionRequest(Action.SHUTDOWN).toJson();
-    runAll(slaves, slave -> {
+    for (ConnectionHandler slave: slaves) {
       slave.send(json);
       slave.close();
-    }, TIMEOUT);
+    }
     slaves.clear();
     if (tcpListener != null) {
       tcpListener.close();
@@ -363,7 +356,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       websocketListener.close();
       websocketListener = null;
     }
-    executor.shutdownNow();
     super.shutdown();
   }
 
@@ -420,37 +412,6 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private void openTcpServer(int port) {
     tcpListener = new TcpServer(port, this);
     log.info("Listening on port "+ tcpListener.getPort());
-  }
-
-   /**
-    * Utility method to run a function on all connection handlers, waiting up to {@code timeoutMs}
-    * total for the whole batch.
-    *
-    * @param handlers collection of connection handlers.
-    * @param fn function to run on each handler.
-    * @param timeoutMs total timeout in milliseconds to wait for the whole batch.
-    */
-  private void runAll(Collection<ConnectionHandler> handlers, java.util.function.Consumer<ConnectionHandler> fn, long timeoutMs) {
-    List<Callable<Void>> tasks = new ArrayList<>(handlers.size());
-    for (ConnectionHandler handler: handlers) {
-      tasks.add(() -> {
-        fn.accept(handler);
-        return null;
-      });
-    }
-    try {
-      List<Future<Void>> futures = executor.invokeAll(tasks, timeoutMs, TimeUnit.MILLISECONDS);
-      for (Future<Void> future: futures) {
-        if (future.isCancelled()) continue;
-        try {
-          future.get();
-        } catch (CancellationException | ExecutionException ex) {
-          // ignore failures to preserve existing best-effort behavior
-        }
-      }
-    } catch (InterruptedException ex) {
-      Thread.currentThread().interrupt();
-    }
   }
 
 }
