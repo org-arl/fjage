@@ -23,7 +23,6 @@ public class WebSocketConnector implements Connector{
     private final PseudoInputStream pin = new PseudoInputStream();
     private final PseudoOutputStream pout = new PseudoOutputStream();
     private OutputThread outThread = null;
-    private WebSocketWriter writer = null;
 
     public WebSocketConnector(String context) {
         this.context = context;
@@ -33,7 +32,6 @@ public class WebSocketConnector implements Connector{
     public void onWebSocketClose(int statusCode, String reason)  {
         this.session = null;
         this.remote = null;
-        if (writer != null) writer.close();
         pin.close();
         pout.close();
         if (outThread != null) outThread.close();
@@ -48,7 +46,6 @@ public class WebSocketConnector implements Connector{
         log.finer("WebSocket Connector connected: " + session.getRemoteAddress().getHostString() + ":" + session.getRemoteAddress().getPort());
         name = "ws://" + this.remote.getInetSocketAddress().getAddress().getHostAddress() + context + ":" + this.remote.getInetSocketAddress().getPort();
         if (listener != null) listener.connected(this);
-        writer = new WebSocketWriter(session, null, log);
         outThread = new OutputThread();
         outThread.start();
     }
@@ -157,7 +154,7 @@ public class WebSocketConnector implements Connector{
     }
 
     private void write(String s){
-        if (writer != null) writer.enqueue(s);
+        if (remote != null) remote.sendStringByFuture(s);
     }
 
 }
