@@ -17,35 +17,34 @@ import java.io.*;
  */
 public class PseudoOutputStream extends OutputStream {
 
-  protected BlockingByteQueue q = new BlockingByteQueue();
+  protected final BlockingByteQueue q = new BlockingByteQueue();
 
   /**
    * Clear the stream buffer.
    */
   public void clear() {
-    if (q != null) q.clear();
+    q.clear();
   }
 
   @Override
   public void write(int c) throws IOException {
-    if (q == null) throw new IOException("Stream is closed");
-    q.write(c);
+    if (!q.write(c)) throw new IOException("Stream is closed");
   }
 
   @Override
   public void write(byte[] buf) throws IOException {
-    if (q == null) throw new IOException("Stream is closed");
-    q.write(buf);
+    if (!q.write(buf)) throw new IOException("Stream is closed");
   }
 
   @Override
   public void write(byte[] buf, int ofs, int len) throws IOException {
-    if (q == null) throw new IOException("Stream is closed");
-    if (ofs == 0 && buf.length == len) q.write(buf);
+    if (ofs == 0 && buf.length == len) {
+      write(buf);
+    }
     else {
       byte[] tmp = new byte[len];
       System.arraycopy(buf, ofs, tmp, 0, len);
-      q.write(tmp);
+      write(tmp);
     }
   }
 
@@ -55,7 +54,6 @@ public class PseudoOutputStream extends OutputStream {
    * @return byte read, or -1 on error (if stream is closed or interrupt).
    */
   public int read() {
-    if (q == null) return -1;
     return q.read();
   }
 
@@ -66,7 +64,6 @@ public class PseudoOutputStream extends OutputStream {
    * @return number of bytes read, or -1 on error (if stream is closed or interrupt).
    */
   public int read(byte[] buf) {
-    if (q == null) return -1;
     return q.read(buf);
   }
 
@@ -76,7 +73,6 @@ public class PseudoOutputStream extends OutputStream {
    * @return bytes array on success, null on failure (if stream is closed or interrupt).
    */
   public byte[] readAvailable() {
-    if (q == null) return null;
     return q.readAvailable();
   }
 
@@ -86,7 +82,6 @@ public class PseudoOutputStream extends OutputStream {
    * @return text string on success, null on failure (if stream is closed or interrupt).
    */
   public String readLine() {
-    if (q == null) return null;
     byte[] buf = q.readDelimited((byte)10);
     if (buf == null) return null;
     return new String(buf);
@@ -98,15 +93,12 @@ public class PseudoOutputStream extends OutputStream {
    * @return number of bytes available, -1 on error (if stream is closed).
    */
   public int available() {
-    if (q == null) return -1;
     return q.available();
   }
 
   @Override
   public void close() {
-    if (q == null) return;
-    q.clear();
-    q = null;
+    q.close();
   }
 
 }
