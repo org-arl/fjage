@@ -202,7 +202,6 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
     Session session = null;
     WebSocketHubConnector conn;
-    private WebSocketWriter writer = null;
 
     public WSHandler(WebSocketHubConnector conn) {
       this.conn = conn;
@@ -212,7 +211,6 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     public void onConnect(Session session) {
       log.fine("New connection from "+session.getRemoteAddress());
       this.session = session;
-      writer = new WebSocketWriter(session, null, log);
       wsHandlers.add(this);
       if (listener != null) listener.connected(conn);
     }
@@ -220,7 +218,6 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     @OnWebSocketClose
     public void onClose(int statusCode, String reason) {
       log.fine("Connection from "+session.getRemoteAddress()+" closed");
-      if (writer != null) writer.close();
       session = null;
       wsHandlers.remove(this);
     }
@@ -251,7 +248,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     }
 
     void write(String s) {
-      if (writer != null) writer.enqueue(s);
+      if (session != null && session.isOpen()) session.getRemote().sendStringByFuture(s);
     }
   }
 }
