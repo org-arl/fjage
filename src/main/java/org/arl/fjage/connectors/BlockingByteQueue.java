@@ -23,6 +23,7 @@ public class BlockingByteQueue {
   protected BlockingQueue<byte[]> queue;
   protected byte[] wbuf, rbuf;
   protected int bytes, wlen, rlen, rpos;
+  protected boolean closed;
 
   public BlockingByteQueue() {
     queue = new LinkedBlockingQueue<byte[]>();
@@ -32,6 +33,7 @@ public class BlockingByteQueue {
     rbuf = wbuf;
     rlen = 0;
     rpos = 0;
+    closed = false;
   }
 
   /**
@@ -44,13 +46,29 @@ public class BlockingByteQueue {
     rlen = 0;
     rpos = 0;
     bytes = 0;
-    notify();
+    notifyAll();
+  }
+
+  /**
+   * Closes the queue and wakes any blocked readers.
+   */
+  public synchronized void close() {
+    if (closed) return;
+    queue.clear();
+    rbuf = wbuf;
+    wlen = 0;
+    rlen = 0;
+    rpos = 0;
+    bytes = 0;
+    closed = true;
+    notifyAll();
   }
 
   /**
    * Writes a byte to the queue.
    */
-  public synchronized void write(int c) {
+  public synchronized boolean write(int c) {
+    if (closed) return false;
     if (wlen == BLOCK_SIZE) {
       if (bytes > 0) {
         if (rbuf != wbuf) queue.add(wbuf);
@@ -61,27 +79,29 @@ public class BlockingByteQueue {
     wbuf[wlen++] = (byte)c;
     if (rbuf == wbuf) rlen = wlen;
     bytes++;
-    notify();
+    notifyAll();
+    return true;
   }
 
   /**
    * Writes a byte array to the queue.
    */
-  public synchronized void write(byte[] buf) {
+  public synchronized boolean write(byte[] buf) {
+    if (closed) return false;
     //for (int i = 0; i < buf.length; i++)
     //  write(buf[i]);
     bytes += buf.length;
     if (wlen == 0 && buf.length > BLOCK_SIZE) {
       queue.add(buf);
-      notify();
-      return;
+      notifyAll();
+      return true;
     }
     if (wlen+buf.length < BLOCK_SIZE) {
       System.arraycopy(buf, 0, wbuf, wlen, buf.length);
       wlen += buf.length;
       if (rbuf == wbuf) rlen = wlen;
-      notify();
-      return;
+      notifyAll();
+      return true;
     }
     int len1 = BLOCK_SIZE - wlen;
     System.arraycopy(buf, 0, wbuf, wlen, len1);
@@ -94,13 +114,14 @@ public class BlockingByteQueue {
       queue.add(wbuf);
       wbuf = new byte[BLOCK_SIZE];
       wlen = 0;
-      notify();
-      return;
+      notifyAll();
+      return true;
     }
     wbuf = new byte[BLOCK_SIZE];
     System.arraycopy(buf, len1, wbuf, 0, len2);
     wlen = len2;
-    notify();
+    notifyAll();
+    return true;
   }
 
   /**
@@ -110,7 +131,7 @@ public class BlockingByteQueue {
    */
   public synchronized int read() {
     try {
-      if (bytes == 0) wait();
+      while (bytes == 0 && !closed) wait();
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
     }
@@ -155,7 +176,7 @@ public class BlockingByteQueue {
    */
   public synchronized byte[] readAvailable() {
     try {
-      if (bytes == 0) wait();
+      while (bytes == 0 && !closed) wait();
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
     }
@@ -192,7 +213,7 @@ public class BlockingByteQueue {
    * Gets the number of bytes available in the buffer.
    */
   public synchronized int available() {
-    return bytes;
+    return closed ? -1 : bytes;
   }
 
 }

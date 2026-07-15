@@ -17,40 +17,36 @@ import java.io.*;
  */
 public class PseudoInputStream extends InputStream {
 
-  protected BlockingByteQueue q = new BlockingByteQueue();
+  protected final BlockingByteQueue q = new BlockingByteQueue();
 
   /**
    * Clear the stream buffer.
    */
   public void clear() {
-    if (q != null) q.clear();
+    q.clear();
   }
 
   /**
    * Write a byte to the stream buffer.
    */
   public void write(int c) throws IOException {
-    if (q == null) throw new IOException("Stream is closed");
-    q.write(c);
+    if (!q.write(c)) throw new IOException("Stream is closed");
   }
 
   /**
    * Write a byte buffer to the stream buffer.
    */
   public void write(byte[] buf) throws IOException {
-    if (q == null) throw new IOException("Stream is closed");
-    q.write(buf);
+    if (!q.write(buf)) throw new IOException("Stream is closed");
   }
 
   @Override
   public int read() {
-    if (q == null) return -1;
     return q.read();
   }
 
   @Override
   public int read(byte[] buf, int ofs, int len) {
-    if (q == null) return -1;
     if (ofs == 0 && buf.length == len) return q.read(buf);
     byte[] tmp = new byte[len];
     int n = q.read(tmp);
@@ -60,21 +56,17 @@ public class PseudoInputStream extends InputStream {
 
   @Override
   public int read(byte[] buf) {
-    if (q == null) return -1;
     return q.read(buf);
   }
 
   @Override
   public int available() {
-    if (q == null) return -1;
     return q.available();
   }
 
   @Override
   public void close() {
-    if (q == null) return;
-    q.clear();
-    q = null;
+    q.close();
   }
 
 }

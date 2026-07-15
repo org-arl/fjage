@@ -7,6 +7,9 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -154,7 +157,28 @@ public class WebSocketConnector implements Connector{
     }
 
     private void write(String s){
-        if (remote != null) remote.sendStringByFuture(s);
+        try {
+            if (session != null && session.isOpen()) {
+                Future<Void> f = session.getRemote().sendStringByFuture(s);
+                try {
+                    f.get(2, TimeUnit.SECONDS);
+                } catch (TimeoutException e){
+                    log.fine("Sending timed out. Closing connection to " + session.getRemoteAddress());
+                    session.disconnect();
+                } catch (java.util.concurrent.ExecutionException e) {
+                    if (e.getCause() instanceof java.nio.channels.ClosedChannelException) {
+                        log.info("Unexpected "+ e.getCause().toString() + " while sending to " + session.getRemoteAddress() + ".");
+                    }
+                    else {
+                        log.log(Level.WARNING, "Error sending websocket message: ", e);
+                    }
+                } catch (Exception e){
+                    log.log(Level.WARNING, "Error sending websocket message: ", e);
+                }
+            }
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Error sending websocket message: ", e);
+        }
     }
 
 }

@@ -14,6 +14,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jetty.websocket.api.*;
@@ -248,7 +251,21 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     }
 
     void write(String s) {
-      if (session != null && session.isOpen()) session.getRemote().sendStringByFuture(s);
+      try {
+        if (session != null && session.isOpen()) {
+          Future<Void> f = session.getRemote().sendStringByFuture(s);
+          try {
+            f.get(2, TimeUnit.SECONDS);
+          } catch (TimeoutException e){
+            log.fine("Sending timed out. Closing connection to " + session.getRemoteAddress());
+            session.disconnect();
+          } catch (Exception e){
+            log.log(Level.WARNING, "Error sending websocket message: ", e);
+          }
+        }
+      } catch (Exception e) {
+        log.log(Level.WARNING, "Error sending websocket message: ", e);
+      }
     }
   }
 }
