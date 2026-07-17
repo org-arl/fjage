@@ -157,9 +157,10 @@ public class BlockingByteQueue {
    * but may return a partial buffer if insufficient data available to fill
    * the buffer.
    *
-   * @return the number of bytes read.
+   * @return the number of bytes read, or -1 if closed
    */
   public synchronized int read(byte[] buf) {
+    if (closed) return -1;
     for (int i = 0; i < buf.length; i++) {
       if (i > 0 && bytes == 0) return i;
       int c = read();

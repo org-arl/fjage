@@ -226,7 +226,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     rq.relay = false;
     String json = rq.toJson();
     for (ConnectionHandler slave: slaves) {
-      if (slave.wantsMessagesFor(aid)) slave.send(json);
+      if (slave.wantsMessagesFor(aid)) slave.sendQueued(json);
     }
     return true;
   }
