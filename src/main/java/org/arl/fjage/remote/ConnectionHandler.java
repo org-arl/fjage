@@ -229,6 +229,12 @@ public class ConnectionHandler extends Thread {
     }
   }
 
+  void sendQueued(String s) {
+    if (conn == null) return;
+    if (keepAlive && !alive && container instanceof MasterContainer) return;
+    if (pool != null && !pool.isShutdown()) pool.execute(() -> send(s));
+  }
+
   JsonMessage request(JsonMessage msg, long timeout) {
     if (conn == null) return null;
     if (keepAlive && !alive && container instanceof MasterContainer) return null;
