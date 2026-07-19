@@ -30,16 +30,17 @@ public class ConnectionHandler extends Thread {
   private final int TIMEOUT = 60000;
   private final int FAILED_SIZE = 256;
 
-  private Connector conn;
-  private DataOutputStream out;
-  private final ConcurrentMap<String,Object> pending = new ConcurrentHashMap<>();
+  private volatile Connector conn;
+  private volatile DataOutputStream out;
+  private final ConcurrentMap<String,PendingRequest> pending = new ConcurrentHashMap<>();
   private final Deque<String> failed = new ArrayDeque<>(FAILED_SIZE);
   private final Logger log = Logger.getLogger(getClass().getName());
   private final RemoteContainer container;
   private volatile boolean alive;
   private final boolean keepAlive;
   private final boolean closeOnDead;
-  private final ExecutorService pool = Executors.newSingleThreadExecutor();
+  private final ExecutorService taskExecutor = Executors.newSingleThreadExecutor();
+  private final ExecutorService sendExecutor = Executors.newSingleThreadExecutor();
   private final Set<AgentID> watchList = new HashSet<>();
   private String clientName = "-";
   private final Firewall fw;
@@ -124,10 +125,10 @@ public class ConnectionHandler extends Thread {
         if (rq.action == null) {
           if (rq.id != null) {
             // response to some request
-            Object request = pending.get(rq.id);
+            PendingRequest request = pending.get(rq.id);
             if (request != null) {
               synchronized(request) {
-                pending.put(rq.id, rq);
+                request.response = rq;
                 request.notifyAll();
               }
             } else if (rq.auth != null) {
@@ -147,7 +148,7 @@ public class ConnectionHandler extends Thread {
               respondAuth(rq, b);
             }
           }
-          else if (fw.permit(rq)) pool.execute(new RemoteTask(rq));
+          else if (fw.permit(rq)) taskExecutor.execute(new RemoteTask(rq));
           else respondAuth(rq, false);
         }
       } catch(Exception ex) {
@@ -156,14 +157,7 @@ public class ConnectionHandler extends Thread {
     }
     fw.signoff();
     close();
-    pool.shutdown();
-    try {
-      if (!pool.awaitTermination(200, TimeUnit.MILLISECONDS)) {
-        pool.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      pool.shutdownNow();
-    }
+    shutdown(taskExecutor);
   }
 
   @Override
@@ -229,36 +223,47 @@ public class ConnectionHandler extends Thread {
     }
   }
 
-  void sendQueued(String s) {
+  void sendAsync(String s) {
     if (conn == null) return;
     if (keepAlive && !alive && container instanceof MasterContainer) return;
-    if (pool != null && !pool.isShutdown()) pool.execute(() -> send(s));
+    try {
+      sendExecutor.execute(() -> {
+        if (conn == null) return;
+        if (keepAlive && !alive && container instanceof MasterContainer) return;
+        send(s);
+      });
+    } catch (RejectedExecutionException ex) {
+      // Connection is closing.
+    }
   }
 
   JsonMessage request(JsonMessage msg, long timeout) {
     if (conn == null) return null;
     if (keepAlive && !alive && container instanceof MasterContainer) return null;
-    pending.put(msg.id, msg.id);
-    long deadline = System.currentTimeMillis() + timeout;
-    synchronized(msg.id) {
+    PendingRequest request = new PendingRequest();
+    pending.put(msg.id, request);
+    long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout);
+    synchronized(request) {
+      if (conn == null) {
+        pending.remove(msg.id, request);
+        return null;
+      }
       send(msg.toJson());
-      long remaining = deadline - System.currentTimeMillis();
-      while (remaining > 0) {
+      long remaining = deadline - System.nanoTime();
+      while (remaining > 0 && request.response == null && !request.closed) {
         try {
-          msg.id.wait(remaining);
+          TimeUnit.NANOSECONDS.timedWait(request, remaining);
         } catch (InterruptedException ex) {
           Thread.currentThread().interrupt();
-          break;
+          pending.remove(msg.id, request);
+          return null;
         }
-        Object response = pending.get(msg.id);
-        if (response instanceof JsonMessage) {
-          pending.remove(msg.id);
-          return (JsonMessage) response;
-        }
-        remaining = deadline - System.currentTimeMillis();
+        remaining = deadline - System.nanoTime();
       }
     }
-    pending.remove(msg.id);
+    pending.remove(msg.id, request);
+    if (request.response != null) return request.response;
+    if (request.closed) return null;
     if (keepAlive && alive) {
       alive = false;
       log.fine("Connection dead");
@@ -273,7 +278,13 @@ public class ConnectionHandler extends Thread {
     conn.close();
     conn = null;
     out = null;
-    pending.values().forEach(Object::notifyAll);
+    sendExecutor.shutdownNow();
+    for (PendingRequest request: pending.values()) {
+      synchronized(request) {
+        request.closed = true;
+        request.notifyAll();
+      }
+    }
     pending.clear();
     container.connectionClosed(this);
   }
@@ -294,6 +305,25 @@ public class ConnectionHandler extends Thread {
     synchronized(failed) {
       return failed.contains(id);
     }
+  }
+
+  private void shutdown(ExecutorService executor) {
+    executor.shutdown();
+    try {
+      if (!executor.awaitTermination(200, TimeUnit.MILLISECONDS)) {
+        executor.shutdownNow();
+      }
+    } catch (InterruptedException ex) {
+      executor.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  private static class PendingRequest {
+
+    JsonMessage response;
+    boolean closed;
+
   }
 
   //////// Private inner class representing task to run
