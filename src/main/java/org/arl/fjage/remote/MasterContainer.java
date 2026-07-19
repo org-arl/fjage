@@ -16,7 +16,10 @@ import org.arl.fjage.auth.*;
 import org.arl.fjage.connectors.*;
 
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.*;
 import java.util.function.Supplier;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Master container supporting multiple remote slave containers. Agents in linked
@@ -37,6 +40,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   private TcpServer tcpListener = null;
   private WebSocketServer websocketListener = null;
   private final CopyOnWriteArrayList<ConnectionHandler> slaves = new CopyOnWriteArrayList<>();
+  private final ExecutorService queryExecutor = Executors.newCachedThreadPool();
   private Supplier<Firewall> fwSupplier = AllowAll.SUPPLIER;
   ////////////// Constructors
 
@@ -200,13 +204,16 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   protected boolean isDuplicate(AgentID aid) {
     if (super.isDuplicate(aid)) return true;
-    for (ConnectionHandler slave: slaves) {
+    final boolean[] duplicate = {false};
+    querySlaves(slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.CONTAINS_AGENT);
       rq.agentID = aid;
-      JsonMessage rsp = slave.request(rq, QUERY_TIMEOUT);
-      if (rsp != null && Boolean.TRUE.equals(rsp.answer)) return true;
-    }
-    return false;
+      return rq;
+    }, rsp -> {
+      duplicate[0] = Boolean.TRUE.equals(rsp.answer);
+      return duplicate[0];
+    });
+    return duplicate[0];
   }
 
   @Override
@@ -226,7 +233,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     rq.relay = false;
     String json = rq.toJson();
     for (ConnectionHandler slave: slaves) {
-      if (slave.wantsMessagesFor(aid)) slave.sendQueued(json);
+      if (slave.wantsMessagesFor(aid)) slave.sendAsync(json);
     }
     return true;
   }
@@ -235,16 +242,15 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   public AgentID[] getAgents() {
     AgentID[] aids = super.getAgents();
     List<AgentID> allAgents = new ArrayList<>(Arrays.asList(aids));
-    for (ConnectionHandler slave: slaves) {
-      JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS);
-      JsonMessage rsp = slave.request(rq, QUERY_TIMEOUT);
-      if (rsp == null || rsp.agentIDs == null) continue;
+    querySlaves(slave -> JsonMessage.createActionRequest(Action.AGENTS), rsp -> {
+      if (rsp.agentIDs == null) return false;
       if (rsp.agentTypes != null && rsp.agentTypes.length == rsp.agentIDs.length) {
         for (int i = 0; i < rsp.agentIDs.length; i++)
           rsp.agentIDs[i].setType(rsp.agentTypes[i]);
       }
       allAgents.addAll(Arrays.asList(rsp.agentIDs));
-    }
+      return false;
+    });
     return allAgents.toArray(new AgentID[0]);
   }
 
@@ -252,12 +258,10 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   public String[] getServices() {
     String[] services = super.getServices();
     Set<String> allServices = new LinkedHashSet<>(Arrays.asList(services));
-    for (ConnectionHandler slave: slaves) {
-      JsonMessage rq = JsonMessage.createActionRequest(Action.SERVICES);
-      JsonMessage rsp = slave.request(rq, QUERY_TIMEOUT);
-      if (rsp == null || rsp.services == null) continue;
-      allServices.addAll(Arrays.asList(rsp.services));
-    }
+    querySlaves(slave -> JsonMessage.createActionRequest(Action.SERVICES), rsp -> {
+      if (rsp.services != null) allServices.addAll(Arrays.asList(rsp.services));
+      return false;
+    });
     return allServices.toArray(new String[0]);
   }
 
@@ -265,13 +269,17 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   public AgentID agentForService(String service) {
     AgentID aid = super.agentForService(service);
     if (aid != null) return aid;
-    for (ConnectionHandler slave: slaves) {
+    final AgentID[] agent = {null};
+    querySlaves(slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.AGENT_FOR_SERVICE);
       rq.service = service;
-      JsonMessage rsp = slave.request(rq, QUERY_TIMEOUT);
-      if (rsp != null && rsp.agentID != null && !rsp.agentID.getName().isEmpty()) return rsp.agentID;
-    }
-    return null;
+      return rq;
+    }, rsp -> {
+      if (rsp.agentID == null || rsp.agentID.getName().isEmpty()) return false;
+      agent[0] = rsp.agentID;
+      return true;
+    });
+    return agent[0];
   }
 
   /**
@@ -284,14 +292,68 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     AgentID[] aids = super.agentsForService(service);
     if (aids == null) aids = new AgentID[0];
     List<AgentID> allAgents = new ArrayList<>(Arrays.asList(aids));
-    for (ConnectionHandler slave: slaves) {
+    querySlaves(slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS_FOR_SERVICE);
       rq.service = service;
-      JsonMessage rsp = slave.request(rq, QUERY_TIMEOUT);
-      if (rsp == null || rsp.agentIDs == null) continue;
-      allAgents.addAll(Arrays.asList(rsp.agentIDs));
-    }
+      return rq;
+    }, rsp -> {
+      if (rsp.agentIDs != null) allAgents.addAll(Arrays.asList(rsp.agentIDs));
+      return false;
+    });
     return allAgents.toArray(new AgentID[0]);
+  }
+
+  /**
+   * Queries all connected slave containers with a request and waits for responses until the timeout expires.
+   * The request is generated by the requestFactory function, and the responseHandler function is called
+   * for each response received. If the responseHandler returns true, the query is terminated early.
+   * @param requestFactory - a function that takes a ConnectionHandler and returns a JsonMessage request to send to that slave.
+   * @param responseHandler - a function that takes a JsonMessage response and returns true if the query should terminate early, false otherwise.
+   */
+  private void querySlaves(Function<ConnectionHandler, JsonMessage> requestFactory, Predicate<JsonMessage> responseHandler) {
+    long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(QUERY_TIMEOUT);
+    CompletionService<JsonMessage> completion = new ExecutorCompletionService<>(queryExecutor);
+    List<Future<JsonMessage>> futures = new ArrayList<>();
+    try {
+      for (ConnectionHandler slave: new ArrayList<>(slaves)) {
+        if (deadline - System.nanoTime() <= 0) break;
+        try {
+          futures.add(completion.submit(() -> {
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0) return null;
+            long timeout = TimeUnit.NANOSECONDS.toMillis(remaining);
+            if (timeout <= 0) return null;
+            return slave.request(requestFactory.apply(slave), timeout);
+          }));
+        } catch (RejectedExecutionException ex) {
+          break;
+        }
+      }
+      for (int pending = futures.size(); pending > 0; pending--) {
+        long remaining = deadline - System.nanoTime();
+        if (remaining <= 0) break;
+        Future<JsonMessage> future;
+        try {
+          future = completion.poll(remaining, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+          break;
+        }
+        if (future == null) break;
+        try {
+          JsonMessage rsp = future.get();
+          if (rsp != null && responseHandler.test(rsp)) break;
+        } catch (CancellationException | ExecutionException ex) {
+          // A disconnected or failed slave contributes no result.
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+          break;
+        }
+      }
+    } finally {
+      for (Future<JsonMessage> future: futures)
+        if (!future.isDone()) future.cancel(true);
+    }
   }
 
   @Override
@@ -321,7 +383,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (!slaves.isEmpty()) {
       log.fine("Waiting for slaves...");
       boolean allAlive = false;
-      for (int i = 0; !allAlive && i < ALIVE_TIMEOUT/ALIVE_POLL_INTERVAL ; i++) {
+      for (int i = 0; !allAlive && i < ALIVE_TIMEOUT/ALIVE_POLL_INTERVAL; i++) {
         try {
           Thread.sleep(ALIVE_POLL_INTERVAL);
         } catch(InterruptedException e) {
@@ -342,6 +404,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   @Override
   public void shutdown() {
+    queryExecutor.shutdownNow();
     if (!running) return;
     String json = JsonMessage.createActionRequest(Action.SHUTDOWN).toJson();
     for (ConnectionHandler slave: slaves) {
