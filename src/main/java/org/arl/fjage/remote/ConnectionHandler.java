@@ -243,12 +243,12 @@ public class ConnectionHandler extends Thread {
     PendingRequest request = new PendingRequest();
     pending.put(msg.id, request);
     long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout);
+    send(msg.toJson());
     synchronized(request) {
       if (conn == null) {
         pending.remove(msg.id, request);
         return null;
       }
-      send(msg.toJson());
       long remaining = deadline - System.nanoTime();
       while (remaining > 0 && request.response == null && !request.closed) {
         try {
@@ -279,6 +279,7 @@ public class ConnectionHandler extends Thread {
     conn = null;
     out = null;
     sendExecutor.shutdownNow();
+    taskExecutor.shutdownNow();
     for (PendingRequest request: pending.values()) {
       synchronized(request) {
         request.closed = true;
