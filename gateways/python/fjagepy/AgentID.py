@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 # Default timeout for non-owned AgentIDs (in milliseconds)
-DEFAULT_TIMEOUT = 10000
+DEFAULT_TIMEOUT = 1000
 
 #   - Accessing unknown attributes performs a remote parameter GET; returns `None` if not found.
 #   - Assigning unknown attributes performs a remote parameter SET.

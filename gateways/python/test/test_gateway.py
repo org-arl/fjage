@@ -32,6 +32,14 @@ def test_gateway_close(gateway):
     sleep(0.1)
     assert not gateway.connector.is_connected()
 
+def test_gateway_uses_split_default_timeouts(gateway):
+    """Gateway should use 1s request defaults and 6s directory-query defaults."""
+    assert gateway._timeout == 1000
+    assert gateway._directory_timeout == 6000
+    agent = gateway.agent('test')
+    assert agent is not None, "Expected gateway.agent('test') to return an AgentID"
+    assert agent._timeout == 1000
+
 def test_gateway_send_message(monkeypatch, gateway):
     """Gateway should send a message over a socket."""
     shell = gateway.agent('shell')

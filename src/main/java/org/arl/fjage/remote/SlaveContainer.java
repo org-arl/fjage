@@ -28,7 +28,8 @@ public class SlaveContainer extends RemoteContainer {
 
   ////////////// Private attributes
 
-  private static final long TIMEOUT = 2000;
+  private static final long DIRECTORY_QUERY_TIMEOUT = 6000;
+  private static final long REQUEST_TIMEOUT = 2000;
 
   private ConnectionHandler master;
   private final String hostname;
@@ -123,7 +124,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.creds = creds;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, REQUEST_TIMEOUT);
     return rsp != null && rsp.auth != null && rsp.auth;
   }
 
@@ -147,7 +148,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.agentID = aid;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, DIRECTORY_QUERY_TIMEOUT);
     return rsp != null && rsp.answer != null && rsp.answer;
   }
 
@@ -192,7 +193,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.action = Action.AGENTS;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, DIRECTORY_QUERY_TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentIDs;
@@ -205,7 +206,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.action = Action.SERVICES;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, DIRECTORY_QUERY_TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.services;
@@ -219,7 +220,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.service = service;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, DIRECTORY_QUERY_TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentID;
@@ -233,7 +234,7 @@ public class SlaveContainer extends RemoteContainer {
     rq.service = service;
     rq.id = UUID.randomUUID().toString();
     String json = rq.toJson();
-    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, TIMEOUT);
+    JsonMessage rsp = master.printlnAndGetResponse(json, rq.id, DIRECTORY_QUERY_TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentIDs;

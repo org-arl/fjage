@@ -28,7 +28,9 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   ////////////// Private attributes
 
-  private static final long TIMEOUT = 15000;
+  private static final long QUERY_TIMEOUT = 6000;
+  private static final int ALIVE_TIMEOUT = 15000;
+  private static final int ALIVE_POLL_INTERVAL = 100;
 
   private TcpServer tcpListener = null;
   private WebSocketServer websocketListener = null;
@@ -214,7 +216,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
-        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
+        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, QUERY_TIMEOUT);
         if (rsp != null && rsp.answer) return true;
       }
     }
@@ -257,7 +259,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
-        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
+        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, QUERY_TIMEOUT);
         if (rsp != null && rsp.agentIDs != null) {
           if (rsp.agentTypes != null && rsp.agentTypes.length == rsp.agentIDs.length) {
             for (int i = 0; i < rsp.agentIDs.length; i++)
@@ -281,7 +283,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
-        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
+        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, QUERY_TIMEOUT);
         if (rsp != null && rsp.services != null) {
           rv.addAll(Arrays.asList(rsp.services));
         }
@@ -302,7 +304,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
-        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
+        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, QUERY_TIMEOUT);
         if (rsp != null && rsp.agentID != null && !rsp.agentID.getName().isEmpty()) return rsp.agentID;
       }
     }
@@ -323,7 +325,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (needsCleanup) cleanupSlaves();
     synchronized(slaves) {
       for (ConnectionHandler slave: slaves) {
-        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, TIMEOUT);
+        JsonMessage rsp = slave.printlnAndGetResponse(json, rq.id, QUERY_TIMEOUT);
         if (rsp != null && rsp.agentIDs != null) {
           rv.addAll(Arrays.asList(rsp.agentIDs));
         }
@@ -362,9 +364,9 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     if (!slaves.isEmpty()) {
       log.fine("Waiting for slaves...");
       boolean allAlive = false;
-      for (int i = 0; !allAlive && i < TIMEOUT/100; i++) {
+      for (int i = 0; !allAlive && i < ALIVE_TIMEOUT/ALIVE_POLL_INTERVAL ; i++) {
         try {
-          Thread.sleep(100);
+          Thread.sleep(ALIVE_POLL_INTERVAL);
         } catch(InterruptedException e) {
           Thread.currentThread().interrupt();
         }
