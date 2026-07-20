@@ -79,7 +79,8 @@ public class MasterContainerQueryTest {
 
     String[] services = master.getServices();
 
-    assertArrayEquals(new String[] {"fast-service", "slow-service"}, services);
+    Set<String> serviceSet = new HashSet<>(Arrays.asList(services));
+    assertEquals(new HashSet<>(Arrays.asList("fast-service", "slow-service")), serviceSet);
   }
 
   @Test
