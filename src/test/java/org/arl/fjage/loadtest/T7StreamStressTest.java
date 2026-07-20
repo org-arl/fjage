@@ -22,6 +22,7 @@ public class T7StreamStressTest {
 
   private static final int ROUNDS = 200;
   private static final int WRITERS = 4;
+  private static final int MAX_WRITES_PER_WRITER = 2048;
 
   @Test(timeout = 120000)
   public void queueCloseStress() throws Exception {
@@ -33,6 +34,7 @@ public class T7StreamStressTest {
         final CountDownLatch done = new CountDownLatch(WRITERS + 1);
         final AtomicInteger postCloseWrites = new AtomicInteger();
         final AtomicInteger readerLastReturn = new AtomicInteger(Integer.MIN_VALUE);
+        final CountDownLatch closed = new CountDownLatch(1);
 
         // reader: keeps reading until end-of-stream; a proper end-of-stream is -1.
         // (exit on 0 too, without asserting yet, so a 0-return bug cannot busy-spin)
@@ -55,12 +57,15 @@ public class T7StreamStressTest {
             @Override
             public void run() {
               byte[] chunk = new byte[256];
-              while (true) {
-                if (!q.write(chunk)) {
-                  postCloseWrites.incrementAndGet();
-                  break;
-                }
+              int writes = 0;
+              while (writes++ < MAX_WRITES_PER_WRITER && q.write(chunk)) {
               }
+              try {
+                closed.await();
+              } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+              }
+              if (!q.write(chunk)) postCloseWrites.incrementAndGet();
               done.countDown();
             }
           });
@@ -69,6 +74,7 @@ public class T7StreamStressTest {
         Thread.sleep(rnd.nextInt(5));
         if (rnd.nextBoolean()) q.clear();   // clear must not wedge anyone
         q.close();
+        closed.countDown();
 
         assertTrue("round " + round + ": reader/writers did not unblock after close",
             done.await(5, TimeUnit.SECONDS));
