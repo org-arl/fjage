@@ -129,6 +129,12 @@ class JSONMessage:
         return jm
 
     @staticmethod
+    def createServices() -> "JSONMessage":
+        jm = JSONMessage()
+        jm.action = Actions.SERVICES.value
+        return jm
+
+    @staticmethod
     def createContainsAgent(agentID: AgentID) -> "JSONMessage":
         if not isinstance(agentID, AgentID):
             raise ValueError("agentID must be an instance of AgentID")
