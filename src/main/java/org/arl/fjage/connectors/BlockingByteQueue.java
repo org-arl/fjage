@@ -164,7 +164,7 @@ public class BlockingByteQueue {
     for (int i = 0; i < buf.length; i++) {
       if (i > 0 && bytes == 0) return i;
       int c = read();
-      if (c < 0) return i;
+      if (c < 0) return i > 0 ? i : -1;
       buf[i] = (byte)c;
     }
     return buf.length;
