@@ -161,9 +161,23 @@ processResources {
 
 test {
   dependsOn 'buildjs'
+  exclude '**/loadtest/**'     // multi-container load tests run on demand via the loadTest task
   systemProperties project.properties.subMap(["manualJSTest"])
   systemProperties project.properties.subMap(["manualPyTest"])
   systemProperties project.properties.subMap(["manualCTest"])
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat "full"
+  }
+}
+
+tasks.register('loadTest', Test) {
+  description = 'Runs multi-container load & fault-injection tests (on demand only, see src/test/java/org/arl/fjage/loadtest/README.md)'
+  group = 'verification'
+  testClassesDirs = sourceSets.test.output.classesDirs
+  classpath = sourceSets.test.runtimeClasspath
+  include '**/loadtest/**'
+  outputs.upToDateWhen { false }
   testLogging {
     events "passed", "skipped", "failed"
     exceptionFormat "full"
