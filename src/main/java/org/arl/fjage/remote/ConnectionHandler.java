@@ -40,6 +40,7 @@ public class ConnectionHandler extends Thread {
   private final boolean keepAlive;
   private final boolean closeOnDead;
   private final ExecutorService taskExecutor = Executors.newSingleThreadExecutor();
+  private final ExecutorService directoryExecutor = Executors.newCachedThreadPool();
   private final ExecutorService sendExecutor = Executors.newSingleThreadExecutor();
   private final Set<AgentID> watchList = new HashSet<>();
   private String clientName = "-";
@@ -148,7 +149,10 @@ public class ConnectionHandler extends Thread {
               respondAuth(rq, b);
             }
           }
-          else if (fw.permit(rq)) taskExecutor.execute(new RemoteTask(rq));
+          else if (fw.permit(rq)) {
+            if (isDirectoryAction(rq.action)) directoryExecutor.execute(new RemoteTask(rq));
+            else taskExecutor.execute(new RemoteTask(rq));
+          }
           else respondAuth(rq, false);
         }
       } catch(Exception ex) {
@@ -158,6 +162,7 @@ public class ConnectionHandler extends Thread {
     fw.signoff();
     close();
     shutdown(taskExecutor);
+    shutdown(directoryExecutor);
   }
 
   @Override
@@ -318,6 +323,11 @@ public class ConnectionHandler extends Thread {
       executor.shutdownNow();
       Thread.currentThread().interrupt();
     }
+  }
+
+  private boolean isDirectoryAction(Action action) {
+    return action == Action.AGENTS || action == Action.CONTAINS_AGENT || action == Action.SERVICES ||
+      action == Action.AGENT_FOR_SERVICE || action == Action.AGENTS_FOR_SERVICE;
   }
 
   private static class PendingRequest {
