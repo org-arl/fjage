@@ -128,6 +128,17 @@ export class JSONMessage {
   }
 
   /**
+   * Creates a JSONMessage object to request the list of services.
+   * @returns {JSONMessage} - JSONMessage object with request for the list of services
+  */
+  static createServices() {
+    const jsonMsg = new JSONMessage();
+    jsonMsg.action = Actions.SERVICES;
+    jsonMsg.id = UUID7.generate().toString(); // unique JSON message ID
+    return jsonMsg;
+  }
+
+  /**
   * Creates a JSONMessage object to check if an agent is contained
   *
   * @param {AgentID} agentID - AgentID of the agent to check

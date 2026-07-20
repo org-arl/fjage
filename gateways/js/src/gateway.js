@@ -540,6 +540,18 @@ export class Gateway {
   }
 
   /**
+  * Gets a list of all services in the container.
+  * @param {number} [timeout=opts.directoryTimeout] - timeout in milliseconds
+  * @returns {Promise<string[]>} - a promise which returns an array of all service names when resolved
+  */
+  async services(timeout=this._directoryTimeout) {
+    let jsonMsg = JSONMessage.createServices();
+    let rsp = await this._msgTxRx(jsonMsg, timeout);
+    if (!rsp || !Array.isArray(rsp.services)) throw new Error('Unable to get services');
+    return rsp.services;
+  }
+
+  /**
   * Check if an agent with a given name exists in the container.
   *
   * @param {AgentID|string} agentID - the agent id to check

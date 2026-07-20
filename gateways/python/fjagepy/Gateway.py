@@ -107,6 +107,9 @@ class Gateway:
             Message or None: received message or None if timeout
         """
 
+        if timeout is None:
+            timeout = self.NON_BLOCKING
+
         if not isinstance(timeout, int):
             raise ValueError("timeout must be an integer")
 
@@ -206,6 +209,17 @@ class Gateway:
         if rsp is not None and hasattr(rsp, 'agentIDs') and isinstance(rsp.agentIDs, list):
             return rsp.agentIDs
         logger.debug("Response to agents() request does not contain agentIDs")
+        return []
+
+    def services(self, timeout: Optional[int] = None) -> list[str]:
+        """Gets the list of all services provided by agents connected to the fjage container"""
+        if timeout is None:
+            timeout = self._directory_timeout
+        json_msg = JSONMessage.createServices()
+        rsp = self._msg_tx_rx(json_msg, timeout)
+        if rsp is not None and hasattr(rsp, 'services') and isinstance(rsp.services, list):
+            return rsp.services
+        logger.debug("Response to services() request does not contain services")
         return []
 
     def contains_agent(self, agentID: AgentID, timeout: Optional[int] = None) -> bool:
