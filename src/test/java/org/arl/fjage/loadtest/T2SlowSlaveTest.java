@@ -63,26 +63,38 @@ public class T2SlowSlaveTest {
       sub[1].stats.latenciesNs.clear();
       rxS0.stats.latenciesNs.clear();
       pubM.sendDurationsNs.clear();
-      int pubSeqAtB = pubM.seq.get();
-
-      // ---- phase B: slave-2 stops reading for 10 s ----
-      // NB: we deliberately do NOT issue a master directory op (e.g. getAgents)
-      // against the stalled slave here. Such a query blocks on the backed-up
-      // handler and times out after QUERY_TIMEOUT, at which point the master
-      // drops the slave as a non-responsive client and discards its queued relay
-      // backlog — turning a recoverable stall into permanent topic-message loss.
-      // This test measures a *recoverable* stall, so the slow slave's connection
-      // must be left intact.
+      // ---- phase B: bounded directory delay ----
       proxy.pause();
+      TestUtil.sleep(250);
+      Future<Long> dirOp = exec.submit(new Callable<Long>() {
+        @Override
+        public Long call() {
+          long t0 = System.currentTimeMillis();
+          fx.master.getAgents();
+          return System.currentTimeMillis() - t0;
+        }
+      });
+      TestUtil.sleep(1000);
+      proxy.unpause();
+      long dirOpMs = dirOp.get(10, TimeUnit.SECONDS);
+      assertTrue("master.getAgents exceeded 5 s query timeout: " + dirOpMs + " ms", dirOpMs < 5000);
 
+      // ---- phase C: slave-2 stops reading for 10 s ----
+      sub[0].stats.latenciesNs.clear();
+      sub[1].stats.latenciesNs.clear();
+      rxS0.stats.latenciesNs.clear();
+      pubM.sendDurationsNs.clear();
+      long subAtC = sub[0].stats.total();
+      int pubSeqAtC = pubM.seq.get();
+      proxy.pause();
       TestUtil.sleep(10000);
-      long subB0 = sub[0].stats.total() - subA0;
+      long subC0 = sub[0].stats.total() - subAtC;
       double subP99B0 = TestUtil.p99ms(sub[0].stats.latenciesNs);
       double probeP99B = TestUtil.p99ms(rxS0.stats.latenciesNs);
       double pubSendMaxB = maxMs(pubM.sendDurationsNs);
-      int pubTicksDuringB = pubM.seq.get() - pubSeqAtB;
+      int pubTicksDuringC = pubM.seq.get() - pubSeqAtC;
 
-      // ---- phase C: recover ----
+      // ---- phase D: recover ----
       proxy.unpause();
 
       TestUtil.sleep(3000);
@@ -101,10 +113,11 @@ public class T2SlowSlaveTest {
 
       System.out.println("=== T2 results ===");
       System.out.println("phase A (5 s baseline): sub-0 topic rate=" + (subA0 / 5) + " msg/s, unicast probe p99=" + probeP99A + " ms");
-      System.out.println("phase B (slave-2 stalled 10 s):");
-      System.out.println("  sub-0 (healthy) received " + subB0 + " topic msgs during stall (head-of-line indicator)");
+      System.out.println("phase B (slave-2 paused 1.25 s): master.getAgents() took " + dirOpMs + " ms");
+      System.out.println("phase C (slave-2 stalled 10 s):");
+      System.out.println("  sub-0 (healthy) received " + subC0 + " topic msgs during stall (head-of-line indicator)");
       System.out.println("  sub-0 topic p99=" + subP99B0 + " ms");
-      System.out.println("  publisher ticks during stall: " + pubTicksDuringB + ", max send() call=" + pubSendMaxB + " ms (agent-thread blocking)");
+      System.out.println("  publisher ticks during stall: " + pubTicksDuringC + ", max send() call=" + pubSendMaxB + " ms (agent-thread blocking)");
       System.out.println("  unicast probe to healthy slave p99=" + probeP99B + " ms");
       System.out.println("recovery: published=" + published
           + " sub totals=" + sub[0].stats.countFrom("pub-m") + "/" + sub[1].stats.countFrom("pub-m") + "/" + sub[2].stats.countFrom("pub-m")

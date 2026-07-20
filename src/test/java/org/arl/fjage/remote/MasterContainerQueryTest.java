@@ -102,6 +102,27 @@ public class MasterContainerQueryTest {
   }
 
   @Test
+  public void slowSlaveDoesNotWedgeConcurrentAggregateQueries() throws Exception {
+    setup();
+    addSlave(7000, null, null);
+    DelayedSlaveContainer client = addSlave(0, null, null);
+    AgentID provider = client.add("provider", new Agent());
+    client.register(provider, "service");
+    start();
+
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+    try {
+      Future<AgentID[]> agents = executor.submit(client::getAgents);
+      Future<AgentID[]> serviceAgents = executor.submit(() -> client.agentsForService("service"));
+
+      assertTrue("Slave AGENTS query timed out", Arrays.asList(agents.get(6, TimeUnit.SECONDS)).contains(provider));
+      assertTrue("Slave AGENTS_FOR_SERVICE query timed out", Arrays.asList(serviceAgents.get(6, TimeUnit.SECONDS)).contains(provider));
+    } finally {
+      executor.shutdownNow();
+    }
+  }
+
+  @Test
   public void concurrentDirectoryQueriesShareConnectionsSafely() throws Exception {
     setup();
     DelayedSlaveContainer slave = addSlave(0, null, null);
