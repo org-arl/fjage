@@ -232,6 +232,16 @@ def test_gateway_request_all_agents(gateway):
     assert 'test' in aids
     gateway.close()
 
+def test_gateway_request_all_services(gateway):
+    """Gateway should be able to request for all services from the master container."""
+    services = gateway.services()
+    assert services is not None
+    assert isinstance(services, list)
+    assert len(services) > 0
+    assert 'server' in services
+    assert 'org.arl.fjage.test.Services.TEST' in services
+    gateway.close()
+
 def test_gateway_check_agent_exists(gateway):
     """Gateway should be able to check if an agent exists on the master container."""
     aid = AgentID('S', owner=gateway)

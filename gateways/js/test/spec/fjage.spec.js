@@ -345,6 +345,17 @@ describe('A Gateway', function () {
     gw.close();
   });
 
+  it('should be able to request for all services from the master container', async function() {
+    const gw = new Gateway(gwOpts);
+    let services = await gw.services();
+    expect(services).toBeDefined();
+    expect(Array.isArray(services)).toBeTruthy();
+    expect(services.length).toBeGreaterThan(0);
+    expect(services).toContain('server');
+    expect(services).toContain('org.arl.fjage.test.Services.TEST');
+    gw.close();
+  });
+
   it('should be able to check if an agent exists on the master container', async function() {
     const gw = new Gateway(gwOpts);
     let aid = new AgentID('S', false, gw);
