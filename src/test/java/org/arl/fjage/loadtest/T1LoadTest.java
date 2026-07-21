@@ -45,12 +45,12 @@ public class T1LoadTest {
       for (int c = 0; c < NC; c++) {
         for (int i = 0; i < PAIRS_PER_CONTAINER; i++) {
           rx[c][i] = new LoadAgents.ReceiverAgent();
-          cs[c].add("rx-" + c + "-" + i, rx[c][i]);
-          allNames.add("rx-" + c + "-" + i);
+          cs[c].add("rx_" + c + "_" + i, rx[c][i]);
+          allNames.add("rx_" + c + "_" + i);
         }
         sub[c] = new LoadAgents.SubscriberAgent();
-        cs[c].add("sub-" + c, sub[c]);
-        allNames.add("sub-" + c);
+        cs[c].add("sub_" + c, sub[c]);
+        allNames.add("sub_" + c);
       }
 
       // senders and publishers
@@ -60,12 +60,12 @@ public class T1LoadTest {
         for (int i = 0; i < PAIRS_PER_CONTAINER; i++) {
           List<AgentID> targets = new ArrayList<AgentID>();
           for (int o = 1; o < NC; o++)
-            targets.add(new AgentID("rx-" + ((c + o) % NC) + "-" + i));
+            targets.add(new AgentID("rx_" + ((c + o) % NC) + "_" + i));
           tx[c][i] = new LoadAgents.SenderAgent(targets, PER_TARGET, go, 50);
-          cs[c].add("tx-" + c + "-" + i, tx[c][i]);
+          cs[c].add("tx_" + c + "_" + i, tx[c][i]);
         }
         pub[c] = new LoadAgents.PublisherAgent(TOPIC_MSGS, go, 20);
-        cs[c].add("pub-" + c, pub[c]);
+        cs[c].add("pub_" + c, pub[c]);
       }
 
       fx.startSlaves();
@@ -166,7 +166,7 @@ public class T1LoadTest {
           allLat.addAll(rx[c][i].stats.latenciesNs);
           for (Map.Entry<String, Set<Integer>> e : rx[c][i].stats.bySrc.entrySet()) {
             if (e.getValue().size() < PER_TARGET)
-              lossReport.append("  rx-").append(c).append("-").append(i)
+              lossReport.append("  rx_").append(c).append("_").append(i)
                   .append(" from ").append(e.getKey()).append(": got ")
                   .append(e.getValue().size()).append("/").append(PER_TARGET).append("\n");
           }

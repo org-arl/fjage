@@ -86,16 +86,16 @@ public class T6WebSocketTest {
     WebSocketClient client = new WebSocketClient();
     try {
       LoadAgents.ReceiverAgent rxM = new LoadAgents.ReceiverAgent();
-      fx.master.add("rx-m", rxM);
+      fx.master.add("rx_m", rxM);
 
       AtomicBoolean go1 = new AtomicBoolean(false);
       LoadAgents.SenderAgent txWs = new LoadAgents.SenderAgent(
           Collections.singletonList(new AgentID("wsrx")), M2C, go1, 0);
-      fx.master.add("tx-ws", txWs);
+      fx.master.add("tx_ws", txWs);
       AtomicBoolean go2 = new AtomicBoolean(false);
       LoadAgents.SenderAgent txWs2 = new LoadAgents.SenderAgent(
           Collections.singletonList(new AgentID("wsrx")), M2C, go2, 0);
-      fx.master.add("tx-ws2", txWs2);
+      fx.master.add("tx_ws2", txWs2);
 
       int wsPort;
       ServerSocket ss = new ServerSocket(0);
@@ -120,7 +120,7 @@ public class T6WebSocketTest {
             + "\"clazz\": \"org.arl.fjage.loadtest.LoadAgents$SeqMsg\", \"data\": {"
             + "\"src\": \"wsc\", \"seq\": " + i + ", \"tns\": " + System.nanoTime()
             + ", \"msgID\": \"ws-" + i + "\", \"perf\": \"INFORM\","
-            + " \"recipient\": \"rx-m\", \"sender\": \"wsc\"}}}";
+            + " \"recipient\": \"rx_m\", \"sender\": \"wsc\"}}}";
         session.getRemote().sendString(json + "\n");
       }
       TestUtil.waitUntil("master received all WS messages", () -> rxM.stats.countFrom("wsc") >= C2M, 60000);
@@ -130,7 +130,7 @@ public class T6WebSocketTest {
       // ---- master -> client storm (throughput: PR removed the 10 ms/line cap) ----
       t0 = System.currentTimeMillis();
       go1.set(true);
-      TestUtil.waitUntil("client received all master messages", () -> ep.countSeqsFrom("tx-ws") >= M2C, 120000);
+      TestUtil.waitUntil("client received all master messages", () -> ep.countSeqsFrom("tx_ws") >= M2C, 120000);
       long m2cMs = System.currentTimeMillis() - t0;
       double m2cRate = 1000.0 * M2C / m2cMs;
 
@@ -140,8 +140,7 @@ public class T6WebSocketTest {
       System.out.println("client->master: " + C2M + " msgs in " + c2mMs + " ms ("
           + String.format("%.0f", 1000.0 * C2M / c2mMs) + " msg/s), lost=0 dups=0");
       System.out.println("master->client: " + M2C + " msgs in " + m2cMs + " ms ("
-          + String.format("%.0f", m2cRate) + " msg/s)"
-          + " [pre-PR cap was ~100 msg/s due to 10 ms/line sleep]");
+          + String.format("%.0f", m2cRate) + " msg/s)");
 
       // the removed 10 ms/line sleep capped this direction at ~100 msg/s; with the fix
       // this must be comfortably faster (master-branch comparison runs will fail here)
