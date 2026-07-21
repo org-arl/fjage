@@ -404,8 +404,8 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
 
   @Override
   public void shutdown() {
-    queryExecutor.shutdownNow();
     if (!running) return;
+    queryExecutor.shutdownNow();
     String json = JsonMessage.createActionRequest(Action.SHUTDOWN).toJson();
     for (ConnectionHandler slave: slaves) {
       slave.send(json);
