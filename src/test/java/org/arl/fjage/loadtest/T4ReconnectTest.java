@@ -31,20 +31,20 @@ public class T4ReconnectTest {
       final LoadAgents.SubscriberAgent[] sub = new LoadAgents.SubscriberAgent[3];
       for (int i = 0; i < 3; i++) {
         sub[i] = new LoadAgents.SubscriberAgent();
-        fx.slaves[i].add("sub-" + i, sub[i]);
+        fx.slaves[i].add("sub_" + i, sub[i]);
       }
       final LoadAgents.ReceiverAgent rxS1 = new LoadAgents.ReceiverAgent();
-      fx.slaves[1].add("rx-s1", rxS1);
+      fx.slaves[1].add("rx_s1", rxS1);
 
       java.util.concurrent.atomic.AtomicBoolean go = new java.util.concurrent.atomic.AtomicBoolean(false);
       final LoadAgents.ContinuousSender pubM = new LoadAgents.ContinuousSender(null, 20, go);
-      fx.master.add("pub-m", pubM);
+      fx.master.add("pub_m", pubM);
       final LoadAgents.ContinuousSender uniM = new LoadAgents.ContinuousSender(
-          Collections.singletonList(new AgentID("rx-s1")), 20, go);
-      fx.master.add("uni-m", uniM);
+          Collections.singletonList(new AgentID("rx_s1")), 20, go);
+      fx.master.add("uni_m", uniM);
 
       fx.startSlaves();
-      fx.awaitAgentsVisible(Arrays.asList("sub-0", "sub-1", "sub-2", "rx-s1"), 30000);
+      fx.awaitAgentsVisible(Arrays.asList("sub_0", "sub_1", "sub_2", "rx_s1"), 30000);
       TestUtil.sleep(1000);   // let watch lists settle before opening the gate
       go.set(true);
 
@@ -93,8 +93,8 @@ public class T4ReconnectTest {
         }, 30000);
         final long c = sub[1].stats.total();
         TestUtil.waitUntil("delivery resumes after flap " + f, () -> sub[1].stats.total() > c + 5, 20000);
-        flapLog.add("flap " + f + ": sub-1 +" + (sub[1].stats.total() - subBefore)
-            + " rx-s1 +" + (rxS1.stats.total() - rxBefore) + " pubSeq=" + pubM.seq.get());
+        flapLog.add("flap " + f + ": sub_1 +" + (sub[1].stats.total() - subBefore)
+            + " rx_s1 +" + (rxS1.stats.total() - rxBefore) + " pubSeq=" + pubM.seq.get());
       }
       for (String s : flapLog) System.out.println("  " + s);
 
@@ -105,19 +105,19 @@ public class T4ReconnectTest {
       int published = pubM.seq.get();
       int uniSent = uniM.seq.get();
       System.out.println("=== T4 results ===");
-      System.out.println("published=" + published + " sub-0/1/2 received=" + sub[0].stats.total()
+      System.out.println("published=" + published + " sub_0/1/2 received=" + sub[0].stats.total()
           + "/" + sub[1].stats.total() + "/" + sub[2].stats.total()
           + " (loss on slave-1 during outages is expected: fire-and-forget)");
       System.out.println("unicast sent to slave-1: " + uniSent + " received: " + rxS1.stats.total());
-      System.out.println("dups: sub-1=" + sub[1].stats.dups.get() + " rx-s1=" + rxS1.stats.dups.get());
-      System.out.println("sub-0 missing seqs: " + TestUtil.ranges(sub[0].stats.missingFrom("pub-m", published)));
-      System.out.println("sub-2 missing seqs: " + TestUtil.ranges(sub[2].stats.missingFrom("pub-m", published)));
-      System.out.println("sub-1 missing seqs: " + TestUtil.ranges(sub[1].stats.missingFrom("pub-m", published)));
+      System.out.println("dups: sub_1=" + sub[1].stats.dups.get() + " rx_s1=" + rxS1.stats.dups.get());
+      System.out.println("sub_0 missing seqs: " + TestUtil.ranges(sub[0].stats.missingFrom("pub_m", published)));
+      System.out.println("sub_2 missing seqs: " + TestUtil.ranges(sub[2].stats.missingFrom("pub_m", published)));
+      System.out.println("sub_1 missing seqs: " + TestUtil.ranges(sub[1].stats.missingFrom("pub_m", published)));
       System.out.println("severes: " + logs.severes());
 
       // healthy slaves must have complete delivery (they never lost their connection)
-      assertEquals("healthy slave-0 lost topic messages", published, sub[0].stats.countFrom("pub-m"));
-      assertEquals("healthy slave-2 lost topic messages", published, sub[2].stats.countFrom("pub-m"));
+      assertEquals("healthy slave-0 lost topic messages", published, sub[0].stats.countFrom("pub_m"));
+      assertEquals("healthy slave-2 lost topic messages", published, sub[2].stats.countFrom("pub_m"));
       assertEquals("duplicates on flapped slave", 0, sub[1].stats.dups.get() + rxS1.stats.dups.get());
       assertEquals("handler count wrong after flapping", 3, fx.master.getConnectionHandlers().length);
       assertTrue("SEVERE logs: " + logs.severes(), logs.severes().isEmpty());
