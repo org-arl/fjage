@@ -34,15 +34,15 @@ public class T5ShutdownRaceTest {
         LoadAgents.SubscriberAgent[] sub = new LoadAgents.SubscriberAgent[3];
         for (int i = 0; i < 3; i++) {
           sub[i] = new LoadAgents.SubscriberAgent();
-          fx.slaves[i].add("sub-" + i, sub[i]);
+          fx.slaves[i].add("sub_" + i, sub[i]);
         }
         LoadAgents.ReceiverAgent rxS0 = new LoadAgents.ReceiverAgent();
-        fx.slaves[0].add("rx-s0", rxS0);
+        fx.slaves[0].add("rx_s0", rxS0);
         LoadAgents.ContinuousSender pubM = new LoadAgents.ContinuousSender(null, 5);
-        fx.master.add("pub-m", pubM);
+        fx.master.add("pub_m", pubM);
         LoadAgents.ContinuousSender uniM = new LoadAgents.ContinuousSender(
-            Collections.singletonList(new AgentID("rx-s0")), 5);
-        fx.master.add("uni-m", uniM);
+            Collections.singletonList(new AgentID("rx_s0")), 5);
+        fx.master.add("uni_m", uniM);
         fx.startSlaves();
 
         // let load flow for a random slice, then kill mid-flight

@@ -31,27 +31,27 @@ public class T2SlowSlaveTest {
       final LoadAgents.SubscriberAgent[] sub = new LoadAgents.SubscriberAgent[3];
       for (int i = 0; i < 3; i++) {
         sub[i] = new LoadAgents.SubscriberAgent();
-        fx.slaves[i].add("sub-" + i, sub[i]);
+        fx.slaves[i].add("sub_" + i, sub[i]);
       }
       LoadAgents.ReceiverAgent rxS0 = new LoadAgents.ReceiverAgent();
-      fx.slaves[0].add("rx-s0", rxS0);
+      fx.slaves[0].add("rx_s0", rxS0);
       LoadAgents.ReceiverAgent rxS2 = new LoadAgents.ReceiverAgent();
-      fx.slaves[2].add("rx-s2", rxS2);
+      fx.slaves[2].add("rx_s2", rxS2);
 
       // publisher to topic (hits all slaves incl. slow one), unicast prober to healthy
       // slave-0, and a bulk unicast feeder to slave-2 to fill its socket buffers fast
       java.util.concurrent.atomic.AtomicBoolean go = new java.util.concurrent.atomic.AtomicBoolean(false);
       LoadAgents.ContinuousSender pubM = new LoadAgents.ContinuousSender(null, 5, go);
-      fx.master.add("pub-m", pubM);
+      fx.master.add("pub_m", pubM);
       LoadAgents.ContinuousSender probeM = new LoadAgents.ContinuousSender(
-          Collections.singletonList(new AgentID("rx-s0")), 10, go);
-      fx.master.add("probe-m", probeM);
+          Collections.singletonList(new AgentID("rx_s0")), 10, go);
+      fx.master.add("probe_m", probeM);
       LoadAgents.ContinuousSender bulkM = new LoadAgents.ContinuousSender(
-          Collections.singletonList(new AgentID("rx-s2")), 2, go);
-      fx.master.add("bulk-m", bulkM);
+          Collections.singletonList(new AgentID("rx_s2")), 2, go);
+      fx.master.add("bulk_m", bulkM);
 
       fx.startSlaves();
-      fx.awaitAgentsVisible(Arrays.asList("sub-0", "sub-1", "sub-2", "rx-s0", "rx-s2"), 30000);
+      fx.awaitAgentsVisible(Arrays.asList("sub_0", "sub_1", "sub_2", "rx_s0", "rx_s2"), 30000);
       TestUtil.sleep(1000);   // let watch lists settle before opening the gate
       go.set(true);
 
@@ -107,24 +107,24 @@ public class T2SlowSlaveTest {
       // all subscribers (incl. the slow one) must eventually receive everything published
       boolean recovered = TestUtil.tryWaitUntil(() -> {
         for (LoadAgents.SubscriberAgent s : sub)
-          if (s.stats.countFrom("pub-m") < published) return false;
+          if (s.stats.countFrom("pub_m") < published) return false;
         return true;
       }, 30000);
 
       System.out.println("=== T2 results ===");
-      System.out.println("phase A (5 s baseline): sub-0 topic rate=" + (subA0 / 5) + " msg/s, unicast probe p99=" + probeP99A + " ms");
+      System.out.println("phase A (5 s baseline): sub_0 topic rate=" + (subA0 / 5) + " msg/s, unicast probe p99=" + probeP99A + " ms");
       System.out.println("phase B (slave-2 paused 1.25 s): master.getAgents() took " + dirOpMs + " ms");
       System.out.println("phase C (slave-2 stalled 10 s):");
-      System.out.println("  sub-0 (healthy) received " + subC0 + " topic msgs during stall (head-of-line indicator)");
-      System.out.println("  sub-0 topic p99=" + subP99B0 + " ms");
+      System.out.println("  sub_0 (healthy) received " + subC0 + " topic msgs during stall (head-of-line indicator)");
+      System.out.println("  sub_0 topic p99=" + subP99B0 + " ms");
       System.out.println("  publisher ticks during stall: " + pubTicksDuringC + ", max send() call=" + pubSendMaxB + " ms (agent-thread blocking)");
       System.out.println("  unicast probe to healthy slave p99=" + probeP99B + " ms");
       System.out.println("recovery: published=" + published
-          + " sub totals=" + sub[0].stats.countFrom("pub-m") + "/" + sub[1].stats.countFrom("pub-m") + "/" + sub[2].stats.countFrom("pub-m")
+          + " sub totals=" + sub[0].stats.countFrom("pub_m") + "/" + sub[1].stats.countFrom("pub_m") + "/" + sub[2].stats.countFrom("pub_m")
           + " recovered=" + recovered);
       for (int i = 0; i < 3; i++) {
-        List<Integer> miss = sub[i].stats.missingFrom("pub-m", published);
-        System.out.println("  sub-" + i + " missing " + miss.size() + " seqs: " + TestUtil.ranges(miss));
+        List<Integer> miss = sub[i].stats.missingFrom("pub_m", published);
+        System.out.println("  sub_" + i + " missing " + miss.size() + " seqs: " + TestUtil.ranges(miss));
       }
       System.out.println("post-recovery max send() durations (complete data): pub=" + maxMs(pubM.sendDurationsNs)
           + " ms, bulk=" + maxMs(bulkM.sendDurationsNs) + " ms, probe=" + maxMs(probeM.sendDurationsNs) + " ms");
