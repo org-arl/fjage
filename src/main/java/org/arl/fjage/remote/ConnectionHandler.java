@@ -45,8 +45,7 @@ public class ConnectionHandler extends Thread {
   private final Set<AgentID> watchList = new HashSet<>();
   private String clientName = "-";
   private final Firewall fw;
-  private long aliveCheckId;
-  private long activeAliveCheck;
+  private volatile long lastRxTime;
 
   public ConnectionHandler(Connector conn, RemoteContainer container, Firewall fw) {
     this.conn = conn;
@@ -75,7 +74,21 @@ public class ConnectionHandler extends Thread {
   public void run() {
     BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
     out = new DataOutputStream(conn.getOutputStream());
-    checkAlive();
+    send(ALIVE);
+    if (closeOnDead) {
+      lastRxTime = System.currentTimeMillis();
+      try {
+        aliveCheckExecutor.scheduleAtFixedRate(() -> {
+          if (System.currentTimeMillis() - lastRxTime > TIMEOUT) {
+            alive = false;
+            log.fine("Connection dead");
+            close();
+          } else send(ALIVE);
+        }, TIMEOUT/4, TIMEOUT/4, TimeUnit.MILLISECONDS);
+      } catch (RejectedExecutionException ex) {
+        // Connection is closing.
+      }
+    }
     while (conn != null) {
       String s = null;
       try {
@@ -85,12 +98,16 @@ public class ConnectionHandler extends Thread {
       }
       if (s == null) break;
       log.fine(this.getName() +" <<< "+s);
+      lastRxTime = System.currentTimeMillis();
       if (s.equals(SIGN_OFF)) {
         alive = false;
         log.fine("Peer signed off");
         continue;
       }
-      acknowledgeAlive();
+      if (!alive) {
+        alive = true;
+        log.fine("Connection alive");
+      }
       if (s.equals(ALIVE)) {
         if (container instanceof SlaveContainer) send(ALIVE);
         continue;
@@ -236,52 +253,16 @@ public class ConnectionHandler extends Thread {
           TimeUnit.NANOSECONDS.timedWait(request, remaining);
         } catch (InterruptedException ex) {
           Thread.currentThread().interrupt();
-          pending.remove(msg.id, request);
-          if (deadline - System.nanoTime() <= 0) checkAlive();
-          return null;
+          break;
         }
         remaining = deadline - System.nanoTime();
       }
     }
     pending.remove(msg.id, request);
     if (request.response != null) return request.response;
-    if (request.closed) return null;
-    checkAlive();
+    // probe an unresponsive peer; the watchdog closes it if it stays silent
+    if (!request.closed && deadline - System.nanoTime() <= 0) send(ALIVE);
     return null;
-  }
-
-  private synchronized void acknowledgeAlive() {
-    if (!alive) {
-      alive = true;
-      log.fine("Connection alive");
-    }
-    activeAliveCheck = 0;
-  }
-
-  private synchronized void checkAlive() {
-    if (conn == null) return;
-    if (!closeOnDead) {
-      send(ALIVE);
-      return;
-    }
-    if (activeAliveCheck != 0) return;
-    alive = false;
-    long checkId = ++aliveCheckId;
-    activeAliveCheck = checkId;
-    send(ALIVE);
-    if (conn == null) return;
-    try {
-      aliveCheckExecutor.schedule(() -> {
-        synchronized (ConnectionHandler.this) {
-          if (conn != null && activeAliveCheck == checkId) {
-            log.fine("Connection dead");
-            close();
-          }
-        }
-      }, TIMEOUT, TimeUnit.MILLISECONDS);
-    } catch (RejectedExecutionException ex) {
-      // Connection is closing.
-    }
   }
 
   synchronized void close() {
