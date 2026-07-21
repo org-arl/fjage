@@ -156,6 +156,7 @@ public class SlaveContainer extends RemoteContainer {
   public boolean send(Message m, boolean relay) {
     if (!running) return false;
     if (master == null) return false;
+    ConnectionHandler localMaster = master;
     AgentID aid = m.getRecipient();
     if (aid == null) return false;
     if (aid.isTopic()) {
@@ -165,7 +166,7 @@ public class SlaveContainer extends RemoteContainer {
       rq.message = m;
       rq.relay = true;
       String json = rq.toJson();
-      master.send(json);
+      localMaster.send(json);
     } else {
       if (super.send(m, false)) return true;
       if (!relay) return false;
@@ -174,7 +175,7 @@ public class SlaveContainer extends RemoteContainer {
       rq.message = m;
       rq.relay = true;
       String json = rq.toJson();
-      master.send(json);
+      localMaster.send(json);
     }
     return true;
   }
@@ -182,8 +183,9 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public AgentID[] getAgents() {
     if (master == null) return null;
+    ConnectionHandler localMaster = master;
     JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS);
-    JsonMessage rsp = master.request(rq, TIMEOUT);
+    JsonMessage rsp = localMaster.request(rq, TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentIDs;
@@ -192,8 +194,9 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public String[] getServices() {
     if (master == null) return null;
+    ConnectionHandler localMaster = master;
     JsonMessage rq = JsonMessage.createActionRequest(Action.SERVICES);
-    JsonMessage rsp = master.request(rq, TIMEOUT);
+    JsonMessage rsp = localMaster.request(rq, TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.services;
@@ -202,9 +205,10 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public AgentID agentForService(String service) {
     if (master == null) return null;
+    ConnectionHandler localMaster = master;
     JsonMessage rq = JsonMessage.createActionRequest(Action.AGENT_FOR_SERVICE);
     rq.service = service;
-    JsonMessage rsp = master.request(rq, TIMEOUT);
+    JsonMessage rsp = localMaster.request(rq, TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentID;
@@ -213,9 +217,10 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public AgentID[] agentsForService(String service) {
     if (master == null) return null;
+    ConnectionHandler localMaster = master;
     JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS_FOR_SERVICE);
     rq.service = service;
-    JsonMessage rsp = master.request(rq, TIMEOUT);
+    JsonMessage rsp = localMaster.request(rq, TIMEOUT);
     if (rsp == null) return null;
     if (rsp.auth != null && !rsp.auth) throw new AuthFailureException();
     return rsp.agentIDs;
