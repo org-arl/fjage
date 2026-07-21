@@ -34,6 +34,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   ////////////// Private attributes
 
   private static final long QUERY_TIMEOUT = 5000;
+  private static final long REQUEST_TIMEOUT_MARGIN = 100;
   private static final int ALIVE_TIMEOUT = 15000;
   private static final int ALIVE_POLL_INTERVAL = 100;
 
@@ -321,7 +322,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
           futures.add(completion.submit(() -> {
             long remaining = deadline - System.nanoTime();
             if (remaining <= 0) return null;
-            long timeout = TimeUnit.NANOSECONDS.toMillis(remaining);
+            long timeout = TimeUnit.NANOSECONDS.toMillis(remaining) - REQUEST_TIMEOUT_MARGIN;
             if (timeout <= 0) return null;
             return slave.request(requestFactory.apply(slave), timeout);
           }));
