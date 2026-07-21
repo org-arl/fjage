@@ -273,6 +273,7 @@ public class ConnectionHandler extends Thread {
     conn.close();
     conn = null;
     out = null;
+    pending.values().forEach(Object::notifyAll);
     pending.clear();
     container.connectionClosed(this);
   }
