@@ -37,14 +37,16 @@ public class ConnectionHandler extends Thread {
   private final Logger log = Logger.getLogger(getClass().getName());
   private final RemoteContainer container;
   private volatile boolean alive;
-  private final boolean keepAlive;
   private final boolean closeOnDead;
   private final ExecutorService taskExecutor = Executors.newSingleThreadExecutor();
   private final ExecutorService directoryExecutor = Executors.newCachedThreadPool();
   private final ExecutorService sendExecutor = Executors.newSingleThreadExecutor();
+  private final ScheduledExecutorService aliveCheckExecutor = Executors.newSingleThreadScheduledExecutor();
   private final Set<AgentID> watchList = new HashSet<>();
   private String clientName = "-";
   private final Firewall fw;
+  private long aliveCheckId;
+  private long activeAliveCheck;
 
   public ConnectionHandler(Connector conn, RemoteContainer container, Firewall fw) {
     this.conn = conn;
@@ -52,7 +54,6 @@ public class ConnectionHandler extends Thread {
     this.fw = fw;
     setName(conn.toString());
     alive = false;
-    keepAlive = true;
     closeOnDead = ((conn instanceof TcpConnector) || (conn instanceof WebSocketConnector)) && (container instanceof MasterContainer);
   }
 
@@ -74,27 +75,7 @@ public class ConnectionHandler extends Thread {
   public void run() {
     BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
     out = new DataOutputStream(conn.getOutputStream());
-    if (keepAlive) {
-      if (closeOnDead) {
-        (new Thread(getName()+":init") {
-          @Override
-          public void run() {
-            send(ALIVE);
-            try {
-              Thread.sleep(TIMEOUT);
-            } catch (InterruptedException ex) {
-              // do nothing
-            }
-            if (!alive) {
-              log.fine("Connection dead");
-              close();
-            }
-          }
-        }).start();
-      } else {
-        send(ALIVE);
-      }
-    }
+    checkAlive();
     while (conn != null) {
       String s = null;
       try {
@@ -104,20 +85,15 @@ public class ConnectionHandler extends Thread {
       }
       if (s == null) break;
       log.fine(this.getName() +" <<< "+s);
-      if (keepAlive) {
-        // additional alive/sign-off logic needed on serial ports to avoid waiting for slaves when none present
-        if (!alive) {
-          alive = true;
-          log.fine("Connection alive");
-        } else if (s.equals(SIGN_OFF)) {
-          alive = false;
-          log.fine("Peer signed off");
-          continue;
-        }
-        if (s.equals(ALIVE)) {
-          if (container instanceof SlaveContainer) send(ALIVE);
-          continue;
-        }
+      if (s.equals(SIGN_OFF)) {
+        alive = false;
+        log.fine("Peer signed off");
+        continue;
+      }
+      acknowledgeAlive();
+      if (s.equals(ALIVE)) {
+        if (container instanceof SlaveContainer) send(ALIVE);
+        continue;
       }
       // handle JSON messages
       if (s.length() < 2) continue;
@@ -230,11 +206,11 @@ public class ConnectionHandler extends Thread {
 
   void sendAsync(String s) {
     if (conn == null) return;
-    if (keepAlive && !alive && container instanceof MasterContainer) return;
+    if (!alive && container instanceof MasterContainer) return;
     try {
       sendExecutor.execute(() -> {
         if (conn == null) return;
-        if (keepAlive && !alive && container instanceof MasterContainer) return;
+        if (!alive && container instanceof MasterContainer) return;
         send(s);
       });
     } catch (RejectedExecutionException ex) {
@@ -244,7 +220,7 @@ public class ConnectionHandler extends Thread {
 
   JsonMessage request(JsonMessage msg, long timeout) {
     if (conn == null) return null;
-    if (keepAlive && !alive && container instanceof MasterContainer) return null;
+    if (!alive && container instanceof MasterContainer) return null;
     PendingRequest request = new PendingRequest();
     pending.put(msg.id, request);
     long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout);
@@ -261,6 +237,7 @@ public class ConnectionHandler extends Thread {
         } catch (InterruptedException ex) {
           Thread.currentThread().interrupt();
           pending.remove(msg.id, request);
+          if (deadline - System.nanoTime() <= 0) checkAlive();
           return null;
         }
         remaining = deadline - System.nanoTime();
@@ -269,20 +246,51 @@ public class ConnectionHandler extends Thread {
     pending.remove(msg.id, request);
     if (request.response != null) return request.response;
     if (request.closed) return null;
-    if (keepAlive && alive) {
-      alive = false;
-      log.fine("Connection dead");
-      if (closeOnDead) close();
-    }
+    checkAlive();
     return null;
+  }
+
+  private synchronized void acknowledgeAlive() {
+    if (!alive) {
+      alive = true;
+      log.fine("Connection alive");
+    }
+    activeAliveCheck = 0;
+  }
+
+  private synchronized void checkAlive() {
+    if (conn == null) return;
+    if (!closeOnDead) {
+      send(ALIVE);
+      return;
+    }
+    if (activeAliveCheck != 0) return;
+    alive = false;
+    long checkId = ++aliveCheckId;
+    activeAliveCheck = checkId;
+    send(ALIVE);
+    if (conn == null) return;
+    try {
+      aliveCheckExecutor.schedule(() -> {
+        synchronized (ConnectionHandler.this) {
+          if (conn != null && activeAliveCheck == checkId) {
+            log.fine("Connection dead");
+            close();
+          }
+        }
+      }, TIMEOUT, TimeUnit.MILLISECONDS);
+    } catch (RejectedExecutionException ex) {
+      // Connection is closing.
+    }
   }
 
   synchronized void close() {
     if (conn == null) return;
-    if (keepAlive && container instanceof SlaveContainer) send(SIGN_OFF);
+    if (container instanceof SlaveContainer) send(SIGN_OFF);
     conn.close();
     conn = null;
     out = null;
+    aliveCheckExecutor.shutdownNow();
     sendExecutor.shutdownNow();
     taskExecutor.shutdownNow();
     for (PendingRequest request: pending.values()) {
