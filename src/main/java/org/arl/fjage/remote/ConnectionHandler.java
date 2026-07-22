@@ -258,8 +258,17 @@ public class ConnectionHandler extends Thread {
     }
     pending.remove(msg.id, request);
     if (request.response != null) return request.response;
-    // probe an unresponsive peer; the watchdog closes it if it stays silent
-    if (!request.closed && deadline - System.nanoTime() <= 0) send(ALIVE);
+    if (!request.closed && deadline - System.nanoTime() <= 0) {
+      if (closeOnDead) {
+        // probe an unresponsive peer; the watchdog closes it if it stays silent
+        send(ALIVE);
+      } else if (alive && container instanceof MasterContainer) {
+        // no watchdog on this connection (e.g. serial port), so fail fast on timeout
+        // to avoid blocking subsequent queries when the peer has silently vanished
+        alive = false;
+        log.fine("Connection dead");
+      }
+    }
     return null;
   }
 
