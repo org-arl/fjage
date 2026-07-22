@@ -154,8 +154,6 @@ public class ConnectionHandler extends Thread {
     }
     fw.signoff();
     close();
-    shutdown(taskExecutor);
-    shutdown(directoryExecutor);
   }
 
   @Override
@@ -281,6 +279,7 @@ public class ConnectionHandler extends Thread {
       }
     }
     pending.clear();
+    directoryExecutor.shutdownNow();
     container.connectionClosed(this);
   }
 
@@ -299,18 +298,6 @@ public class ConnectionHandler extends Thread {
   boolean checkAuthFailure(String id) {
     synchronized(failed) {
       return failed.contains(id);
-    }
-  }
-
-  private void shutdown(ExecutorService executor) {
-    executor.shutdown();
-    try {
-      if (!executor.awaitTermination(200, TimeUnit.MILLISECONDS)) {
-        executor.shutdownNow();
-      }
-    } catch (InterruptedException ex) {
-      executor.shutdownNow();
-      Thread.currentThread().interrupt();
     }
   }
 
