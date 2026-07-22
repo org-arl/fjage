@@ -23,7 +23,7 @@ All gateway agents should use names prefixed with `gateway-`.
 - Creates a gateway connecting to a specified master container specified by the arguments.
 - Must accept `String hostname, Int port` arguments for TCP connections.
 - May support `String devname, Int baud, String settings` arguments if Serial connections are supported.
-- Must return a `null` if the connection to master container fails on the first attempt.
+- Must return a `null`, or throw an exception, if the connection to master container fails on the first attempt.
 - May support auto-reconnect, where, once a connection with the master container is established if the connection fails, the Gateway tries to reconnect automatically.
 - Must NOT set the `sentAt` field of the message. This field will be populated by the Container when the message is received.
 - Must respond to JSON message `{"alive": true}` from the master container with `{"alive": true}` as soon as possible to indicate that the gateway is alive.
