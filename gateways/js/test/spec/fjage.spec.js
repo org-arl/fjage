@@ -232,7 +232,7 @@ describe('A Gateway', function () {
   });
 
   it('should be able to send and receive many messages asynchronously', async function() {
-    const NMSG = 64;
+    const NMSG = (128/2) - 2; // leaving some room for other messages in the queue
     const gw = new Gateway(gwOpts);
     gw.flush();
     var rxed = new Array(NMSG).fill(false);
