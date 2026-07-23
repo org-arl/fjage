@@ -83,6 +83,8 @@ Only agents may access messaging and related functionality provided by fjåge. F
     println "The lowest temperature today is ${rsp?rsp.minTemp:'unknown'}"
     gw.shutdown()
 
+The proxy agent created by a gateway is named with the reserved ``gateway-`` prefix (e.g. ``gateway-5f3a``); non-gateway agents should not use this prefix. The master container uses this naming convention to identify gateway connections and keep them lightweight: once a connection is classified as a gateway, the master stops sending it directory queries (agent lists, service lookups, etc.), and answers such queries from its cached knowledge of the gateway agent instead. For the same reason, gateway agents cannot register services — a service registered on a gateway agent would not be discoverable by other agents. If a gateway connects with an agent name that collides with an existing agent, the master shuts down that gateway connection and logs a warning.
+
 .. Javadoc links
 .. -------------
 ..

@@ -16,7 +16,15 @@ A fjåge Gateway connects to a fjåge master container and sends/receives messag
 - `action: send` : parse and process the messsage as per the Gateway logic.
 - `action: shutdown` : close and stop the Gateway
 
-All gateway agents should use names prefixed with `gateway-`.
+All gateway agents must use names prefixed with `gateway-`. This prefix is reserved for gateway agents; non-gateway agents must not use it.
+
+A master container may classify a connection presenting exactly one `gateway-`-prefixed agent as a lightweight gateway connection. Once classified:
+
+- The master will not direct directory queries (`agents`, `services`, `agentForService`, `agentsForService`, `containsAgent`) at the connection.
+- The gateway agent's name is included in the master's directory listings from the cached classification, so the gateway remains visible to other agents.
+- Gateway agents must not register services; the master will not route service queries to gateway connections, so any services registered by a gateway agent would not be discoverable.
+
+If a gateway's agent name collides with an existing agent known to the master, the master sends `action: shutdown` on that connection and closes it. A compliant gateway must terminate on receiving `shutdown` and must not reconnect with the same agent name. The master logs a warning identifying the collision.
 
 ### `Gateway()` :: String hostname, Int port, (String settings) -> Gateway
 
