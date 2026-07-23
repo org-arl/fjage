@@ -583,6 +583,11 @@ public class ShellAgent extends Agent {
             send(new Message(req, Performative.REFUSE));
             return;
           }
+          if (file.isDirectory()) {
+            log.info("Syntax check failure: file " + filename + " is a directory");
+            send(new Message(req, Performative.REFUSE));
+            return;
+          }
           ex = engine.parse(file);
         } else {
           String cmd = req.getCommand();
