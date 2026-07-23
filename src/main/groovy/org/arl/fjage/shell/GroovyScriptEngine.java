@@ -494,7 +494,6 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   private RuntimeException rethrowParseFailure(Throwable ex) {
     if (ex instanceof GroovyBugError) ex = resolveGroovyBug(ex);
-    if (ex instanceof MultipleCompilationErrorsException) return (MultipleCompilationErrorsException) ex;
     if (ex instanceof RuntimeException) return (RuntimeException) ex;
     return new RuntimeException(ex);
   }
