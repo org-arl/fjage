@@ -72,8 +72,10 @@ public class ConnectionHandler extends Thread {
 
   @Override
   public void run() {
-    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-    out = new DataOutputStream(conn.getOutputStream());
+    Connector c = conn;
+    if (c == null) return;
+    BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream()));
+    out = new DataOutputStream(c.getOutputStream());
     send(ALIVE);
     if (closeOnDead) {
       lastRxTime = System.currentTimeMillis();
