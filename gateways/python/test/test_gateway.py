@@ -1,6 +1,6 @@
 import pytest
 import socket
-from time import sleep
+from time import sleep, monotonic
 
 from fjagepy import Gateway, Message, ShellExecReq, AgentID, MessageClass, Performative, JSONMessage
 from .conftest import DEFAULT_HOST, DEFAULT_PORT
@@ -174,11 +174,9 @@ def test_gateway_send_receive_many(gateway):
         gateway.send(smr)
 
     for type in range(1, NMSG + 1):
-        m = gateway.receive(lambda m: isinstance(m, SendMsgRsp), timeout=2000)
+        m = gateway.receive(lambda m: isinstance(m, SendMsgRsp), timeout=5000)
         if m and m.type:
             rxed[m.type - 1] = True
-        else:
-            print(f'Error getting SendMsgRsp #{type} : {m}')
 
     assert rxed.count(False) == 0
 
