@@ -5,7 +5,6 @@ import org.arl.fjage.param.*;
 import org.arl.fjage.remote.*;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -13,7 +12,7 @@ import static org.junit.Assert.*;
 public class TunnelNotificationsTest {
 
   private static class MyMessageListener implements MessageListener {
-    public List<Message> msgs = Collections.synchronizedList(new ArrayList<Message>());
+    public List<Message> msgs = Collections.synchronizedList(new ArrayList<>());
     @Override
     public boolean onReceive(Message msg) {
       msgs.add(msg);
@@ -22,7 +21,7 @@ public class TunnelNotificationsTest {
   }
 
   @Test
-  public void testConnectionNotifications() throws IOException {
+  public void testConnectionNotifications() {
     Platform platform = new RealTimePlatform();
     Container c1 = new Container(platform);
     Container c2 = new Container(platform);
@@ -40,12 +39,12 @@ public class TunnelNotificationsTest {
 
     boolean foundConn = false;
     for (Message m: l1.msgs) {
-      if (m instanceof ConnectionNotification) {
+      if (m instanceof TunnelConnectionNtf) {
         foundConn = true;
         break;
       }
     }
-    assertTrue("ConnectionNotification should be published on server container", foundConn);
+    assertTrue("TunnelConnectionNtf should be published on server container", foundConn);
 
     // Request parameters and check connIDs parameter is present
     Message req = new ParameterReq();
@@ -59,9 +58,9 @@ public class TunnelNotificationsTest {
     assertNotNull("Expected a ParameterRsp in container listener", prsp);
     Object val = prsp.get(TunnelParam.connIDs);
     assertNotNull("connIDs parameter should be present", val);
-    assertTrue("connIDs should be a List", val instanceof List<?>);
-    List<?> ids = (List<?>) val;
-    assertTrue("connIDs should contain at least one connection id", ids.size() >= 1);
+    assertTrue("connIDs should be a Map", val instanceof Map<?, ?>);
+    Map<?, ?> ids = (Map<?, ?>) val;
+    assertFalse("connIDs should contain at least one connection id", ids.isEmpty());
 
     platform.shutdown();
   }
