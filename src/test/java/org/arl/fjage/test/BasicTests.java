@@ -390,6 +390,27 @@ public class BasicTests {
   }
 
   @Test
+  public void testShellCheckStatic() {
+    log.info("testShellCheckStatic");
+    Platform platform = new RealTimePlatform();
+    Container container = new Container(platform);
+    GroovyScriptEngine engine = new GroovyScriptEngine();
+    engine.setVariable("xbind", 5);
+    container.add("shell", new ShellAgent(engine));
+    ShellCheckStaticTestAgent agent = new ShellCheckStaticTestAgent();
+    container.add("test", agent);
+    platform.start();
+    while (!agent.done)
+      platform.delay(1000);
+    platform.shutdown();
+    assertTrue("Binding variable should be valid", agent.bindingVarValid);
+    assertTrue("Assign-then-read should be valid", agent.assignReadValid);
+    assertTrue("Unknown method call should fall back to dynamic (valid)", agent.dynamicMethodValid);
+    assertTrue("Static type error should be invalid", agent.typeErrorInvalid);
+    assertTrue("Undeclared variable read should be invalid", agent.undeclaredInvalid);
+  }
+
+  @Test
   public void testListener() {
     log.info("testListener");
     Platform platform = new RealTimePlatform();
@@ -1194,6 +1215,42 @@ public class BasicTests {
         public void action() {
           Message rsp = request(new ShellCheckReq(new AgentID("shell"), "println 'hello'"));
           refused = rsp != null && rsp.getPerformative() == Performative.REFUSE;
+          done = true;
+        }
+      });
+    }
+  }
+
+  private static class ShellCheckStaticTestAgent extends Agent {
+    public boolean bindingVarValid = false, assignReadValid = false, dynamicMethodValid = false,
+                   typeErrorInvalid = false, undeclaredInvalid = false, done = false;
+
+    private static boolean isValid(Message rsp) {
+      return rsp instanceof ShellCheckRsp && ((ShellCheckRsp)rsp).isValid()
+          && ((ShellCheckRsp)rsp).getDiagnostics() == null;
+    }
+
+    private static boolean isInvalid(Message rsp) {
+      return rsp instanceof ShellCheckRsp && !((ShellCheckRsp)rsp).isValid()
+          && ((ShellCheckRsp)rsp).getDiagnostics() != null;
+    }
+
+    @Override
+    public void init() {
+      add(new OneShotBehavior() {
+        @Override
+        public void action() {
+          AgentID shell = new AgentID("shell");
+          // shell binding variable set on the engine is known to the static check
+          bindingVarValid = isValid(request(new ShellCheckReq(shell, "xbind + 1")));
+          // a `name = value` binding assignment and a later read of it in the same script
+          assignReadValid = isValid(request(new ShellCheckReq(shell, "ybind = 3\nybind + 1")));
+          // unknown method call falls back to dynamic dispatch (methodMissing / shortcuts)
+          dynamicMethodValid = isValid(request(new ShellCheckReq(shell, "foobar()")));
+          // genuine static type error on a known type is caught
+          typeErrorInvalid = isInvalid(request(new ShellCheckReq(shell, "int z = 'hello'")));
+          // read of an undeclared name not in the binding is flagged
+          undeclaredInvalid = isInvalid(request(new ShellCheckReq(shell, "zzz + 1")));
           done = true;
         }
       });
