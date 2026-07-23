@@ -1,14 +1,16 @@
 package org.arl.fjage.test
 
-import org.arl.fjage.*
-import org.arl.fjage.connectors.WebSocketHubConnector
+
+import org.arl.fjage.Agent
+import org.arl.fjage.Message
+import org.arl.fjage.MessageBehavior
+import org.arl.fjage.RealTimePlatform
 import org.arl.fjage.remote.MasterContainer
 import org.arl.fjage.shell.EchoScriptEngine
 import org.arl.fjage.shell.ShellAgent
 import org.junit.Test
 
 import static org.junit.Assert.assertTrue
-import static org.junit.Assert.assertEquals
 
 class fjagepyTest {
 
