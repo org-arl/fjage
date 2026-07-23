@@ -69,8 +69,8 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
     "Example:\n  @@.agents = [agent('remoteAgent'), topic('remoteTopic')]\n\n" +
     "### @@.ip - IP address of the server to connect to (null for servers)\n" +
     "### @@.port - TCP port number\n" +
-    "### @@.connIDs - list of currently connected connection IDs (read-only)\n" +
-    "Each element is an integer connID assigned to a connector when a connection is established.\n";
+    "### @@.connIDs - map of currently connected connection IDs (read-only)\n" +
+    "Keys are integer connIDs; values are connector names (typically remote IP:port).\n";
 
   //// agent methods
 
@@ -119,7 +119,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
     connectors.add(connector);
     connIDs.put(++connID, connector);
     monitor(connID, connector);
-    n = new TunnelConnectionNtf("connected", connID, connector.getName());
+    n = new TunnelConnectionNtf(TunnelStatus.CONNECTED, connID, connector.getName());
     n.setRecipient(topic());
     send(n);
   }
@@ -128,12 +128,11 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
     try {
       Connector c = new TcpConnector(ip, port);
       log.info("Connected to "+ip+":"+port);
-      int id;
       TunnelConnectionNtf n;
       connectors.add(c);
       connIDs.put(++connID, c);
       monitor(connID, c);
-      n = new TunnelConnectionNtf("connected", connID, c.getName());
+      n = new TunnelConnectionNtf(TunnelStatus.CONNECTED, connID, c.getName());
       n.setRecipient(topic());
       send(n);
     } catch (IOException ex) {
@@ -232,7 +231,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
     if (entryToRemove.isPresent()) {
       int id = entryToRemove.get().getKey();
       connIDs.remove(id);
-      TunnelConnectionNtf n = new TunnelConnectionNtf("disconnected", id, c.getName());
+      TunnelConnectionNtf n = new TunnelConnectionNtf(TunnelStatus.DISCONNECTED, id, c.getName());
       n.setRecipient(topic());
       send(n);
     }
