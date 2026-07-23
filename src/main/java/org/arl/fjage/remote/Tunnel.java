@@ -115,11 +115,14 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   @Override
   public void connected(Connector connector) {
     log.info("Incoming connection: "+connector.getName());
-    TunnelConnectionNtf n;
+    int id;
     connectors.add(connector);
-    connIDs.put(++connID, connector);
-    monitor(connID, connector);
-    n = new TunnelConnectionNtf(TunnelStatus.CONNECTED, connID, connector.getName());
+    synchronized (this) {
+      id = ++connID;
+      connIDs.put(id, connector);
+    }
+    monitor(id, connector);
+    TunnelConnectionNtf n = new TunnelConnectionNtf(TunnelStatus.CONNECTED, id, connector.getName());
     n.setRecipient(topic());
     send(n);
   }
