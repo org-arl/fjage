@@ -11,10 +11,12 @@ for full license details.
 package org.arl.fjage.shell;
 
 import groovy.lang.*;
+import groovy.transform.CompileStatic;
 import groovy.transform.ThreadInterrupt;
 import org.arl.fjage.Message;
 import org.arl.fjage.Performative;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
@@ -27,7 +29,9 @@ import java.io.Reader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,9 +79,25 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   }
 
+  ////// static attributes
+
+  // Exposes the binding of the engine currently running a static check to the
+  // CompileStatic type-checking extension (see resource ShellStaticCheck.groovy),
+  // so that shell binding variables are treated as valid during the check.
+  private static final ThreadLocal<Binding> CHECK_BINDING = new ThreadLocal<>();
+
+  /**
+   * Returns the shell binding of the engine currently performing a static check on the
+   * calling thread, or null if none. Used by the CompileStatic type-checking extension.
+   */
+  public static Binding currentCheckBinding() {
+    return CHECK_BINDING.get();
+  }
+
   ////// private attributes
 
   private GroovyShell groovy;
+  private GroovyShell groovyCheck;
   private Binding binding;
   private ImportCustomizer imports;
   private Shell out = null;
@@ -115,6 +135,16 @@ public class GroovyScriptEngine implements ScriptEngine {
     compiler.addCompilationCustomizers(imports);
     compiler.addCompilationCustomizers(new ASTTransformationCustomizer(ThreadInterrupt.class));
     groovy = new GroovyShell(gcl, binding, compiler);
+    // Separate shell used only by parse() to statically check scripts without running them.
+    // It reuses the same (mutable) imports and script base class, and adds CompileStatic with a
+    // type-checking extension that tolerates shell binding variables and dynamic shell features.
+    CompilerConfiguration checkCompiler = new CompilerConfiguration();
+    checkCompiler.setScriptBaseClass(BaseGroovyScript.class.getName());
+    checkCompiler.addCompilationCustomizers(imports);
+    Map<String,Object> checkOpts = new HashMap<>();
+    checkOpts.put("extensions", new ConstantExpression("org/arl/fjage/shell/ShellStaticCheck.groovy"));
+    checkCompiler.addCompilationCustomizers(new ASTTransformationCustomizer(checkOpts, CompileStatic.class));
+    groovyCheck = new GroovyShell(gcl, binding, checkCompiler);
     binding.setVariable("__groovy__", groovy);
     binding.setVariable("__doc__", doc);
     groovy.evaluate("__init__()");
@@ -136,12 +166,24 @@ public class GroovyScriptEngine implements ScriptEngine {
   @Override
   public boolean isComplete(String cmd) {
     if (cmd == null || cmd.trim().length() == 0) return true;
-    try {
-      return parse(cmd) == null;
-    } catch (MultipleCompilationErrorsException ex) {
-      return !isIncomplete(ex);
-    } catch (Throwable ex) {
-      return true;
+    // Use a dynamic (non-static) parse here: line-continuation detection only cares about
+    // syntactic completeness, and running the static check per keystroke would be wasteful and
+    // could misreport valid dynamic commands as errors.
+    synchronized(this) {
+      try {
+        busy = Thread.currentThread();
+        try {
+          groovy.parse(cmd);
+          return true;
+        } catch (MultipleCompilationErrorsException ex) {
+          return !isIncomplete(ex);
+        } catch (Throwable ex) {
+          return true;
+        }
+      } finally {
+        Thread.interrupted();
+        busy = null;
+      }
     }
   }
 
@@ -151,8 +193,9 @@ public class GroovyScriptEngine implements ScriptEngine {
     synchronized(this) {
       try {
         busy = Thread.currentThread();
+        CHECK_BINDING.set(binding);
         try {
-          groovy.parse(cmd);
+          groovyCheck.parse(cmd);
           return null;
         } catch (MultipleCompilationErrorsException ex) {
           return ex;
@@ -160,6 +203,7 @@ public class GroovyScriptEngine implements ScriptEngine {
           throw rethrowParseFailure(ex);
         }
       } finally {
+        CHECK_BINDING.remove();
         Thread.interrupted();
         busy = null;
       }
@@ -172,9 +216,10 @@ public class GroovyScriptEngine implements ScriptEngine {
     synchronized(this) {
       try {
         busy = Thread.currentThread();
+        CHECK_BINDING.set(binding);
         try {
-          groovy.getClassLoader().clearCache();
-          groovy.parse(script);
+          groovyCheck.getClassLoader().clearCache();
+          groovyCheck.parse(script);
           return null;
         } catch (MultipleCompilationErrorsException ex) {
           return ex;
@@ -182,6 +227,7 @@ public class GroovyScriptEngine implements ScriptEngine {
           throw rethrowParseFailure(ex);
         }
       } finally {
+        CHECK_BINDING.remove();
         Thread.interrupted();
         busy = null;
       }
