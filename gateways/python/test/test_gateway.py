@@ -1,6 +1,6 @@
 import pytest
 import socket
-from time import sleep, monotonic
+from time import sleep
 
 from fjagepy import Gateway, Message, ShellExecReq, AgentID, MessageClass, Performative, JSONMessage
 from .conftest import DEFAULT_HOST, DEFAULT_PORT
