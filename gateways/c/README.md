@@ -69,4 +69,4 @@ A test suite is available in the `test` directory. To run the test suite, follow
 
 ## Documentation
 
-The documentation is available at [fjåge C APIs](https://fjage.readthedocs.io/en/latest/cgw.html).
+The documentation is available at [fjåge C APIs](https://org-arl.github.io/fjage/cgw.html).

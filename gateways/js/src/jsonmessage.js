@@ -9,7 +9,7 @@ import { Message } from './message.js';
 * contains all the fields that can be a part of a fjage JSON message. The class
 * provides methods to create JSONMessage objects from raw strings and to
 * convert JSONMessage objects to JSON strings in the format of the fjage on-the-wire
-* protocol. See {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation}
+* protocol. See {@link https://org-arl.github.io/fjage/protocol.html#json-message-requestresponse-attributes fjage documentation}
 * for more details on the JSON message format.
 *
 * Most users will not need to create JSONMessage objects directly, but rather use the Gateway and Message classes
@@ -40,7 +40,7 @@ import { Message } from './message.js';
 * @property {string} [service] - Used in conjunction with "action" : "agentForService" and "action" : "agentsForService" to query for agent(s) providing this specific service.
 * @property {Array<string>} [services] - This attribute is populated in objects which are responses to objects requesting the services available with "action" : "services".
 * @property {boolean} [answer] - This attribute is populated in objects which are responses to query objects with "action" : "containsAgent".
-* @property {Message} [message] - This holds the main payload of the message. The structure and format of this object is discussed in the {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation}.
+* @property {Message} [message] - This holds the main payload of the message. The structure and format of this object is discussed in the {@link https://org-arl.github.io/fjage/protocol.html#json-message-requestresponse-attributes fjage documentation}.
 * @property {boolean} [relay] - This attribute defines if the target container should relay (forward) the message to other containers it is connected to or not.
 * @property {Object} [creds] - Credentials to be used for authentication.
 * @property {Object} [auth] - Authentication information to be used for the message.
@@ -232,7 +232,7 @@ export class JSONMessage {
 
 /**
 * Actions supported by the fjåge JSON message protocol. See
-* {@link https://fjage.readthedocs.io/en/latest/protocol.html#json-message-request-response-attributes fjage documentation} for more details.
+* {@link https://org-arl.github.io/fjage/protocol.html#json-message-requestresponse-attributes fjage documentation} for more details.
 *
 * @enum {string} Actions
 */

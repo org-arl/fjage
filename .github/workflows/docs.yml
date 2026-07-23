@@ -1,0 +1,67 @@
+name: docs
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/**'
+      - 'src/main/**'
+      - 'gateways/**'
+      - 'VERSION'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.8.21
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Render developer's guide
+        run: quarto render docs
+      - name: Generate javadoc
+        run: ./gradlew javadoc
+      - name: Generate jsdoc
+        working-directory: gateways/js
+        run: |
+          npm ci
+          npm run docs
+      - name: Generate pydocs
+        run: |
+          pip install ./gateways/python sphinx==8.2.3 sphinx-rtd-theme==3.0.2 myst-parser==4.0.1
+          sphinx-build -q gateways/python/docs build/docs/pydocs
+      - name: Assemble site
+        run: cp -r build/docs/javadoc build/docs/jsdoc build/docs/pydocs docs/_site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
