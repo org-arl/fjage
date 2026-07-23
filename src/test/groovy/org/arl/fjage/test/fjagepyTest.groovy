@@ -21,7 +21,6 @@ class fjagepyTest {
     ]
     def platform = new RealTimePlatform()
     def container = new MasterContainer(platform, 5081)
-    container.addConnector(new WebSocketHubConnector(8080, "/ws", true))
     container.add("shell", new ShellAgent(new EchoScriptEngine()))
     platform.start()
     container.add('echo', new EchoServerAgent())
