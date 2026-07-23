@@ -262,9 +262,9 @@ public class ConnectionHandler extends Thread {
       if (closeOnDead) {
         // probe an unresponsive peer; the watchdog closes it if it stays silent
         send(ALIVE);
-      } else if (alive && container instanceof MasterContainer) {
-        // no watchdog on this connection (e.g. serial port), so fail fast on timeout
-        // to avoid blocking subsequent queries when the peer has silently vanished
+      } else if (alive && container instanceof MasterContainer && !(conn instanceof WebSocketHubConnector)) {
+        // no watchdog on this point-to-point connection (e.g. serial port), so fail fast on
+        // timeout to avoid blocking subsequent queries when the peer has silently vanished.
         alive = false;
         log.fine("Connection dead");
       }
