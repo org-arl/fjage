@@ -559,7 +559,7 @@ public class ShellAgent extends Agent {
   private void handleCheckReq(final ShellCheckReq req) {
     Message rsp;
     if (engine == null || engine.isBusy()) {
-      log.info("Syntax check failure: engine is busy");
+      log.info("Syntax check failure: engine is " + (engine == null ? "null" : "busy"));
       rsp = new Message(req, Performative.REFUSE);
     }
     else {
