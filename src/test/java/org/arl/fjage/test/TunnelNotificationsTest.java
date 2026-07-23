@@ -38,10 +38,12 @@ public class TunnelNotificationsTest {
     platform.delay(500);
 
     boolean foundConn = false;
-    for (Message m: l1.msgs) {
-      if (m instanceof TunnelConnectionNtf) {
-        foundConn = true;
-        break;
+    synchronized (l1.msgs) {
+      for (Message m: l1.msgs) {
+        if (m instanceof TunnelConnectionNtf) {
+          foundConn = true;
+          break;
+        }
       }
     }
     assertTrue("TunnelConnectionNtf should be published on server container", foundConn);

@@ -21,9 +21,7 @@ public enum TunnelParam implements Parameter {
   /**
    * List of remote agents/topics visible through the tunnel.
    */
-  agents
-
-  ,
+  agents,
 
   /**
    * List of currently connected connection IDs (read-only).
