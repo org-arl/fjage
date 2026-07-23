@@ -8,7 +8,7 @@ import org.arl.fjage.*;
  * This message carries a short `event` string (e.g., "connected", "closed"),
  * the numeric `connID` assigned by the tunnel, the connector `name`.
  */
-public class ConnectionNotification extends Message {
+public class TunnelConnectionNtf extends Message {
 
   private static final long serialVersionUID = 1L;
 
@@ -16,12 +16,12 @@ public class ConnectionNotification extends Message {
   private int connID;
   private String name;
 
-  public ConnectionNotification() {
+  public TunnelConnectionNtf() {
     super();
     setPerformative(Performative.INFORM);
   }
 
-  public ConnectionNotification(String event, int connID, String name) {
+  public TunnelConnectionNtf(String event, int connID, String name) {
     super();
     setPerformative(Performative.INFORM);
     this.event = event;
@@ -29,7 +29,7 @@ public class ConnectionNotification extends Message {
     this.name = name;
   }
 
-  public ConnectionNotification(AgentID recipient, String event, int connID, String name) {
+  public TunnelConnectionNtf(AgentID recipient, String event, int connID, String name) {
     super(recipient);
     setPerformative(Performative.INFORM);
     this.event = event;
@@ -63,7 +63,7 @@ public class ConnectionNotification extends Message {
 
   @Override
   public String toString() {
-    return "ConnectionNotification[event="+event+", connID="+connID+", name="+name+"]";
+    return "TunnelConnectionNtf[event="+event+", connID="+connID+", name="+name+"]";
   }
 
 }
