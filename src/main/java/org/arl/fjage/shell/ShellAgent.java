@@ -603,7 +603,7 @@ public class ShellAgent extends Agent {
         if (ex != null) checkRsp.setDiagnostics(toDiagnosticsJson(ex));
         rsp = checkRsp;
       } catch (Throwable ex) {
-        log.log(Level.WARNING, "Command parse failure: "+ex.toString(), ex);
+        log.log(Level.WARNING, "Shell check parse failure: "+ex.toString(), ex);
         rsp = new Message(req, Performative.FAILURE);
       }
     }
