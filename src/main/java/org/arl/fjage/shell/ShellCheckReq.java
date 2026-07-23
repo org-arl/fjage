@@ -82,11 +82,6 @@ public class ShellCheckReq extends Message {
   }
 
   /**
-   * Set the script to check.
-   *
-   * @param script script file to check.
-   */
-  /**
    * Set the filename of the script to check.
    *
    * @param filename script filename to check.
