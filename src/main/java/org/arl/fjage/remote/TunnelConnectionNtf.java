@@ -3,9 +3,9 @@ package org.arl.fjage.remote;
 import org.arl.fjage.*;
 
 /**
- * Notification message sent by `Tunnel` when a connector is opened or closed.
+ * Notification message sent by {@link Tunnel} when a connector connects or disconnects.
  * <p>
- * This message carries a `TunnelStatus` event, a connection ID (`connID`), and
+ * This message carries a {@link TunnelStatus} event, a connection ID ({@code connID}), and
  * the name of the connector.
  */
 public class TunnelConnectionNtf extends Message {
