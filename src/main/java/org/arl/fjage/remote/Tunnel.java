@@ -19,7 +19,7 @@ import org.arl.fjage.connectors.*;
  * tunnel connects to a server tunnel at a specified IP address and TCP port.
  * <p>
  * Once a connection is established, the tunnel agent forwards selected messages
- * between the two platforms. The `agents` parameter specifies the list of remote
+ * between the two platforms. The {@code agents} parameter specifies the list of remote
  * agents or topics forwarded through the tunnel.
  */
 public class Tunnel extends Agent implements ConnectionListener, MessageListener {
@@ -42,7 +42,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   protected int connID = 0;
 
   /**
-   * Map of connection id to Connector. `connIDs` parameter exposes the
+   * Map of connection id to Connector. {@code connIDs} parameter exposes the
    * keys of this map as a read-only snapshot.
    */
   protected Map<Integer,Connector> connIDs = new ConcurrentHashMap<>();
@@ -117,10 +117,8 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
     log.info("Incoming connection: "+connector.getName());
     int id;
     connectors.add(connector);
-    synchronized (this) {
-      id = ++connID;
-      connIDs.put(id, connector);
-    }
+    id = ++connID;
+    connIDs.put(id, connector);
     monitor(id, connector);
     TunnelConnectionNtf n = new TunnelConnectionNtf(TunnelStatus.CONNECTED, id, connector.getName());
     n.setRecipient(topic());
