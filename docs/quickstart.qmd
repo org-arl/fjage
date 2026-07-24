@@ -31,7 +31,7 @@ fjage.sh
 rconsole.sh
 logs/
 build/libs/
-  fjage-2.5.0.jar
+  fjage-2.6.0.jar
   groovy-2.5.23.jar
   jline-3.29.0-jdk8.jar
   commons-lang3-3.20.0.jar

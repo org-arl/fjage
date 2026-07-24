@@ -1,8 +1,17 @@
 # Release Notes
 
-### Upcoming
+### 2.6.0
 
-* Classify gateway connections (single `gateway-` prefixed agent) as lightweight: directory queries are no longer sent to them, and their agent is answered from the master's cache
+* Add `services()` to the Gateway API to list all services visible through a gateway
+* Split gateway default timeouts: 1 s for `request()`, 6 s for directory queries and 0 for `receive()`
+* Gateway spec: allow constructors to throw on first-connect failure, instead of only returning `null`
+* Add connection IDs and `TunnelConnectionNtf` connection notifications to the Tunnel agent
+* Improve `MasterContainer` scalability by handling directory queries asynchronously and in parallel
+* Improve detection and cleanup of unresponsive/dead peers in `ConnectionHandler`, and fix shutdown races
+* Bugfix: WebSocket writes are now bounded and non-blocking, so a slow client can no longer stall the container
+* Bugfix: Correct handling of closed state in `BlockingByteQueue`, `PseudoInputStream` and `PseudoOutputStream`
+* Chore: Migrate the developer's guide from Sphinx/ReadTheDocs to Quarto
+* Classify gateway connections (single `gateway-` prefixed agent) as lightweight: not asked directory queries.
 
 ### 2.5.0
 

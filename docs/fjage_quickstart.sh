@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # fjage version
-VERSION=2.5.0
+VERSION=2.6.0
 
 # dependency versions (matching build.gradle for fjage $VERSION)
 GROOVY_VERSION=2.5.23
