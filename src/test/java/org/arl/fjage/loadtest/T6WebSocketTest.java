@@ -36,7 +36,7 @@ public class T6WebSocketTest {
 
   /** Gateway-style WS endpoint: collects lines, auto-answers keep-alive. */
   public static class WsEndpoint extends WebSocketAdapter {
-    final Queue<String> lines = new ConcurrentLinkedQueue<String>();
+    final Queue<String> lines = new ConcurrentLinkedQueue<>();
     final CountDownLatch connected = new CountDownLatch(1);
     final AtomicInteger malformed = new AtomicInteger();
 
@@ -69,7 +69,7 @@ public class T6WebSocketTest {
     }
 
     int countSeqsFrom(String src) {
-      Set<Integer> seen = new HashSet<Integer>();
+      Set<Integer> seen = new HashSet<>();
       for (String l : lines) {
         if (!l.contains("\"" + src + "\"")) continue;
         Matcher m = SEQ.matcher(l);

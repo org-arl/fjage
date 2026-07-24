@@ -23,11 +23,10 @@ public class T5ShutdownRaceTest {
   private static final String[] BENIGN_THREADS = {"fjage-timer", ":init", "proxy:"};
 
   @Test(timeout = 600000)
-  public void shutdownUnderLoad() throws Exception {
+  public void shutdownUnderLoad() {
     LogCapture logs = new LogCapture();
     Set<String> baseline = TestUtil.threadSnapshot();
     Random rnd = new Random(7);
-    int timerLeaks = 0;
     try {
       for (int iter = 0; iter < ITERATIONS; iter++) {
         final MultiContainerFixture fx = MultiContainerFixture.create(3);
@@ -60,7 +59,6 @@ public class T5ShutdownRaceTest {
 
         for (Container c : fx.containers())
           assertFalse("iter " + iter + ": container did not stop: " + c, c.isRunning());
-        timerLeaks += 4;   // known pre-existing: RealTimePlatform timers are never cancelled
         System.out.println("iter " + iter + " ok (mode=" + (iter % 2 == 1 ? "master-first" : "slave-first")
             + ", rx=" + rxS0.stats.total() + ", sub0=" + sub[0].stats.total() + ")");
       }
@@ -69,7 +67,7 @@ public class T5ShutdownRaceTest {
     }
 
     TestUtil.sleep(3000);
-    List<String> leaks = new ArrayList<String>();
+    List<String> leaks = new ArrayList<>();
     int timers = 0;
     for (String t : TestUtil.newThreadsSince(baseline)) {
       if (t.contains("fjage-timer")) {
@@ -78,7 +76,10 @@ public class T5ShutdownRaceTest {
       }
       boolean benign = false;
       for (String b : BENIGN_THREADS)
-        if (t.contains(b)) benign = true;
+        if (t.contains(b)) {
+          benign = true;
+          break;
+        }
       if (!benign) leaks.add(t);
     }
     System.out.println("=== T5 results ===");
