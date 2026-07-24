@@ -9,7 +9,7 @@ import java.util.logging.*;
  */
 public class LogCapture extends Handler implements AutoCloseable {
 
-  private final Queue<LogRecord> records = new ConcurrentLinkedQueue<LogRecord>();
+  private final Queue<LogRecord> records = new ConcurrentLinkedQueue<>();
   private final Logger root = Logger.getLogger("");
 
   public LogCapture() {
@@ -32,7 +32,7 @@ public class LogCapture extends Handler implements AutoCloseable {
   }
 
   private List<String> filter(Level level) {
-    List<String> out = new ArrayList<String>();
+    List<String> out = new ArrayList<>();
     for (LogRecord r : records) {
       if (r.getLevel().intValue() >= level.intValue()) {
         String s = r.getLevel() + " [" + r.getLoggerName() + "] " + r.getMessage();

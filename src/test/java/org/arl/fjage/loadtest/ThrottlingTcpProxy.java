@@ -19,7 +19,7 @@ public class ThrottlingTcpProxy extends Thread {
   private volatile boolean paused = false;   // stop reading -> backpressure
   private volatile boolean refuse = false;   // accept then immediately close
   private volatile boolean shutdown = false;
-  private final List<Socket> live = Collections.synchronizedList(new ArrayList<Socket>());
+  private final List<Socket> live = Collections.synchronizedList(new ArrayList<>());
 
   public ThrottlingTcpProxy(String dstHost, int dstPort) throws IOException {
     this.dstHost = dstHost;
@@ -31,10 +31,6 @@ public class ThrottlingTcpProxy extends Thread {
 
   public int getPort() {
     return server.getLocalPort();
-  }
-
-  public void setRate(int bps) {
-    bytesPerSec = bps;
   }
 
   public void pause() {
@@ -52,7 +48,7 @@ public class ThrottlingTcpProxy extends Thread {
   /** Abruptly kills all live connections with RST (no clean close, no SIGN_OFF). */
   public void dropConnections() {
     synchronized (live) {
-      for (Socket s : new ArrayList<Socket>(live)) {
+      for (Socket s : new ArrayList<>(live)) {
         try {
           s.setSoLinger(true, 0);   // force RST on close
         } catch (SocketException ex) {

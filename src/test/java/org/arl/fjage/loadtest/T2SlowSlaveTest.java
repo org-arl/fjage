@@ -66,13 +66,10 @@ public class T2SlowSlaveTest {
       // ---- phase B: bounded directory delay ----
       proxy.pause();
       TestUtil.sleep(250);
-      Future<Long> dirOp = exec.submit(new Callable<Long>() {
-        @Override
-        public Long call() {
-          long t0 = System.currentTimeMillis();
-          fx.master.getAgents();
-          return System.currentTimeMillis() - t0;
-        }
+      Future<Long> dirOp = exec.submit(() -> {
+        long t0 = System.currentTimeMillis();
+        fx.master.getAgents();
+        return System.currentTimeMillis() - t0;
       });
       TestUtil.sleep(1000);
       proxy.unpause();

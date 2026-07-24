@@ -36,15 +36,15 @@ public class LoadAgents {
 
   /** Thread-safe receive-side statistics. */
   public static class Stats {
-    public final Map<String, Set<Integer>> bySrc = new ConcurrentHashMap<String, Set<Integer>>();
+    public final Map<String, Set<Integer>> bySrc = new ConcurrentHashMap<>();
     public final AtomicInteger dups = new AtomicInteger();
-    public final Queue<Long> latenciesNs = new ConcurrentLinkedQueue<Long>();
+    public final Queue<Long> latenciesNs = new ConcurrentLinkedQueue<>();
 
     void record(SeqMsg m) {
       Set<Integer> seen = bySrc.get(m.src);
       if (seen == null) {
-        seen = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
-        Set<Integer> prev = ((ConcurrentHashMap<String, Set<Integer>>) bySrc).putIfAbsent(m.src, seen);
+        seen = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        Set<Integer> prev = bySrc.putIfAbsent(m.src, seen);
         if (prev != null) seen = prev;
       }
       if (!seen.add(m.seq)) dups.incrementAndGet();
@@ -63,7 +63,7 @@ public class LoadAgents {
     }
 
     public List<Integer> missingFrom(String src, int expected) {
-      List<Integer> missing = new ArrayList<Integer>();
+      List<Integer> missing = new ArrayList<>();
       Set<Integer> s = bySrc.get(src);
       for (int i = 0; i < expected; i++)
         if (s == null || !s.contains(i)) missing.add(i);
@@ -86,12 +86,7 @@ public class LoadAgents {
     @Override
     public void init() {
       register(SERVICE);
-      add(new MessageBehavior(SeqMsg.class, new java.util.function.Consumer<Message>() {
-        @Override
-        public void accept(Message m) {
-          stats.record((SeqMsg) m);
-        }
-      }));
+      add(new MessageBehavior(SeqMsg.class, m -> stats.record((SeqMsg) m)));
     }
   }
 
@@ -102,12 +97,7 @@ public class LoadAgents {
     @Override
     public void init() {
       subscribe(topic(TOPIC));
-      add(new MessageBehavior(SeqMsg.class, new java.util.function.Consumer<Message>() {
-        @Override
-        public void accept(Message m) {
-          stats.record((SeqMsg) m);
-        }
-      }));
+      add(new MessageBehavior(SeqMsg.class, m -> stats.record((SeqMsg) m)));
     }
   }
 
@@ -129,20 +119,17 @@ public class LoadAgents {
 
     @Override
     public void init() {
-      add(new OneShotBehavior(new Runnable() {
-        @Override
-        public void run() {
-          while (!go.get()) delay(20);
-          String me = getName();
-          for (int seq = 0; seq < perTarget; seq++) {
-            for (AgentID t : targets) {
-              send(new SeqMsg(t, me, seq));
-              int n = sent.incrementAndGet();
-              if (paceEveryN > 0 && n % paceEveryN == 0) delay(1);
-            }
+      add(new OneShotBehavior(() -> {
+        while (!go.get()) delay(20);
+        String me = getName();
+        for (int seq = 0; seq < perTarget; seq++) {
+          for (AgentID t : targets) {
+            send(new SeqMsg(t, me, seq));
+            int n = sent.incrementAndGet();
+            if (paceEveryN > 0 && n % paceEveryN == 0) delay(1);
           }
-          done = true;
         }
+        done = true;
       }));
     }
   }
@@ -162,18 +149,15 @@ public class LoadAgents {
 
     @Override
     public void init() {
-      add(new OneShotBehavior(new Runnable() {
-        @Override
-        public void run() {
-          while (!go.get()) delay(20);
-          AgentID t = topic(TOPIC);
-          String me = getName();
-          for (int seq = 0; seq < count; seq++) {
-            send(new SeqMsg(t, me, seq));
-            if (paceEveryN > 0 && (seq + 1) % paceEveryN == 0) delay(1);
-          }
-          done = true;
+      add(new OneShotBehavior(() -> {
+        while (!go.get()) delay(20);
+        AgentID t = topic(TOPIC);
+        String me = getName();
+        for (int seq = 0; seq < count; seq++) {
+          send(new SeqMsg(t, me, seq));
+          if (paceEveryN > 0 && (seq + 1) % paceEveryN == 0) delay(1);
         }
+        done = true;
       }));
     }
   }
@@ -188,7 +172,7 @@ public class LoadAgents {
     private final long periodMs;
     private final AtomicBoolean go;        // null => always on
     public final AtomicInteger seq = new AtomicInteger();
-    public final Queue<Long> sendDurationsNs = new ConcurrentLinkedQueue<Long>();
+    public final Queue<Long> sendDurationsNs = new ConcurrentLinkedQueue<>();
     private TickerBehavior ticker;
 
     public ContinuousSender(List<AgentID> targets, long periodMs) {

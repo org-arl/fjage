@@ -42,7 +42,7 @@ public class TestUtil {
 
   /** Snapshot of live thread identities (name#id). */
   public static Set<String> threadSnapshot() {
-    Set<String> names = new TreeSet<String>();
+    Set<String> names = new TreeSet<>();
     for (Thread t : Thread.getAllStackTraces().keySet())
       if (t.isAlive()) names.add(t.getName() + "#" + t.getId());
     return names;
@@ -50,7 +50,7 @@ public class TestUtil {
 
   /** Threads alive now that were not in the baseline snapshot. */
   public static List<String> newThreadsSince(Set<String> baseline) {
-    List<String> leaked = new ArrayList<String>();
+    List<String> leaked = new ArrayList<>();
     for (String name : threadSnapshot())
       if (!baseline.contains(name)) leaked.add(name);
     return leaked;
@@ -59,7 +59,7 @@ public class TestUtil {
   /** Simple latency stats over a collection of nanosecond samples. */
   public static String latencyStats(Collection<Long> ns) {
     if (ns.isEmpty()) return "no samples";
-    List<Long> sorted = new ArrayList<Long>(ns);
+    List<Long> sorted = new ArrayList<>(ns);
     Collections.sort(sorted);
     return String.format("n=%d p50=%.1fms p95=%.1fms p99=%.1fms max=%.1fms",
         sorted.size(),
@@ -88,7 +88,7 @@ public class TestUtil {
 
   public static double p99ms(Collection<Long> ns) {
     if (ns.isEmpty()) return -1;
-    List<Long> sorted = new ArrayList<Long>(ns);
+    List<Long> sorted = new ArrayList<>(ns);
     Collections.sort(sorted);
     return sorted.get((int) (sorted.size() * 0.99)) / 1e6;
   }

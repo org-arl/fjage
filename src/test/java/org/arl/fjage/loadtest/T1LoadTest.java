@@ -30,7 +30,7 @@ public class T1LoadTest {
   private static final int NC = 4;                // containers (1 master + 3 slaves)
 
   @Test(timeout = 300000)
-  public void loadTest() throws Exception {
+  public void loadTest() {
     LogCapture logs = new LogCapture();
     Set<String> threadBaseline = TestUtil.threadSnapshot();
     MultiContainerFixture fx = MultiContainerFixture.create(3);
@@ -41,7 +41,7 @@ public class T1LoadTest {
       // receivers and subscribers
       LoadAgents.ReceiverAgent[][] rx = new LoadAgents.ReceiverAgent[NC][PAIRS_PER_CONTAINER];
       LoadAgents.SubscriberAgent[] sub = new LoadAgents.SubscriberAgent[NC];
-      List<String> allNames = new ArrayList<String>();
+      List<String> allNames = new ArrayList<>();
       for (int c = 0; c < NC; c++) {
         for (int i = 0; i < PAIRS_PER_CONTAINER; i++) {
           rx[c][i] = new LoadAgents.ReceiverAgent();
@@ -58,7 +58,7 @@ public class T1LoadTest {
       LoadAgents.PublisherAgent[] pub = new LoadAgents.PublisherAgent[NC];
       for (int c = 0; c < NC; c++) {
         for (int i = 0; i < PAIRS_PER_CONTAINER; i++) {
-          List<AgentID> targets = new ArrayList<AgentID>();
+          List<AgentID> targets = new ArrayList<>();
           for (int o = 1; o < NC; o++)
             targets.add(new AgentID("rx_" + ((c + o) % NC) + "_" + i));
           tx[c][i] = new LoadAgents.SenderAgent(targets, PER_TARGET, go, 50);
@@ -75,9 +75,8 @@ public class T1LoadTest {
       final AtomicBoolean hammer = new AtomicBoolean(true);
       final AtomicInteger dirAnomalies = new AtomicInteger();
       final AtomicInteger dirOps = new AtomicInteger();
-      final Queue<String> anomalyDetails = new ConcurrentLinkedQueue<String>();
+      final Queue<String> anomalyDetails = new ConcurrentLinkedQueue<>();
       final int expectedSvc = NC * PAIRS_PER_CONTAINER;   // all receivers register the service
-      List<Thread> hammers = new ArrayList<Thread>();
       for (int h = 0; h < 2; h++) {
         Thread t = new Thread("hammer-master-" + h) {
           @Override
@@ -101,7 +100,6 @@ public class T1LoadTest {
         };
         t.setDaemon(true);
         t.start();
-        hammers.add(t);
       }
       for (int h = 0; h < 2; h++) {
         final int si = h;
@@ -121,7 +119,6 @@ public class T1LoadTest {
         };
         t.setDaemon(true);
         t.start();
-        hammers.add(t);
       }
 
       // open the gate and run the load
@@ -154,7 +151,7 @@ public class T1LoadTest {
 
       // collect and report
       int unicastSent = 0, unicastRecd = 0, dups = 0, topicRecd = 0;
-      List<Long> allLat = new ArrayList<Long>();
+      List<Long> allLat = new ArrayList<>();
       StringBuilder lossReport = new StringBuilder();
       for (int c = 0; c < NC; c++) {
         topicRecd += sub[c].stats.total();
