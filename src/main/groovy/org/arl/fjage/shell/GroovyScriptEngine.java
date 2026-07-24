@@ -48,7 +48,7 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   ////// inner classes
 
-  class BlockingInput {
+  static class BlockingInput {
 
     private int waiting = 0;
     private String input = null;
@@ -98,13 +98,13 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   private GroovyShell groovy;
   private GroovyShell groovyCheck;
-  private Binding binding;
+  private final Binding binding;
   private ImportCustomizer imports;
   private Shell out = null;
   private Thread busy = null;
-  private Documentation doc = new Documentation();
-  private BlockingInput input = new BlockingInput();
-  private Logger log = Logger.getLogger(getClass().getName());
+  private final Documentation doc = new Documentation();
+  private final BlockingInput input = new BlockingInput();
+  private final Logger log = Logger.getLogger(getClass().getName());
 
   ////// constructor
 
@@ -165,72 +165,42 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   @Override
   public boolean isComplete(String cmd) {
-    if (cmd == null || cmd.trim().length() == 0) return true;
-    // Use a dynamic (non-static) parse here: line-continuation detection only cares about
-    // syntactic completeness, and running the static check per keystroke would be wasteful and
-    // could misreport valid dynamic commands as errors.
-    synchronized(this) {
-      try {
-        busy = Thread.currentThread();
-        try {
-          groovy.parse(cmd);
-          return true;
-        } catch (MultipleCompilationErrorsException ex) {
-          return !isIncomplete(ex);
-        } catch (Throwable ex) {
-          return true;
-        }
-      } finally {
-        Thread.interrupted();
-        busy = null;
-      }
+    if (cmd == null || cmd.trim().isEmpty()) return true;
+    try {
+      groovy.parse(cmd);
+      return true;
+    } catch (MultipleCompilationErrorsException ex) {
+      return !isIncomplete(ex);
+    } catch (Throwable ex) {
+      return true;
     }
   }
 
   @Override
   public MultipleCompilationErrorsException parse(String cmd) {
-    if (cmd == null || cmd.trim().length() == 0) return null;
-    synchronized(this) {
-      try {
-        busy = Thread.currentThread();
-        CHECK_BINDING.set(binding);
-        try {
-          groovyCheck.parse(cmd);
-          return null;
-        } catch (MultipleCompilationErrorsException ex) {
-          return ex;
-        } catch (Throwable ex) {
-          throw rethrowParseFailure(ex);
-        }
-      } finally {
-        CHECK_BINDING.remove();
-        Thread.interrupted();
-        busy = null;
-      }
+    if (cmd == null || cmd.trim().isEmpty()) return null;
+    CHECK_BINDING.set(binding);
+    try {
+      groovyCheck.parse(cmd);
+      return null;
+    } catch (MultipleCompilationErrorsException ex) {
+      return ex;
+    } catch (Throwable ex) {
+      throw rethrowParseFailure(ex);
     }
   }
 
   @Override
   public MultipleCompilationErrorsException parse(File script) {
     if (script == null) return null;
-    synchronized(this) {
-      try {
-        busy = Thread.currentThread();
-        CHECK_BINDING.set(binding);
-        try {
-          groovyCheck.getClassLoader().clearCache();
-          groovyCheck.parse(script);
-          return null;
-        } catch (MultipleCompilationErrorsException ex) {
-          return ex;
-        } catch (Throwable ex) {
-          throw rethrowParseFailure(ex);
-        }
-      } finally {
-        CHECK_BINDING.remove();
-        Thread.interrupted();
-        busy = null;
-      }
+    CHECK_BINDING.set(binding);
+    try {
+      groovyCheck.parse(script);
+      return null;
+    } catch (MultipleCompilationErrorsException ex) {
+      return ex;
+    } catch (Throwable ex) {
+      throw rethrowParseFailure(ex);
     }
   }
 
@@ -488,8 +458,7 @@ public class GroovyScriptEngine implements ScriptEngine {
     String s = ex.getMessage();
     if (s == null) return false;
     if (s.contains("unexpected token")) return true;
-    if (s.contains("expecting")) return true;
-    return false;
+    return s.contains("expecting");
   }
 
   private RuntimeException rethrowParseFailure(Throwable ex) {
