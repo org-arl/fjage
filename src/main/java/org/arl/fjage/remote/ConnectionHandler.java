@@ -29,6 +29,8 @@ public class ConnectionHandler extends Thread {
   private final String SIGN_OFF = "{\"alive\": false}";
   private final int TIMEOUT = 60000;
   private final int FAILED_SIZE = 256;
+  private final int PROBE_TIMEOUT = 5000;
+  private static final String GATEWAY_PREFIX = "gateway-";
 
   private volatile Connector conn;
   private volatile DataOutputStream out;
@@ -46,6 +48,8 @@ public class ConnectionHandler extends Thread {
   private String clientName = "-";
   private final Firewall fw;
   private volatile long lastRxTime;
+  private volatile AgentID gatewayAgent = null;
+  private volatile boolean classified = false;
 
   public ConnectionHandler(Connector conn, RemoteContainer container, Firewall fw) {
     this.conn = conn;
@@ -109,6 +113,17 @@ public class ConnectionHandler extends Thread {
       if (!alive) {
         alive = true;
         log.fine("Connection alive");
+        if (container instanceof MasterContainer && !classified) {
+          // probe the peer's agent list to classify lightweight gateway connections
+          try {
+            directoryExecutor.execute(() -> {
+              JsonMessage rsp = request(JsonMessage.createActionRequest(Action.AGENTS), PROBE_TIMEOUT);
+              if (rsp != null) classify(rsp);
+            });
+          } catch (RejectedExecutionException ex) {
+            // Connection is closing.
+          }
+        }
       }
       if (s.equals(ALIVE)) {
         if (container instanceof SlaveContainer) send(ALIVE);
@@ -304,6 +319,42 @@ public class ConnectionHandler extends Thread {
       if (watchList.isEmpty()) return true;
       return watchList.contains(aid);
     }
+  }
+
+  /**
+   * Classifies this connection from an AGENTS response. A connection holding exactly one
+   * agent named "gateway-*" is a lightweight gateway connection (see gateways/Gateways.md):
+   * the master caches its agent ID and stops directing directory queries at it. Any other
+   * response marks the connection as a regular slave. Classification is sticky for the
+   * lifetime of the connection, since a gateway holds its single agent from sign-on.
+   */
+  void classify(JsonMessage rsp) {
+    if (classified || rsp.agentIDs == null) return;
+    if (rsp.agentIDs.length == 1 && rsp.agentIDs[0].getName().startsWith(GATEWAY_PREFIX)) {
+      AgentID aid = rsp.agentIDs[0];
+      if (rsp.agentTypes != null && rsp.agentTypes.length == 1) aid.setType(rsp.agentTypes[0]);
+      gatewayAgent = aid;
+      classified = true;
+      log.fine("Connection "+getName()+" classified as gateway ("+aid.getName()+"), directory queries suppressed");
+      if (container instanceof MasterContainer) ((MasterContainer)container).gatewayClassified(this);
+    } else {
+      classified = true;
+    }
+  }
+
+  /**
+   * Returns true if this connection has been classified as a lightweight gateway connection.
+   */
+  boolean isGateway() {
+    return gatewayAgent != null;
+  }
+
+  /**
+   * Returns the agent ID of the gateway agent on this connection, or null if this
+   * connection is not classified as a gateway connection.
+   */
+  AgentID getGatewayAgent() {
+    return gatewayAgent;
   }
 
   boolean checkAuthFailure(String id) {

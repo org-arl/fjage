@@ -205,6 +205,10 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
   @Override
   protected boolean isDuplicate(AgentID aid) {
     if (super.isDuplicate(aid)) return true;
+    for (ConnectionHandler slave: slaves) {
+      AgentID gw = slave.getGatewayAgent();
+      if (gw != null && gw.equals(aid)) return true;
+    }
     final boolean[] duplicate = {false};
     querySlaves(slave -> {
       JsonMessage rq = JsonMessage.createActionRequest(Action.CONTAINS_AGENT);
@@ -252,6 +256,11 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       allAgents.addAll(Arrays.asList(rsp.agentIDs));
       return false;
     });
+    for (ConnectionHandler slave: slaves) {
+      // gateway connections are not queried, but their single agent is known from classification
+      AgentID gw = slave.getGatewayAgent();
+      if (gw != null) allAgents.add(gw);
+    }
     return allAgents.toArray(new AgentID[0]);
   }
 
@@ -317,6 +326,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     List<Future<JsonMessage>> futures = new ArrayList<>();
     try {
       for (ConnectionHandler slave: new ArrayList<>(slaves)) {
+        if (slave.isGateway()) continue;      // lightweight gateway connections hold no directory info
         if (deadline - System.nanoTime() <= 0) break;
         try {
           futures.add(completion.submit(() -> {
@@ -324,7 +334,10 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
             if (remaining <= 0) return null;
             long timeout = TimeUnit.NANOSECONDS.toMillis(remaining) - REQUEST_TIMEOUT_MARGIN;
             if (timeout <= 0) return null;
-            return slave.request(requestFactory.apply(slave), timeout);
+            JsonMessage rq = requestFactory.apply(slave);
+            JsonMessage rsp = slave.request(rq, timeout);
+            if (rsp != null && rq.action == Action.AGENTS) slave.classify(rsp);
+            return rsp;
           }));
         } catch (RejectedExecutionException ex) {
           break;
@@ -354,6 +367,34 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     } finally {
       for (Future<JsonMessage> future: futures)
         if (!future.isDone()) future.cancel(true);
+    }
+  }
+
+  /**
+   * Called by a ConnectionHandler when it classifies its connection as a lightweight gateway
+   * connection. Checks the gateway agent's name against the local directory and other gateway
+   * connections; on a collision, the offending connection is asked to shut down and closed,
+   * since two holders of one agent name would make message routing ambiguous.
+   */
+  void gatewayClassified(ConnectionHandler handler) {
+    AgentID aid = handler.getGatewayAgent();
+    if (aid == null) return;
+    boolean collision = super.isDuplicate(aid);
+    if (!collision) {
+      for (ConnectionHandler slave: slaves) {
+        if (slave == handler) continue;
+        AgentID gw = slave.getGatewayAgent();
+        if (gw != null && gw.equals(aid)) {
+          collision = true;
+          break;
+        }
+      }
+    }
+    if (collision) {
+      log.warning("Gateway agent name collision: "+aid.getName()+" on connection "+handler.getName()+
+        " conflicts with an existing agent, shutting down connection");
+      handler.send(JsonMessage.createActionRequest(Action.SHUTDOWN).toJson());
+      handler.close();
     }
   }
 

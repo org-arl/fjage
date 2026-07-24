@@ -1,5 +1,9 @@
 # Release Notes
 
+### Upcoming
+
+* Classify gateway connections (single `gateway-` prefixed agent) as lightweight: directory queries are no longer sent to them, and their agent is answered from the master's cache
+
 ### 2.5.0
 
 * Add support for 2D integer arrays in the C gateway
