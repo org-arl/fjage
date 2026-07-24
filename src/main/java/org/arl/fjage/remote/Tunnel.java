@@ -5,6 +5,8 @@ import java.util.concurrent.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
+
 import org.arl.fjage.*;
 import org.arl.fjage.param.*;
 import org.arl.fjage.connectors.*;
@@ -17,7 +19,7 @@ import org.arl.fjage.connectors.*;
  * tunnel connects to a server tunnel at a specified IP address and TCP port.
  * <p>
  * Once a connection is established, the tunnel agent forwards selected messages
- * between the two platforms. The `agents` parameter specifies the list of remote
+ * between the two platforms. The {@code agents} parameter specifies the list of remote
  * agents or topics forwarded through the tunnel.
  */
 public class Tunnel extends Agent implements ConnectionListener, MessageListener {
@@ -30,12 +32,20 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   protected int port;
 
   protected TcpServer server = null;
-  protected final List<AgentID> agents = new ArrayList<>();
-  protected final List<Connector> connectors = new ArrayList<>();
+  protected final List<AgentID> agents = new CopyOnWriteArrayList<>();
+  protected final List<Connector> connectors = new CopyOnWriteArrayList<>();
   protected ExecutorService writeExecutor = null;
   protected ExecutorService readExecutor = null;
+  /**
+   * Monotonically increasing connection id counter.
+   */
   protected int connID = 0;
-  protected Map<Integer,Connector> connIDs = new HashMap<>();
+
+  /**
+   * Map of connection id to Connector. {@code connIDs} parameter exposes the
+   * keys of this map as a read-only snapshot.
+   */
+  protected Map<Integer,Connector> connIDs = new ConcurrentHashMap<>();
 
   //// constructors
 
@@ -58,7 +68,9 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
     "### @@.agents - list of remote agents/topics visible through the tunnel\n\n" +
     "Example:\n  @@.agents = [agent('remoteAgent'), topic('remoteTopic')]\n\n" +
     "### @@.ip - IP address of the server to connect to (null for servers)\n" +
-    "### @@.port - TCP port number\n";
+    "### @@.port - TCP port number\n" +
+    "### @@.connIDs - map of currently connected connection IDs (read-only)\n" +
+    "Keys are integer connIDs; values are connector names (typically remote IP:port).\n";
 
   //// agent methods
 
@@ -75,9 +87,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
       add(new TickerBehavior(MONITOR_PERIOD) {
         @Override
         public void onTick() {
-          synchronized (connectors) {
-            if (connectors.isEmpty()) connect();
-          }
+          if (connectors.isEmpty()) connect();
         }
       });
     }
@@ -95,11 +105,9 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
       server.close();
       server = null;
     }
-    synchronized (connectors) {
-      for (Connector c : connectors) c.close();
-      connectors.clear();
-      connIDs.clear();
-    }
+    for (Connector c : connectors) c.close();
+    connectors.clear();
+    connIDs.clear();
   }
 
   //// connection & message management
@@ -107,22 +115,27 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   @Override
   public void connected(Connector connector) {
     log.info("Incoming connection: "+connector.getName());
-    synchronized (connectors) {
-      connectors.add(connector);
-      connIDs.put(++connID, connector);
-      monitor(connID, connector);
-    }
+    int id;
+    connectors.add(connector);
+    id = ++connID;
+    connIDs.put(id, connector);
+    monitor(id, connector);
+    TunnelConnectionNtf n = new TunnelConnectionNtf(TunnelStatus.CONNECTED, id, connector.getName());
+    n.setRecipient(topic());
+    send(n);
   }
 
   protected void connect() {
     try {
       Connector c = new TcpConnector(ip, port);
       log.info("Connected to "+ip+":"+port);
-      synchronized (connectors) {
-        connectors.add(c);
-        connIDs.put(++connID, c);
-        monitor(connID, c);
-      }
+      TunnelConnectionNtf n;
+      connectors.add(c);
+      connIDs.put(++connID, c);
+      monitor(connID, c);
+      n = new TunnelConnectionNtf(TunnelStatus.CONNECTED, connID, c.getName());
+      n.setRecipient(topic());
+      send(n);
     } catch (IOException ex) {
       log.info("Failed to connect to "+ip+":"+port+": "+ex.getMessage());
     }
@@ -130,26 +143,20 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
 
   @Override
   public boolean onReceive(Message msg) {
-    synchronized (connectors) {
-      if (connectors.isEmpty()) return false;
-    }
+    if (connectors.isEmpty()) return false;
     AgentID rcpt = msg.getRecipient();
     AgentID sender = msg.getSender();
     if (rcpt == null || sender == null) return false;
     if (sender.getName().contains("@")) return false;
     boolean shouldForward;
-    synchronized (agents) {
-      shouldForward = agents.contains(rcpt);
-    }
+    shouldForward = agents.contains(rcpt);
     if (shouldForward) {
       JsonMessage jmsg = new JsonMessage();
       jmsg.message = msg;
       String json = jmsg.toJson();
       log.finer("* << "+json);
-      synchronized (connectors) {
-        for (Connector c: connectors)
-          sendToRemote(c, json.getBytes(StandardCharsets.UTF_8));
-      }
+      for (Connector c: connectors)
+        sendToRemote(c, json.getBytes(StandardCharsets.UTF_8));
       return !rcpt.isTopic();
     } else if (!rcpt.isTopic() && rcpt.getName().contains("@")) {
       int id;
@@ -160,9 +167,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
         int i = s.lastIndexOf('@');
         id = Integer.parseInt(s.substring(i+1));
         rname = s.substring(0, i);
-        synchronized (connectors) {
-          c = connIDs.get(id);
-        }
+        c = connIDs.get(id);
       } catch (NumberFormatException ex) {
         return false;
       }
@@ -220,14 +225,32 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   }
 
   protected void removeConnector(Connector c) {
-    synchronized (connectors) {
-      connectors.remove(c);
-      connIDs.values().removeIf(v -> v.equals(c));
+    connectors.remove(c);
+    Optional<Map.Entry<Integer, Connector>> entryToRemove = connIDs.entrySet().stream()
+              .filter(entry -> entry.getValue() == c)
+              .findFirst();
+    if (entryToRemove.isPresent()) {
+      int id = entryToRemove.get().getKey();
+      connIDs.remove(id);
+      TunnelConnectionNtf n = new TunnelConnectionNtf(TunnelStatus.DISCONNECTED, id, c.getName());
+      n.setRecipient(topic());
+      send(n);
     }
     c.close();
   }
 
   //// parameters
+
+  /**
+   * Get the list of currently connected connection IDs.
+   *
+   * @return Map of connectionID to a string which is the IP:port of the remote
+   * end of the connection.
+   */
+  public Map<Integer, String> getConnIDs() {
+    return Collections.unmodifiableMap(connIDs.entrySet().stream()
+      .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getName())));
+  }
 
   /**
    * Get IP address for the tunnel. In case of a client tunnel, this is the IP
@@ -258,9 +281,7 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
    * @return List of remote agents/topics visible through the tunnel.
    */
   public List<AgentID> getAgents() {
-    synchronized (agents) {
-      return new ArrayList<>(agents);
-    }
+    return new ArrayList<>(agents);
   }
 
   /**
@@ -269,12 +290,10 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
    * @param agents List of remote agents/topics visible through the tunnel.
    */
   public void setAgents(List<AgentID> agents) {
-    synchronized (this.agents) {
-      this.agents.clear();
-      if (agents == null) return;
-      for (AgentID aid: agents)
-        if (aid != null) this.agents.add(new AgentID(aid.getName(), aid.isTopic()));
-    }
+    this.agents.clear();
+    if (agents == null) return;
+    for (AgentID aid: agents)
+      if (aid != null) this.agents.add(new AgentID(aid.getName(), aid.isTopic()));
   }
 
   /**
@@ -292,14 +311,8 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
    * @return description.
    */
   public String getDescription() {
-    String s = " (no connections)";
-    synchronized (connectors) {
-      int n = connectors.size();
-      if (n == 1) s = " (1 connection)";
-      else if (n > 1) s = " ("+n+" connections)";
-    }
-    if (ip != null) return "Tunnel to " + ip + ":" + getPort() + s;
-    return "Tunnel listening on port " + getPort() + s;
+    if (ip != null) return "Tunnel to " + ip + ":" + getPort();
+    return "Tunnel listening on port " + getPort();
   }
 
 }

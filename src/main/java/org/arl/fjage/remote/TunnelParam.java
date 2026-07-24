@@ -21,6 +21,14 @@ public enum TunnelParam implements Parameter {
   /**
    * List of remote agents/topics visible through the tunnel.
    */
-  agents
+  agents,
+
+  /**
+   * Map of connection IDs to connector names. In case of a client tunnel, this is
+   * a map of connection IDs to connector names for the server tunnel. In case of a
+   * server tunnel, this is a map of connection IDs to connector names for the
+   * client tunnels.
+   */
+  connIDs
 
 }

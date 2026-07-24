@@ -167,7 +167,7 @@
 
 ## v1.7.0
 
-* New [parameter API](https://fjage.readthedocs.io/en/latest/params.html)
+* New [parameter API](https://org-arl.github.io/fjage/params.html)
 * Experimental feature: `setYieldDuringReceive()` to allow other behaviors to execute while waiting for messages
 * Behaviors now have priorities, allowing multiple conflicting MessageBehaviors to be active at one time
 * JSON serialization/deserialization of messages is now part of public API

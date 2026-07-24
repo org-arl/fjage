@@ -1,0 +1,46 @@
+---
+title: "Julia Gateway"
+---
+
+## Introduction
+
+[Fjage.jl](https://github.com/org-arl/Fjage.jl) provides a Julia interface to fjåge. Like the other gateways, it lets a Julia application connect to a fjåge master container, exchange messages with agents, and look up services. Fjage.jl goes further than the other gateways, however — it is a full Julia port of fjåge, so you can also develop agents, behaviors and containers natively in Julia. Fjage.jl is maintained in its own repository and has its own [documentation](https://org-arl.github.io/Fjage.jl/stable/); this chapter introduces the gateway functionality and defers to that documentation for the full API reference and for Julia-side agent development.
+
+Fjage.jl is registered in the Julia package registry. To install it, press `]` at the Julia REPL to enter the package manager, and:
+
+```
+pkg> add Fjage
+```
+
+## Connecting to fjåge
+
+Just as with the [Python gateway](pythongw.qmd), we assume a fjåge master container is running with a TCP port open (see [Distributed Agents](remote.qmd)). Open a gateway to it, look up an agent providing the service you want, and interact with it. For example, to interact with the shell agent:
+
+```julia
+julia> using Fjage
+julia> gw = Gateway("localhost", 1100);
+julia> shell = agentforservice(gw, "org.arl.fjage.shell.Services.SHELL")
+shell
+julia> shell.language        # read a parameter of the shell agent
+"Groovy"
+julia> request(gw, ShellExecReq(recipient=shell, command="ps"))
+AGREE
+julia> shell << ShellExecReq(command="ps")   # shorthand for the same request
+AGREE
+julia> close(gw)
+```
+
+The gateway supports the same messaging primitives as the other gateways — `send`, `receive`, `request`, `subscribe`/`unsubscribe`, `agentforservice`/`agentsforservice` — with Julia-idiomatic lowercase names. They are documented in the [Gateway section of the Fjage.jl manual](https://org-arl.github.io/Fjage.jl/stable/gw.html).
+
+## Working with message classes
+
+Message types corresponding to fjåge message classes are declared with the `@message` macro, which plays the role that `MessageClass` plays in the [Python](pythongw.qmd) and [JavaScript](jsgw.qmd) gateways. The declaration specifies the fully qualified Java class name and the message fields:
+
+```julia
+@message "org.arl.fjage.demo.WeatherForecastReqMsg" struct WeatherForecastReqMsg
+  city::Union{String,Nothing} = nothing
+  country::Union{String,Nothing} = nothing
+end
+```
+
+All messages automatically carry the standard fjåge fields (`performative`, `messageID`, `inReplyTo`, `sender`, `recipient`, `sentAt`), and the performative is guessed from the class name (`...Req` becomes a `REQUEST`). For one-off or dynamic interactions, a `GenericMessage` can be used without declaring a message type, much like [generic messages](messages.qmd) on the Java side. See the [Messages section of the Fjage.jl manual](https://org-arl.github.io/Fjage.jl/stable/msg.html) for details, including performative overrides and message inheritance.

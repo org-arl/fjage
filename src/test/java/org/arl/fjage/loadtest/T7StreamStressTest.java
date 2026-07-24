@@ -38,36 +38,30 @@ public class T7StreamStressTest {
 
         // reader: keeps reading until end-of-stream; a proper end-of-stream is -1.
         // (exit on 0 too, without asserting yet, so a 0-return bug cannot busy-spin)
-        pool.execute(new Runnable() {
-          @Override
-          public void run() {
-            byte[] buf = new byte[512];
-            int n;
-            while ((n = q.read(buf)) > 0) {
-              // consume
-            }
-            readerLastReturn.set(n);
-            done.countDown();
+        pool.execute(() -> {
+          byte[] buf = new byte[512];
+          int n;
+          while ((n = q.read(buf)) > 0) {
+            // consume
           }
+          readerLastReturn.set(n);
+          done.countDown();
         });
 
         // writers: write chunks until write() reports closed
         for (int w = 0; w < WRITERS; w++) {
-          pool.execute(new Runnable() {
-            @Override
-            public void run() {
-              byte[] chunk = new byte[256];
-              int writes = 0;
-              while (writes++ < MAX_WRITES_PER_WRITER && q.write(chunk)) {
-              }
-              try {
-                closed.await();
-              } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-              }
-              if (!q.write(chunk)) postCloseWrites.incrementAndGet();
-              done.countDown();
+          pool.execute(() -> {
+            byte[] chunk = new byte[256];
+            int writes = 0;
+            while (writes++ < MAX_WRITES_PER_WRITER && q.write(chunk)) {
             }
+            try {
+              closed.await();
+            } catch (InterruptedException ex) {
+              Thread.currentThread().interrupt();
+            }
+            if (!q.write(chunk)) postCloseWrites.incrementAndGet();
+            done.countDown();
           });
         }
 
@@ -102,40 +96,31 @@ public class T7StreamStressTest {
         final CountDownLatch done = new CountDownLatch(3);
         final AtomicInteger pinLastReturn = new AtomicInteger(Integer.MIN_VALUE);
 
-        pool.execute(new Runnable() {
-          @Override
-          public void run() {
-            byte[] buf = new byte[128];
-            int n;
-            while ((n = pin.read(buf)) > 0) {
-              // consume
-            }
-            pinLastReturn.set(n);
-            done.countDown();
+        pool.execute(() -> {
+          byte[] buf = new byte[128];
+          int n;
+          while ((n = pin.read(buf)) > 0) {
+            // consume
           }
+          pinLastReturn.set(n);
+          done.countDown();
         });
-        pool.execute(new Runnable() {
-          @Override
-          public void run() {
-            while (pout.readLine() != null) {
-              // consume
-            }
-            done.countDown();
+        pool.execute(() -> {
+          while (pout.readLine() != null) {
+            // consume
           }
+          done.countDown();
         });
-        pool.execute(new Runnable() {
-          @Override
-          public void run() {
-            try {
-              while (true) {
-                pin.write("0123456789abcdef\n".getBytes());
-                pout.write("0123456789abcdef\n".getBytes());
-              }
-            } catch (IOException expected) {
-              // one of the streams closed under us
+        pool.execute(() -> {
+          try {
+            while (true) {
+              pin.write("0123456789abcdef\n".getBytes());
+              pout.write("0123456789abcdef\n".getBytes());
             }
-            done.countDown();
+          } catch (IOException expected) {
+            // one of the streams closed under us
           }
+          done.countDown();
         });
 
         Thread.sleep(round % 5);

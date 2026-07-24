@@ -22,7 +22,7 @@ public class T4ReconnectTest {
   private static final String[] BENIGN_THREADS = {"fjage-timer", ":init", "proxy:", "process reaper"};
 
   @Test(timeout = 300000)
-  public void lossReconnectAndFlap() throws Exception {
+  public void lossReconnectAndFlap() {
     LogCapture logs = new LogCapture();
     Set<String> baseline = TestUtil.threadSnapshot();
     final MultiContainerFixture fx = MultiContainerFixture.create(3, new boolean[]{false, true, false});
@@ -80,7 +80,7 @@ public class T4ReconnectTest {
       System.out.println("=== T4: single loss/reconnect OK; now flapping ===");
 
       // ---- flapping ----
-      List<String> flapLog = new ArrayList<String>();
+      List<String> flapLog = new ArrayList<>();
       for (int f = 0; f < 8; f++) {
         long subBefore = sub[1].stats.total(), rxBefore = rxS1.stats.total();
         proxy.setRefuse(true);
@@ -128,11 +128,14 @@ public class T4ReconnectTest {
 
     // thread-leak check after teardown (filtering known-benign daemons)
     TestUtil.sleep(3000);
-    List<String> leaks = new ArrayList<String>();
+    List<String> leaks = new ArrayList<>();
     for (String t : TestUtil.newThreadsSince(baseline)) {
       boolean benign = false;
       for (String b : BENIGN_THREADS)
-        if (t.contains(b)) benign = true;
+        if (t.contains(b)) {
+          benign = true;
+          break;
+        }
       if (!benign) leaks.add(t);
     }
     System.out.println("non-benign leaked threads: " + leaks);

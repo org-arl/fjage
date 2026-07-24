@@ -4,9 +4,9 @@ fjåge Build Instructions
 Prerequisites
 -------------
 
-* [Gradle](http://www.gradle.org/)
-* [Sphinx](http://sphinx-doc.org/) - required for building documentation
-* [GnuPG](http://www.gnupg.org/) - required for signing artifacts for MavenCentral
+* [Gradle](https://www.gradle.org/)
+* [Quarto](https://quarto.org/) - required for building documentation
+* [GnuPG](https://www.gnupg.org/) - required for signing artifacts for MavenCentral
 
 Generating JARs
 ---------------
@@ -51,18 +51,16 @@ To generate API documentation:
 
     gradle javadoc
 
-The javadoc is available at `docs/javadoc/index.html`.
+The javadoc is available at `build/docs/javadoc/index.html`.
 
 Generating Developer's Guide
 ----------------------------
 
-To generate the developer's guide and related documentation in HTML format:
+To generate the developer's guide in HTML format:
 
-    gradle doc
+    quarto render docs
 
-The guide is available at `htdocs/doc/html/index.html`.
-
-The Gradle build script simply executes a `make html` command in turn calls Sphinx build script to generate the documentation. The Gradle build script suppresses the output of Sphinx. In case of any problems, it may be useful to look at the output by directly invoking `make html`.
+The guide is available at `docs/_site/index.html`. The guide, together with the Java, JavaScript and Python API documentation, is automatically published to [GitHub Pages](https://org-arl.github.io/fjage/) by the `docs` GitHub Actions workflow on every push to `master` that touches the documentation or sources.
 
 Publishing fjagepy package to PyPI
 ----------------------------------
