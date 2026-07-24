@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.shell;
 
 import org.arl.fjage.Message;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 
 import java.io.File;
 import java.io.Reader;
@@ -38,6 +39,16 @@ public class EchoScriptEngine implements ScriptEngine {
   @Override
   public boolean isComplete(String cmd) {
     return true;
+  }
+
+  @Override
+  public MultipleCompilationErrorsException parse(String cmd) {
+    return null;
+  }
+
+  @Override
+  public MultipleCompilationErrorsException parse(File script) {
+    return null;
   }
 
   @Override
