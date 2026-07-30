@@ -62,6 +62,18 @@ shell << msg
 gw.close()
 ```
 
+### Serial Connection
+
+To connect to a fjåge container over a serial port, specify `devname` (and
+optionally `baud`, defaults to 9600) instead of a hostname and port. This needs
+the optional `pyserial` dependency (`pip install "fjagepy[serial]"`):
+
+```python
+from fjagepy import Gateway
+
+gw = Gateway(devname='/dev/ttyUSB0', baud=115200)
+```
+
 ### Request-Response Pattern
 
 ```python
@@ -141,6 +153,9 @@ Implement custom connectors by extending the `Connector` base class:
 from fjagepy import Connector
 
 class MyCustomConnector(Connector):
+    def __init__(self, **kwargs):
+        self.url = kwargs.get('url')
+
     def connect(self):
         # Implementation
         pass
@@ -153,9 +168,13 @@ class MyCustomConnector(Connector):
         # Implementation
         pass
 
-# Use custom connector
-gw = Gateway(connector=MyCustomConnector)
+# Use custom connector; extra keyword arguments are passed on to the connector
+gw = Gateway(connector=MyCustomConnector, url='ws://localhost:8080/ws')
 ```
+
+Connectors are constructed with `reconnect_delay` (5 or -1, depending on the
+Gateway's `reconnect` flag), plus `host`/`port` or `devname`/`baud`, and any
+extra keyword arguments given to `Gateway()`.
 
 ### Logging and Debugging
 

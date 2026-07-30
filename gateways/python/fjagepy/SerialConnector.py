@@ -1,4 +1,3 @@
-import socket
 import logging
 import threading
 import time
@@ -10,23 +9,31 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+class SerialConnector(Connector):
+    """Simple serial port connector using pyserial.
 
-class TCPConnector(Connector):
-    """Simple TCP connector using synchronous sockets."""
+    Requires the optional `pyserial` dependency (`pip install fjagepy[serial]`).
+    """
 
-    def __init__(self, **kwargs: Any ):
-        self.host = kwargs.get("host")
-        if not self.host or not isinstance(self.host, str) or self.host.strip() == "":
-            raise ValueError("host must be a non-empty string")
-        self.port:int = kwargs.get("port", 0)
-        if not isinstance(self.port, int) or not (0 < self.port < 65536):
-            raise ValueError("port must be an integer 1-65535")
-        self.reconnect_delay:int = kwargs.get("reconnect_delay", -2)
+    def __init__(self, **kwargs: Any):
+        self.devname = kwargs.get("devname")
+        if not self.devname or not isinstance(self.devname, str) or self.devname.strip() == "":
+            raise ValueError("devname must be a non-empty string")
+        self.baud: int = kwargs.get("baud", 9600)
+        if not isinstance(self.baud, int) or self.baud <= 0:
+            raise ValueError("baud must be a positive integer")
+        self.reconnect_delay = kwargs.get("reconnect_delay", -2)
         if not isinstance(self.reconnect_delay, (int, float)) or self.reconnect_delay < -1:
             raise ValueError("reconnect_delay must be a non-negative number or -1 for no reconnect")
 
-        # Socket and connection state
-        self._socket: Optional[socket.socket] = None
+        try:
+            import serial  # type: ignore[import-untyped]  # local import, so that pyserial stays an optional dependency
+        except ImportError as e:
+            raise ImportError("SerialConnector requires pyserial: pip install pyserial") from e
+        self._serial = serial
+
+        # Port and connection state
+        self._port: Optional[Any] = None
         self._connected = False
         self._callback: Optional[Callable[[List[str]], None]] = None
 
@@ -42,17 +49,16 @@ class TCPConnector(Connector):
         self._callback = callback
 
     def connect(self) -> None:
-        """Establish the connection."""
+        """Open the serial port."""
         with self._lock:
             if self._connected:
                 return
 
             try:
-                self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self._socket.settimeout(10.0)  # 10 second connection timeout
-                self._socket.connect((self.host, self.port))
+                # serial_for_url() accepts device names as well as URLs (eg. loop://)
+                self._port = self._serial.serial_for_url(self.devname, baudrate=self.baud, timeout=0.1)
                 self._connected = True
-                logger.debug(f"Connected to {self.host}:{self.port}")
+                logger.debug(f"Connected to {self.devname}@{self.baud}")
 
                 # Start read thread if callback is set
                 if self._callback:
@@ -61,18 +67,18 @@ class TCPConnector(Connector):
                     self._read_thread.start()
 
             except Exception as e:
-                self._cleanup_socket()
-                raise ConnectionError(f"Failed to connect to {self.host}:{self.port}: {e}")
+                self._cleanup_port()
+                raise ConnectionError(f"Failed to connect to {self.devname}@{self.baud}: {e}")
 
     def disconnect(self) -> None:
-        """Close the connection."""
+        """Close the serial port."""
         with self._lock:
             if not self._connected:
                 return
 
             self._stop_event.set()
             self._connected = False
-            self._cleanup_socket()
+            self._cleanup_port()
 
             # Wait for read thread to finish
             if self._read_thread and self._read_thread.is_alive():
@@ -87,56 +93,48 @@ class TCPConnector(Connector):
     def send(self, msg: str) -> None:
         """Send a message."""
         with self._lock:
-            if not self._connected or not self._socket:
+            if not self._connected or not self._port:
                 raise ConnectionError("Not connected")
             try:
-                message = msg + "\n"
-                self._socket.sendall(message.encode())
+                self._port.write((msg + "\n").encode())
             except Exception as e:
                 self._connected = False
-                self._cleanup_socket()
+                self._cleanup_port()
                 raise ConnectionError(f"Failed to send message: {e}")
 
     def __details__(self):
-        return f"host:{self.host}:{self.port}"
+        return f"dev:{self.devname}@{self.baud}"
 
     def __repr__(self):
-        return f"TCPConnector(host={self.host}, port={self.port}, connected={self.is_connected()})"
+        return f"SerialConnector(devname={self.devname}, baud={self.baud}, connected={self.is_connected()})"
 
     # Internal methods
 
-    def _cleanup_socket(self) -> None:
-        """Clean up socket resources."""
-        if self._socket:
+    def _cleanup_port(self) -> None:
+        """Clean up serial port resources."""
+        if self._port:
             try:
-                self._socket.close()
+                self._port.close()
             except Exception:
                 pass
-            self._socket = None
+            self._port = None
 
     def _read_loop(self) -> None:
         """Background thread that reads data and calls the callback."""
         buffer = ""
 
         try:
-            if not self._socket:
-                return
-
-            # Set socket to non-blocking for periodic stop checks
-            self._socket.settimeout(0.1)
-
             while not self._stop_event.is_set() and self._connected:
+                port = self._port
+                if not port:
+                    break
                 try:
-                    data = self._socket.recv(4096)
+                    # read() blocks for at most the port timeout (0.1s), allowing periodic stop checks
+                    data = port.read(port.in_waiting or 1)
                     if not data:
-                        # Connection closed by peer
-                        with self._lock:
-                            self._connected = False
-                            self._cleanup_socket()
-                        logger.warning("Connection closed by peer")
-                        break
+                        continue
 
-                    buffer += data.decode()
+                    buffer += data.decode(errors="replace")
                     lines = buffer.split("\n")
                     buffer = lines.pop()  # Keep incomplete line
 
@@ -146,15 +144,12 @@ class TCPConnector(Connector):
                         except Exception as e:
                             logger.warning(f"Callback error: {e}")
 
-                except socket.timeout:
-                    # Normal timeout, continue loop
-                    continue
                 except Exception as e:
                     if self._connected:  # Only log if we expect to be connected
                         logger.warning(f"Read error: {e}")
                         with self._lock:
                             self._connected = False
-                            self._cleanup_socket()
+                            self._cleanup_port()
                     break
 
         except Exception as e:
@@ -165,7 +160,7 @@ class TCPConnector(Connector):
                 self._attempt_reconnect()
 
     def _attempt_reconnect(self) -> None:
-        """Attempt to reconnect with delay."""
+        """Attempt to reopen the port with delay."""
         while not self._stop_event.is_set() and self.reconnect_delay >= 0:
             try:
                 logger.debug(f"Attempting to reconnect in {self.reconnect_delay}s...")
