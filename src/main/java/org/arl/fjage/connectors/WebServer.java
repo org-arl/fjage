@@ -382,13 +382,16 @@ public class WebServer {
   /**
    * Adds a context to upload files to.
    *
+   * The maximum file size and maximum request size are set to 1 GB. The file
+   * size threshold is set to 100 MB, after which files will be written to disk
+   * temporarily instead of kept in memory during processing. The directory to
+   * which the file is written temporarily is the same as the upload directory.
+   *
    * @param context context path.
    * @param dir filesystem path of directory to upload files to.
    * @return true if added, false otherwise.
    */
   public boolean addUpload(String context, File dir) {
-    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     long maxFileSize = 1024 * 1024 * 1024; // 1 GB
     long maxRequestSize = 1024 * 1024 * 1024; // 1 GB
     int fileSizeThreshold = 100*1024*1024; // 100 MB
@@ -398,6 +401,9 @@ public class WebServer {
   /**
    * Adds a context to upload files to.
    *
+   * For files exceeding the file size threshold, the directory to which the
+   * file is written temporarily is the same as the upload directory.
+   *
    * @param context context path.
    * @param dir filesystem path of directory to upload files to.
    * @param maxFileSize maximum size of a file. @see javax.servlet.MultipartConfigElement
@@ -406,9 +412,26 @@ public class WebServer {
    * @return true if added, false otherwise.
    */
   public boolean addUpload(String context, File dir, long maxFileSize, long maxRequestSize, int fileSizeThreshold) {
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     String location = dir.getAbsolutePath();
-    MultipartConfigElement multipartConfig = new MultipartConfigElement(location, maxFileSize, maxRequestSize, fileSizeThreshold);
+    return addUpload(context, dir, location, maxFileSize, maxRequestSize, fileSizeThreshold);
+  }
+
+  /**
+   * Adds a context to upload files to.
+   *
+   * @param context context path.
+   * @param dir filesystem path of directory to upload files to.
+   * @param tmpLocation filesystem path of directory where temporary files will be stored. @see javax.servlet.MultipartConfigElement#getLocation()
+   * @param maxFileSize maximum size of a file. @see javax.servlet.MultipartConfigElement
+   * @param maxRequestSize maximum size of a request. @see javax.servlet.MultipartConfigElement
+   * @param fileSizeThreshold size threshold after which files will be written to disk. @see javax.servlet.MultipartConfigElement
+   * @return true if added, false otherwise.
+   */
+  public boolean addUpload(String context, File dir, String tmpLocation, long maxFileSize, long maxRequestSize, int fileSizeThreshold) {
+    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
+    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+    if (tmpLocation == null) tmpLocation = "";  // In MultipartConfigElement, empty string means the default tmp directory will be used
+    MultipartConfigElement multipartConfig = new MultipartConfigElement(tmpLocation, maxFileSize, maxRequestSize, fileSizeThreshold);
     ContextHandler handler = new ContextHandler(context);
     handler.setAllowNullPathInfo(true);
     handler.setHandler(new UploadHandler(multipartConfig, dir.toPath()));
