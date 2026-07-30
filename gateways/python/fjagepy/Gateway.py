@@ -62,7 +62,7 @@ class Gateway:
             connector_kwargs : additional keyword arguments passed to the connector.
         """
         if devname is not None:
-            if not isinstance(devname, str) or not devname:
+            if not isinstance(devname, str) or devname.strip() == "": 
                 raise ValueError("devname must be a non-empty string")
             if not isinstance(baud, int) or baud <= 0:
                 raise ValueError("baud must be a positive integer")
