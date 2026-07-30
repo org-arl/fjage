@@ -6,7 +6,9 @@ from .Performative import Performative
 from .AgentID import AgentID
 from .Services import Services
 
+from .Connector import Connector
 from .TCPConnector import TCPConnector
+from .SerialConnector import SerialConnector
 from .JSONMessage import JSONMessage
 
 
@@ -22,7 +24,9 @@ __all__ = [
     "Performative",
     "AgentID",
     "Services",
+    "Connector",
     "TCPConnector",
+    "SerialConnector",
     "JSONMessage",
     "ParameterReq",
     "ParameterRsp",
