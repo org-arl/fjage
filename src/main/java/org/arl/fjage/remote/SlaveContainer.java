@@ -119,10 +119,11 @@ public class SlaveContainer extends RemoteContainer {
    * @return true if authenticated, false otherwise.
    */
   public boolean authenticate(String creds) {
-    if (master == null) return false;
+    ConnectionHandler localMaster = master;
+    if (localMaster == null) return false;
     JsonMessage rq = JsonMessage.createActionRequest(Action.AUTH);
     rq.creds = creds;
-    JsonMessage rsp = master.request(rq, REQUEST_TIMEOUT);
+    JsonMessage rsp = localMaster.request(rq, REQUEST_TIMEOUT);
     return rsp != null && rsp.auth != null && rsp.auth;
   }
 
@@ -132,7 +133,8 @@ public class SlaveContainer extends RemoteContainer {
    * INTERNAL USE ONLY.
    */
   public void checkAuthFailure(String id) {
-    if (master.checkAuthFailure(id)) throw new AuthFailureException();
+    ConnectionHandler localMaster = master;    // master may be nulled on connection loss
+    if (localMaster != null && localMaster.checkAuthFailure(id)) throw new AuthFailureException();
   }
 
   /////////////// Container interface methods to override
@@ -140,10 +142,11 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   protected boolean isDuplicate(AgentID aid) {
     if (super.isDuplicate(aid)) return true;
-    if (master == null) return false;
+    ConnectionHandler localMaster = master;
+    if (localMaster == null) return false;
     JsonMessage rq = JsonMessage.createActionRequest(Action.CONTAINS_AGENT);
     rq.agentID = aid;
-    JsonMessage rsp = master.request(rq, DIRECTORY_QUERY_TIMEOUT);
+    JsonMessage rsp = localMaster.request(rq, DIRECTORY_QUERY_TIMEOUT);
     return rsp != null && rsp.answer != null && rsp.answer;
   }
 
@@ -248,7 +251,9 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   protected void initComplete() {
     log.fine("Waiting for master...");
-    while (!quit && (master == null || !master.isConnectionAlive())) {
+    while (!quit) {
+      ConnectionHandler localMaster = master;
+      if (localMaster != null && localMaster.isConnectionAlive()) break;
       try {
         Thread.sleep(100);
       } catch(InterruptedException e) {
@@ -261,7 +266,8 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public void shutdown() {
     quit = true;
-    if (master != null) master.close();
+    ConnectionHandler localMaster = master;
+    if (localMaster != null) localMaster.close();
     Thread t = connectionManager;
     if (t != null) {
       t.interrupt();
