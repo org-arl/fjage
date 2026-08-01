@@ -35,6 +35,12 @@ public class Gateway implements Messenger, Closeable {
    */
   public static final long BLOCKING = -1;
 
+  /**
+   * Extra time beyond the requested receive timeout that a non-gateway thread may wait
+   * for the gateway agent to complete the receive, before giving up.
+   */
+  private static final long RECEIVE_TIMEOUT_SLACK = 1000;
+
   //////////// Private attributes
 
   protected Container container = null;
@@ -116,29 +122,55 @@ public class Gateway implements Messenger, Closeable {
 
   protected void init() {
     agent = new Agent() {
-      private Message rsp;
       private final Object sync = new Object();
       @Override
-      public Message receive(final MessageFilter filter, long timeout) {
+      public Message receive(final MessageFilter filter, final long timeout) {
         if (Thread.currentThread().getId() == tid) return super.receive(filter, timeout);
+        final Message[] rsp = new Message[1];
+        final boolean[] done = new boolean[1];
         synchronized (sync) {
-          rsp = null;
           try {
             add(new OneShotBehavior() {
               @Override
               public void action() {
-                rsp = receive(filter, timeout);
-                synchronized (sync) {
-                  sync.notify();
+                try {
+                  rsp[0] = receive(filter, timeout);
+                } finally {
+                  // notify the waiter on all exit paths, including an exception out of
+                  // receive(), so that it never sleeps past the requested timeout (issue #437)
+                  synchronized (sync) {
+                    done[0] = true;
+                    sync.notifyAll();
+                  }
                 }
               }
             });
-            sync.wait();
+            // the notify above is the normal wake-up, and stop() notifies if the agent dies;
+            // the deadline is a backstop for when the behavior cannot complete in time
+            long deadline = timeout < 0 ? -1 : currentTimeMillis() + timeout + RECEIVE_TIMEOUT_SLACK;
+            while (!done[0] && getState() != AgentState.FINISHING && getState() != AgentState.FINISHED) {
+              if (deadline < 0) sync.wait();
+              else {
+                long remaining = deadline - currentTimeMillis();
+                if (remaining <= 0) break;
+                sync.wait(remaining);
+              }
+            }
           } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            thread.interrupt();
+            Thread t = thread;
+            if (t != null) t.interrupt();
           }
-          return rsp;
+          return rsp[0];
+        }
+      }
+      @Override
+      public void stop() {
+        super.stop();
+        // wake any non-gateway thread waiting in receive(), as the behavior that would
+        // have notified it may never run once the agent is stopped
+        synchronized (sync) {
+          sync.notifyAll();
         }
       }
     };
