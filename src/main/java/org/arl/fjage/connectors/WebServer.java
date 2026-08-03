@@ -148,6 +148,7 @@ public class WebServer {
   protected Server server;
   protected ContextHandlerCollection contexts;
   protected RewriteHandler rewrite;
+  protected ErrorHandler defaultErrorHandler;
   protected boolean started;
   protected int port;
 
@@ -466,6 +467,53 @@ public class WebServer {
   }
 
   /**
+   * Sets a global error handler for all context handlers on the server.
+   *
+   * Any contexts added subsequently will automatically adopt this error handler.
+   * Note that this will override any error handlers that have already been set for existing contexts.
+   *
+   * @param errorHandler error handler to set.
+   */
+  public void setErrorHandler(ErrorHandler errorHandler) {
+    if (errorHandler == null) throw new IllegalArgumentException("Error handler cannot be null");
+    this.defaultErrorHandler = errorHandler;
+    this.defaultErrorHandler.setServer(server);
+    if (contexts != null) {
+      for (Handler h : contexts.getHandlers()) {
+        if (h instanceof ContextHandler) {
+          ((ContextHandler) h).setErrorHandler(errorHandler);
+        }
+      }
+    }
+  }
+
+  /**
+   * Sets an error handler for a specific context path.
+   *
+   * Note that this will override any error handler that has already been set for the specified context.
+   *
+   * @param context context path.
+   * @param errorHandler error handler to set.
+   * @return true if applied to at least one matching context handler, false otherwise.
+   */
+  public boolean setErrorHandler(String context, ErrorHandler errorHandler) {
+    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
+    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+    if (errorHandler == null) throw new IllegalArgumentException("Error handler cannot be null");
+    errorHandler.setServer(server);
+    boolean updated = false;
+    if (contexts != null) {
+      for (Handler h : contexts.getHandlers()) {
+        if (h instanceof ContextHandler && ((ContextHandler) h).getContextPath().equals(context)) {
+          ((ContextHandler) h).setErrorHandler(errorHandler);
+          updated = true;
+        }
+      }
+    }
+    return updated;
+  }
+
+  /**
    * Adds a rule to rewrite handler.
    * <p>
    * NOTE: Rules cannot be added after the server is started.
@@ -515,6 +563,11 @@ public class WebServer {
    */
   private boolean add(ContextHandler handler) {
     contexts.addHandler(handler);
+
+    if (defaultErrorHandler != null) {
+      handler.setErrorHandler(defaultErrorHandler);
+    }
+
     try {
       handler.start();
     } catch (Exception ex) {
