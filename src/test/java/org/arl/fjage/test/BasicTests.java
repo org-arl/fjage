@@ -403,6 +403,28 @@ public class BasicTests {
   }
 
   @Test
+  public void testListener3() {
+    log.info("testListener3");
+    Platform platform = new RealTimePlatform();
+    Container container = new Container(platform);
+    ServerAgent server = new ServerAgent();
+    ClientAgent2 client = new ClientAgent2();
+    container.add("S", server);
+    container.add("C", client);
+    MyMessageListener listener = new MyMessageListener();
+    listener.fail = true;
+    assertTrue(container.addListener(listener));
+    platform.start();
+    platform.delay(1000);
+    platform.shutdown();
+    // a listener that throws must not disrupt delivery, nor break the sending agent
+    assertTrue(listener.n > 0);
+    assertEquals(5, client.nuisance);
+    assertEquals(listener.n, client.nuisance);
+    assertEquals(client.nuisance, server.nuisance);
+  }
+
+  @Test
   public void testTunnel() {
     log.info("testTunnel");
     Platform platform = new RealTimePlatform();
@@ -958,10 +980,12 @@ public class BasicTests {
     public List<Message> msgs = Collections.synchronizedList(new ArrayList<Message>());
     public int n = 0;
     public boolean eat = false;
+    public boolean fail = false;
     @Override
     public boolean onReceive(Message msg) {
       msgs.add(msg);
       n++;
+      if (fail) throw new RuntimeException("deliberate listener failure");
       return eat;
     }
   }

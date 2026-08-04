@@ -57,7 +57,7 @@ public class Container {
   protected Method doClone;
   protected boolean autoclone = false;
   protected final Set<AgentID> idle = new HashSet<>();
-  protected final Set<MessageListener> listeners = new HashSet<>();
+  protected final Set<MessageListener> listeners = new CopyOnWriteArraySet<>();
 
   //////////// Interface methods
 
@@ -320,15 +320,15 @@ public class Container {
   /**
    * Adds a listener to the container. A listener is able to snoop on all
    * messages passing through the container, and optionally able to ask the
-   * container to drop a message.
+   * container to drop a message. A listener that throws an exception has the
+   * exception logged and ignored, so that a misbehaving listener cannot
+   * disrupt message delivery.
    *
    * @param listener listener.
    * @return true if successfully added, false otherwise.
    */
   public boolean addListener(MessageListener listener) {
-    synchronized (listeners) {
-      return listeners.add(listener);
-    }
+    return listeners.add(listener);
   }
 
   /**
@@ -338,9 +338,7 @@ public class Container {
    * @return true if successfully removed, false otherwise.
    */
   public boolean removeListener(MessageListener listener) {
-    synchronized (listeners) {
-      return listeners.remove(listener);
-    }
+    return listeners.remove(listener);
   }
 
   /**
@@ -366,9 +364,12 @@ public class Container {
   public boolean send(Message m, boolean relay) {
     if (relay) log.warning("Container does not support relaying");
     if (m.getSentAt() == null) m.setSentAt(platform.currentTimeMillis());
-    synchronized (listeners) {
-      for (MessageListener listener: listeners)
+    for (MessageListener listener: listeners) {
+      try {
         if (listener.onReceive(m)) return true;
+      } catch (Throwable ex) {
+        log.log(Level.WARNING, "MessageListener: "+ex.toString(), ex);
+      }
     }
     AgentID aid = m.getRecipient();
     if (aid == null) return false;
