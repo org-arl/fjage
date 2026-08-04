@@ -214,6 +214,7 @@ public class WebServer {
     }
   }
 
+
   /**
    * Stops the web server. Once this method is called, the server cannot be restarted.
    */
@@ -444,11 +445,25 @@ public class WebServer {
    * @return true if a handler is already registered, false otherwise.
    */
   public boolean hasHandler(String context) {
-    // find any handler in contexts.getHandlers() that has getContextPath() == context
-    return Arrays.stream(contexts.getHandlers())
+    // find any handler in handlers() that has getContextPath() == context
+    return Arrays.stream(handlers())
         .filter(h -> h instanceof ContextHandler)
         .map(h -> (ContextHandler) h)
         .anyMatch(h -> h.getContextPath().equals(context));
+  }
+
+  /**
+   * Gets the context handlers currently registered on the server. Jetty returns a null
+   * handler array (rather than an empty one) when no handlers are registered, so this
+   * method normalizes that to an empty array. It also returns an empty array if the
+   * server has been stopped.
+   *
+   * @return context handlers, empty array if none.
+   */
+  private Handler[] handlers() {
+    if (contexts == null) return new Handler[0];
+    Handler[] h = contexts.getHandlers();
+    return h == null ? new Handler[0] : h;
   }
 
   /**
@@ -478,11 +493,9 @@ public class WebServer {
     if (errorHandler == null) throw new IllegalArgumentException("Error handler cannot be null");
     this.defaultErrorHandler = errorHandler;
     this.defaultErrorHandler.setServer(server);
-    if (contexts != null) {
-      for (Handler h : contexts.getHandlers()) {
-        if (h instanceof ContextHandler) {
-          ((ContextHandler) h).setErrorHandler(errorHandler);
-        }
+    for (Handler h : handlers()) {
+      if (h instanceof ContextHandler) {
+        ((ContextHandler) h).setErrorHandler(errorHandler);
       }
     }
   }
@@ -502,12 +515,10 @@ public class WebServer {
     if (errorHandler == null) throw new IllegalArgumentException("Error handler cannot be null");
     errorHandler.setServer(server);
     boolean updated = false;
-    if (contexts != null) {
-      for (Handler h : contexts.getHandlers()) {
-        if (h instanceof ContextHandler && ((ContextHandler) h).getContextPath().equals(context)) {
-          ((ContextHandler) h).setErrorHandler(errorHandler);
-          updated = true;
-        }
+    for (Handler h : handlers()) {
+      if (h instanceof ContextHandler && ((ContextHandler) h).getContextPath().equals(context)) {
+        ((ContextHandler) h).setErrorHandler(errorHandler);
+        updated = true;
       }
     }
     return updated;
