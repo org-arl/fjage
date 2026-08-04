@@ -1,0 +1,137 @@
+/******************************************************************************
+
+Copyright (c) 2026, Mandar Chitre
+
+This file is part of fjage which is released under Simplified BSD License.
+See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
+for full license details.
+
+******************************************************************************/
+
+:root {
+  --bg: #ffffff; --bg2: #f2f3f5; --bg3: #e6e8ec; --fg: #1f2328; --fg2: #6a707a;
+  --line: #d2d6dc; --rule: #e9ebee; --accent: #1f6feb; --topic: #b7791f;
+  --warn: #c33; --ok: #2da44e; --sel: #dbe9fb; --rel: #ffe8a8;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1e1f22; --bg2: #26282c; --bg3: #2f3237; --fg: #d8dae0; --fg2: #8b9099;
+    --line: #3a3d43; --rule: #2a2c30; --accent: #5aa9e6; --topic: #d79b4a;
+    --warn: #e06c6c; --ok: #6cc070; --sel: #2d4256; --rel: #4a4326;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: #ffffff; --bg2: #f2f3f5; --bg3: #e6e8ec; --fg: #1f2328; --fg2: #6a707a;
+  --line: #d2d6dc; --rule: #e9ebee; --accent: #1f6feb; --topic: #b7791f;
+  --warn: #c33; --ok: #2da44e; --sel: #dbe9fb; --rel: #ffe8a8;
+}
+
+:root[data-theme="dark"] {
+  --bg: #1e1f22; --bg2: #26282c; --bg3: #2f3237; --fg: #d8dae0; --fg2: #8b9099;
+  --line: #3a3d43; --rule: #2a2c30; --accent: #5aa9e6; --topic: #d79b4a;
+  --warn: #e06c6c; --ok: #6cc070; --sel: #2d4256; --rel: #4a4326;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: var(--bg); color: var(--fg); font: 13px/1.4 var(--mono);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+header {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px; flex: none;
+  background: var(--bg2); border-bottom: 1px solid var(--line);
+}
+header h1 { font-size: 13px; font-weight: 600; margin: 0 6px 0 0; letter-spacing: .5px; }
+#status { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); flex: none; }
+#status.up { background: var(--ok); }
+.spacer { flex: 1; }
+.stat { color: var(--fg2); white-space: nowrap; }
+.stat b { color: var(--fg); font-weight: 600; }
+.sep { width: 1px; height: 18px; background: var(--line); flex: none; }
+
+button, input {
+  background: var(--bg3); color: var(--fg); border: 1px solid var(--line);
+  border-radius: 3px; padding: 3px 7px; font: inherit;
+}
+button { cursor: pointer; }
+button:hover { background: var(--line); }
+button.on { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+label.ctl { color: var(--fg2); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+label.ctl input[type=text] { width: 120px; }
+
+#main { flex: 1; display: flex; min-height: 0; }
+
+#side {
+  width: 230px; flex: none; background: var(--bg2); border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; min-height: 0;
+}
+.side-hd {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  padding: 6px 10px; color: var(--fg2); border-bottom: 1px solid var(--line); flex: none;
+}
+button.mini { padding: 1px 6px; font-size: 11px; }
+.side-btns { display: flex; gap: 4px; flex: none; }
+#endpoints { list-style: none; margin: 0; padding: 4px 0; overflow: auto; flex: 1; min-height: 0; }
+#endpoints li {
+  display: flex; align-items: center; gap: 6px; padding: 2px 8px 2px 6px; cursor: grab;
+}
+#endpoints li:hover { background: var(--bg3); }
+#endpoints li.drop-target { border-top: 2px solid var(--accent); }
+#endpoints li.dropped .nm { text-decoration: line-through; opacity: .55; }
+#endpoints .grip { color: var(--fg2); flex: none; }
+#endpoints .nm {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#endpoints .nm.topic { color: var(--topic); }
+#endpoints .cnt {
+  flex: none; font-size: 11px; color: var(--fg2); min-width: 30px; text-align: right;
+}
+#endpoints li.dropped .cnt { opacity: .55; }
+#endpoints .tog {
+  flex: none; font-size: 10px; padding: 0 4px; border: 1px solid transparent;
+  border-radius: 3px; background: none; color: var(--fg2);
+}
+#endpoints .tog:hover { border-color: var(--line); }
+#endpoints .tog.show.on { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+#endpoints .tog.drop.on { background: var(--warn); border-color: var(--warn); color: var(--bg); }
+.side-note {
+  margin: 0; padding: 8px 10px; font-size: 11px; line-height: 1.5; color: var(--fg2);
+  border-top: 1px solid var(--line); flex: none;
+}
+.side-note b { color: var(--fg); font-weight: 600; }
+
+#view { flex: 1; overflow: auto; min-width: 0; position: relative; }
+#seqhdr {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--bg2); border-bottom: 1px solid var(--line);
+}
+svg { display: block; }
+svg text { font: 11px var(--mono); fill: var(--fg); }
+svg text.part { font-weight: 600; }
+svg text.part.topic { fill: var(--topic); }
+svg text.lbl { fill: var(--fg2); }
+svg .life { stroke: var(--line); }
+svg .arrow { stroke: var(--accent); fill: none; }
+svg .arrow.topic { stroke: var(--topic); stroke-dasharray: 4 3; }
+svg .hit { fill: transparent; cursor: pointer; }
+svg .hit:hover { fill: var(--bg3); fill-opacity: .5; }
+svg .row.sel .hit { fill: var(--sel); fill-opacity: .8; }
+svg .row.sel text.lbl { fill: var(--fg); }
+svg text.time { font-size: 10px; opacity: .75; }
+/* the message a selected one replies to, and any replies to it */
+svg .row.rel .hit { fill: var(--rel); fill-opacity: .55; }
+svg .row.rel .arrow { stroke-width: 2; }
+svg .row.rel text.lbl { fill: var(--fg); }
+
+#detail {
+  width: 380px; flex: none; border-left: 1px solid var(--line); background: var(--bg2);
+  overflow: auto; padding: 10px; font-size: 12px;
+}
+#detail pre { margin: 0; white-space: pre-wrap; word-break: break-word; color: var(--fg2); }
+.empty { color: var(--fg2); padding: 20px; }
