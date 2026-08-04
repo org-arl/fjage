@@ -10,12 +10,15 @@ for full license details.
 
 package org.arl.fjage.connectors;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.ServerSocket;
+import java.net.URL;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
@@ -60,6 +63,19 @@ public class WebServerTest {
     };
   }
 
+  private static int statusOf(WebServer svr, String path) throws IOException {
+    URL url = new URL("http://127.0.0.1:"+svr.getPort()+path);
+    HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+    conn.setInstanceFollowRedirects(false);
+    conn.setConnectTimeout(5000);
+    conn.setReadTimeout(5000);
+    try {
+      return conn.getResponseCode();
+    } finally {
+      conn.disconnect();
+    }
+  }
+
   //////////// Jetty returns a null handler array when no handlers are registered
 
   @Test
@@ -92,6 +108,26 @@ public class WebServerTest {
     assertNotNull(svr.addHandler("/ws", okHandler()));
     assertTrue(svr.setErrorHandler("/ws", new ErrorHandler()));
     assertFalse(svr.setErrorHandler("/other", new ErrorHandler()));
+  }
+
+  //////////// web socket clients cannot follow a redirect on an upgrade request
+
+  @Test
+  public void handlerContextIsServedOnBarePath() throws IOException {
+    WebServer svr = newServer();
+    assertNotNull(svr.addHandler("/ws", okHandler()));
+    svr.start();
+    assertEquals(200, statusOf(svr, "/ws"));
+    assertEquals(200, statusOf(svr, "/ws/"));
+  }
+
+  @Test
+  public void staticContextStillRedirectsBarePath() throws IOException {
+    WebServer svr = newServer();
+    // any resource directory on the test classpath will do
+    assertFalse(svr.addStatic("/static", "org/arl/fjage/shell").isEmpty());
+    svr.start();
+    assertEquals(302, statusOf(svr, "/static"));
   }
 
 }
