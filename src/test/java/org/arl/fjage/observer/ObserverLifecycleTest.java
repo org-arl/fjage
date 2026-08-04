@@ -15,6 +15,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
 import java.net.ServerSocket;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,7 +56,18 @@ public class ObserverLifecycleTest {
       assertEquals("replacement observer did not install", 1, listenerCount(container));
     } finally {
       platform.shutdown();
+      stopWebServer(port);
     }
+  }
+
+  /**
+   * Stops a web server an observer left running. An observer never stops one
+   * itself, since it may be sharing it with the application, so a test must
+   * clean up after itself or the server stays registered for the rest of the
+   * JVM's life, and other tests see it.
+   */
+  private static void stopWebServer(int port) {
+    if (WebServer.hasInstance(port)) WebServer.getInstance(port).stop();
   }
 
   private void waitFor(Container c, int n) throws Exception {
@@ -85,8 +97,16 @@ public class ObserverLifecycleTest {
   @Test
   public void testAutoPortFollowsTheApplicationWebServer() throws Exception {
     Logger.getLogger("org.arl.fjage").setLevel(Level.WARNING);
-    int port = freePort();
-    WebServer app = WebServer.getInstance(port);          // the application's web server
+    // Web servers are registered per JVM, and an observer deliberately does not
+    // stop the one it used, since it may be sharing it with the application. So
+    // servers created by other test classes are still registered here, and this
+    // test would otherwise pick up whichever of them happened to get the lowest
+    // port number. Start from a clean slate.
+    WebServer.shutdown();
+    int[] ports = new int[] { freePort(), freePort() };
+    Arrays.sort(ports);
+    WebServer app = WebServer.getInstance(ports[0]);      // the application's web server
+    WebServer other = WebServer.getInstance(ports[1]);    // a second one, to pin the tie-break down
     Platform platform = new RealTimePlatform();
     Container container = new Container(platform);
     try {
@@ -94,12 +114,13 @@ public class ObserverLifecycleTest {
       container.add("observer", observer);
       platform.start();
       long t = System.currentTimeMillis() + 5000;
-      while (System.currentTimeMillis() < t && !observer.getUrl().contains(":"+port+"/")) Thread.sleep(20);
+      while (System.currentTimeMillis() < t && !observer.getUrl().contains(":"+ports[0]+"/")) Thread.sleep(20);
       assertTrue("observer did not follow the application web server: "+observer.getUrl(),
-                 observer.getUrl().contains(":"+port+"/observer/"));
+                 observer.getUrl().contains(":"+ports[0]+"/observer/"));
     } finally {
       platform.shutdown();
       app.stop();
+      other.stop();
     }
   }
 

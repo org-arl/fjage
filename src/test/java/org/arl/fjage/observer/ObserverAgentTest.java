@@ -36,6 +36,7 @@ import org.arl.fjage.Performative;
 import org.arl.fjage.Platform;
 import org.arl.fjage.RealTimePlatform;
 import org.arl.fjage.TickerBehavior;
+import org.arl.fjage.connectors.WebServer;
 import org.arl.fjage.param.ParameterReq;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -75,6 +76,10 @@ public class ObserverAgentTest {
   @AfterClass
   public static void tearDownClass() {
     platform.shutdown();
+    // an observer never stops its web server, since it may be sharing it with
+    // the application, so the test stops the one it caused rather than leave it
+    // registered for other test classes to trip over
+    if (WebServer.hasInstance(port)) WebServer.getInstance(port).stop();
   }
 
   @Before
