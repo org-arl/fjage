@@ -15,14 +15,14 @@ class SerialConnector(Connector):
     Requires the optional `pyserial` dependency (`pip install fjagepy[serial]`).
     """
 
-    def __init__(self, **kwargs: Any):
-        self.devname = kwargs.get("devname")
+    def __init__(self, devname: str, baud: int = 9600, reconnect_delay: float = -2):
+        self.devname = devname
         if not self.devname or not isinstance(self.devname, str) or self.devname.strip() == "":
             raise ValueError("devname must be a non-empty string")
-        self.baud: int = kwargs.get("baud", 9600)
+        self.baud = baud
         if not isinstance(self.baud, int) or self.baud <= 0:
             raise ValueError("baud must be a positive integer")
-        self.reconnect_delay = kwargs.get("reconnect_delay", -2)
+        self.reconnect_delay = reconnect_delay
         if not isinstance(self.reconnect_delay, (int, float)) or self.reconnect_delay < -1:
             raise ValueError("reconnect_delay must be a non-negative number or -1 for no reconnect")
 
@@ -67,6 +67,7 @@ class SerialConnector(Connector):
                     self._read_thread.start()
 
             except Exception as e:
+                self._connected = False
                 self._cleanup_port()
                 raise ConnectionError(f"Failed to connect to {self.devname}@{self.baud}: {e}")
 
@@ -121,7 +122,7 @@ class SerialConnector(Connector):
 
     def _read_loop(self) -> None:
         """Background thread that reads data and calls the callback."""
-        buffer = ""
+        buffer: str = ""
 
         try:
             while not self._stop_event.is_set() and self._connected:
@@ -164,10 +165,8 @@ class SerialConnector(Connector):
         while not self._stop_event.is_set() and self.reconnect_delay >= 0:
             try:
                 logger.debug(f"Attempting to reconnect in {self.reconnect_delay}s...")
-                time.sleep(self.reconnect_delay)
-
-                if self._stop_event.is_set():
-                    break
+                if self._stop_event.wait(timeout=self.reconnect_delay):
+                    break 
 
                 self.connect()
                 return  # Successfully reconnected
