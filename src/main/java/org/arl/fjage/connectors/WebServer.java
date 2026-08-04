@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import java.io.*;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -210,10 +211,26 @@ public class WebServer {
       log.info("Started web server on port "+port);
       started = true;
     } catch (Exception ex) {
-      log.log(Level.WARNING, "Unable to start web server on port "+port, ex);
+      // a web server that fails to start is not fatal, but the caller gets back a server
+      // that quietly serves nothing, so name the most common cause explicitly
+      if (isPortInUse(ex)) log.log(Level.WARNING, "Unable to start web server: port "+port+" is already in use", ex);
+      else log.log(Level.WARNING, "Unable to start web server on port "+port, ex);
     }
   }
 
+  /**
+   * Checks if an exception was caused by a port already being in use.
+   *
+   * @param ex exception to check.
+   * @return true if caused by a bind failure, false otherwise.
+   */
+  private static boolean isPortInUse(Throwable ex) {
+    while (ex != null) {
+      if (ex instanceof BindException) return true;
+      ex = ex.getCause();
+    }
+    return false;
+  }
 
   /**
    * Stops the web server. Once this method is called, the server cannot be restarted.
