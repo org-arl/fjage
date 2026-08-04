@@ -240,8 +240,10 @@ for full license details.
       if (list[i].to) used[list[i].to] = true;
     }
     // an endpoint the user asked to see gets a lifeline even before it says
-    // anything, so that selecting it has a visible effect
-    for (var k in shown) if (shown[k] && !dropped[k]) used[k] = true;
+    // anything, so that selecting it has a visible effect -- but only if this
+    // observer knows it, since selections are remembered per host and port, and
+    // would otherwise leak onto a different container served at the same address
+    for (var k in shown) if (shown[k] && !dropped[k] && (k in endpoints)) used[k] = true;
     // `order` only decides the layout — every used endpoint must get a lifeline
     // whether or not it has been ordered yet, or an arrow could end up with no
     // lifeline to attach to
