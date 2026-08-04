@@ -456,6 +456,9 @@ public class WebServer {
     if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
     ContextHandler c = new ContextHandler(context);
+    // serve the bare context path directly, rather than redirecting it to the path with a
+    // trailing slash; web socket clients cannot follow a redirect on an upgrade request
+    c.setAllowNullPathInfo(true);
     c.setHandler(handler);
     if (add(c)) return c;
     return null;
