@@ -85,7 +85,15 @@ public class EnumTypeAdapter extends TypeAdapter<Object> {
     if (pos < 0) return new NamedParameter(s);
     String value = s.substring(pos+1);
     Class<? extends Enum> cls = enumClass(s.substring(0,pos));
-    if (cls != null) return Enum.valueOf(cls, value);
+    if (cls != null) {
+      try {
+        return Enum.valueOf(cls, value);
+      } catch (IllegalArgumentException ex) {
+        // the constant is unknown, perhaps because it was removed in a newer version;
+        // fall back to a named parameter, so that the rest of the message survives
+        log.fine("No enum constant "+s+", treating as named parameter");
+      }
+    }
     return new NamedParameter(s);
   }
 
