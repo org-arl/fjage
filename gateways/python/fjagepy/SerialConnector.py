@@ -22,7 +22,7 @@ class SerialConnector(Connector):
         self.baud = baud
         if not isinstance(self.baud, int) or self.baud <= 0:
             raise ValueError("baud must be a positive integer")
-        self.reconnect_delay = reconnect_delay
+        self.reconnect_delay = kwargs.get("reconnect_delay", None)
         if not isinstance(self.reconnect_delay, (int, float)) or self.reconnect_delay < -1:
             raise ValueError("reconnect_delay must be a non-negative number or -1 for no reconnect")
 
@@ -166,7 +166,7 @@ class SerialConnector(Connector):
             try:
                 logger.debug(f"Attempting to reconnect in {self.reconnect_delay}s...")
                 if self._stop_event.wait(timeout=self.reconnect_delay):
-                    break 
+                    break
 
                 self.connect()
                 return  # Successfully reconnected
