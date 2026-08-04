@@ -17,8 +17,15 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
@@ -119,6 +126,34 @@ public class WebServerTest {
     svr.start();
     assertEquals(200, statusOf(svr, "/ws"));
     assertEquals(200, statusOf(svr, "/ws/"));
+  }
+
+  //////////// a server that cannot bind serves nothing, so say why
+
+  @Test
+  public void portAlreadyInUseIsReported() throws IOException {
+    try (ServerSocket blocker = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
+      svr = WebServer.getInstance(blocker.getLocalPort());
+      Logger logger = Logger.getLogger(WebServer.class.getName());
+      final List<LogRecord> records = new ArrayList<>();
+      Handler handler = new Handler() {
+        @Override public void publish(LogRecord r) { records.add(r); }
+        @Override public void flush() { }
+        @Override public void close() { }
+      };
+      logger.addHandler(handler);
+      try {
+        svr.start();
+      } finally {
+        logger.removeHandler(handler);
+      }
+      assertFalse("server should not report itself as started", svr.started);
+      boolean reported = false;
+      for (LogRecord r: records) {
+        if (r.getLevel() == Level.WARNING && r.getMessage().contains("port "+blocker.getLocalPort()+" is already in use")) reported = true;
+      }
+      assertTrue("expected a warning naming the busy port, got: "+records, reported);
+    }
   }
 
   @Test
