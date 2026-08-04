@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fjåge observer</title>
+<link rel="stylesheet" href="observer.css">
+</head>
+<body>
+
+<header>
+  <h1>fjåge observer</h1>
+  <div id="status" title="disconnected"></div>
+  <span class="stat" id="scope" title="an observer sees only the traffic in its own container; add one observer per container"></span>
+  <span class="stat"><b id="shown">0</b> shown</span>
+  <span class="stat"><b id="count">0</b> observed</span>
+  <span class="stat"><b id="dropped">0</b> dropped</span>
+  <div class="spacer"></div>
+  <label class="ctl">class <input type="text" id="f-clazz" placeholder="regex" title="only observe messages whose class matches"></label>
+  <label class="ctl">&minus;class <input type="text" id="f-xclazz" placeholder="regex" title="drop messages whose class matches, in the container"></label>
+  <button id="apply" title="apply the class filters in the container">Apply</button>
+  <div class="sep"></div>
+  <button id="pause" title="freeze the display; messages keep buffering">Pause</button>
+  <button id="clear" title="discard buffered messages">Clear</button>
+  <button id="theme" title="toggle light/dark theme">◐</button>
+</header>
+
+<div id="main">
+
+  <aside id="side">
+    <div class="side-hd">
+      <span>endpoints</span>
+      <span class="side-btns">
+        <button id="none" class="mini" title="deselect every endpoint">none</button>
+        <button id="clearep" class="mini" title="forget the endpoints seen so far; those still in use reappear as soon as they send or receive anything">clear</button>
+      </span>
+    </div>
+    <ul id="endpoints"></ul>
+    <p class="side-note">
+      <b>show</b> is local to this browser and retrospective &mdash; it reveals messages already
+      buffered here.
+      <b>drop</b> is applied in the container and shared by all browsers &mdash; dropped messages are
+      never sent, and undropping does not bring them back.
+      Drag to reorder lifelines. Use <b>↑</b>/<b>↓</b> to step through messages.
+    </p>
+  </aside>
+
+  <div id="view">
+    <div id="seqhdr"></div>
+    <div id="seq"></div>
+    <div id="empty" class="empty">Select one or more endpoints to show their messages.</div>
+  </div>
+
+  <aside id="detail"><div class="empty">Click a message to see its contents.</div></aside>
+
+</div>
+
+<script src="observer.js"></script>
+</body>
+</html>
