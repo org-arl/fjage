@@ -37,7 +37,8 @@ public class Gateway implements Messenger, Closeable {
 
   /**
    * Extra time beyond the requested receive timeout that a non-gateway thread may wait
-   * for the gateway agent to complete the receive, before giving up.
+   * for the gateway agent to complete the receive, to avoid indefinite waits if the
+   * scheduled behavior never runs (including for NON_BLOCKING receives).
    */
   private static final long RECEIVE_TIMEOUT_SLACK = 1000;
 
