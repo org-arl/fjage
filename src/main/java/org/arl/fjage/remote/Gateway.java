@@ -147,7 +147,7 @@ public class Gateway implements Messenger, Closeable {
             });
             // the notify above is the normal wake-up, and stop() notifies if the agent dies;
             // the deadline is a backstop for when the behavior cannot complete in time
-            long deadline = timeout < 0 ? -1 : currentTimeMillis() + timeout + RECEIVE_TIMEOUT_SLACK;
+            long deadline = timeout == BLOCKING ? -1 : currentTimeMillis() + timeout + RECEIVE_TIMEOUT_SLACK;
             while (!done[0] && getState() != AgentState.FINISHING && getState() != AgentState.FINISHED) {
               if (deadline < 0) sync.wait();
               else {
