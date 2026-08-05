@@ -15,14 +15,14 @@ class SerialConnector(Connector):
     Requires the optional `pyserial` dependency (`pip install fjagepy[serial]`).
     """
 
-    def __init__(self, devname: str, baud: int = 9600, reconnect_delay: float = -2):
+    def __init__(self, devname: str, reconnect_delay: float, baud: int = 9600):
         self.devname = devname
         if not self.devname or not isinstance(self.devname, str) or self.devname.strip() == "":
             raise ValueError("devname must be a non-empty string")
         self.baud = baud
         if not isinstance(self.baud, int) or self.baud <= 0:
             raise ValueError("baud must be a positive integer")
-        self.reconnect_delay = kwargs.get("reconnect_delay", None)
+        self.reconnect_delay = reconnect_delay
         if not isinstance(self.reconnect_delay, (int, float)) or self.reconnect_delay < -1:
             raise ValueError("reconnect_delay must be a non-negative number or -1 for no reconnect")
 
