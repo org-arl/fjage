@@ -121,38 +121,50 @@ public class Documentation {
     int level = s.indexOf(' ');
     if (level <= 0) return;
     int endlevel = level;
-    if (s.startsWith("# ")) sb.append(s);
-    else sb.append(s.replaceAll(header, ""));
+    sb.append(s);
     sb.append('\n');
-    int skip = 0;
+    boolean skip = false;
     for (int i = pos+1; i < doc.size(); i++) {
       s = doc.get(i);
-      Matcher m = section.matcher(s);
-      if (m.matches()) {
-        m = heading.matcher(s);
+      if (section.matcher(s).matches()) {
         level = s.indexOf(' ');
         if (level <= endlevel) break;
-        boolean nl = false;
-        if (skip == 0 || level <= skip) {
-          if (skip > 0) nl = true;
-          skip = 0;
-          s = s.replaceAll(header, "");
-        }
-        if (m.matches()) {
-          skip = level;
+        // a "name - description" heading with no sub-headings of its own is an
+        // item, and is shown as a bullet with its body elided; anything else is
+        // a section heading, and is shown along with its body
+        boolean item = heading.matcher(s).matches() && !hasSubsections(i, level);
+        if (item) {
           sb.append("* ");
+          sb.append(s.replaceAll(header, ""));
+        } else {
+          if (skip) sb.append('\n');
           sb.append(s);
-          sb.append('\n');
-        } else if (nl) {
-          sb.append('\n');
         }
+        sb.append('\n');
+        skip = item;
+        continue;
       }
-      if (skip == 0) {
+      if (!skip) {
         sb.append(s);
         sb.append('\n');
       }
     }
     sb.append('\n');
+  }
+
+  /**
+   * Check if a heading has sub-headings nested under it.
+   *
+   * @param pos position of the heading.
+   * @param level level of the heading.
+   */
+  protected boolean hasSubsections(int pos, int level) {
+    for (int i = pos+1; i < doc.size(); i++) {
+      String s = doc.get(i);
+      if (!section.matcher(s).matches()) continue;
+      return s.indexOf(' ') > level;
+    }
+    return false;
   }
 
   /**
