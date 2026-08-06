@@ -2,6 +2,8 @@
 
 ### 2.6.0
 
+* Add `SerialConnector` to the Python gateway: `Gateway(connector=SerialConnector('/dev/ttyUSB0', 115200))`, needing the optional `fjagepy[serial]` dependency
+* Breaking (fjagepy): connectors take explicit constructor arguments, and `Gateway(connector=...)` now takes a `Connector` instance instead of a class
 * Add `services()` to the Gateway API to list all services visible through a gateway
 * Split gateway default timeouts: 1 s for `request()`, 6 s for directory queries and 0 for `receive()`
 * Gateway spec: allow constructors to throw on first-connect failure, instead of only returning `null`

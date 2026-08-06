@@ -10,7 +10,7 @@ from fjagepy import SerialConnector
 @pytest.fixture
 def connector():
     """SerialConnector on a pyserial loopback port, so writes come back as reads."""
-    conn = SerialConnector(devname='loop://', baud=9600, reconnect_delay=-1)
+    conn = SerialConnector('loop://', reconnect_delay=-1)
     yield conn
     conn.disconnect()
 
@@ -29,12 +29,10 @@ def wait_for(lines, n, timeout=2.0):
     return lines
 
 
-def test_serialconnector_validates_devname():
-    """SerialConnector should reject a missing or empty device name."""
-    with pytest.raises(ValueError):
-        SerialConnector(devname='')
-    with pytest.raises(ValueError):
-        SerialConnector(baud=9600)
+def test_serialconnector_requires_devname():
+    """SerialConnector should require a device name."""
+    with pytest.raises(TypeError):
+        SerialConnector()   # type: ignore[call-arg]
 
 
 def test_serialconnector_send_receive(connector):
