@@ -14,16 +14,16 @@ logger.addHandler(logging.NullHandler())
 class TCPConnector(Connector):
     """Simple TCP connector using synchronous sockets."""
 
-    def __init__(self, **kwargs: Any ):
-        self.host = kwargs.get("host")
-        if not self.host or not isinstance(self.host, str) or self.host.strip() == "":
-            raise ValueError("host must be a non-empty string")
-        self.port:int = kwargs.get("port", 0)
-        if not isinstance(self.port, int) or not (0 < self.port < 65536):
-            raise ValueError("port must be an integer 1-65535")
-        self.reconnect_delay:int = kwargs.get("reconnect_delay", -2)
-        if not isinstance(self.reconnect_delay, (int, float)) or self.reconnect_delay < -1:
-            raise ValueError("reconnect_delay must be a non-negative number or -1 for no reconnect")
+    def __init__(self, hostname: str = 'localhost', port: int = 1100, reconnect_delay: float = 5):
+        """
+        Args:
+            hostname : hostname or IP address of the fjåge container. Defaults to 'localhost'.
+            port : port of the fjåge container. Defaults to 1100.
+            reconnect_delay : seconds to wait before reconnecting, or -1 to disable reconnection. Defaults to 5.
+        """
+        self.hostname = hostname
+        self.port = port
+        self.reconnect_delay = reconnect_delay
 
         # Socket and connection state
         self._socket: Optional[socket.socket] = None
@@ -50,9 +50,9 @@ class TCPConnector(Connector):
             try:
                 self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self._socket.settimeout(10.0)  # 10 second connection timeout
-                self._socket.connect((self.host, self.port))
+                self._socket.connect((self.hostname, self.port))
                 self._connected = True
-                logger.debug(f"Connected to {self.host}:{self.port}")
+                logger.debug(f"Connected to {self.hostname}:{self.port}")
 
                 # Start read thread if callback is set
                 if self._callback:
@@ -62,7 +62,7 @@ class TCPConnector(Connector):
 
             except Exception as e:
                 self._cleanup_socket()
-                raise ConnectionError(f"Failed to connect to {self.host}:{self.port}: {e}")
+                raise ConnectionError(f"Failed to connect to {self.hostname}:{self.port}: {e}")
 
     def disconnect(self) -> None:
         """Close the connection."""
@@ -98,10 +98,10 @@ class TCPConnector(Connector):
                 raise ConnectionError(f"Failed to send message: {e}")
 
     def __details__(self):
-        return f"host:{self.host}:{self.port}"
+        return f"host:{self.hostname}:{self.port}"
 
     def __repr__(self):
-        return f"TCPConnector(host={self.host}, port={self.port}, connected={self.is_connected()})"
+        return f"TCPConnector(host={self.hostname}, port={self.port}, connected={self.is_connected()})"
 
     # Internal methods
 

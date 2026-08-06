@@ -64,14 +64,14 @@ gw.close()
 
 ### Serial Connection
 
-To connect to a fjåge container over a serial port, specify `devname` (and
-optionally `baud`, defaults to 9600) instead of a hostname and port. This needs
-the optional `pyserial` dependency (`pip install "fjagepy[serial]"`):
+To connect to a fjåge container over a serial port, pass a `SerialConnector`
+instead of a hostname and port. This needs the optional `pyserial` dependency
+(`pip install "fjagepy[serial]"`):
 
 ```python
-from fjagepy import Gateway
+from fjagepy import Gateway, SerialConnector
 
-gw = Gateway(devname='/dev/ttyUSB0', baud=115200)
+gw = Gateway(connector=SerialConnector('/dev/ttyUSB0', 115200))
 ```
 
 ### Request-Response Pattern
@@ -153,8 +153,8 @@ Implement custom connectors by extending the `Connector` base class:
 from fjagepy import Connector
 
 class MyCustomConnector(Connector):
-    def __init__(self, **kwargs):
-        self.url = kwargs.get('url')
+    def __init__(self, url: str):
+        self.url = url
 
     def connect(self):
         # Implementation
@@ -168,13 +168,16 @@ class MyCustomConnector(Connector):
         # Implementation
         pass
 
-# Use custom connector; extra keyword arguments are passed on to the connector
-gw = Gateway(connector=MyCustomConnector, url='ws://localhost:8080/ws')
+# Construct the connector yourself and hand it to the Gateway
+gw = Gateway(connector=MyCustomConnector('ws://localhost:8080/ws'))
 ```
 
-Connectors are constructed with `reconnect_delay` (5 or -1, depending on the
-Gateway's `reconnect` flag), plus `host`/`port` or `devname`/`baud`, and any
-extra keyword arguments given to `Gateway()`.
+A connector defines its own constructor arguments; the Gateway simply uses the
+instance it is given. `TCPConnector(hostname, port, reconnect_delay)` may also be
+constructed explicitly, which is the only way to set a custom `reconnect_delay`.
+
+> **Note:** up to fjagepy 2.2.0, `connector` took a Connector *class*
+> (`Gateway(connector=TCPConnector)`). It now takes an instance.
 
 ### Logging and Debugging
 

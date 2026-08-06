@@ -44,43 +44,29 @@ class Gateway:
     NON_BLOCKING = 0
     BLOCKING = -1
 
-    def __init__(self, hostname: str = 'localhost', port: int = 1100, connector: Optional[Type[Connector]] = None, reconnect: bool = True, timeout: int = DEFAULT_REQUEST_TIMEOUT, directory_timeout: int = DEFAULT_DIRECTORY_TIMEOUT, devname: Optional[str] = None, baud: int = 9600, **connector_kwargs: Any) -> None:
+    def __init__(self, hostname: str = 'localhost', port: int = 1100, connector: Optional[Connector] = None, reconnect: bool = True, timeout: int = DEFAULT_REQUEST_TIMEOUT, directory_timeout: int = DEFAULT_DIRECTORY_TIMEOUT) -> None:
         """Creates a new Gateway instance.
 
-        Connects over TCP by default. If `devname` is specified, connects over a
-        serial port instead (requires the optional `pyserial` dependency).
+        Connects over TCP by default. To use any other transport, construct its
+        Connector and pass it as `connector`, e.g. `SerialConnector` for a serial
+        port; `hostname`, `port` and `reconnect` are then ignored.
 
         Args:
             hostname : hostname of the fjage container. Defaults to 'localhost'.
             port : port of the fjage container. Defaults to 1100.
-            connector : Connector class to use. Defaults to SerialConnector if devname is specified, TCPConnector otherwise.
+            connector : a Connector instance to use, instead of connecting over TCP.
             reconnect : whether to keep the connection alive. Defaults to True.
             timeout : default timeout in milliseconds for request(). Defaults to 1000.
             directory_timeout : default timeout in milliseconds for directory queries. Defaults to 6000.
-            devname : serial device name (e.g. '/dev/ttyUSB0') to connect over serial instead of TCP.
-            baud : serial baud rate, used only with devname. Defaults to 9600.
-            connector_kwargs : additional keyword arguments passed to the connector.
         """
-        if devname is not None:
-            if not isinstance(devname, str) or devname.strip() == "": 
-                raise ValueError("devname must be a non-empty string")
-            if not isinstance(baud, int) or baud <= 0:
-                raise ValueError("baud must be a positive integer")
-            opts: dict[str, Any] = {'devname': devname, 'baud': baud}
+        if connector is not None:
+            if not isinstance(connector, Connector):
+                raise ValueError("connector must be a Connector instance")
         else:
             if not isinstance(hostname, str) or not hostname:
                 raise ValueError("hostname must be a non-empty string")
             if not isinstance(port, int) or not (0 < port < 65536):
                 raise ValueError("port must be an integer 1-65535")
-            opts = {'host': hostname, 'port': port}
-        if connector is None:
-            if devname is not None:
-                from .SerialConnector import SerialConnector
-                connector = SerialConnector
-            else:
-                connector = TCPConnector
-        if not isinstance(connector, type) or not issubclass(connector, Connector):
-            raise ValueError("connector must be a subclass of Connector")
         if not isinstance(reconnect, bool):
             raise ValueError("reconnect must be a boolean")
         if not isinstance(timeout, int) or timeout <= 0:
@@ -95,9 +81,7 @@ class Gateway:
         self._timeout = timeout
         self._directory_timeout = directory_timeout
         self.aid = AgentID("gateway-" + str(uuid.uuid4()), owner=self)
-        opts['reconnect_delay'] = 5 if reconnect else -1
-        opts.update(connector_kwargs)
-        self.connector = connector(**opts)
+        self.connector = connector or TCPConnector(hostname, port, 5 if reconnect else -1)
         self.connector.set_receive_callback(self._msg_rx)
         try :
             self.connector.connect()
