@@ -22,7 +22,7 @@ import org.arl.fjage.Message;
 import org.arl.fjage.MessageFilter;
 
 /**
- * Filter used by {@link ObserverAgent} to decide which messages to publish to
+ * Filter used by {@link Observer} to decide which messages to publish to
  * the web interface.
  * <p>
  * The filter is applied in the container, before serialization, and so a
@@ -126,8 +126,8 @@ public class ObserverFilter implements MessageFilter {
       if (excludeClazzRe != null && excludeClazzRe.matcher(cls).find()) return false;
     }
     if (excluded != null) {
-      if (excluded.contains(ObserverAgent.endpoint(m.getSender()))) return false;
-      if (excluded.contains(ObserverAgent.endpoint(m.getRecipient()))) return false;
+      if (excluded.contains(Observer.endpoint(m.getSender()))) return false;
+      if (excluded.contains(Observer.endpoint(m.getRecipient()))) return false;
     }
     return true;
   }

@@ -41,7 +41,7 @@ public class ObserverLifecycleTest {
     Container container = new Container(platform);
     try {
       assertEquals(0, listenerCount(container));
-      container.add("observer", new ObserverAgent(port, "/observer"));
+      container.add("observer", new Observer(port, "/observer"));
       platform.start();
       waitFor(container, 1);
       assertEquals("listener not installed", 1, listenerCount(container));
@@ -51,7 +51,7 @@ public class ObserverLifecycleTest {
       assertEquals("listener not removed on kill", 0, listenerCount(container));
 
       // the port is free again, so a replacement observer can take it over
-      container.add("observer2", new ObserverAgent(port, "/observer"));
+      container.add("observer2", new Observer(port, "/observer"));
       waitFor(container, 1);
       assertEquals("replacement observer did not install", 1, listenerCount(container));
     } finally {
@@ -110,7 +110,7 @@ public class ObserverLifecycleTest {
     Platform platform = new RealTimePlatform();
     Container container = new Container(platform);
     try {
-      ObserverAgent observer = new ObserverAgent();        // no port given
+      Observer observer = new Observer();        // no port given
       container.add("observer", observer);
       platform.start();
       long t = System.currentTimeMillis() + 5000;
@@ -126,9 +126,9 @@ public class ObserverLifecycleTest {
 
   @Test
   public void testEndpointNaming() {
-    assertTrue(ObserverAgent.endpoint(null) == null);
-    assertEquals("a", ObserverAgent.endpoint(new org.arl.fjage.AgentID("a")));
-    assertEquals("#t", ObserverAgent.endpoint(new org.arl.fjage.AgentID("t", true)));
+    assertTrue(Observer.endpoint(null) == null);
+    assertEquals("a", Observer.endpoint(new org.arl.fjage.AgentID("a")));
+    assertEquals("#t", Observer.endpoint(new org.arl.fjage.AgentID("t", true)));
   }
 
 }

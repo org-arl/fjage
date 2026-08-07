@@ -52,13 +52,13 @@ import org.eclipse.jetty.server.handler.ContextHandler;
  * <p>
  * To use, simply add the agent to a container:
  * <pre>
- * container.add("observer", new ObserverAgent());
+ * container.add("observer", new Observer());
  * </pre>
  * The web interface is served by the application's own web server if it has
  * one, and on {@link #DEFAULT_PORT} otherwise. Pass a port explicitly to
  * override that:
  * <pre>
- * container.add("observer", new ObserverAgent(8082));
+ * container.add("observer", new Observer(8082));
  * </pre>
  * The URL to browse to is logged when the agent starts, and is readable as the
  * {@code url} parameter of the agent.
@@ -95,7 +95,7 @@ import org.eclipse.jetty.server.handler.ContextHandler;
  *
  * @author  Mandar Chitre
  */
-public class ObserverAgent extends Agent implements MessageListener {
+public class Observer extends Agent implements MessageListener {
 
   /**
    * Port used for the web interface when no port is specified and the
@@ -148,7 +148,7 @@ public class ObserverAgent extends Agent implements MessageListener {
    * matter whether the application's web server is created before or after the
    * observer is added to the container.
    */
-  public ObserverAgent() {
+  public Observer() {
     this(AUTO_PORT, DEFAULT_CONTEXT);
   }
 
@@ -158,7 +158,7 @@ public class ObserverAgent extends Agent implements MessageListener {
    * @param port port to serve the web interface on, or {@link #AUTO_PORT} to
    *             use the application's web server.
    */
-  public ObserverAgent(int port) {
+  public Observer(int port) {
     this(port, DEFAULT_CONTEXT);
   }
 
@@ -170,7 +170,7 @@ public class ObserverAgent extends Agent implements MessageListener {
    *             use the application's web server.
    * @param context context path to serve the web interface at.
    */
-  public ObserverAgent(int port, String context) {
+  public Observer(int port, String context) {
     this.port = port;
     this.context = context;
   }

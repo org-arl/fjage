@@ -13,7 +13,7 @@ package org.arl.fjage.observer;
 import org.arl.fjage.param.Parameter;
 
 /**
- * Parameters supported by {@link ObserverAgent}, so that an observer can be
+ * Parameters supported by {@link Observer}, so that an observer can be
  * inspected and controlled from a shell or over a gateway.
  *
  * @author  Mandar Chitre

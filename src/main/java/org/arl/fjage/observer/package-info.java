@@ -13,14 +13,14 @@ for full license details.
  * <p>
  * fjåge offers no direct way to watch agents talk to each other. Logs show
  * what each agent chose to log, and a shell sees only the messages addressed to
- * it. {@link org.arl.fjage.observer.ObserverAgent} fills that gap: added to a
+ * it. {@link org.arl.fjage.observer.Observer} fills that gap: added to a
  * container, it observes every message sent in that container and publishes it
  * to a web interface that draws the traffic as a sequence diagram.
  * <pre>
- * container.add("observer", new ObserverAgent());
+ * container.add("observer", new Observer());
  * </pre>
  * The web interface is served by the application's own web server if it has
- * one, and on {@link org.arl.fjage.observer.ObserverAgent#DEFAULT_PORT}
+ * one, and on {@link org.arl.fjage.observer.Observer#DEFAULT_PORT}
  * otherwise. The URL is logged at startup, and readable as the agent's
  * {@code url} parameter.
  * <p>
