@@ -367,8 +367,8 @@ public class Container {
     for (MessageListener listener: listeners) {
       try {
         if (listener.onReceive(m)) return true;
-      } catch (Throwable ex) {
-        log.log(Level.WARNING, "MessageListener: "+ex.toString(), ex);
+      } catch (RuntimeException ex) {
+        log.log(Level.WARNING, "MessageListener: "+ ex, ex);
       }
     }
     AgentID aid = m.getRecipient();
