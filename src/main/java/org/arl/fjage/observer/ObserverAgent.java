@@ -119,7 +119,7 @@ public class ObserverAgent extends Agent implements MessageListener {
   protected final String context;
   protected final Gson gson = new Gson();
   protected final Object wlock = new Object();
-  protected final Map<String,Endpoint> endpoints = new ConcurrentHashMap<String,Endpoint>();
+  protected final Map<String,Endpoint> endpoints = new ConcurrentHashMap<>();
 
   protected WebServer server = null;
   protected WebSocketHubConnector conn = null;
@@ -186,13 +186,10 @@ public class ObserverAgent extends Agent implements MessageListener {
       log.warning("Observer web interface resources not found at "+RESOURCE);
     conn = new WebSocketHubConnector(port, context+"/ws");
     out = conn.getOutputStream();
-    conn.setConnectionListener(new ConnectionListener() {
-      @Override
-      public void connected(Connector connector) {
-        // bring a newly connected client up to date
-        publishState();
-        publishEndpoints(null);
-      }
+    conn.setConnectionListener(connector -> {
+      // bring a newly connected client up to date
+      publishState();
+      publishEndpoints(null);
     });
     startControlThread();
     if (c != null) c.addListener(this);
@@ -272,7 +269,7 @@ public class ObserverAgent extends Agent implements MessageListener {
     } catch (Throwable ex) {
       // an exception here would break message delivery for the whole
       // container, since Container.send() does not guard listener calls
-      log.log(Level.WARNING, "Observer error: "+ex.toString(), ex);
+      log.log(Level.WARNING, "Observer error: "+ ex, ex);
     }
     return false;
   }
@@ -310,7 +307,7 @@ public class ObserverAgent extends Agent implements MessageListener {
         Endpoint prev = endpoints.putIfAbsent(name, ep = new Endpoint(aid.isTopic()));
         if (prev != null) ep = prev;
         else {
-          if (fresh == null) fresh = new ArrayList<String>(2);
+          if (fresh == null) fresh = new ArrayList<>(2)
           fresh.add(name);
         }
       }
@@ -367,7 +364,7 @@ public class ObserverAgent extends Agent implements MessageListener {
         publish(json);
       }
     } catch (Throwable ex) {
-      log.log(Level.WARNING, "Observer error: "+ex.toString(), ex);
+      log.log(Level.WARNING, "Observer error: "+ ex, ex);
     }
   }
 
@@ -427,24 +424,21 @@ public class ObserverAgent extends Agent implements MessageListener {
    * applied globally, and the resulting state is published to all clients.
    */
   protected void startControlThread() {
-    ctrlThread = new Thread(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
-          String s;
-          while ((s = in.readLine()) != null) {
-            s = s.trim();
-            if (s.isEmpty()) continue;
-            try {
-              handleControl(s);
-            } catch (Throwable ex) {
-              log.log(Level.WARNING, "Bad observer command: "+s, ex);
-            }
+    ctrlThread = new Thread(() -> {
+      try {
+        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+        String s;
+        while ((s = in.readLine()) != null) {
+          s = s.trim();
+          if (s.isEmpty()) continue;
+          try {
+            handleControl(s);
+          } catch (Throwable ex) {
+            log.log(Level.WARNING, "Bad observer command: "+s, ex);
           }
-        } catch (Throwable ex) {
-          if (conn != null) log.log(Level.WARNING, "Observer control thread died: "+ex.toString(), ex);
         }
+      } catch (Throwable ex) {
+        if (conn != null) log.log(Level.WARNING, "Observer control thread died: "+ ex, ex);
       }
     }, getClass().getSimpleName()+":ctrl");
     ctrlThread.setDaemon(true);
