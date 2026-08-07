@@ -1,5 +1,6 @@
 import socket
 import logging
+import math
 import threading
 import time
 from typing import Any, Callable, List, Optional
@@ -21,6 +22,18 @@ class TCPConnector(Connector):
             port : port of the fjåge container. Defaults to 1100.
             reconnect_delay : seconds to wait before reconnecting, or -1 to disable reconnection. Defaults to 5.
         """
+        if not isinstance(hostname, str) or not hostname.strip():
+            raise ValueError("hostname must be a non-empty string")
+        if isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
+            raise ValueError("port must be an integer between 1 and 65535")
+        if (
+            isinstance(reconnect_delay, bool)
+            or not isinstance(reconnect_delay, (int, float))
+            or not math.isfinite(reconnect_delay)
+            or reconnect_delay < -1
+        ):
+            raise ValueError("reconnect_delay must be a finite non-negative number or -1")
+
         self.hostname = hostname
         self.port = port
         self.reconnect_delay = reconnect_delay

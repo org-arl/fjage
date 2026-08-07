@@ -35,6 +35,21 @@ def test_serialconnector_requires_devname():
         SerialConnector()   # type: ignore[call-arg]
 
 
+@pytest.mark.parametrize(
+    ("devname", "baud", "reconnect_delay"),
+    [
+        ("", 9600, 5),
+        ("loop://", 0, 5),
+        ("loop://", True, 5),
+        ("loop://", 9600, -2),
+        ("loop://", 9600, float("inf")),
+    ],
+)
+def test_serialconnector_validates_constructor_arguments(devname, baud, reconnect_delay):
+    with pytest.raises(ValueError):
+        SerialConnector(devname, baud, reconnect_delay)
+
+
 def test_serialconnector_send_receive(connector):
     """A line sent on a loopback port should come back to the receive callback."""
     lines = collect(connector)
