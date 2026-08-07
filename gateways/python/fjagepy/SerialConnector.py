@@ -1,4 +1,5 @@
 import logging
+import math
 import threading
 import time
 from typing import Any, Callable, List, Optional
@@ -22,6 +23,18 @@ class SerialConnector(Connector):
             baud : baud rate. Defaults to 9600.
             reconnect_delay : seconds to wait before reconnecting, or -1 to disable reconnection. Defaults to 5.
         """
+        if not isinstance(devname, str) or not devname.strip():
+            raise ValueError("devname must be a non-empty string")
+        if isinstance(baud, bool) or not isinstance(baud, int) or baud <= 0:
+            raise ValueError("baud must be a positive integer")
+        if (
+            isinstance(reconnect_delay, bool)
+            or not isinstance(reconnect_delay, (int, float))
+            or not math.isfinite(reconnect_delay)
+            or reconnect_delay < -1
+        ):
+            raise ValueError("reconnect_delay must be a finite non-negative number or -1")
+
         self.devname = devname
         self.baud = baud
         self.reconnect_delay = reconnect_delay
