@@ -153,10 +153,10 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    *
    * @param msg message to send.
    */
-  public void send(Message msg) {
-    if (owner == null) return;
+  public boolean send(Message msg) {
+    if (owner == null) return false;
     msg.setRecipient(this);
-    owner.send(msg);
+    return owner.send(msg);
   }
 
   /**
