@@ -48,14 +48,14 @@ import org.junit.Test;
  * Boots a container with an observer and two chatty agents, and drives the
  * observer over its web socket.
  */
-public class ObserverAgentTest {
+public class ObserverTest {
 
   private static final String CONTEXT = "/observer";
   private static final AtomicInteger delivered = new AtomicInteger(0);
 
   private static Platform platform;
   private static Container container;
-  private static ObserverAgent observer;
+  private static Observer observer;
   private static int port;
 
   private ObserverTestClient client;
@@ -66,7 +66,7 @@ public class ObserverAgentTest {
     port = freePort();
     platform = new RealTimePlatform();
     container = new Container(platform);
-    observer = new ObserverAgent(port, CONTEXT);
+    observer = new Observer(port, CONTEXT);
     container.add("observer", observer);
     container.add("pinger", new Pinger());
     container.add("ponger", new Ponger());
@@ -262,7 +262,7 @@ public class ObserverAgentTest {
       assertTrue("rate limit not applied, got "+n+" messages", n <= 6);
       assertTrue("nothing dropped", observer.getDropped() > 0);
     } finally {
-      observer.setMaxRate(ObserverAgent.DEFAULT_MAX_RATE);
+      observer.setMaxRate(Observer.DEFAULT_MAX_RATE);
     }
   }
 
