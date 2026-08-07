@@ -132,8 +132,8 @@ public class ObserverAgent extends Agent implements MessageListener {
   protected volatile int maxRate = DEFAULT_MAX_RATE;
   protected volatile ObserverFilter filter = new ObserverFilter().compile();
 
-  protected long count = 0;
-  protected long dropped = 0;
+  protected final AtomicLong count = new AtomicLong();
+  protected final AtomicLong dropped = new AtomicLong();
   protected long seq = 0;
   protected long windowStart = 0;
   protected int windowCount = 0;
@@ -260,10 +260,10 @@ public class ObserverAgent extends Agent implements MessageListener {
       long t = System.currentTimeMillis();
       synchronized (wlock) {
         if (!allow(t)) {
-          dropped++;
+          dropped.incrementAndGet();
           return false;
         }
-        count++;
+        count.incrementAndGet();
         publish(serialize(msg, t, ++seq));
       }
     } catch (Throwable ex) {
@@ -307,7 +307,7 @@ public class ObserverAgent extends Agent implements MessageListener {
         Endpoint prev = endpoints.putIfAbsent(name, ep = new Endpoint(aid.isTopic()));
         if (prev != null) ep = prev;
         else {
-          if (fresh == null) fresh = new ArrayList<>(2)
+          if (fresh == null) fresh = new ArrayList<>(2);
           fresh.add(name);
         }
       }
@@ -394,8 +394,8 @@ public class ObserverAgent extends Agent implements MessageListener {
     StringBuilder sb = new StringBuilder();
     sb.append("{\"action\":\"state\",\"enabled\":").append(enabled);
     sb.append(",\"maxRate\":").append(maxRate);
-    sb.append(",\"count\":").append(count);
-    sb.append(",\"dropped\":").append(dropped);
+    sb.append(",\"count\":").append(count.get());
+    sb.append(",\"dropped\":").append(dropped.get());
     sb.append(",\"filter\":").append(gson.toJson(filter));
     // an observer sees only its own container, and saying which one heads off
     // the "why can't I see agent X" question in a distributed setup
@@ -409,10 +409,12 @@ public class ObserverAgent extends Agent implements MessageListener {
     long t = System.currentTimeMillis();
     if (t - lastStats < STATS_INTERVAL) return;     // virtual time may run fast
     lastStats = t;
-    if (count == lastStatsCount && dropped == lastStatsDropped) return;
-    lastStatsCount = count;
-    lastStatsDropped = dropped;
-    publishSafely("{\"action\":\"stats\",\"count\":"+count+",\"dropped\":"+dropped+"}");
+    long n = count.get();
+    long d = dropped.get();
+    if (n == lastStatsCount && d == lastStatsDropped) return;
+    lastStatsCount = n;
+    lastStatsDropped = d;
+    publishSafely("{\"action\":\"stats\",\"count\":"+n+",\"dropped\":"+d+"}");
     publishEndpoints(null);     // refresh the per-endpoint counts
   }
 
@@ -488,11 +490,11 @@ public class ObserverAgent extends Agent implements MessageListener {
   }
 
   public long getCount() {
-    return count;
+    return count.get();
   }
 
   public long getDropped() {
-    return dropped;
+    return dropped.get();
   }
 
   public int getMaxRate() {

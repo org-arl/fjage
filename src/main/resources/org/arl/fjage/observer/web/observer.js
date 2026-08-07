@@ -34,7 +34,7 @@ for full license details.
     try {
       localStorage.setItem(STORE, JSON.stringify({
         theme: document.documentElement.getAttribute('data-theme'),
-        order: order, shown: Object.keys(shown), dropped: Object.keys(dropped)
+        order: order, shown: Object.keys(shown)
       }));
     } catch (ex) { /* private browsing, quota, ... — not worth breaking over */ }
   }
@@ -46,10 +46,11 @@ for full license details.
     if (s.theme) document.documentElement.setAttribute('data-theme', s.theme);
     if (s.order) order = s.order.slice();
     (s.shown || []).forEach(function (n) { shown[n] = true; });
-    (s.dropped || []).forEach(function (n) { dropped[n] = true; });
     // `order` is only a preference for how to lay out lifelines — endpoints are
     // never resurrected from it, or a restarted container would still be shown
     // listing whatever the previous one happened to talk to
+    // `dropped` is not persisted: it mirrors the container's filter, which the
+    // server sends on connect
   }
 
   //////////// websocket
@@ -66,7 +67,9 @@ for full license details.
       backoff = 500;
       $('status').className = 'up';
       $('status').title = 'connected';
-      sendFilter();                        // our drop rules may outlive a restart
+      // the container filter is shared by all clients, so a new client adopts
+      // the current state rather than pushing its own — only an explicit apply
+      // or drop mutates the shared filter
       send({ action: 'state' });
     };
     ws.onclose = function () {
