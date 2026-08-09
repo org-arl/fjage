@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
+import java.util.stream.Stream;
 
 /**
  * Shell agent runs in a container and allows execution of shell commands and scripts.
@@ -252,6 +253,7 @@ public class ShellAgent extends Agent {
         if (msg instanceof ShellExecReq) handleExecReq((ShellExecReq)msg);
         else if (msg instanceof GetFileReq) handleGetFileReq((GetFileReq)msg);
         else if (msg instanceof PutFileReq) handlePutFileReq((PutFileReq)msg);
+        else if (msg instanceof DeleteFileReq) handleDeleteFileReq((DeleteFileReq)msg);
         else if (msg.getPerformative() == Performative.REQUEST) send(new Message(msg, Performative.NOT_UNDERSTOOD));
         else {
           log.fine(msg.getSender()+" > "+msg.toString());
@@ -646,51 +648,31 @@ public class ShellAgent extends Agent {
     Closeable os = null;
     long ofs = req.getOffset();
     try {
-      boolean fileIsDir = filename.endsWith("/") || filename.endsWith(File.separator);
-      if (fileIsDir) {
-        if (ofs == 0) {
-          if (contents == null) {
-            Path pathToBeDeleted = Paths.get(filename);
-
-            Files.walk(pathToBeDeleted)
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
-
-            rsp = new Message(req, Performative.AGREE);
-          } else {
-            if (!f.exists()) rsp = new Message(req, f.mkdir() ? Performative.AGREE : Performative.FAILURE);
-          }
-        }
-      } else {
-        if (contents == null && ofs == 0) {
-          if (isCache.containsKey(filename)){
-            isCache.get(filename).is.close();
-            isCache.remove(filename);
-          }
-          if (f.delete()) rsp = new Message(req, Performative.AGREE);
-        } else if (contents == null) {
+      if (ofs == 0 && contents == null) { // Delete
+        if (deletePath(filename)) rsp = new Message(req, Performative.AGREE);
+      } else if (filename.endsWith("/") || filename.endsWith(File.separator)) {
+        // Create directory
+        if (ofs == 0 && !f.exists()) rsp = new Message(req, f.mkdir() ? Performative.AGREE : Performative.FAILURE);
+      } else if (contents == null) { // Truncate file
           os = new RandomAccessFile(f, "rw");
           ((RandomAccessFile) os).setLength(ofs);
           rsp = new Message(req, Performative.AGREE);
-        } else {
-          if (ofs == f.length()) {
-            // Append if ofs != 0
-            os = new FileOutputStream(f, ofs != 0);
-            ((FileOutputStream) os).write(contents);
-            ((FileOutputStream) os).flush();
-            ((FileOutputStream) os).getFD().sync();
-          } else {
-            // Overwrite if ofs == 0
-            os = new RandomAccessFile(f, "rw");
-            if(ofs >= 0)((RandomAccessFile) os).setLength(ofs + contents.length);
-            if (ofs > 0) ((RandomAccessFile) os).skipBytes((int) ofs);
-            else if (ofs < 0) ((RandomAccessFile) os).skipBytes((int) (f.length() + ofs));
-            ((RandomAccessFile) os).write(contents);
-            ((RandomAccessFile) os).getFD().sync();
-          }
-          rsp = new Message(req, Performative.AGREE);
-        }
+      } else if (ofs == f.length()) {
+        // Append if ofs != 0
+        os = new FileOutputStream(f, ofs != 0);
+        ((FileOutputStream) os).write(contents);
+        ((FileOutputStream) os).flush();
+        ((FileOutputStream) os).getFD().sync();
+        rsp = new Message(req, Performative.AGREE);
+      } else {
+        // Overwrite if ofs == 0
+        os = new RandomAccessFile(f, "rw");
+        if(ofs >= 0)((RandomAccessFile) os).setLength(ofs + contents.length);
+        if (ofs > 0) ((RandomAccessFile) os).skipBytes((int) ofs);
+        else if (ofs < 0) ((RandomAccessFile) os).skipBytes((int) (f.length() + ofs));
+        ((RandomAccessFile) os).write(contents);
+        ((RandomAccessFile) os).getFD().sync();
+        rsp = new Message(req, Performative.AGREE);
       }
     } catch (IOException ex) {
       log.log(Level.WARNING, "File write failure: "+ex.toString(), ex);
@@ -707,4 +689,79 @@ public class ShellAgent extends Agent {
     send(rsp);
   }
 
+  private void handleDeleteFileReq(final DeleteFileReq req) {
+    String filename = req.getFilename();
+    if (filename == null) {
+      send(new Message(req, Performative.REFUSE));
+      return;
+    }
+
+    Message rsp = null;
+    try {
+      if (deletePath(filename)) rsp = new Message(req, Performative.AGREE);
+    } catch (IOException ex) {
+      log.log(Level.WARNING, "File delete failure: "+ex.toString(), ex);
+    }
+    if (rsp == null) rsp = new Message(req, Performative.FAILURE);
+    send(rsp);
+  }
+
+  private boolean deletePath(String filename) throws IOException {
+    File f = new File(filename);
+    if (!f.exists()) {
+      return false;
+    }
+
+    boolean isDir = filename.endsWith("/") || filename.endsWith(File.separator);
+    if (isDir) {
+      // If the filename ends with a file separator, we expect a directory
+      if (!f.isDirectory()) {
+        return false;
+      }
+
+      // Remove cache entries for files in the directory
+      String prefix = filename;
+      if (!prefix.endsWith("/") && !prefix.endsWith(File.separator)) {
+        prefix += File.separator;
+      }
+      Iterator<Map.Entry<String, InputStreamCacheEntry>> it = isCache.entrySet().iterator();
+      while (it.hasNext()) {
+        Map.Entry<String, InputStreamCacheEntry> entry = it.next();
+        String key = entry.getKey();
+        if (key.startsWith(prefix)) {
+          try {
+            entry.getValue().is.close();
+          } catch (IOException ex) {
+            log.log(Level.WARNING, "Input stream close failure: "+ex.toString(), ex);
+          }
+          it.remove();
+        }
+      }
+
+      // Remove the directory and its files
+      Path pathToBeDeleted = Paths.get(filename);
+      try (Stream<Path> stream = Files.walk(pathToBeDeleted)) {
+         Iterator<Path> paths = stream.sorted(Comparator.reverseOrder()).iterator();
+         while (paths.hasNext()) Files.delete(paths.next());
+      }
+      return true;
+    }
+
+    // Not a directory
+
+    // If the filename doesn't end with a file separator, we expect a file
+    if (!f.isFile()) {
+      return false;
+    }
+
+    if (isCache.containsKey(filename)){
+      try {
+        isCache.get(filename).is.close();
+      } catch (IOException ex) {
+        log.log(Level.WARNING, "Input stream close failure: "+ex.toString(), ex);
+      }
+      isCache.remove(filename);
+    }
+    return f.delete();
+  }
 }
