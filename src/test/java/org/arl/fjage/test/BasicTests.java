@@ -344,7 +344,13 @@ public class BasicTests {
     assertTrue("Get file (offset 9, len 0) failed", agent.get3);
     assertTrue("Get file (offset 27, len 1, out of bounds) failed", agent.get4);
     assertTrue("Directory listing failed", agent.dir);
-    assertTrue("Delete file failed", agent.del);
+    assertTrue("Delete file (PutFileReq) failed", agent.delByPut);
+    assertTrue("Delete file (existing file) failed", agent.del);
+    assertTrue("Delete file (missing file) failed", agent.delMissing);
+    assertTrue("Delete file (null filename) failed", agent.delNull);
+    assertTrue("Delete directory (recursive, trailing separator) failed", agent.delDir);
+    assertTrue("Delete file with trailing separator (mismatch) failed", agent.delFileTrailingSepMismatch);
+    assertTrue("Delete directory without trailing separator (mismatch) failed", agent.delDirNoSepMismatch);
   }
 
   @Test
@@ -993,7 +999,9 @@ public class BasicTests {
   private static class ShellTestAgent extends Agent {
     private final String DIRNAME = System.getProperty("java.io.tmpdir");
     private final String FILENAME = "fjage-test.txt";
-    public boolean exec = false, put1 = false, put2 = false, put3 = false, put4 = false, get = false, get2 = false, get3 = false, get4 = false, del = false, dir = false, done = false;
+    private final String DELETE_FILENAME = "fjage-delete-test.txt";
+    private final String DELETE_DIRNAME = "fjage-delete-dir";
+    public boolean exec = false, put1 = false, put2 = false, put3 = false, put4 = false, get = false, get2 = false, get3 = false, get4 = false, delByPut = false, dir = false, del = false, delMissing = false, delNull = false, delDir = false, delFileTrailingSepMismatch = false, delDirNoSepMismatch = false, done = false;
     @Override
     public void init() {
       add(new OneShotBehavior() {
@@ -1007,7 +1015,19 @@ public class BasicTests {
           Test 7: Overwrite data to the file created in Test 1.
           Test 8: Truncate the file created in Test 1.
           Test 9: Get a listing of all files in the directory, ensure the file created in Test 1 exists.
-          Test 10: Delete file created in Test 1.
+          Test 10: Delete file created in Test 1 (via PutFileReq).
+          Test 11: Create a second file with dummy data, to be deleted via DeleteFileReq.
+          Test 12: Delete the file created in Test 11 via DeleteFileReq.
+          Test 13: Attempt to delete the (now missing) file created in Test 11 via DeleteFileReq, expect failure.
+          Test 14: Attempt a DeleteFileReq with no filename set, expect refusal.
+          Test 15: Create a directory containing a nested file and a nested subdirectory with its own file,
+                   then delete it all recursively via DeleteFileReq using a trailing path separator, expect success.
+          Test 16: Create a plain file, then attempt to delete it via DeleteFileReq using a
+                   trailing path separator (mismatch: file targeted as if it were a directory),
+                   expect failure.
+          Test 17: Create an empty directory, then attempt to delete it via DeleteFileReq without
+                   a trailing path separator (mismatch: directory targeted as if it were a file),
+                   expect failure.
          */
         @Override
         public void action() {
@@ -1117,8 +1137,74 @@ public class BasicTests {
           log.info("del rsp: "+rsp);
           if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
             File f = new File(DIRNAME+File.separator+FILENAME);
+            if (!f.exists()) delByPut = true;
+          }
+
+          req = new PutFileReq(shell, DIRNAME+File.separator+DELETE_FILENAME, bytes);
+          rsp = request(req);
+          log.info("del setup put rsp: "+rsp);
+
+          req = new DeleteFileReq(shell, DIRNAME+File.separator+DELETE_FILENAME);
+          rsp = request(req);
+          log.info("del rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.AGREE) {
+            File f = new File(DIRNAME+File.separator+DELETE_FILENAME);
             if (!f.exists()) del = true;
           }
+
+          req = new DeleteFileReq(shell, DIRNAME+File.separator+DELETE_FILENAME);
+          rsp = request(req);
+          log.info("delMissing rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.FAILURE) delMissing = true;
+
+          req = new DeleteFileReq(shell);
+          rsp = request(req);
+          log.info("delNull rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.REFUSE) delNull = true;
+
+          File dirToDelete = new File(DIRNAME+File.separator+DELETE_DIRNAME);
+          req = new PutFileReq(shell, dirToDelete.getPath()+File.separator, new byte[0]);
+          rsp = request(req);
+          log.info("delDir mkdir rsp: "+rsp);
+          File nested = new File(dirToDelete, "nested.txt");
+          req = new PutFileReq(shell, nested.getPath(), bytes);
+          rsp = request(req);
+          log.info("delDir nested put rsp: "+rsp);
+          File nestedDir = new File(dirToDelete, "nesteddir");
+          req = new PutFileReq(shell, nestedDir.getPath()+File.separator, new byte[0]);
+          rsp = request(req);
+          log.info("delDir nesteddir mkdir rsp: "+rsp);
+          File nestedDirFile = new File(nestedDir, "nested2.txt");
+          req = new PutFileReq(shell, nestedDirFile.getPath(), bytes);
+          rsp = request(req);
+          log.info("delDir nesteddir nested put rsp: "+rsp);
+          req = new DeleteFileReq(shell, dirToDelete.getPath()+File.separator);
+          rsp = request(req);
+          log.info("delDir rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.AGREE
+              && !dirToDelete.exists() && !nested.exists() && !nestedDir.exists() && !nestedDirFile.exists())
+            delDir = true;
+
+          File fileForMismatch = new File(DIRNAME+File.separator+"fjage-delete-mismatch.txt");
+          req = new PutFileReq(shell, fileForMismatch.getPath(), bytes);
+          rsp = request(req);
+          log.info("delFileTrailingSepMismatch setup put rsp: "+rsp);
+          req = new DeleteFileReq(shell, fileForMismatch.getPath()+File.separator);
+          rsp = request(req);
+          log.info("delFileTrailingSepMismatch rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.FAILURE && fileForMismatch.exists()) delFileTrailingSepMismatch = true;
+          fileForMismatch.delete();
+
+          File dirForMismatch = new File(DIRNAME+File.separator+"fjage-delete-mismatch-dir");
+          req = new PutFileReq(shell, dirForMismatch.getPath()+File.separator, new byte[0]);
+          rsp = request(req);
+          log.info("delDirNoSepMismatch mkdir rsp: "+rsp);
+          req = new DeleteFileReq(shell, dirForMismatch.getPath());
+          rsp = request(req);
+          log.info("delDirNoSepMismatch rsp: "+rsp);
+          if (rsp != null && rsp.getPerformative() == Performative.FAILURE && dirForMismatch.exists()) delDirNoSepMismatch = true;
+          dirForMismatch.delete();
+
           done = true;
         }
       });
