@@ -15,6 +15,7 @@ import org.arl.fjage.param.ParameterMessageBehavior;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -590,7 +591,8 @@ public class ShellAgent extends Agent {
         else if (ofs+len > length) len = length-ofs;
         if (len > Integer.MAX_VALUE) throw new IOException("File is too large!");
         byte[] bytes = new byte[(int)len];
-        InputStreamCacheEntry isce = isCache.get(filename);
+        String key = cacheKey(filename);
+        InputStreamCacheEntry isce = isCache.get(key);
         if (isce != null) {
           if (isce.pos == ofs) {
             isce.lastUsed = currentTimeMillis();
@@ -598,7 +600,7 @@ public class ShellAgent extends Agent {
             is = isce.is;
           } else {
             isce.is.close();
-            isCache.remove(filename);
+            isCache.remove(key);
           }
         }
         int offset = 0;
@@ -615,8 +617,8 @@ public class ShellAgent extends Agent {
         rsp.setOffset(ofs);
         rsp.setContents(bytes);
         if (ofs != 0) {
-          if (!isCache.containsKey(filename))
-            isCache.put(filename, new InputStreamCacheEntry(is, ofs+bytes.length));
+          if (!isCache.containsKey(key))
+            isCache.put(key, new InputStreamCacheEntry(is, ofs+bytes.length));
           is = null;
         }
       }
@@ -629,7 +631,7 @@ public class ShellAgent extends Agent {
         } catch (IOException ex) {
           // do nothing
         }
-        isCache.remove(filename);
+        isCache.remove(cacheKey(filename));
       }
     }
     if (rsp != null) send(rsp);
@@ -720,15 +722,18 @@ public class ShellAgent extends Agent {
       }
 
       // Remove cache entries for files in the directory
-      String prefix = filename;
-      if (!prefix.endsWith("/") && !prefix.endsWith(File.separator)) {
-        prefix += File.separator;
-      }
+      Path dirPath = Paths.get(filename).normalize();
       Iterator<Map.Entry<String, InputStreamCacheEntry>> it = isCache.entrySet().iterator();
       while (it.hasNext()) {
         Map.Entry<String, InputStreamCacheEntry> entry = it.next();
-        String key = entry.getKey();
-        if (key.startsWith(prefix)) {
+        Path entryPath;
+        try {
+          entryPath = Paths.get(entry.getKey());
+        } catch (InvalidPathException ex) {
+          continue;
+        }
+
+        if (entryPath.startsWith(dirPath)) {
           try {
             entry.getValue().is.close();
           } catch (IOException ex) {
@@ -754,14 +759,24 @@ public class ShellAgent extends Agent {
       return false;
     }
 
-    if (isCache.containsKey(filename)){
+    String key = cacheKey(filename);
+    if (isCache.containsKey(key)){
       try {
-        isCache.get(filename).is.close();
+        isCache.get(key).is.close();
       } catch (IOException ex) {
         log.log(Level.WARNING, "Input stream close failure: "+ex.toString(), ex);
       }
-      isCache.remove(filename);
+      isCache.remove(key);
     }
     return f.delete();
+  }
+
+  // Canonical form of a filename for use as an isCache key.
+  private String cacheKey(String filename) {
+    try {
+      return Paths.get(filename).normalize().toString();
+    } catch (InvalidPathException ex) {
+      return filename;
+    }
   }
 }
