@@ -217,7 +217,7 @@
     window.addEventListener('load', () => {
 
       // Initialize terminal
-      let term = new Terminal({ cols: COLS, rows: ROWS });
+      let term = new Terminal({ cols: COLS, rows: ROWS, fontSize: 14 });
       let fitAddon = new FitAddon.FitAddon();
       term.loadAddon(fitAddon);
       term.loadAddon(new WebLinksAddon.WebLinksAddon());
