@@ -915,6 +915,109 @@ describe('Shell GetFile/PutFile', function () {
     expect(rsp2.contents.length).toBe(TEST_STRING.length-4+NEW_STRING.length);
     expect(new TextDecoder('utf-8').decode(new Uint8Array(rsp2.contents))).toEqual(TEST_STRING.substring(0,10) + NEW_STRING);
   });
+
+  it('should be able to delete a file using DeleteFileReq', async function () {
+    const dfr = new DeleteFileReq();
+    dfr.recipient = shell;
+    dfr.filename = DIRNAME + '/' + FILENAME;
+    const rsp = await gw.request(dfr, 3000);
+    expect(rsp).toBeTruthy();
+    expect(rsp.perf).toEqual(Performative.AGREE);
+    var gfr = new GetFileReq();
+    gfr.recipient = shell;
+    gfr.filename = DIRNAME + '/' + FILENAME;
+    const rsp2 = await gw.request(gfr);
+    expect(rsp2.perf).toEqual(Performative.FAILURE);
+  });
+
+  it('should fail to delete a file using DeleteFileReq if the file does not exist', async function () {
+    const dfr = new DeleteFileReq();
+    dfr.recipient = shell;
+    dfr.filename = DIRNAME + '/' + FILENAME;
+    const rsp = await gw.request(dfr, 3000);
+    expect(rsp).toBeTruthy();
+    expect(rsp.perf).toEqual(Performative.AGREE);
+    const rsp2 = await gw.request(dfr, 3000);
+    expect(rsp2).toBeTruthy();
+    expect(rsp2.perf).toEqual(Performative.FAILURE);
+  });
+
+  it('should refuse a DeleteFileReq with no filename set', async function () {
+    const dfr = new DeleteFileReq();
+    dfr.recipient = shell;
+    const rsp = await gw.request(dfr, 3000);
+    expect(rsp).toBeTruthy();
+    expect(rsp.perf).toEqual(Performative.REFUSE);
+  });
+
+  it('should be able to recursively delete a directory using DeleteFileReq', async function () {
+    const dirPath = DIRNAME + '/fjage-test-delete-dir';
+
+    let pfr = new PutFileReq();
+    pfr.recipient = shell;
+    pfr.filename = dirPath + '/';
+    pfr.contents = [];
+    let rsp = await gw.request(pfr, 3000);
+    expect(rsp.perf).toEqual(Performative.AGREE);
+
+    pfr = new PutFileReq();
+    pfr.recipient = shell;
+    pfr.filename = dirPath + '/nested.txt';
+    pfr.contents = Array.from((new TextEncoder('utf-8').encode(TEST_STRING)));
+    rsp = await gw.request(pfr, 3000);
+    expect(rsp.perf).toEqual(Performative.AGREE);
+
+    pfr = new PutFileReq();
+    pfr.recipient = shell;
+    pfr.filename = dirPath + '/nesteddir/';
+    pfr.contents = [];
+    rsp = await gw.request(pfr, 3000);
+    expect(rsp.perf).toEqual(Performative.AGREE);
+
+    const dfr = new DeleteFileReq();
+    dfr.recipient = shell;
+    dfr.filename = dirPath + '/';
+    const rsp2 = await gw.request(dfr, 3000);
+    expect(rsp2).toBeTruthy();
+    expect(rsp2.perf).toEqual(Performative.AGREE);
+
+    const gfr = new GetFileReq();
+    gfr.recipient = shell;
+    gfr.filename = dirPath;
+    const rsp3 = await gw.request(gfr, 3000);
+    expect(rsp3.perf).toEqual(Performative.FAILURE);
+  });
+
+  it('should fail to delete a file using DeleteFileReq when the filename has a trailing separator', async function () {
+    const dfr = new DeleteFileReq();
+    dfr.recipient = shell;
+    dfr.filename = DIRNAME + '/' + FILENAME + '/';
+    const rsp = await gw.request(dfr, 3000);
+    expect(rsp).toBeTruthy();
+    expect(rsp.perf).toEqual(Performative.FAILURE);
+  });
+
+  it('should fail to delete a directory using DeleteFileReq without a trailing separator', async function () {
+    const dirPath = DIRNAME + '/fjage-test-delete-mismatch-dir';
+    const pfr = new PutFileReq();
+    pfr.recipient = shell;
+    pfr.filename = dirPath + '/';
+    pfr.contents = [];
+    const rsp = await gw.request(pfr, 3000);
+    expect(rsp.perf).toEqual(Performative.AGREE);
+
+    const dfr = new DeleteFileReq();
+    dfr.recipient = shell;
+    dfr.filename = dirPath;
+    const rsp2 = await gw.request(dfr, 3000);
+    expect(rsp2).toBeTruthy();
+    expect(rsp2.perf).toEqual(Performative.FAILURE);
+
+    const cleanup = new DeleteFileReq();
+    cleanup.recipient = shell;
+    cleanup.filename = dirPath + '/';
+    await gw.request(cleanup, 3000);
+  });
 });
 
 async function sendTestStatus(status, trace, type) {
