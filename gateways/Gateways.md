@@ -239,11 +239,12 @@ The `clazz` field should be set based on the type of the base64 array is being e
 
 ## Pre-defined Messages
 
-A fjåge Gateway may export pre-defined Message Types for the Messages defined by fjåge. These are :
+A fjåge Gateway may export pre-defined Message Types for the Messages defined by fjåge. These are:
 
 - `org.arl.fjage.shell.ShellExecReq`
 - `org.arl.fjage.shell.GetFileReq`
 - `org.arl.fjage.shell.PutFileReq`
+- `org.arl.fjage.shell.DeleteFileReq`
 - `org.arl.fjage.param.ParameterReq`
 - `org.arl.fjage.shell.GetFileRsp`
 - `org.arl.fjage.param.ParameterRsp`
