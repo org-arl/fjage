@@ -442,6 +442,16 @@ class PutFileReq(Message):
         _update_attributes(self, kwargs)
 
 
+@message('org.arl.fjage.shell.DeleteFileReq')
+class DeleteFileReq(Message):
+    filename: Optional[str]
+
+    def __init__(self, filename: Optional[str] = None, **kwargs):
+        super().__init__(perf=Performative.REQUEST)
+        self.filename: Optional[str] = filename
+        _update_attributes(self, kwargs)
+
+
 @message('org.arl.fjage.shell.GetFileReq')
 class GetFileReq(Message):
     filename: Optional[str]
