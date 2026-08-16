@@ -196,6 +196,14 @@ export const ParameterRsp = MessageClass('org.arl.fjage.param.ParameterRsp');
 */
 export const PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq');
 
+/**
+* Request to delete a file, or a directory (if the file name ends with a path separator).
+*
+* @typedef {Message} DeleteFileReq
+* @property {string} filename - name of the file or directory to delete
+* @exports DeleteFileReq
+*/
+export const DeleteFileReq = MessageClass('org.arl.fjage.shell.DeleteFileReq');
 
 /**
 * Request to read a file or a directory.
