@@ -8,7 +8,7 @@ FILENAME = 'fjage-test.txt';
 TEST_STRING = 'this is a test';
 NEW_STRING = 'new test';
 
-from fjagepy import Gateway, Message, ShellExecReq, AgentID, MessageClass, Performative, JSONMessage, GetFileReq, GetFileRsp, PutFileReq
+from fjagepy import Gateway, Message, ShellExecReq, AgentID, MessageClass, Performative, JSONMessage, GetFileReq, GetFileRsp, PutFileReq, DeleteFileReq
 
 @pytest.fixture(scope="module")
 def gateway():
@@ -312,3 +312,121 @@ def test_gateway_append_file_using_offset_less_than_zero(gateway, testfile):
     assert len(rsp2.contents) == expected_length
     expected_content = (TEST_STRING[:10] + NEW_STRING).encode('utf-8')
     assert rsp2.contents == list(expected_content)
+
+def test_gateway_delete_file_using_delete_file_req(gateway, testfile):
+    """Gateway should be able to delete a file using DeleteFileReq."""
+    shell = gateway.agent('shell')
+    dfr = DeleteFileReq()
+    dfr.recipient = shell
+    dfr.filename = DIRNAME + '/' + FILENAME
+    rsp = gateway.request(dfr)
+    assert rsp is not None
+    assert rsp.perf is not None
+    assert rsp.perf == Performative.AGREE
+    gfr = GetFileReq()
+    gfr.recipient = shell
+    gfr.filename = DIRNAME + '/' + FILENAME
+    rsp2 = gateway.request(gfr)
+    assert rsp2 is not None
+    assert rsp2.perf is not None
+    assert rsp2.perf == Performative.FAILURE
+
+def test_gateway_delete_file_using_delete_file_req_missing_file(gateway, testfile):
+    """Gateway should fail to delete a file using DeleteFileReq if the file does not exist."""
+    shell = gateway.agent('shell')
+    dfr = DeleteFileReq()
+    dfr.recipient = shell
+    dfr.filename = DIRNAME + '/' + FILENAME
+    rsp = gateway.request(dfr)
+    assert rsp is not None
+    assert rsp.perf is not None
+    assert rsp.perf == Performative.AGREE
+    rsp2 = gateway.request(dfr)
+    assert rsp2 is not None
+    assert rsp2.perf is not None
+    assert rsp2.perf == Performative.FAILURE
+
+def test_gateway_delete_file_req_no_filename(gateway, testfile):
+    """Gateway should refuse a DeleteFileReq with no filename set."""
+    shell = gateway.agent('shell')
+    dfr = DeleteFileReq()
+    dfr.recipient = shell
+    rsp = gateway.request(dfr)
+    assert rsp is not None
+    assert rsp.perf is not None
+    assert rsp.perf == Performative.REFUSE
+
+def test_gateway_delete_directory_using_delete_file_req(gateway, testfile):
+    """Gateway should be able to recursively delete a directory using DeleteFileReq."""
+    shell = gateway.agent('shell')
+    dirpath = DIRNAME + '/fjage-test-delete-dir'
+
+    pfr = PutFileReq()
+    pfr.recipient = shell
+    pfr.filename = dirpath + '/'
+    pfr.contents = []
+    rsp = gateway.request(pfr)
+    assert rsp is not None and rsp.perf == Performative.AGREE
+
+    pfr = PutFileReq()
+    pfr.recipient = shell
+    pfr.filename = dirpath + '/nested.txt'
+    pfr.contents = list(TEST_STRING.encode('utf-8'))
+    rsp = gateway.request(pfr)
+    assert rsp is not None and rsp.perf == Performative.AGREE
+
+    pfr = PutFileReq()
+    pfr.recipient = shell
+    pfr.filename = dirpath + '/nesteddir/'
+    pfr.contents = []
+    rsp = gateway.request(pfr)
+    assert rsp is not None and rsp.perf == Performative.AGREE
+
+    dfr = DeleteFileReq()
+    dfr.recipient = shell
+    dfr.filename = dirpath + '/'
+    rsp2 = gateway.request(dfr)
+    assert rsp2 is not None
+    assert rsp2.perf == Performative.AGREE
+
+    gfr = GetFileReq()
+    gfr.recipient = shell
+    gfr.filename = dirpath
+    rsp3 = gateway.request(gfr)
+    assert rsp3 is not None
+    assert rsp3.perf == Performative.FAILURE
+
+def test_gateway_delete_file_req_trailing_separator_mismatch(gateway, testfile):
+    """Gateway should fail to delete a file using DeleteFileReq when the filename has a trailing separator."""
+    shell = gateway.agent('shell')
+    dfr = DeleteFileReq()
+    dfr.recipient = shell
+    dfr.filename = DIRNAME + '/' + FILENAME + '/'
+    rsp = gateway.request(dfr)
+    assert rsp is not None
+    assert rsp.perf is not None
+    assert rsp.perf == Performative.FAILURE
+
+def test_gateway_delete_directory_req_no_trailing_separator_mismatch(gateway, testfile):
+    """Gateway should fail to delete a directory using DeleteFileReq without a trailing separator."""
+    shell = gateway.agent('shell')
+    dirpath = DIRNAME + '/fjage-test-delete-mismatch-dir'
+
+    pfr = PutFileReq()
+    pfr.recipient = shell
+    pfr.filename = dirpath + '/'
+    pfr.contents = []
+    rsp = gateway.request(pfr)
+    assert rsp is not None and rsp.perf == Performative.AGREE
+
+    dfr = DeleteFileReq()
+    dfr.recipient = shell
+    dfr.filename = dirpath
+    rsp2 = gateway.request(dfr)
+    assert rsp2 is not None
+    assert rsp2.perf == Performative.FAILURE
+
+    cleanup = DeleteFileReq()
+    cleanup.recipient = shell
+    cleanup.filename = dirpath + '/'
+    gateway.request(cleanup)
