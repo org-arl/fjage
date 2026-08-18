@@ -124,10 +124,12 @@ export class AgentID {
       msg.param = clonedParams.shift();
       msg.value = clonedValues.shift();
       msg.requests = clonedParams.map((p, i) => {
-        return {
+        /** @type {ParameterReq.Entry} */
+        const entry  = {
           'param': p,
           'value': clonedValues[i]
         };
+        return entry;
       });
     } else {
       msg.param = params;
@@ -170,7 +172,11 @@ export class AgentID {
       if (Array.isArray(params)) {
         const clonedParams = params.slice(); // Clone the array to avoid side effects
         msg.param = clonedParams.shift();
-        msg.requests = clonedParams.map(p => {return {'param': p};});
+        msg.requests = clonedParams.map(p => {
+          /** @type {ParameterReq.Entry} */
+          const pEntry = {'param': p};
+          return pEntry;
+        });
       }
       else msg.param = params;
     }

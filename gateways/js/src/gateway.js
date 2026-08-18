@@ -643,7 +643,7 @@ export class Gateway {
   * Returns a response message received by the gateway. This method returns a {Promise} which resolves when
   * a response is received or if no response is received after the timeout.
   *
-  * @param {function|Message|typeof Message} filter - original message to which a response is expected, or a MessageClass of the type
+  * @param {Function|Message} filter - original message to which a response is expected, or a message constructor for the type
   * of message to match, or a closure to use to match against the message
   * @param {number} [timeout=0] - timeout in milliseconds
   * @returns {Promise<Message|void>} - received response message, null on timeout

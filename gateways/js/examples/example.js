@@ -1,5 +1,4 @@
-const { AgentID, Gateway, MessageClass } = require('fjage');
-const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
+const { AgentID, Gateway, ShellExecReq } = require('fjage');
 
 (async function () {
     const shell = new AgentID('shell');
@@ -15,5 +14,4 @@ const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
     console.log(rsp);
     gw.close();
 })();
-
 

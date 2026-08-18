@@ -33,7 +33,7 @@ At runtime, fjage.js will check its context (browser or Node.js) and accordingly
 ### [CommonJS](dist/cjs)
 
 ```js
-const { Performative, AgentID, Message, Gateway, MessageClass } = require('fjage');
+const { Performative, AgentID, Message, Gateway, ShellExecReq } = require('fjage');
 const shell = new AgentID('shell');
 const gw = new Gateway({
     hostname: 'localhost',
@@ -44,7 +44,7 @@ const gw = new Gateway({
 ### [ECMAScript modules](dist/esm)
 
 ```js
-import { Performative, AgentID, Message, Gateway, MessageClass } from 'fjage.js'
+import { Performative, AgentID, Message, Gateway, ShellExecReq } from 'fjage.js'
 const shell = new AgentID('shell');
 const gw = new Gateway({
     hostname: 'localhost',
