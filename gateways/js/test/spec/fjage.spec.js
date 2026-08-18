@@ -1,12 +1,50 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, registerMessageClass, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, ShellExecReq*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
 const TEST_STRING = 'this is a test';
 const NEW_STRING = 'new test';
-const SendMsgReq = MessageClass('org.arl.fjage.test.SendMsgReq');
-const SendMsgRsp = MessageClass('org.arl.fjage.test.SendMsgRsp');
-const TestCompleteNtf = MessageClass('org.arl.fjage.test.TestCompleteNtf');
+
+class TxFrameReq extends Message {}
+registerMessageClass('org.arl.unet.phy.TxFrameReq', TxFrameReq);
+
+class SendMsgReq extends Message {
+  num = 0;
+  type = 0;
+  constructor(fields={}) {
+    super(fields);
+    this.perf = Performative.REQUEST;
+  }
+}
+registerMessageClass('org.arl.fjage.test.SendMsgReq', SendMsgReq);
+
+class SendMsgRsp extends Message {
+  id = 0;
+  type = 0;
+  constructor(fields={}) {
+    super(fields);
+  }
+}
+registerMessageClass('org.arl.fjage.test.SendMsgRsp', SendMsgRsp);
+
+class TestCompleteNtf extends Message {
+  status = null;
+  trace = null;
+  type = null;
+  constructor(fields={}) {
+    super(fields);
+  }
+}
+registerMessageClass('org.arl.fjage.test.TestCompleteNtf', TestCompleteNtf);
+
+class TestMessage extends Message {
+  data = null;
+  constructor(fields={}) {
+    super(fields);
+  }
+}
+registerMessageClass('org.arl.fjage.test.TestMessage', TestMessage);
+
 
 const ValidFjageActions = ['agents', 'containsAgent', 'services', 'agentForService', 'agentsForService', 'send', 'shutdown'];
 const ValidFjagePerformatives = ['REQUEST', 'AGREE', 'REFUSE', 'FAILURE', 'INFORM', 'CONFIRM', 'DISCONFIRM', 'QUERY_IF', 'NOT_UNDERSTOOD', 'CFP', 'PROPOSE', 'CANCEL', ];
@@ -575,7 +613,6 @@ describe('An AgentID setup to reject promises', function () {
 
 describe('A JSONMessage', function () {
   it('should serialise and deserialise correctly', function () {
-    const TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq');
     const txMsg = new TxFrameReq();
     const jsonMsg = new JSONMessage();
     jsonMsg.action = 'send';
@@ -616,43 +653,66 @@ describe('A Message', function () {
   it('should serialise and deserialise correctly', function () {
     const msg1 = new Message();
     const msg2 = Message.fromJSON(msg1.toJSON());
-    const TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq');
     const txMsg = new TxFrameReq();
     expect(msg1).toEqual(msg2);
     expect(Message.fromJSON(txMsg.toJSON())).toEqual(txMsg);
   });
+
+  it('should support reply and fields-object constructors', function () {
+    const request = new Message();
+    request.sender = new AgentID('sender');
+    const reply = new Message(request, Performative.CONFIRM);
+    const fields = new Message({recipient: new AgentID('recipient')});
+    expect(reply.recipient).toEqual(request.sender);
+    expect(reply.inReplyTo).toEqual(request.msgID);
+    expect(reply.perf).toEqual(Performative.CONFIRM);
+    expect(fields.recipient.name).toEqual('recipient');
+  });
+
+  it('should preserve an explicitly supplied request performative', function () {
+    class CustomReq extends Message {}
+    expect(new CustomReq().perf).toEqual(Performative.REQUEST);
+    expect(new CustomReq({perf: Performative.INFORM}).perf).toEqual(Performative.INFORM);
+  });
 });
 
-describe('A MessageClass', function () {
-  it('should be able to create a custom Message', function () {
-    expect(() => {
-      let msgName = 'NewMessage';
-      const NewMessage = MessageClass(msgName);
-      expect(typeof NewMessage).toEqual('function');
-      expect(NewMessage.__clazz__).toEqual(msgName);
-      new NewMessage();
-    }).not.toThrow();
+describe('Message registration', function () {
+  it('should resolve an exact class name before a short class name', function () {
+    class FirstFoo extends Message { first = null; }
+    class SecondFoo extends Message { second = null; }
+    registerMessageClass('a.Foo', FirstFoo);
+    registerMessageClass('b.Foo', SecondFoo);
+    expect(Message.fromJSON({clazz: 'a.Foo', data: {first: 1}})).toEqual(jasmine.any(FirstFoo));
+    expect(Message.fromJSON({clazz: 'Foo', data: {second: 2}})).toEqual(jasmine.any(SecondFoo));
   });
 
-  it('should be able to create a custom Message with parent Message', function () {
-    expect(() => {
-      let msgName = 'New2Message';
-      let parentName = 'ParentMessage';
-      const ParentMessage = MessageClass(parentName);
-      const NewMessage = MessageClass(msgName, ParentMessage);
-      expect(typeof NewMessage).toEqual('function');
-      expect(NewMessage.__clazz__).toEqual(msgName);
-      let nm = new NewMessage();
-      expect(nm instanceof NewMessage).toBeTruthy();
-      expect(nm instanceof ParentMessage).toBeTruthy();
-    }).not.toThrow();
+  it('should discard undeclared fields from registered messages', function () {
+    class StrictMessage extends Message { value = null; }
+    registerMessageClass('org.example.StrictMessage', StrictMessage);
+    const message = Message.fromJSON({clazz: 'org.example.StrictMessage', data: {value: 1, extra: 2}});
+    expect(message.value).toBe(1);
+    expect(message.extra).toBeUndefined();
   });
 
-  it('should make sure that a MessageClass name that ends with Req has a perf of REQUEST', function () {
-    let msgName = 'NewReq';
-    const NewReq = MessageClass(msgName);
-    let nr = new NewReq();
-    expect(nr.perf).toEqual(Performative.REQUEST);
+  it('should validate registrations before changing the registry', function () {
+    class ValidMessage extends Message {}
+    expect(() => registerMessageClass('', ValidMessage)).toThrow();
+    expect(() => registerMessageClass('org.example.InvalidMessage', class {})).toThrow();
+  });
+
+  it('should retain base fields when a registered class needs constructor arguments', function () {
+    class RequiredArgumentMessage extends Message {
+      constructor(required) {
+        if (!required) throw new TypeError('required argument');
+        super();
+        this.value = null;
+      }
+    }
+    registerMessageClass('org.example.RequiredArgumentMessage', RequiredArgumentMessage);
+    const message = Message.fromJSON({clazz: 'org.example.RequiredArgumentMessage', data: {value: 1}});
+    expect(message).toEqual(jasmine.any(RequiredArgumentMessage));
+    expect(message.msgID).toBeDefined();
+    expect(message.value).toBeUndefined();
   });
 });
 

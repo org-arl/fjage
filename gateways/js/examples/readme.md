@@ -56,5 +56,4 @@ The ESM version of fjage.js (dist/esm/fjage.js) can also be used to create bundl
 
 > Message {__clazz__: "org.arl.fjage.GenericMessage", msgID: "452e851a-69cd-4782-acc4-7c71135333e1", sender: "shell", recipient: "WebGW-", perf: "AGREE", …}
 
-As in this example web page, fjage.js can be used in your script by having a separate script tag to import the UMD version (dist/fjage.min.js). Once this script is run, all the fjage.js classes ( Performative, AgentID, Message, Gateway, MessageClass, etc) are available to your script under the namespace `fjage`.
-
+As in this example web page, fjage.js can be used in your script by having a separate script tag to import the UMD version (dist/fjage.min.js). Once this script is run, all the fjage.js classes (Performative, AgentID, Message, Gateway, ShellExecReq, etc.) are available to your script under the namespace `fjage`.

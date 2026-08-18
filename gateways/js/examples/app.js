@@ -1,6 +1,4 @@
-import { AgentID, Gateway, MessageClass } from './node_modules/fjage/dist/esm/fjage.js'
-
-const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
+import { AgentID, Gateway, ShellExecReq } from './node_modules/fjage/dist/esm/fjage.js'
 
 (async function () {
     const shell = new AgentID('shell');
@@ -17,5 +15,4 @@ const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
     console.log(rsp);
     gw.close();
 })()
-
 
