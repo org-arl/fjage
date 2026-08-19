@@ -52,10 +52,10 @@ def _message_clazz(class_: type["Message"]) -> str:
     return "org.arl.fjage.Message"
 
 def registerMessage(qualified_name: str, message_class: type["Message"]) -> type["Message"]:
-    """Register a Message subclass under a fully qualified wire name.
+    """Register a Message subclass under a wire name.
 
     Args:
-        qualified_name: fully qualified name used in the JSON ``clazz`` field
+        qualified_name: name used in the JSON ``clazz`` field (fully qualified recommended)
         message_class: Message subclass to use for that name
 
     Returns:
