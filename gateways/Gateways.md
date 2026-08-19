@@ -54,7 +54,7 @@ If a gateway's agent name collides with an existing agent known to the master, t
 
 - Returns a _Message_ received by the agent.
 - May accept optional filter and timeout arguments.
-- May support a `Message` subclass or the language-equivalent type to filter for messages of a specific class.
+- May support filter of type `Message` subclass (or the language-equivalent type) to filter for messages of a specific class.
 - May support filter of type `String id` to filter for a response to a specific message `id`.
 - May support filter of type `Callback` to let the user implement a filter function.
 - Must not **block** if timeout is 0.
