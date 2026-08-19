@@ -51,9 +51,23 @@ def _message_clazz(class_: type["Message"]) -> str:
         return clazz_name
     return "org.arl.fjage.Message"
 
-def _register_message_class(class_: type["Message"], fqcn: Optional[str] = None) -> type["Message"]:
-    if not issubclass(class_, Message):
-        raise TypeError('@message can only be used with Message subclasses')
+def registerMessage(qualified_name: str, message_class: type["Message"]) -> type["Message"]:
+    """Register a Message subclass under a fully qualified wire name.
+
+    Args:
+        qualified_name: fully qualified name used in the JSON ``clazz`` field
+        message_class: Message subclass to use for that name
+
+    Returns:
+        The registered Message subclass.
+    """
+    if not isinstance(qualified_name, str) or not qualified_name:
+        raise TypeError('qualified_name must be a non-empty string')
+    if not isinstance(message_class, type) or not issubclass(message_class, Message):
+        raise TypeError('message_class must be a Message subclass')
+
+    class_ = message_class
+    fqcn = qualified_name
 
     # check if something is already registered with the same name or clazz
     if class_.__name__ in _MESSAGE_REGISTRY and _MESSAGE_REGISTRY[class_.__name__] != class_:
@@ -67,10 +81,9 @@ def _register_message_class(class_: type["Message"], fqcn: Optional[str] = None)
     sys.modules[__name__].__dict__[class_.__name__] = class_
     _MESSAGE_REGISTRY[class_.__name__] = class_
 
-    clazz_name = fqcn or getattr(class_, '__clazz__', None)
-    if isinstance(clazz_name, str) and clazz_name:
-        _MESSAGE_REGISTRY[clazz_name] = class_
-        _MESSAGE_REGISTRY[clazz_name.split('.')[-1]] = class_
+    class_.__clazz__ = fqcn
+    _MESSAGE_REGISTRY[fqcn] = class_
+    _MESSAGE_REGISTRY[fqcn.split('.')[-1]] = class_
 
     return class_
 
@@ -224,6 +237,8 @@ class GenericMessage(Message):
 def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
     """Creates an unqualified message class based on a fully qualified name.
 
+    Deprecated. Use :py:func:`registerMessage` or :py:func:`message` instead.
+
     Args:
         name : fully qualified name of the message class
         parent : parent class to inherit from. Defaults to :py:class:`Message`.
@@ -234,7 +249,7 @@ def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
 
     warnings.warn(
         "MessageClass is deprecated and will be removed in a future version. "
-        "Use the @message decorator instead.",
+        "Use registerMessage or the @message decorator instead.",
         DeprecationWarning,
         stacklevel=2
     )
@@ -249,7 +264,7 @@ def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
         _update_attributes(self, kwargs)
 
     class_ = type(sname, (parent,), {"__init__": __init__})
-    return _register_message_class(class_, name)
+    return registerMessage(name, class_)
 
 @overload
 def message(arg: type[Message]) -> type[Message]: ...
@@ -267,9 +282,8 @@ def message(arg: type[Message] | str)  -> Union[type[Message], Callable[..., typ
         if not issubclass(class_, Message):
             raise TypeError('@message can only be used with Message subclasses')
 
-        clazz_name = fqcn or class_.__dict__.get('__clazz__') or class_.__name__
-        class_.__clazz__ = clazz_name
-        return _register_message_class(class_, clazz_name)
+        qualified_name = fqcn or class_.__dict__.get('__clazz__') or class_.__name__
+        return registerMessage(qualified_name, class_)
 
     if isinstance(arg, type):
         return decorate(arg)

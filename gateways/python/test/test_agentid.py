@@ -1,5 +1,5 @@
 import pytest, logging
-from fjagepy import AgentID, MessageClass, Gateway
+from fjagepy import AgentID, Gateway
 from .conftest import DEFAULT_HOST, DEFAULT_PORT
 
 logging.basicConfig(level=logging.DEBUG)
@@ -128,4 +128,3 @@ def test_agentid_get_all_indexed_params(gateway):
         'org.arl.fjage.test.Params.y': 3
     }
     assert val == params
-

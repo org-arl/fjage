@@ -1,10 +1,12 @@
 import pytest
-from fjagepy import Gateway, MessageClass, Performative
+from fjagepy import Gateway, Message, Performative, message
 
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 5081
 
-TestCompleteNtf = MessageClass('org.arl.fjage.test.TestCompleteNtf');
+@message('org.arl.fjage.test.TestCompleteNtf')
+class TestCompleteNtf(Message):
+    pass
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     """

@@ -121,7 +121,7 @@ gw.close()
 
 ### User-Defined Message Classes
 
-Use `@message` to register your own message subclasses so incoming JSON can be inflated back into the right Python type.
+Register your own `Message` subclasses so outgoing JSON uses the correct `clazz` and incoming JSON inflates back into the right Python type. The `@message` decorator is the shortest form:
 
 ```python
 from fjagepy import Message, message
@@ -142,6 +142,27 @@ incoming = Message.from_json(payload)
 assert isinstance(incoming, CustomReq)
 assert incoming.text == 'hello'
 ```
+
+The equivalent programmatic form uses `registerMessage()`:
+
+```python
+from fjagepy import Message, registerMessage
+
+
+class CustomReq(Message):
+    pass
+
+
+registerMessage('org.example.CustomReq', CustomReq)
+```
+
+`MessageClass` is deprecated. Replace code such as:
+
+```python
+CustomReq = MessageClass('org.example.CustomReq')
+```
+
+with a normal `Message` subclass registered using `registerMessage()` or `@message`.
 
 ## Advanced Usage
 
