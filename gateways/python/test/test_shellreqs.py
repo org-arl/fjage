@@ -8,7 +8,7 @@ FILENAME = 'fjage-test.txt';
 TEST_STRING = 'this is a test';
 NEW_STRING = 'new test';
 
-from fjagepy import Gateway, Message, ShellExecReq, AgentID, MessageClass, Performative, JSONMessage, GetFileReq, GetFileRsp, PutFileReq, DeleteFileReq
+from fjagepy import Gateway, Message, ShellExecReq, AgentID, Performative, JSONMessage, GetFileReq, GetFileRsp, PutFileReq, DeleteFileReq
 
 @pytest.fixture(scope="module")
 def gateway():

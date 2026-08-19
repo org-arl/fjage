@@ -2,11 +2,17 @@ import pytest
 import socket
 from time import sleep
 
-from fjagepy import Gateway, Message, ShellExecReq, AgentID, MessageClass, Performative, JSONMessage
+from fjagepy import Gateway, Message, ShellExecReq, AgentID, Performative, JSONMessage, message
 from .conftest import DEFAULT_HOST, DEFAULT_PORT
 
-SendMsgReq = MessageClass("org.arl.fjage.test.SendMsgReq");
-SendMsgRsp = MessageClass("org.arl.fjage.test.SendMsgRsp");
+@message("org.arl.fjage.test.SendMsgReq")
+class SendMsgReq(Message):
+    pass
+
+
+@message("org.arl.fjage.test.SendMsgRsp")
+class SendMsgRsp(Message):
+    pass
 
 @pytest.fixture
 def gateway():

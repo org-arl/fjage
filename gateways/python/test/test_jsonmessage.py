@@ -2,10 +2,12 @@ import pytest
 
 def test_jsonmessage_serialize_deserialize():
     """JSONMessage should serialize and deserialize back identically."""
-    from fjagepy import JSONMessage, Message, AgentID, MessageClass
+    from fjagepy import JSONMessage, Message, AgentID, message
 
     ## Using the Javascript example above as a guide
-    TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq')
+    @message('org.arl.unet.phy.TxFrameReq')
+    class TxFrameReq(Message):
+        pass
     tx_msg = TxFrameReq()
     json_msg = JSONMessage()
     json_msg.action = 'send'

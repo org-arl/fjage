@@ -1,7 +1,7 @@
 import inspect
 import pytest
 
-from fjagepy import Message, AgentID, Performative, MessageClass, message
+from fjagepy import Message, AgentID, Performative, MessageClass, registerMessage, message
 
 
 @message
@@ -51,33 +51,49 @@ def test_message_serialization():
     assert msg2.sender == msg.sender
     assert msg2.recipient == msg.recipient
 
-def test_messageclass_custom_message():
-    """MessageClass should create custom message classes."""
-    msgName = 'NewMessage'
-    NewMessage = MessageClass(msgName)
-    assert callable(NewMessage)
-    nm = NewMessage()
-    nm.__clazz__ = msgName
-    assert isinstance(nm, NewMessage)
+def test_register_message_serializes_and_inflates_registered_class():
+    """registerMessage should use the registered name in both directions."""
+    class RegisteredReq(Message):
+        pass
 
-def test_messageclass_custom_message_with_parent():
-    """MessageClass should create custom message classes with parent."""
-    msgName = 'New2Message'
-    parentName = 'ParentMessage'
-    ParentMessage = MessageClass(parentName)
-    NewMessage = MessageClass(msgName, ParentMessage)
-    assert callable(NewMessage)
-    nm = NewMessage()
-    nm.__clazz__ = msgName
-    assert isinstance(nm, NewMessage)
-    assert isinstance(nm, ParentMessage)
+    registered = registerMessage('org.arl.fjage.test.RegisteredReq', RegisteredReq)
+    outgoing = registered(value=7)
+    incoming = Message.from_json(outgoing.to_json())
 
-def test_messageclass_name_req():
-    """MessageClass should set perf to REQUEST if name ends with Req."""
-    msgName = 'NewReq'
-    NewReq = MessageClass(msgName)
-    nr = NewReq()
-    assert nr.perf == Performative.REQUEST
+    assert registered is RegisteredReq
+    assert outgoing.__clazz__ == 'org.arl.fjage.test.RegisteredReq'
+    assert outgoing.perf == Performative.REQUEST
+    assert isinstance(incoming, RegisteredReq)
+    assert incoming.value == 7
+
+
+def test_register_message_keeps_qualified_names_and_updates_unqualified_name():
+    """Qualified names should stay distinct while the latest short name wins."""
+    FirstFoo = type('Foo', (Message,), {})
+    SecondFoo = type('Foo', (Message,), {})
+
+    registerMessage('a.Foo', FirstFoo)
+    registerMessage('b.Foo', SecondFoo)
+
+    assert isinstance(Message.from_json({'clazz': 'a.Foo', 'data': {}}), FirstFoo)
+    assert isinstance(Message.from_json({'clazz': 'b.Foo', 'data': {}}), SecondFoo)
+    assert isinstance(Message.from_json({'clazz': 'Foo', 'data': {}}), SecondFoo)
+
+
+def test_register_message_rejects_invalid_arguments():
+    """registerMessage should require a name and a Message subclass."""
+    with pytest.raises(TypeError, match='qualified_name'):
+        registerMessage('', Message)
+    with pytest.raises(TypeError, match='message_class'):
+        registerMessage('org.arl.fjage.test.Invalid', object)
+
+
+def test_messageclass_is_deprecated():
+    """MessageClass should remain available during the deprecation period."""
+    with pytest.warns(DeprecationWarning, match='Use registerMessage or the @message decorator'):
+        DeprecatedMessage = MessageClass('org.arl.fjage.test.DeprecatedMessage')
+
+    assert isinstance(DeprecatedMessage(), DeprecatedMessage)
 
 
 def test_message_encode_numpy_array():
