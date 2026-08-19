@@ -650,10 +650,15 @@ describe('A Message', function () {
       .toThrowError(TypeError, 'inReplyToMsg must be a Message');
   });
 
-  it('should preserve an explicitly supplied request performative', function () {
+  it('should use the registered class name for the default performative', function () {
+    const CustomMessage = registerMessage('org.example.CustomReq', class extends Message {});
+    expect(new CustomMessage().perf).toEqual(Performative.REQUEST);
+    expect(new CustomMessage(undefined, Performative.INFORM).perf).toEqual(Performative.INFORM);
+  });
+
+  it('should not infer a default performative from an unregistered class name', function () {
     class CustomReq extends Message {}
-    expect(new CustomReq().perf).toEqual(Performative.REQUEST);
-    expect(new CustomReq(undefined, Performative.INFORM).perf).toEqual(Performative.INFORM);
+    expect(new CustomReq().perf).toEqual(Performative.INFORM);
   });
 });
 

@@ -4,6 +4,7 @@ import { AgentID } from './agentid.js';
 
 /** Registry of message classes for de/serialization. */
 const _MESSAGE_REGISTRY = Object.create(null);
+const _DEFAULT_PERF = Symbol('defaultPerf');
 
 /**
  * @typedef {Object} MessageJSON
@@ -20,7 +21,7 @@ const _MESSAGE_REGISTRY = Object.create(null);
  */
 function initializeMessage(message, inReplyToMsg, perf) {
   message.msgID = UUID7.generate().toString();
-  message.perf = perf === undefined ? Performative.INFORM : perf;
+  message.perf = perf === undefined ? message[_DEFAULT_PERF] || Performative.INFORM : perf;
   message.sender = null;
   message.recipient = null;
   message.inReplyTo = null;
@@ -32,28 +33,6 @@ function initializeMessage(message, inReplyToMsg, perf) {
   if (inReplyToMsg) {
     message.recipient = inReplyToMsg.sender;
     message.inReplyTo = inReplyToMsg.msgID;
-  }
-
-  if (message.constructor.name.toLowerCase().endsWith('req') && perf === undefined) {
-    message.perf = Performative.REQUEST;
-  }
-}
-
-/**
- * Instantiate a message class for JSON inflation.
- *
- * @param {Function} messageClass - class to instantiate
- * @returns {Message} inflated message instance
- */
-function instantiateMessage(messageClass) {
-  try {
-    // @ts-ignore Function is validated by registerMessage().
-    return new messageClass();
-  } catch (error) {
-    if (!(error instanceof TypeError)) throw error;
-    const message = Object.create(messageClass.prototype);
-    initializeMessage(message);
-    return message;
   }
 }
 
@@ -127,7 +106,17 @@ export class Message {
     const shortName = jsonObj.clazz.replace(/^.*\./, '');
     const registeredClass = _MESSAGE_REGISTRY[jsonObj.clazz] || _MESSAGE_REGISTRY[shortName];
     const messageClass = registeredClass || Message;
-    const message = instantiateMessage(messageClass);
+
+    let message;
+    try {
+      // @ts-ignore Function is validated by registerMessage().
+      message = new messageClass();
+    } catch (error) {
+      if (!(error instanceof TypeError)) throw error;
+      message = Object.create(messageClass.prototype);
+      initializeMessage(message);
+    }
+
     if (!registeredClass && jsonObj.clazz !== Message.prototype.__clazz__) {
       message.__clazz__ = jsonObj.clazz;
     }
@@ -172,6 +161,9 @@ export function registerMessage(qualifiedName, messageClass) {
     console.warn(`Overriding existing message class registered with short name '${shortName}'`);
   }
   messageClass.prototype.__clazz__ = qualifiedName;
+  messageClass.prototype[_DEFAULT_PERF] = shortName.toLowerCase().endsWith('req')
+    ? Performative.REQUEST
+    : Performative.INFORM;
   _MESSAGE_REGISTRY[qualifiedName] = messageClass;
   _MESSAGE_REGISTRY[shortName] = messageClass;
   return messageClass;
