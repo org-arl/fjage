@@ -47,11 +47,10 @@ function initializeMessage(message, inReplyToMsgOrFields, perf) {
  */
 function instantiateMessage(messageClass) {
   try {
-    // @ts-ignore Function is validated by registerMessageClass().
+    // @ts-ignore Function is validated by registerMessage().
     return new messageClass();
   } catch (error) {
     if (!(error instanceof TypeError)) throw error;
-    console.warn(`Unable to construct ${messageClass.name} without arguments; only base Message fields can be inflated`);
     const message = Object.create(messageClass.prototype);
     initializeMessage(message);
     return message;
@@ -126,17 +125,17 @@ export class Message {
       throw new Error(`Invalid Object for Message : ${jsonObj}`);
     }
     const shortName = jsonObj.clazz.replace(/^.*\./, '');
-    const messageClass = _MESSAGE_REGISTRY[jsonObj.clazz] || _MESSAGE_REGISTRY[shortName] || Message;
+    const registeredClass = _MESSAGE_REGISTRY[jsonObj.clazz] || _MESSAGE_REGISTRY[shortName];
+    const messageClass = registeredClass || Message;
     const message = instantiateMessage(messageClass);
+    if (!registeredClass && jsonObj.clazz !== Message.prototype.__clazz__) {
+      message.__clazz__ = jsonObj.clazz;
+    }
 
     for (const key in jsonObj.data) {
-      if (Object.prototype.hasOwnProperty.call(message, key)) {
-        if ((key === 'sender' || key === 'recipient') && typeof jsonObj.data[key] === 'string') {
-          message[key] = AgentID.fromJSON(jsonObj.data[key]);
-        } else {
-          message[key] = jsonObj.data[key];
-        }
-      } else if (message instanceof GenericMessage) {
+      if ((key === 'sender' || key === 'recipient') && typeof jsonObj.data[key] === 'string') {
+        message[key] = AgentID.fromJSON(jsonObj.data[key]);
+      } else {
         message[key] = jsonObj.data[key];
       }
     }
@@ -153,34 +152,35 @@ Message.prototype.__clazz__ = 'org.arl.fjage.Message';
  * A received fully qualified name resolves exactly. A received unqualified
  * name resolves to the most recently registered class with that short name.
  *
- * @param {string} name - fully qualified message class name
+ * @param {string} qualifiedName - fully qualified message class name
  * @param {Function} messageClass - class to register
+ * @returns {Function} registered message class
  */
-export function registerMessageClass(name, messageClass) {
-  if (typeof name !== 'string' || name.trim() === '') {
+export function registerMessage(qualifiedName, messageClass) {
+  if (typeof qualifiedName !== 'string' || qualifiedName.trim() === '') {
     throw new Error('Message class name must be a non-empty string');
   }
   if (typeof messageClass !== 'function' || !(messageClass.prototype instanceof Message)) {
     throw new Error('Message class must be a subclass of Message');
   }
 
-  const shortName = name.split('.').pop();
-  if (_MESSAGE_REGISTRY[name] && _MESSAGE_REGISTRY[name] !== messageClass) {
-    console.warn(`Overriding existing message class registered with name '${name}'`);
+  const shortName = qualifiedName.split('.').pop();
+  if (_MESSAGE_REGISTRY[qualifiedName] && _MESSAGE_REGISTRY[qualifiedName] !== messageClass) {
+    console.warn(`Overriding existing message class registered with name '${qualifiedName}'`);
   }
   if (_MESSAGE_REGISTRY[shortName] && _MESSAGE_REGISTRY[shortName] !== messageClass) {
     console.warn(`Overriding existing message class registered with short name '${shortName}'`);
   }
-  messageClass.prototype.__clazz__ = name;
-  _MESSAGE_REGISTRY[name] = messageClass;
+  messageClass.prototype.__clazz__ = qualifiedName;
+  _MESSAGE_REGISTRY[qualifiedName] = messageClass;
   _MESSAGE_REGISTRY[shortName] = messageClass;
+  return messageClass;
 }
 
 /**
- * @deprecated since version 3.0.0. Use {@link registerMessageClass} instead.
+ * @deprecated since version 3.0.0. Use {@link registerMessage} instead.
  *
  * Creates an unqualified message class based on a fully qualified name.
- * Dynamically added fields are not guaranteed to inflate from JSON.
  *
  * @param {string} name - fully qualified message class name
  * @param {Function} [parent] - parent Message class
@@ -198,13 +198,13 @@ export function MessageClass(name, parent=Message) {
       super(fields);
     }
   };
-  registerMessageClass(name, messageClass);
+  registerMessage(name, messageClass);
   return messageClass;
 }
 
 /** A message class that can convey generic key-value messages. */
 export class GenericMessage extends Message {}
-registerMessageClass('org.arl.fjage.GenericMessage', GenericMessage);
+registerMessage('org.arl.fjage.GenericMessage', GenericMessage);
 
 /**
  * @typedef {Object} ParameterReq.Entry
@@ -223,7 +223,7 @@ export class ParameterReq extends Message {
   /** @type {number} */
   index = -1;
 }
-registerMessageClass('org.arl.fjage.param.ParameterReq', ParameterReq);
+registerMessage('org.arl.fjage.param.ParameterReq', ParameterReq);
 
 /** A message that responds to a {@link ParameterReq}. */
 export class ParameterRsp extends Message {
@@ -238,7 +238,7 @@ export class ParameterRsp extends Message {
   /** @type {number} */
   index = -1;
 }
-registerMessageClass('org.arl.fjage.param.ParameterRsp', ParameterRsp);
+registerMessage('org.arl.fjage.param.ParameterRsp', ParameterRsp);
 
 /** Request to write contents to a file, or delete a file. */
 export class PutFileReq extends Message {
@@ -249,14 +249,14 @@ export class PutFileReq extends Message {
   /** @type {number} */
   offset = 0;
 }
-registerMessageClass('org.arl.fjage.shell.PutFileReq', PutFileReq);
+registerMessage('org.arl.fjage.shell.PutFileReq', PutFileReq);
 
 /** Request to delete a file or directory. */
 export class DeleteFileReq extends Message {
   /** @type {string|null} */
   filename = null;
 }
-registerMessageClass('org.arl.fjage.shell.DeleteFileReq', DeleteFileReq);
+registerMessage('org.arl.fjage.shell.DeleteFileReq', DeleteFileReq);
 
 /** Request to read a file or directory. */
 export class GetFileReq extends Message {
@@ -267,7 +267,7 @@ export class GetFileReq extends Message {
   /** @type {number} */
   length = 0;
 }
-registerMessageClass('org.arl.fjage.shell.GetFileReq', GetFileReq);
+registerMessage('org.arl.fjage.shell.GetFileReq', GetFileReq);
 
 /** Response to a {@link GetFileReq}. */
 export class GetFileRsp extends Message {
@@ -280,7 +280,7 @@ export class GetFileRsp extends Message {
   /** @type {boolean} */
   directory = false;
 }
-registerMessageClass('org.arl.fjage.shell.GetFileRsp', GetFileRsp);
+registerMessage('org.arl.fjage.shell.GetFileRsp', GetFileRsp);
 
 /** Request to execute a shell command or script. */
 export class ShellExecReq extends Message {
@@ -289,4 +289,4 @@ export class ShellExecReq extends Message {
   /** @type {boolean} */
   ans = false;
 }
-registerMessageClass('org.arl.fjage.shell.ShellExecReq', ShellExecReq);
+registerMessage('org.arl.fjage.shell.ShellExecReq', ShellExecReq);
