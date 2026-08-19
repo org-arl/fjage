@@ -77,6 +77,11 @@ class TemperatureNtf extends Message {
 }
 
 registerMessage('org.example.TemperatureNtf', TemperatureNtf);
+
+const ntf = new TemperatureNtf();
+ntf.temperature = 24.5;
 ```
+
+The `Message` constructor accepts an optional message to reply to and an optional performative. It does not accept an object containing message fields. Set custom fields after construction or initialize them in the custom class constructor.
 
 `MessageClass` is deprecated. Use `registerMessage()` when adding custom message classes.

@@ -1,4 +1,4 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, registerMessage, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, ShellExecReq*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, MessageClass, Gateway, registerMessage, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, ShellExecReq*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -11,8 +11,8 @@ registerMessage('org.arl.unet.phy.TxFrameReq', TxFrameReq);
 class SendMsgReq extends Message {
   num = 0;
   type = 0;
-  constructor(fields={}) {
-    super(fields);
+  constructor() {
+    super();
     this.perf = Performative.REQUEST;
   }
 }
@@ -21,9 +21,6 @@ registerMessage('org.arl.fjage.test.SendMsgReq', SendMsgReq);
 class SendMsgRsp extends Message {
   id = 0;
   type = 0;
-  constructor(fields={}) {
-    super(fields);
-  }
 }
 registerMessage('org.arl.fjage.test.SendMsgRsp', SendMsgRsp);
 
@@ -31,17 +28,11 @@ class TestCompleteNtf extends Message {
   status = null;
   trace = null;
   type = null;
-  constructor(fields={}) {
-    super(fields);
-  }
 }
 registerMessage('org.arl.fjage.test.TestCompleteNtf', TestCompleteNtf);
 
 class TestMessage extends Message {
   data = null;
-  constructor(fields={}) {
-    super(fields);
-  }
 }
 registerMessage('org.arl.fjage.test.TestMessage', TestMessage);
 
@@ -233,19 +224,6 @@ describe('A Gateway', function () {
     const req = new ShellExecReq();
     req.recipient = shell;
     req.command = 'boo';
-    gw.request(req);
-    await delay(300);
-    expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
-    gw.close();
-  });
-
-  it('should send correct ShellExecReq of valid fjage message structure created using param constructor', async function() {
-    const shell = new AgentID('shell');
-    const gw = new Gateway(gwOpts);
-    await delay(300); // delay allow for imports
-    spyOn(gw.connector.sock, 'send').and.callThrough();
-    gw.connector.sock.send.calls.reset();
-    const req = new ShellExecReq({recipient: shell, cmd: 'boo'});
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
@@ -658,25 +636,34 @@ describe('A Message', function () {
     expect(Message.fromJSON(txMsg.toJSON())).toEqual(txMsg);
   });
 
-  it('should support reply and fields-object constructors', function () {
+  it('should support a reply constructor', function () {
     const request = new Message();
     request.sender = new AgentID('sender');
     const reply = new Message(request, Performative.CONFIRM);
-    const fields = new Message({recipient: new AgentID('recipient')});
     expect(reply.recipient).toEqual(request.sender);
     expect(reply.inReplyTo).toEqual(request.msgID);
     expect(reply.perf).toEqual(Performative.CONFIRM);
-    expect(fields.recipient.name).toEqual('recipient');
+  });
+
+  it('should reject a fields-object constructor', function () {
+    expect(() => new Message({recipient: new AgentID('recipient')}))
+      .toThrowError(TypeError, 'inReplyToMsg must be a Message');
   });
 
   it('should preserve an explicitly supplied request performative', function () {
     class CustomReq extends Message {}
     expect(new CustomReq().perf).toEqual(Performative.REQUEST);
-    expect(new CustomReq({perf: Performative.INFORM}).perf).toEqual(Performative.INFORM);
+    expect(new CustomReq(undefined, Performative.INFORM).perf).toEqual(Performative.INFORM);
   });
 });
 
 describe('Message registration', function () {
+  it('should retain fields-object construction for deprecated MessageClass', function () {
+    const LegacyMessage = MessageClass('org.example.LegacyMessage');
+    const message = new LegacyMessage({value: 1});
+    expect(message.value).toBe(1);
+  });
+
   it('should resolve an exact class name before a short class name', function () {
     class FirstFoo extends Message { first = null; }
     class SecondFoo extends Message { second = null; }
