@@ -3,8 +3,8 @@ from __future__ import annotations
 import sys
 import logging
 import keyword
+import warnings
 from typing import Callable, Optional, Any, Dict, TYPE_CHECKING, Union, get_type_hints, overload
-from warnings import deprecated
 
 from .AgentID import AgentID
 from .Performative import Performative
@@ -221,7 +221,6 @@ class GenericMessage(Message):
         self.__clazz__ = "org.arl.fjage.GenericMessage"
 
 
-@deprecated("Use @message decorator or registerMessageClass instead to register message classes for JSON inflation.")
 def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
     """Creates an unqualified message class based on a fully qualified name.
 
@@ -232,6 +231,13 @@ def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
     Returns:
         A new subclass of Message with the given name.
     """
+
+    warnings.warn(
+        "MessageClass is deprecated and will be removed in a future version. "
+        "Use the @message decorator instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
 
     sname = name.split('.')[-1]
 
