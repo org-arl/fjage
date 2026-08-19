@@ -1,4 +1,4 @@
-import { Message, GenericMessage, ParameterReq, ParameterRsp, PutFileReq, GetFileReq, GetFileRsp, DeleteFileReq, ShellExecReq, registerMessageClass} from './message.js';
+import { Message, MessageClass, GenericMessage, ParameterReq, ParameterRsp, PutFileReq, GetFileReq, GetFileRsp, DeleteFileReq, ShellExecReq, registerMessage} from './message.js';
 import { Gateway, init} from './gateway.js';
 import { AgentID } from './agentid.js';
 import { Services } from './services.js';
@@ -7,4 +7,4 @@ import { JSONMessage } from './jsonmessage.js';
 
 init();
 
-export { Gateway, AgentID, Message, GenericMessage, Services, ParameterReq, ParameterRsp, Performative, JSONMessage, PutFileReq, GetFileReq, GetFileRsp, DeleteFileReq, ShellExecReq, registerMessageClass };
+export { Gateway, AgentID, Message, MessageClass, GenericMessage, Services, ParameterReq, ParameterRsp, Performative, JSONMessage, PutFileReq, GetFileReq, GetFileRsp, DeleteFileReq, ShellExecReq, registerMessage };

@@ -1,4 +1,4 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, registerMessageClass, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, ShellExecReq*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, registerMessage, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, ShellExecReq*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -6,7 +6,7 @@ const TEST_STRING = 'this is a test';
 const NEW_STRING = 'new test';
 
 class TxFrameReq extends Message {}
-registerMessageClass('org.arl.unet.phy.TxFrameReq', TxFrameReq);
+registerMessage('org.arl.unet.phy.TxFrameReq', TxFrameReq);
 
 class SendMsgReq extends Message {
   num = 0;
@@ -16,7 +16,7 @@ class SendMsgReq extends Message {
     this.perf = Performative.REQUEST;
   }
 }
-registerMessageClass('org.arl.fjage.test.SendMsgReq', SendMsgReq);
+registerMessage('org.arl.fjage.test.SendMsgReq', SendMsgReq);
 
 class SendMsgRsp extends Message {
   id = 0;
@@ -25,7 +25,7 @@ class SendMsgRsp extends Message {
     super(fields);
   }
 }
-registerMessageClass('org.arl.fjage.test.SendMsgRsp', SendMsgRsp);
+registerMessage('org.arl.fjage.test.SendMsgRsp', SendMsgRsp);
 
 class TestCompleteNtf extends Message {
   status = null;
@@ -35,7 +35,7 @@ class TestCompleteNtf extends Message {
     super(fields);
   }
 }
-registerMessageClass('org.arl.fjage.test.TestCompleteNtf', TestCompleteNtf);
+registerMessage('org.arl.fjage.test.TestCompleteNtf', TestCompleteNtf);
 
 class TestMessage extends Message {
   data = null;
@@ -43,7 +43,7 @@ class TestMessage extends Message {
     super(fields);
   }
 }
-registerMessageClass('org.arl.fjage.test.TestMessage', TestMessage);
+registerMessage('org.arl.fjage.test.TestMessage', TestMessage);
 
 
 const ValidFjageActions = ['agents', 'containsAgent', 'services', 'agentForService', 'agentsForService', 'send', 'shutdown'];
@@ -680,27 +680,30 @@ describe('Message registration', function () {
   it('should resolve an exact class name before a short class name', function () {
     class FirstFoo extends Message { first = null; }
     class SecondFoo extends Message { second = null; }
-    registerMessageClass('a.Foo', FirstFoo);
-    registerMessageClass('b.Foo', SecondFoo);
+    expect(registerMessage('a.Foo', FirstFoo)).toBe(FirstFoo);
+    expect(registerMessage('b.Foo', SecondFoo)).toBe(SecondFoo);
     expect(Message.fromJSON({clazz: 'a.Foo', data: {first: 1}})).toEqual(jasmine.any(FirstFoo));
+    expect(Message.fromJSON({clazz: 'b.Foo', data: {second: 2}})).toEqual(jasmine.any(SecondFoo));
     expect(Message.fromJSON({clazz: 'Foo', data: {second: 2}})).toEqual(jasmine.any(SecondFoo));
+    expect(new FirstFoo().toJSON().clazz).toBe('a.Foo');
+    expect(new SecondFoo().toJSON().clazz).toBe('b.Foo');
   });
 
-  it('should discard undeclared fields from registered messages', function () {
-    class StrictMessage extends Message { value = null; }
-    registerMessageClass('org.example.StrictMessage', StrictMessage);
-    const message = Message.fromJSON({clazz: 'org.example.StrictMessage', data: {value: 1, extra: 2}});
+  it('should inflate all fields from registered messages', function () {
+    class CustomMessage extends Message { value = null; }
+    registerMessage('org.example.CustomMessage', CustomMessage);
+    const message = Message.fromJSON({clazz: 'org.example.CustomMessage', data: {value: 1, extra: 2}});
     expect(message.value).toBe(1);
-    expect(message.extra).toBeUndefined();
+    expect(message.extra).toBe(2);
   });
 
   it('should validate registrations before changing the registry', function () {
     class ValidMessage extends Message {}
-    expect(() => registerMessageClass('', ValidMessage)).toThrow();
-    expect(() => registerMessageClass('org.example.InvalidMessage', class {})).toThrow();
+    expect(() => registerMessage('', ValidMessage)).toThrow();
+    expect(() => registerMessage('org.example.InvalidMessage', class {})).toThrow();
   });
 
-  it('should retain base fields when a registered class needs constructor arguments', function () {
+  it('should inflate fields when a registered class needs constructor arguments', function () {
     class RequiredArgumentMessage extends Message {
       constructor(required) {
         if (!required) throw new TypeError('required argument');
@@ -708,11 +711,18 @@ describe('Message registration', function () {
         this.value = null;
       }
     }
-    registerMessageClass('org.example.RequiredArgumentMessage', RequiredArgumentMessage);
+    registerMessage('org.example.RequiredArgumentMessage', RequiredArgumentMessage);
     const message = Message.fromJSON({clazz: 'org.example.RequiredArgumentMessage', data: {value: 1}});
     expect(message).toEqual(jasmine.any(RequiredArgumentMessage));
     expect(message.msgID).toBeDefined();
-    expect(message.value).toBeUndefined();
+    expect(message.value).toBe(1);
+  });
+
+  it('should preserve the class name of an unregistered message', function () {
+    const message = Message.fromJSON({clazz: 'org.example.UnknownMessage', data: {value: 1}});
+    expect(message).toEqual(jasmine.any(Message));
+    expect(message.toJSON().clazz).toBe('org.example.UnknownMessage');
+    expect(message.value).toBe(1);
   });
 });
 

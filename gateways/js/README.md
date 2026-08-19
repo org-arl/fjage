@@ -64,3 +64,19 @@ const gw = new Gateway({
     });
 </script>
 ```
+
+### Custom message classes
+
+Define a normal `Message` subclass, then register its fully qualified name. Registration sets the outgoing JSON `clazz` and lets the gateway create the same class when matching JSON arrives.
+
+```js
+import { Message, registerMessage } from 'fjage.js';
+
+class TemperatureNtf extends Message {
+    temperature = null;
+}
+
+registerMessage('org.example.TemperatureNtf', TemperatureNtf);
+```
+
+`MessageClass` is deprecated. Use `registerMessage()` when adding custom message classes.
