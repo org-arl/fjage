@@ -54,7 +54,7 @@ If a gateway's agent name collides with an existing agent known to the master, t
 
 - Returns a _Message_ received by the agent.
 - May accept optional filter and timeout arguments.
-- May support filter of type `MessageClass class` to filter for a message of a specific class.
+- May support a `Message` subclass or the language-equivalent type to filter for messages of a specific class.
 - May support filter of type `String id` to filter for a response to a specific message `id`.
 - May support filter of type `Callback` to let the user implement a filter function.
 - Must not **block** if timeout is 0.
@@ -182,18 +182,30 @@ If a gateway's agent name collides with an existing agent known to the master, t
 
 - When serializing an AgentID, a `#` must be prepended to the AgentID name if the AgentID is a topic.
 
-## MessageClass Class
+## Message registration
+
+### `registerMessage()` :: String qualifiedName, Class messageClass -> Class
+
+- Registers a `Message` subclass with the serialization and deserialization machinery using its fully qualified name.
+- Serializing an instance of the registered class must set the JSON `clazz` field to `qualifiedName`.
+- Deserializing JSON whose `clazz` field matches `qualifiedName` must create an instance of `messageClass`.
+- The registered class should be returned if the language supports returning classes.
+- Languages that support annotations or decorators may also provide `@message`, including a form that accepts the fully qualified name, instead of or in addition to `registerMessage()`.
+- Registrations must retain their fully qualified names even when multiple classes have the same unqualified name. For example, if `a.Foo` is registered and then `b.Foo` is registered, JSON with `clazz` set to `a.Foo` must inflate to the class registered as `a.Foo`, and JSON with `clazz` set to `b.Foo` must inflate to the class registered as `b.Foo`. JSON with `clazz` set to the unqualified name `Foo` must inflate to the class whose matching unqualified name was registered most recently, which is `b.Foo` in this example.
+
+## MessageClass Class (deprecated)
 
 ### `MessageClass()` :: String -> Class
 
-- Creates a unqualified message class based on a fully qualified name.
+- Creates an unqualified message class based on a fully qualified name.
+- Deprecated. Existing implementations may retain it for compatibility, but new custom message classes must use `registerMessage()` or `@message` where available.
 
 ## Message Class
 
 ### `Message()`:: (Message inReplyTo), (Performative perf) -> Message
 
 - Creates a response message.
-- Commonly not used directly, but extended using the _MessageClass_ function to create custom messages.
+- Custom message types should subclass _Message_ and use `registerMessage()` or `@message` where available so the gateway can serialize and deserialize them using the correct type.
 
 ## JSON Protocol
 
