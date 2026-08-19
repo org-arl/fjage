@@ -15,10 +15,10 @@ const _MESSAGE_REGISTRY = Object.create(null);
  * Initialize the base fields of a message.
  *
  * @param {Message} message - message to initialize
- * @param {Message|Object} [inReplyToMsgOrFields] - reply-to message or fields
+ * @param {Message} [inReplyToMsg] - message to reply to
  * @param {Performative} [perf] - performative of the message
  */
-function initializeMessage(message, inReplyToMsgOrFields, perf) {
+function initializeMessage(message, inReplyToMsg, perf) {
   message.msgID = UUID7.generate().toString();
   message.perf = perf === undefined ? Performative.INFORM : perf;
   message.sender = null;
@@ -26,15 +26,15 @@ function initializeMessage(message, inReplyToMsgOrFields, perf) {
   message.inReplyTo = null;
   message.sentAt = 0;
 
-  if (inReplyToMsgOrFields instanceof Message) {
-    message.recipient = inReplyToMsgOrFields.sender;
-    message.inReplyTo = inReplyToMsgOrFields.msgID;
-  } else if (inReplyToMsgOrFields && typeof inReplyToMsgOrFields === 'object') {
-    Object.assign(message, inReplyToMsgOrFields);
+  if (inReplyToMsg != null && !(inReplyToMsg instanceof Message)) {
+    throw new TypeError('inReplyToMsg must be a Message');
+  }
+  if (inReplyToMsg) {
+    message.recipient = inReplyToMsg.sender;
+    message.inReplyTo = inReplyToMsg.msgID;
   }
 
-  if (message.constructor.name.toLowerCase().endsWith('req') && perf === undefined &&
-      !(inReplyToMsgOrFields && typeof inReplyToMsgOrFields === 'object' && 'perf' in inReplyToMsgOrFields)) {
+  if (message.constructor.name.toLowerCase().endsWith('req') && perf === undefined) {
     message.perf = Performative.REQUEST;
   }
 }
@@ -82,11 +82,11 @@ export class Message {
   sentAt;
 
   /**
-   * @param {Message|Object} [inReplyToMsgOrFields] - message to reply to, or fields to assign
+   * @param {Message} [inReplyToMsg] - message to reply to
    * @param {Performative} [perf] - performative of the message
    */
-  constructor(inReplyToMsgOrFields, perf) {
-    initializeMessage(this, inReplyToMsgOrFields, perf);
+  constructor(inReplyToMsg, perf) {
+    initializeMessage(this, inReplyToMsg, perf);
   }
 
   /**
@@ -195,7 +195,8 @@ export function MessageClass(name, parent=Message) {
   // @ts-ignore Parent is validated above.
   const messageClass = class extends parent {
     constructor(fields={}) {
-      super(fields);
+      super();
+      Object.assign(this, fields);
     }
   };
   registerMessage(name, messageClass);
