@@ -710,11 +710,9 @@ describe('Message registration', function () {
     expect(message.value).toBe(1);
   });
 
-  it('should preserve the class name of an unregistered message', function () {
+  it('should skip inflation of an unregistered message', function () {
     const message = Message.fromJSON({clazz: 'org.example.UnknownMessage', data: {value: 1}});
-    expect(message).toEqual(jasmine.any(Message));
-    expect(message.toJSON().clazz).toBe('org.example.UnknownMessage');
-    expect(message.value).toBe(1);
+    expect(message).toBeNull();
   });
 });
 

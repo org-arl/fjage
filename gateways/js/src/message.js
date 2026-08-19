@@ -96,7 +96,7 @@ export class Message {
    * Create a message from a parsed JSON representation.
    *
    * @param {MessageJSON} jsonObj - parsed message JSON
-   * @returns {Message} message created from the JSON object
+   * @returns {Message|null} message created from the JSON object
    */
   static fromJSON(jsonObj) {
     if (!jsonObj || typeof jsonObj !== 'object' || typeof jsonObj.clazz !== 'string' ||
@@ -105,20 +105,19 @@ export class Message {
     }
     const shortName = jsonObj.clazz.replace(/^.*\./, '');
     const registeredClass = _MESSAGE_REGISTRY[jsonObj.clazz] || _MESSAGE_REGISTRY[shortName];
-    const messageClass = registeredClass || Message;
+    if (!registeredClass) {
+      console.warn(`No registered message class for ${jsonObj.clazz}, skipping inflation`);
+      return null;
+    }
 
     let message;
     try {
       // @ts-ignore Function is validated by registerMessage().
-      message = new messageClass();
+      message = new registeredClass();
     } catch (error) {
       if (!(error instanceof TypeError)) throw error;
-      message = Object.create(messageClass.prototype);
+      message = Object.create(registeredClass.prototype);
       initializeMessage(message);
-    }
-
-    if (!registeredClass && jsonObj.clazz !== Message.prototype.__clazz__) {
-      message.__clazz__ = jsonObj.clazz;
     }
 
     for (const key in jsonObj.data) {
@@ -134,6 +133,8 @@ export class Message {
 
 /** Default class name for messages that are not of a specific subclass. */
 Message.prototype.__clazz__ = 'org.arl.fjage.Message';
+_MESSAGE_REGISTRY['org.arl.fjage.Message'] = Message;
+_MESSAGE_REGISTRY.Message = Message;
 
 /**
  * Register a message class for JSON inflation.
