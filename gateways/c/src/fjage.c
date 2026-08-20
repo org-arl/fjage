@@ -365,7 +365,7 @@ static jsmntok_t* json_parse(const char* json) {
   jsmn_parser parser;
   jsmn_init(&parser);
   int n = jsmn_parse(&parser, json, strlen(json), NULL, 0);
-  if (n < 0) return NULL;
+  if (n <= 0) return NULL;
   jsmntok_t* tokens = malloc(n*sizeof(jsmntok_t));
   if (tokens == NULL) return NULL;
   jsmn_init(&parser);
