@@ -127,6 +127,16 @@ If a gateway's agent name collides with an existing agent known to the master, t
 
 - Flushes the incoming queue in the `Gateway`.
 
+### `registerMessage()` :: String qualifiedName, Class messageClass -> Class
+
+- Registers a `Message` subclass with the serialization and deserialization machinery using its fully qualified name.
+- Should be a static method on `Gateway` if the language supports static methods.
+- Serializing an instance of the registered class must set the JSON `clazz` field to `qualifiedName`.
+- Deserializing JSON whose `clazz` field matches `qualifiedName` must create an instance of `messageClass`.
+- The registered class should be returned if the language supports returning classes.
+- Languages that support annotations or decorators may also provide `@message`, including a form that accepts the fully qualified name, instead of or in addition to `registerMessage()`.
+- Registrations must retain their fully qualified names even when multiple classes have the same unqualified name. For example, if `a.Foo` is registered and then `b.Foo` is registered, JSON with `clazz` set to `a.Foo` must inflate to the class registered as `a.Foo`, and JSON with `clazz` set to `b.Foo` must inflate to the class registered as `b.Foo`. JSON with `clazz` set to the unqualified name `Foo` must inflate to the class whose matching unqualified name was registered most recently, which is `b.Foo` in this example.
+
 ## AgentID Class
 
 ### `AgentID()` :: String name, (Boolean isTopic) -> AgentID
@@ -181,17 +191,6 @@ If a gateway's agent name collides with an existing agent known to the master, t
 ### Notes
 
 - When serializing an AgentID, a `#` must be prepended to the AgentID name if the AgentID is a topic.
-
-## Message registration
-
-### `registerMessage()` :: String qualifiedName, Class messageClass -> Class
-
-- Registers a `Message` subclass with the serialization and deserialization machinery using its fully qualified name.
-- Serializing an instance of the registered class must set the JSON `clazz` field to `qualifiedName`.
-- Deserializing JSON whose `clazz` field matches `qualifiedName` must create an instance of `messageClass`.
-- The registered class should be returned if the language supports returning classes.
-- Languages that support annotations or decorators may also provide `@message`, including a form that accepts the fully qualified name, instead of or in addition to `registerMessage()`.
-- Registrations must retain their fully qualified names even when multiple classes have the same unqualified name. For example, if `a.Foo` is registered and then `b.Foo` is registered, JSON with `clazz` set to `a.Foo` must inflate to the class registered as `a.Foo`, and JSON with `clazz` set to `b.Foo` must inflate to the class registered as `b.Foo`. JSON with `clazz` set to the unqualified name `Foo` must inflate to the class whose matching unqualified name was registered most recently, which is `b.Foo` in this example.
 
 ## MessageClass Class (deprecated)
 
