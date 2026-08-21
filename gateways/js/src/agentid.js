@@ -1,7 +1,8 @@
 import { Performative } from './performative.js';
 import { ParameterReq  } from './message.js';
-import { Gateway } from './gateway.js';  // import Gateway class for type checking. Remove if not needed.
-import { Message } from './message.js';  // import Message class for type checking. Remove if not needed.
+
+/** @typedef {import('./gateway.js').Gateway} Gateway */
+/** @typedef {import('./message.js').Message} Message */
 
 const DEFAULT_TIMEOUT = 1000; // Default timeout for non-owned AgentIDs
 
