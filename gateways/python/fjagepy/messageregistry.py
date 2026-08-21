@@ -14,7 +14,11 @@ MESSAGE_REGISTRY: Dict[str, type["Message"]] = {}
 
 
 def register_message(class_name: str, message_class: type["Message"]) -> type["Message"]:
-    """Store a validated Message subclass under its wire name."""
+    """Store a Message subclass under its wire name."""
+    if not isinstance(class_name, str) or not class_name:
+        raise TypeError('class_name must be a non-empty string')
+    if not isinstance(message_class, type):
+        raise TypeError('message_class must be a class')
     short_name = class_name.split('.')[-1]
     existing = MESSAGE_REGISTRY.get(class_name)
     if existing is not None and existing != message_class:
