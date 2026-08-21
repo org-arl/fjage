@@ -143,8 +143,7 @@ export function MessageClass(name, parent=Message) {
   if (!(parent === Message || parent.prototype instanceof Message)) {
     throw new Error(`Parent class ${parent.name} is not a subclass of Message`);
   }
-  const shortName = name.replace(/^.*\./, '');
-  const registeredClass = messageClassForName(shortName);
+  const registeredClass = messageClassForName(name);
   if (registeredClass) return registeredClass;
   // @ts-ignore Parent is validated above.
   const messageClass = class extends parent {
