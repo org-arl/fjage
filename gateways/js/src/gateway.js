@@ -4,9 +4,9 @@ import { isBrowser, isNode, isJsDom, isWebWorker } from 'browser-or-node';
 import { AgentID } from './agentid.js';
 import {
   Message, GenericMessage, ParameterReq, ParameterRsp, PutFileReq, GetFileReq,
-  GetFileRsp, DeleteFileReq, ShellExecReq, _DEFAULT_PERF, _configureMessageRegistration
+  GetFileRsp, DeleteFileReq, ShellExecReq
 } from './message.js';
-import { Performative } from './performative.js';
+import { MESSAGE_REGISTRY, registerMessageClass } from './messageregistry.js';
 import { _guid, UUID7 } from './utils.js';
 
 import TCPConnector from './tcpconnector.js';
@@ -90,37 +90,22 @@ export function init(){
 */
 export class Gateway {
 
-  static _MESSAGE_REGISTRY = Object.create(null);
+  static _MESSAGE_REGISTRY = MESSAGE_REGISTRY;
 
   /**
   * Registers a message class for JSON serialization and inflation.
-  * @param {string} qualifiedName - fully qualified message class name
+  * @param {string} className - qualified or unqualified message class name
   * @param {Function} messageClass - class to register
   * @returns {Function} registered message class
   */
-  static registerMessage(qualifiedName, messageClass) {
-    if (typeof qualifiedName !== 'string' || qualifiedName.trim() === '') {
+  static registerMessage(className, messageClass) {
+    if (typeof className !== 'string' || className.trim() === '') {
       throw new Error('Message class name must be a non-empty string');
     }
     if (typeof messageClass !== 'function' || !(messageClass.prototype instanceof Message)) {
       throw new Error('Message class must be a subclass of Message');
     }
-
-    const shortName = qualifiedName.split('.').pop();
-    const registry = Gateway._MESSAGE_REGISTRY;
-    if (registry[qualifiedName] && registry[qualifiedName] !== messageClass) {
-      console.warn(`Overriding existing message class registered with name '${qualifiedName}'`);
-    }
-    if (registry[shortName] && registry[shortName] !== messageClass) {
-      console.warn(`Overriding existing message class registered with short name '${shortName}'`);
-    }
-    messageClass.prototype.__clazz__ = qualifiedName;
-    messageClass.prototype[_DEFAULT_PERF] = shortName.toLowerCase().endsWith('req')
-      ? Performative.REQUEST
-      : Performative.INFORM;
-    registry[qualifiedName] = messageClass;
-    registry[shortName] = messageClass;
-    return messageClass;
+    return registerMessageClass(className, messageClass);
   }
 
   constructor(opts = {}) {
@@ -734,11 +719,7 @@ export class Gateway {
 
 }
 
-_configureMessageRegistration(
-  name => Gateway._MESSAGE_REGISTRY[name] || Gateway._MESSAGE_REGISTRY[name.replace(/^.*\./, '')],
-  Gateway.registerMessage
-);
-Gateway.registerMessage('org.arl.fjage.Message', Message);
+registerMessageClass('org.arl.fjage.Message', Message);
 Gateway.registerMessage('org.arl.fjage.GenericMessage', GenericMessage);
 Gateway.registerMessage('org.arl.fjage.param.ParameterReq', ParameterReq);
 Gateway.registerMessage('org.arl.fjage.param.ParameterRsp', ParameterRsp);

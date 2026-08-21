@@ -632,6 +632,7 @@ describe('A Message', function () {
     const msg1 = new Message();
     const msg2 = Message.fromJSON(msg1.toJSON());
     const txMsg = new TxFrameReq();
+    expect(Gateway._MESSAGE_REGISTRY.Message).toBe(Message);
     expect(msg1).toEqual(msg2);
     expect(Message.fromJSON(txMsg.toJSON())).toEqual(txMsg);
   });
@@ -663,6 +664,14 @@ describe('A Message', function () {
 });
 
 describe('Message registration', function () {
+  it('should register an unqualified class name', function () {
+    class UnqualifiedMessage extends Message {}
+    expect(Gateway.registerMessage('UnqualifiedMessage', UnqualifiedMessage)).toBe(UnqualifiedMessage);
+    expect(new UnqualifiedMessage().toJSON().clazz).toBe('UnqualifiedMessage');
+    expect(Message.fromJSON({clazz: 'UnqualifiedMessage', data: {}}))
+      .toEqual(jasmine.any(UnqualifiedMessage));
+  });
+
   it('should retain fields-object construction for deprecated MessageClass', function () {
     const LegacyMessage = MessageClass('org.example.LegacyMessage');
     const message = new LegacyMessage({value: 1});

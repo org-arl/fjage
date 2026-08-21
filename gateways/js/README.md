@@ -67,7 +67,7 @@ const gw = new Gateway({
 
 ### Custom message classes
 
-Define a normal `Message` subclass, then register its fully qualified name. Registration sets the outgoing JSON `clazz` and lets the gateway create the same class when matching JSON arrives.
+Define a normal `Message` subclass, then register its class name. The name may be qualified, such as `org.example.TemperatureNtf`, or unqualified, such as `TemperatureNtf`. Registration sets the outgoing JSON `clazz` and lets the gateway create the same class when matching JSON arrives.
 
 ```js
 import { Gateway, Message } from 'fjage.js';

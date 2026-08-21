@@ -1,25 +1,11 @@
 import { Performative } from './performative.js';
 import { UUID7 } from './utils.js';
 import { AgentID } from './agentid.js';
-
-export const _DEFAULT_PERF = Symbol('defaultPerf');
-/** @type {(name: string) => Function|undefined} */
-let _messageClassForName = () => undefined;
-/** @type {(qualifiedName: string, messageClass: Function) => Function} */
-let _registerMessage = () => { throw new Error('Message registration is not configured'); };
-
-/**
- * @param {(name: string) => Function|undefined} messageClassForName - registered class lookup
- * @param {(qualifiedName: string, messageClass: Function) => Function} registerMessage - registration function
- */
-export function _configureMessageRegistration(messageClassForName, registerMessage) {
-  _messageClassForName = messageClassForName;
-  _registerMessage = registerMessage;
-}
+import { DEFAULT_PERF, messageClassForName, registerMessageClass } from './messageregistry.js';
 
 /**
  * @typedef {Object} MessageJSON
- * @property {string} clazz - fully qualified message class name
+ * @property {string} clazz - qualified or unqualified message class name
  * @property {Object.<string, *>} data - message data
  */
 
@@ -32,7 +18,7 @@ export function _configureMessageRegistration(messageClassForName, registerMessa
  */
 function initializeMessage(message, inReplyToMsg, perf) {
   message.msgID = UUID7.generate().toString();
-  message.perf = perf === undefined ? message[_DEFAULT_PERF] || Performative.INFORM : perf;
+  message.perf = perf === undefined ? message[DEFAULT_PERF] || Performative.INFORM : perf;
   message.sender = null;
   message.recipient = null;
   message.inReplyTo = null;
@@ -114,7 +100,7 @@ export class Message {
         !jsonObj.data || typeof jsonObj.data !== 'object') {
       throw new Error(`Invalid Object for Message : ${jsonObj}`);
     }
-    const registeredClass = _messageClassForName(jsonObj.clazz);
+    const registeredClass = messageClassForName(jsonObj.clazz);
     if (!registeredClass) {
       console.warn(`No registered message class for ${jsonObj.clazz}, skipping inflation`);
       return null;
@@ -158,7 +144,7 @@ export function MessageClass(name, parent=Message) {
     throw new Error(`Parent class ${parent.name} is not a subclass of Message`);
   }
   const shortName = name.replace(/^.*\./, '');
-  const registeredClass = _messageClassForName(shortName);
+  const registeredClass = messageClassForName(shortName);
   if (registeredClass) return registeredClass;
   // @ts-ignore Parent is validated above.
   const messageClass = class extends parent {
@@ -167,7 +153,7 @@ export function MessageClass(name, parent=Message) {
       Object.assign(this, fields);
     }
   };
-  _registerMessage(name, messageClass);
+  registerMessageClass(name, messageClass);
   return messageClass;
 }
 
