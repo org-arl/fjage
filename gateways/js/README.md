@@ -70,13 +70,13 @@ const gw = new Gateway({
 Define a normal `Message` subclass, then register its fully qualified name. Registration sets the outgoing JSON `clazz` and lets the gateway create the same class when matching JSON arrives.
 
 ```js
-import { Message, registerMessage } from 'fjage.js';
+import { Gateway, Message } from 'fjage.js';
 
 class TemperatureNtf extends Message {
     temperature = null;
 }
 
-registerMessage('org.example.TemperatureNtf', TemperatureNtf);
+Gateway.registerMessage('org.example.TemperatureNtf', TemperatureNtf);
 
 const ntf = new TemperatureNtf();
 ntf.temperature = 24.5;
@@ -84,4 +84,4 @@ ntf.temperature = 24.5;
 
 The `Message` constructor accepts an optional message to reply to and an optional performative. It does not accept an object containing message fields. Set custom fields after construction or initialize them in the custom class constructor.
 
-`MessageClass` is deprecated. Use `registerMessage()` when adding custom message classes.
+`MessageClass` is deprecated. Use `Gateway.registerMessage()` when adding custom message classes.

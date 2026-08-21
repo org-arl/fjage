@@ -1,4 +1,4 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, MessageClass, Gateway, registerMessage, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, ShellExecReq*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, MessageClass, Gateway, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, ShellExecReq*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -6,7 +6,7 @@ const TEST_STRING = 'this is a test';
 const NEW_STRING = 'new test';
 
 class TxFrameReq extends Message {}
-registerMessage('org.arl.unet.phy.TxFrameReq', TxFrameReq);
+Gateway.registerMessage('org.arl.unet.phy.TxFrameReq', TxFrameReq);
 
 class SendMsgReq extends Message {
   num = 0;
@@ -16,25 +16,25 @@ class SendMsgReq extends Message {
     this.perf = Performative.REQUEST;
   }
 }
-registerMessage('org.arl.fjage.test.SendMsgReq', SendMsgReq);
+Gateway.registerMessage('org.arl.fjage.test.SendMsgReq', SendMsgReq);
 
 class SendMsgRsp extends Message {
   id = 0;
   type = 0;
 }
-registerMessage('org.arl.fjage.test.SendMsgRsp', SendMsgRsp);
+Gateway.registerMessage('org.arl.fjage.test.SendMsgRsp', SendMsgRsp);
 
 class TestCompleteNtf extends Message {
   status = null;
   trace = null;
   type = null;
 }
-registerMessage('org.arl.fjage.test.TestCompleteNtf', TestCompleteNtf);
+Gateway.registerMessage('org.arl.fjage.test.TestCompleteNtf', TestCompleteNtf);
 
 class TestMessage extends Message {
   data = null;
 }
-registerMessage('org.arl.fjage.test.TestMessage', TestMessage);
+Gateway.registerMessage('org.arl.fjage.test.TestMessage', TestMessage);
 
 
 const ValidFjageActions = ['agents', 'containsAgent', 'services', 'agentForService', 'agentsForService', 'send', 'shutdown'];
@@ -651,7 +651,7 @@ describe('A Message', function () {
   });
 
   it('should use the registered class name for the default performative', function () {
-    const CustomMessage = registerMessage('org.example.CustomReq', class extends Message {});
+    const CustomMessage = Gateway.registerMessage('org.example.CustomReq', class extends Message {});
     expect(new CustomMessage().perf).toEqual(Performative.REQUEST);
     expect(new CustomMessage(undefined, Performative.INFORM).perf).toEqual(Performative.INFORM);
   });
@@ -672,8 +672,8 @@ describe('Message registration', function () {
   it('should resolve an exact class name before a short class name', function () {
     class FirstFoo extends Message { first = null; }
     class SecondFoo extends Message { second = null; }
-    expect(registerMessage('a.Foo', FirstFoo)).toBe(FirstFoo);
-    expect(registerMessage('b.Foo', SecondFoo)).toBe(SecondFoo);
+    expect(Gateway.registerMessage('a.Foo', FirstFoo)).toBe(FirstFoo);
+    expect(Gateway.registerMessage('b.Foo', SecondFoo)).toBe(SecondFoo);
     expect(Message.fromJSON({clazz: 'a.Foo', data: {first: 1}})).toEqual(jasmine.any(FirstFoo));
     expect(Message.fromJSON({clazz: 'b.Foo', data: {second: 2}})).toEqual(jasmine.any(SecondFoo));
     expect(Message.fromJSON({clazz: 'Foo', data: {second: 2}})).toEqual(jasmine.any(SecondFoo));
@@ -683,7 +683,7 @@ describe('Message registration', function () {
 
   it('should inflate all fields from registered messages', function () {
     class CustomMessage extends Message { value = null; }
-    registerMessage('org.example.CustomMessage', CustomMessage);
+    Gateway.registerMessage('org.example.CustomMessage', CustomMessage);
     const message = Message.fromJSON({clazz: 'org.example.CustomMessage', data: {value: 1, extra: 2}});
     expect(message.value).toBe(1);
     expect(message.extra).toBe(2);
@@ -691,8 +691,8 @@ describe('Message registration', function () {
 
   it('should validate registrations before changing the registry', function () {
     class ValidMessage extends Message {}
-    expect(() => registerMessage('', ValidMessage)).toThrow();
-    expect(() => registerMessage('org.example.InvalidMessage', class {})).toThrow();
+    expect(() => Gateway.registerMessage('', ValidMessage)).toThrow();
+    expect(() => Gateway.registerMessage('org.example.InvalidMessage', class {})).toThrow();
   });
 
   it('should inflate fields when a registered class needs constructor arguments', function () {
@@ -703,7 +703,7 @@ describe('Message registration', function () {
         this.value = null;
       }
     }
-    registerMessage('org.example.RequiredArgumentMessage', RequiredArgumentMessage);
+    Gateway.registerMessage('org.example.RequiredArgumentMessage', RequiredArgumentMessage);
     const message = Message.fromJSON({clazz: 'org.example.RequiredArgumentMessage', data: {value: 1}});
     expect(message).toEqual(jasmine.any(RequiredArgumentMessage));
     expect(message.msgID).toBeDefined();

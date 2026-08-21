@@ -4,7 +4,6 @@ toc:
   - Services
   - Performative
   - Message
-  - registerMessage
   - MessageClass
   - ParameterReq
   - ParameterReq.Entry
