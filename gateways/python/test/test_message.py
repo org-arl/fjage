@@ -69,15 +69,15 @@ def test_gateway_register_message_serializes_and_inflates_registered_class():
 
 def test_register_message_keeps_qualified_names_and_updates_unqualified_name():
     """Qualified names should stay distinct while the latest short name wins."""
-    FirstFoo = type('Foo', (Message,), {})
-    SecondFoo = type('Foo', (Message,), {})
+    FirstFoo = type('TestFoo', (Message,), {})
+    SecondFoo = type('TestFoo', (Message,), {})
 
-    Gateway.registerMessage('a.Foo', FirstFoo)
-    Gateway.registerMessage('b.Foo', SecondFoo)
+    Gateway.registerMessage('a.TestFoo', FirstFoo)
+    Gateway.registerMessage('b.TestFoo', SecondFoo)
 
-    assert isinstance(Message.from_json({'clazz': 'a.Foo', 'data': {}}), FirstFoo)
-    assert isinstance(Message.from_json({'clazz': 'b.Foo', 'data': {}}), SecondFoo)
-    assert isinstance(Message.from_json({'clazz': 'Foo', 'data': {}}), SecondFoo)
+    assert isinstance(Message.from_json({'clazz': 'a.TestFoo', 'data': {}}), FirstFoo)
+    assert isinstance(Message.from_json({'clazz': 'b.TestFoo', 'data': {}}), SecondFoo)
+    assert isinstance(Message.from_json({'clazz': 'TestFoo', 'data': {}}), SecondFoo)
 
 
 def test_gateway_register_message_rejects_invalid_arguments():
