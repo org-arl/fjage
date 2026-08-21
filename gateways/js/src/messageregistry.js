@@ -29,6 +29,7 @@ export function registerMessageClass(className, messageClass) {
   }
 
   const shortName = className.split('.').pop();
+  if (!shortName) throw new Error('Message class name must not end with a dot');
   if (MESSAGE_REGISTRY[className] && MESSAGE_REGISTRY[className] !== messageClass) {
     console.warn(`Overriding existing message class registered with name '${className}'`);
   }
