@@ -1,7 +1,7 @@
 import logging
 
 from .Gateway import Gateway
-from .Message import Message, MessageClass, registerMessage, message, ParameterReq, ParameterRsp, PutFileReq, GetFileReq, DeleteFileReq, ShellExecReq, GetFileRsp
+from .Message import Message, MessageClass, message, ParameterReq, ParameterRsp, PutFileReq, GetFileReq, DeleteFileReq, ShellExecReq, GetFileRsp
 from .Performative import Performative
 from .AgentID import AgentID
 from .Services import Services
@@ -20,7 +20,6 @@ __all__ = [
     "Gateway",
     "Message",
     "MessageClass",
-    "registerMessage",
     "message",
     "Performative",
     "AgentID",

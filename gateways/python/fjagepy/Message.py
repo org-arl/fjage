@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import logging
 import keyword
 import warnings
@@ -9,6 +8,7 @@ from typing import Callable, Optional, Any, Dict, TYPE_CHECKING, Union, get_type
 from .AgentID import AgentID
 from .Performative import Performative
 from .Utils import UUID7
+from .messageregistry import message_class_for_name, register_message
 
 if TYPE_CHECKING:
     from .Gateway import Gateway
@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-_MESSAGE_REGISTRY: Dict[str, type["Message"]] = {}
 _NUMPY_AVAILABLE:bool = False
 
 # Attempt to import numpy for array handling
@@ -50,42 +49,6 @@ def _message_clazz(class_: type["Message"]) -> str:
     if isinstance(clazz_name, str) and clazz_name:
         return clazz_name
     return "org.arl.fjage.Message"
-
-def registerMessage(qualified_name: str, message_class: type["Message"]) -> type["Message"]:
-    """Register a Message subclass under a wire name.
-
-    Args:
-        qualified_name: name used in the JSON ``clazz`` field (fully qualified recommended)
-        message_class: Message subclass to use for that name
-
-    Returns:
-        The registered Message subclass.
-    """
-    if not isinstance(qualified_name, str) or not qualified_name:
-        raise TypeError('qualified_name must be a non-empty string')
-    if not isinstance(message_class, type) or not issubclass(message_class, Message):
-        raise TypeError('message_class must be a Message subclass')
-
-    class_ = message_class
-    fqcn = qualified_name
-
-    # check if something is already registered with the same name or clazz
-    if class_.__name__ in _MESSAGE_REGISTRY and _MESSAGE_REGISTRY[class_.__name__] != class_:
-        logger.warning(f"Overriding existing message class registered with name '{class_.__name__}': {_MESSAGE_REGISTRY[class_.__name__]} -> {class_}")
-    if fqcn:
-        if fqcn in _MESSAGE_REGISTRY and _MESSAGE_REGISTRY[fqcn] != class_:
-            logger.warning(f"Overriding existing message class registered with clazz '{fqcn}': {_MESSAGE_REGISTRY[fqcn]} -> {class_}")
-        if fqcn.split('.')[-1] in _MESSAGE_REGISTRY and _MESSAGE_REGISTRY[fqcn.split('.')[-1]] != class_:
-            logger.warning(f"Overriding existing message class registered with name '{fqcn.split('.')[-1]}': {_MESSAGE_REGISTRY[fqcn.split('.')[-1]]} -> {class_}")
-
-    sys.modules[__name__].__dict__[class_.__name__] = class_
-    _MESSAGE_REGISTRY[class_.__name__] = class_
-
-    class_.__clazz__ = fqcn
-    _MESSAGE_REGISTRY[fqcn] = class_
-    _MESSAGE_REGISTRY[fqcn.split('.')[-1]] = class_
-
-    return class_
 
 def _instantiate_message(class_: type["Message"]) -> "Message":
     try:
@@ -166,11 +129,10 @@ class Message:
         qclazz = json_obj["clazz"]
         clazz_name = qclazz.split(".")[-1]
 
-        rv_cls = _MESSAGE_REGISTRY.get(qclazz) or _MESSAGE_REGISTRY.get(clazz_name)
+        rv_cls = message_class_for_name(qclazz)
 
         if rv_cls is None:
-            module = sys.modules[__name__]
-            rv_cls = getattr(module, clazz_name, None)
+            rv_cls = globals().get(clazz_name)
 
         # Else default to base Message class
         if rv_cls is None:
@@ -237,7 +199,7 @@ class GenericMessage(Message):
 def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
     """Creates an unqualified message class based on a fully qualified name.
 
-    Deprecated. Use :py:func:`registerMessage` or :py:func:`message` instead.
+    Deprecated. Use :py:meth:`Gateway.registerMessage` or :py:func:`message` instead.
 
     Args:
         name : fully qualified name of the message class
@@ -249,7 +211,7 @@ def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
 
     warnings.warn(
         "MessageClass is deprecated and will be removed in a future version. "
-        "Use registerMessage or the @message decorator instead.",
+        "Use Gateway.registerMessage or the @message decorator instead.",
         DeprecationWarning,
         stacklevel=2
     )
@@ -264,7 +226,7 @@ def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
         _update_attributes(self, kwargs)
 
     class_ = type(sname, (parent,), {"__init__": __init__})
-    return registerMessage(name, class_)
+    return register_message(name, class_)
 
 @overload
 def message(arg: type[Message]) -> type[Message]: ...
@@ -283,7 +245,7 @@ def message(arg: type[Message] | str)  -> Union[type[Message], Callable[..., typ
             raise TypeError('@message can only be used with Message subclasses')
 
         qualified_name = fqcn or class_.__dict__.get('__clazz__') or class_.__name__
-        return registerMessage(qualified_name, class_)
+        return register_message(qualified_name, class_)
 
     if isinstance(arg, type):
         return decorate(arg)

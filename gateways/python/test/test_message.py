@@ -1,7 +1,7 @@
 import inspect
 import pytest
 
-from fjagepy import Message, AgentID, Performative, MessageClass, registerMessage, message
+from fjagepy import Gateway, Message, AgentID, Performative, MessageClass, message
 
 
 @message
@@ -51,12 +51,12 @@ def test_message_serialization():
     assert msg2.sender == msg.sender
     assert msg2.recipient == msg.recipient
 
-def test_register_message_serializes_and_inflates_registered_class():
-    """registerMessage should use the registered name in both directions."""
+def test_gateway_register_message_serializes_and_inflates_registered_class():
+    """Gateway.registerMessage should use the registered name in both directions."""
     class RegisteredReq(Message):
         pass
 
-    registered = registerMessage('org.arl.fjage.test.RegisteredReq', RegisteredReq)
+    registered = Gateway.registerMessage('org.arl.fjage.test.RegisteredReq', RegisteredReq)
     outgoing = registered(value=7)
     incoming = Message.from_json(outgoing.to_json())
 
@@ -72,25 +72,31 @@ def test_register_message_keeps_qualified_names_and_updates_unqualified_name():
     FirstFoo = type('Foo', (Message,), {})
     SecondFoo = type('Foo', (Message,), {})
 
-    registerMessage('a.Foo', FirstFoo)
-    registerMessage('b.Foo', SecondFoo)
+    Gateway.registerMessage('a.Foo', FirstFoo)
+    Gateway.registerMessage('b.Foo', SecondFoo)
 
     assert isinstance(Message.from_json({'clazz': 'a.Foo', 'data': {}}), FirstFoo)
     assert isinstance(Message.from_json({'clazz': 'b.Foo', 'data': {}}), SecondFoo)
     assert isinstance(Message.from_json({'clazz': 'Foo', 'data': {}}), SecondFoo)
 
 
-def test_register_message_rejects_invalid_arguments():
-    """registerMessage should require a name and a Message subclass."""
-    with pytest.raises(TypeError, match='qualified_name'):
-        registerMessage('', Message)
+def test_gateway_register_message_rejects_invalid_arguments():
+    """Gateway.registerMessage should require a name and a Message subclass."""
+    with pytest.raises(TypeError, match='class_name'):
+        Gateway.registerMessage('', Message)
     with pytest.raises(TypeError, match='message_class'):
-        registerMessage('org.arl.fjage.test.Invalid', object)
+        Gateway.registerMessage('org.arl.fjage.test.Invalid', object)
+
+
+def test_register_message_is_not_exported_from_fjagepy():
+    import fjagepy
+
+    assert not hasattr(fjagepy, 'registerMessage')
 
 
 def test_messageclass_is_deprecated():
     """MessageClass should remain available during the deprecation period."""
-    with pytest.warns(DeprecationWarning, match='Use registerMessage or the @message decorator'):
+    with pytest.warns(DeprecationWarning, match='Use Gateway.registerMessage or the @message decorator'):
         DeprecatedMessage = MessageClass('org.arl.fjage.test.DeprecatedMessage')
 
     assert isinstance(DeprecatedMessage(), DeprecatedMessage)

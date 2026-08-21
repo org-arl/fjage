@@ -143,17 +143,17 @@ assert isinstance(incoming, CustomReq)
 assert incoming.text == 'hello'
 ```
 
-The equivalent programmatic form uses `registerMessage()`:
+The equivalent programmatic form uses `Gateway.registerMessage()`:
 
 ```python
-from fjagepy import Message, registerMessage
+from fjagepy import Gateway, Message
 
 
 class CustomReq(Message):
     pass
 
 
-registerMessage('org.example.CustomReq', CustomReq)
+Gateway.registerMessage('org.example.CustomReq', CustomReq)
 ```
 
 `MessageClass` is deprecated. Replace code such as:
@@ -162,7 +162,7 @@ registerMessage('org.example.CustomReq', CustomReq)
 CustomReq = MessageClass('org.example.CustomReq')
 ```
 
-with a normal `Message` subclass registered using `registerMessage()` or `@message`.
+with a normal `Message` subclass registered using `Gateway.registerMessage()` or `@message`.
 
 ## Advanced Usage
 
