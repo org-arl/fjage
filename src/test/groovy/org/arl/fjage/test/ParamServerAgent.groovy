@@ -15,6 +15,7 @@ public class ParamServerAgent extends Agent {
   float b = 42.0;
   int z = 2;
 
+  @SuppressWarnings('NonFinalPublicField')
   public int x = 1;
 
   // These are local variables (storage)

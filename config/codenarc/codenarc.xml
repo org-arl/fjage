@@ -1,0 +1,14 @@
+<ruleset xmlns="http://codenarc.org/ruleset/1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://codenarc.org/ruleset/1.0 http://codenarc.org/ruleset-schema.xsd">
+  <description>Correctness and bug-finding rules for fjage Groovy sources.</description>
+  <ruleset-ref path="rulesets/basic.xml">
+    <exclude name="ClassForName"/>
+  </ruleset-ref>
+  <ruleset-ref path="rulesets/concurrency.xml"/>
+  <ruleset-ref path="rulesets/exceptions.xml"/>
+  <ruleset-ref path="rulesets/security.xml">
+    <!-- This rule only applies to Enterprise JavaBeans, which fjage does not use. -->
+    <exclude name="JavaIoPackageAccess"/>
+  </ruleset-ref>
+</ruleset>

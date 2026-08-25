@@ -659,6 +659,7 @@ abstract class BaseGroovyScript extends Script {
   /**
    * Try executing a named script if a command/property does not exist.
    */
+  @SuppressWarnings('EmptyCatchBlock')
   def propertyMissing(String name) {
     Binding binding = getBinding()
     def a = agent(name)

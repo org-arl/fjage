@@ -4,6 +4,7 @@ import org.arl.fjage.*
 import org.arl.fjage.param.Parameter
 import org.arl.fjage.param.ParameterMessageBehavior
 
+@SuppressWarnings('InsecureRandom')
 public class PublishServerAgent extends Agent {
   Boolean tick = false
 

@@ -52,7 +52,7 @@ public class T6WebSocketTest {
         if (line.isEmpty()) continue;
         lines.add(line);
         try {
-          com.google.gson.JsonParser.parseString(line);
+          Objects.requireNonNull(com.google.gson.JsonParser.parseString(line));
         } catch (Exception ex) {
           malformed.incrementAndGet();
         }

@@ -80,12 +80,15 @@ Try to stick to the coding style already in use in the repository. Additionally,
 
 Building:
 
-* `gradle` to build the jars including resources (webshell, fjage.js, etc.)
-* `gradle test` to run all regression tests (automated through Github actions CI)
-* `gradle publish` to publish jars to the Github Maven repository (requires credentials)
+* `./gradlew` to build the jars including resources (webshell, fjage.js, etc.)
+* `./gradlew check` to run Java/Groovy static analysis (automated through Github actions CI)
+* `./gradlew test` to run all regression tests after static analysis passes
+* `./gradlew codenarcMain` to analyze the main Groovy sources
+* `./gradlew spotbugsMain` to analyze the compiled main classes
+* `./gradlew publish` to publish jars to the Github Maven repository (requires credentials)
 * `quarto render docs` to build developer's documentation (published via GitHub Actions to GitHub Pages)
-* `gradle javadoc` to build the Java API documentation
-* `gradle jsdoc` to build the Javascript API documentation
+* `./gradlew javadoc` to build the Java API documentation
+* `./gradlew jsdoc` to build the Javascript API documentation
 
 License
 -------

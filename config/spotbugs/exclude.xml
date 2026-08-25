@@ -1,0 +1,91 @@
+<FindBugsFilter>
+  <!-- AgentID deliberately supports comparison with a String; see its equals() contract. -->
+  <Match>
+    <Bug pattern="EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS"/>
+    <Class name="org.arl.fjage.AgentID"/>
+    <Method name="equals"/>
+  </Match>
+
+  <!-- Preserve existing platform-default encoding behavior while rejecting new occurrences. -->
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.connectors.PseudoOutputStream"/>
+    <Method name="readLine"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.connectors.WebSocketConnector"/>
+    <Method name="onWebSocketText"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.connectors.WebSocketHubConnector$OutputThread"/>
+    <Method name="run"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.connectors.WebSocketHubConnector$WSHandler"/>
+    <Method name="onMessage"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.remote.ConnectionHandler"/>
+    <Method name="run"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.shell.DumbShell"/>
+    <Method name="&lt;init&gt;"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.shell.GroovyBoot"/>
+    <Method name="main"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.shell.GroovyScriptEngine"/>
+    <Method name="resolveGroovyBug"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.shell.ShellAgent"/>
+    <Method name="addInitrc"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.shell.ShellAgent"/>
+    <Method name="handleGetFileReq"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.loadtest.T7StreamStressTest"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.test.BasicTests$ShellTestAgent$1"/>
+    <Method name="action"/>
+  </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="org.arl.fjage.test.LoggingShellTest"/>
+  </Match>
+
+  <!-- These tests change logger state briefly and restore it before returning. -->
+  <Match>
+    <Bug pattern="LG_LOST_LOGGER_DUE_TO_WEAK_REFERENCE"/>
+    <Class name="org.arl.fjage.connectors.WebServerTest"/>
+  </Match>
+  <Match>
+    <Bug pattern="LG_LOST_LOGGER_DUE_TO_WEAK_REFERENCE"/>
+    <Class name="org.arl.fjage.observer.ObserverLifecycleTest"/>
+  </Match>
+  <Match>
+    <Bug pattern="LG_LOST_LOGGER_DUE_TO_WEAK_REFERENCE"/>
+    <Class name="org.arl.fjage.observer.ObserverTest"/>
+  </Match>
+  <Match>
+    <Bug pattern="LG_LOST_LOGGER_DUE_TO_WEAK_REFERENCE"/>
+    <Class name="org.arl.fjage.test.AbstractSimulatorTest"/>
+  </Match>
+</FindBugsFilter>

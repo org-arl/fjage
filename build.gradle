@@ -1,36 +1,49 @@
 import org.apache.tools.ant.taskdefs.condition.Os
+import javax.inject.Inject
 
 plugins {
   id 'java-library'
   id 'groovy'
+  id 'codenarc'
   id 'maven-publish'
+  id 'net.ltgt.errorprone' version '4.4.0'
+  id 'com.github.spotbugs' version '5.2.5'
 }
 
 defaultTasks 'jar'
 
-archivesBaseName = 'fjage'
+base {
+  archivesName = 'fjage'
+}
 group = 'com.github.org-arl'
 version = new File(projectDir, 'VERSION').text.trim()
 
 // get git commit
-def stdout = new ByteArrayOutputStream()
-exec {
+def commit = providers.exec {
   commandLine 'git', 'describe', '--always', '--abbrev=8', '--match', 'NOT A TAG', '--dirty=*'
-  standardOutput = stdout;
+}.standardOutput.asText.get().trim()
+
+// configuration cache disallows Project APIs (exec/copy/delete) in task actions; use injected services instead
+interface Ops {
+  @Inject ExecOperations getExec()
+  @Inject FileSystemOperations getFs()
 }
-def commit = "$stdout".replace('\n','')
+def ops = objects.newInstance(Ops)
 
 // check if npm exists
 def npmcmd = Os.isFamily(Os.FAMILY_WINDOWS) ? "npm.cmd" : "npm"
-boolean npmExists = false
-try {
-  def npmproc = "$npmcmd -v".execute()
-  npmproc.waitForOrKill(3000)
-  npmExists = npmproc.exitValue() == 0
-} catch (IOException ignored){}
+def npmExists = providers.exec {
+  commandLine npmcmd, '--version'
+  ignoreExitValue = true
+}.standardOutput.asText.map { it.trim() }.orElse("").map { it != "" }
 
-targetCompatibility = 1.8
-sourceCompatibility = 1.8
+// targetCompatibility = 1.8
+// sourceCompatibility = 1.8
+
+java {
+  targetCompatibility = JavaVersion.VERSION_1_8
+  sourceCompatibility = JavaVersion.VERSION_1_8
+}
 
 repositories {
   mavenCentral()
@@ -50,6 +63,11 @@ dependencies {
   api 'com.fazecast:jSerialComm:2.10.4'
   testImplementation 'junit:junit:4.13.2'
   testImplementation 'net.jodah:concurrentunit:0.4.6'
+
+  // Last Error Prone release that runs on JDK 8.
+  errorprone 'com.google.errorprone:error_prone_core:2.10.0'
+  // CodeNarc has an isolated Groovy 3 runtime and does not change fjage's Groovy 2.5 API.
+  codenarc 'org.codenarc:CodeNarc:3.4.0'
 }
 
 compileJava {
@@ -62,6 +80,37 @@ compileTestJava {
   options.compilerArgs << "-Xlint:-options"
 }
 
+codenarc {
+  configFile = file('config/codenarc/codenarc.xml')
+  reportFormat = 'html'
+  ignoreFailures = false
+}
+
+spotbugs {
+  // Last SpotBugs release that runs on JDK 8.
+  toolVersion = '4.8.6'
+  effort = 'max'
+  reportLevel = 'high'
+  excludeFilter = file('config/spotbugs/exclude.xml')
+  ignoreFailures = false
+}
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+  reports {
+    html.required = true
+    xml.required = false
+  }
+}
+
+tasks.named('check') {
+  setDependsOn([
+    tasks.named('codenarcMain'),
+    tasks.named('codenarcTest'),
+    tasks.named('spotbugsMain'),
+    tasks.named('spotbugsTest')
+  ])
+}
+
 compileGroovy {
   options.compilerArgs << "-Xlint:all"
   options.compilerArgs << "-Xlint:-options"
@@ -70,28 +119,26 @@ compileGroovy {
 tasks.register('buildjs') {
   inputs.files fileTree('gateways/js/src').include('**/*.js'), "gateways/js/package.json"
   outputs.dir "gateways/js/dist"
+  def jsdir = file('gateways/js')
+  def bundle = file('gateways/js/dist/fjage.js')
   doLast {
     if (npmExists) {
-      exec {
-        workingDir 'gateways/js'
+      ops.exec.exec {
+        workingDir jsdir
         executable npmcmd
         args System.getenv('CI') != null ? 'ci' : "install"
         errorOutput = new ByteArrayOutputStream()
         standardOutput = new ByteArrayOutputStream()
       }
-      exec {
-        workingDir 'gateways/js'
+      ops.exec.exec {
+        workingDir jsdir
         executable npmcmd
         args 'run', 'build'
       }
-    } else if (file('gateways/js/dist/fjage.js').exists()) {
-      if (!gradle.taskGraph.hasTask(":javadoc")) { // only log if not building javadoc
-        project.logger.lifecycle('npm not found. Using cached fjage.js build')
-      }
+    } else if (bundle.exists()) {
+      logger.info('npm not found. Using cached fjage.js build')
     } else {
-      if (!gradle.taskGraph.hasTask(":javadoc")) { // only log if not building javadoc
-        project.logger.lifecycle('Not bundling fjage.js. WebShell will not work.')
-      }
+      logger.warn('Not bundling fjage.js. WebShell will not work.')
     }
   }
 }
@@ -113,17 +160,19 @@ tasks.register('updatexterm') {
       throw new GradleException("npm not found. Cannot update xterm.")
     }
   }
+  def pkgjson = file('package.json')
+  def rootdir = projectDir
   doLast {
     // create package.json with `{}` if it does not exist
-    if (!file('package.json').exists()) {
-      file('package.json').text = '{}'
+    if (!pkgjson.exists()) {
+      pkgjson.text = '{}'
     }
-    exec {
-      workingDir '.'
+    ops.exec.exec {
+      workingDir rootdir
       executable npmcmd
       args 'install', '@xterm/xterm@6.0.0', '@xterm/addon-attach@0.12.0', '@xterm/addon-fit@0.11.0', '@xterm/addon-web-links@0.12.0'
     }
-    copy {
+    ops.fs.copy {
       from(['node_modules/@xterm/addon-web-links/lib', 'node_modules/@xterm/addon-attach/lib', 'node_modules/@xterm/addon-fit/lib', 'node_modules/@xterm/xterm/lib']) {
         include '*.js'
       }
@@ -132,7 +181,9 @@ tasks.register('updatexterm') {
       }
       into 'src/main/resources/org/arl/fjage/web/shell'
     }
-    delete "node_modules", "package.json", "package-lock.json"
+    ops.fs.delete {
+      delete "node_modules", "package.json", "package-lock.json"
+    }
   }
 }
 
@@ -143,10 +194,12 @@ jar {
         "Build-Timestamp": new Date().format('d-MM-yyyy_HH:mm:ss'),
         "Build-Version": "${project.version}/${commit}")
   }
+  def libsdir = layout.buildDirectory.dir('libs')
+  def runtimeDeps = configurations.runtimeClasspath
   doLast {
-    copy {
-      into "$buildDir/libs"
-      from configurations.runtimeClasspath
+    ops.fs.copy {
+      into libsdir
+      from runtimeDeps
     }
   }
 }
@@ -167,7 +220,7 @@ test {
   systemProperties project.properties.subMap(["manualCTest"])
   testLogging {
     events "passed", "skipped", "failed"
-    exceptionFormat "full"
+    exceptionFormat = "full"
   }
 }
 
