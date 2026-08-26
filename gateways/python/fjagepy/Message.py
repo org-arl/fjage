@@ -118,7 +118,11 @@ class Message:
 
     @classmethod
     def from_json(cls, json_obj: Dict[str, Any], owner: Optional["Gateway"] = None) -> Optional["Message"]:
-        """ Inflate a Message (or subclass) from a JSON object.
+        """Inflate a Message or subclass from a JSON object.
+
+        Registered classes take precedence over module-level classes with the
+        same short name. Unknown classes are inflated as Message instances and
+        retain their wire class name and fields. Malformed objects return None.
 
         :meta private:
         """
@@ -132,9 +136,10 @@ class Message:
         rv_cls = message_class_for_name(qclazz)
 
         if rv_cls is None:
-            rv_cls = globals().get(clazz_name)
+            reflected_cls = globals().get(clazz_name)
+            if isinstance(reflected_cls, type) and issubclass(reflected_cls, Message):
+                rv_cls = reflected_cls
 
-        # Else default to base Message class
         if rv_cls is None:
             rv_cls = Message
 

@@ -1,4 +1,6 @@
 import inspect
+import sys
+
 import pytest
 
 from fjagepy import Gateway, Message, AgentID, Performative, MessageClass, message
@@ -203,3 +205,80 @@ def test_message_decorator_inflates_without_noarg_constructor():
     msg = Message.from_json(js)
     assert isinstance(msg, RequiredArgsMessage)
     assert msg.token == 'abc'
+
+
+def test_message_from_json_inflates_unknown_qualified_class(caplog):
+    """Unknown qualified classes should inflate as Message without a warning."""
+    js = {
+        "clazz": "org.example.UnknownMessage",
+        "data": {
+            "msgID": "12345678901234567890123456789012",
+            "perf": "INFORM",
+            "sender": "sender",
+            "recipient": "#topic",
+            "inReplyTo": "reply-id",
+            "sentAt": 1,
+            "value": {"nested": True},
+        },
+    }
+
+    caplog.set_level("WARNING", logger="fjagepy.Message")
+    msg = Message.from_json(js)
+
+    assert type(msg) is Message
+    assert msg.__clazz__ == js["clazz"]
+    assert msg.msgID == js["data"]["msgID"]
+    assert msg.perf == Performative.INFORM
+    assert msg.sender == AgentID("sender")
+    assert msg.recipient == AgentID("topic", topic=True)
+    assert msg.inReplyTo == "reply-id"
+    assert msg.sentAt == 1
+    assert msg.value == {"nested": True}
+    assert msg.to_json()["clazz"] == js["clazz"]
+    assert not caplog.records
+
+
+def test_message_from_json_inflates_unknown_unqualified_class():
+    """Unknown unqualified classes should also inflate as Message."""
+    msg = Message.from_json({"clazz": "UnknownMessage", "data": {"value": 1}})
+
+    assert type(msg) is Message
+    assert msg.__clazz__ == "UnknownMessage"
+    assert msg.value == 1
+
+
+def test_message_from_json_uses_unregistered_module_class(monkeypatch):
+    """An available unregistered Message subclass should be used when found."""
+    class ReflectedMessage(Message):
+        pass
+
+    message_module = sys.modules[Message.__module__]
+    monkeypatch.setattr(message_module, "ReflectedMessage", ReflectedMessage, raising=False)
+
+    msg = Message.from_json({"clazz": "org.example.ReflectedMessage", "data": {"value": 1}})
+
+    assert isinstance(msg, ReflectedMessage)
+    assert msg.__clazz__ == "org.example.ReflectedMessage"
+    assert msg.value == 1
+
+
+def test_message_from_json_ignores_non_message_module_class(monkeypatch):
+    """A reflected object that is not a Message subclass should be ignored."""
+    message_module = sys.modules[Message.__module__]
+    monkeypatch.setattr(message_module, "NotAMessage", object, raising=False)
+
+    msg = Message.from_json({"clazz": "org.example.NotAMessage", "data": {"value": 1}})
+
+    assert type(msg) is Message
+    assert msg.__clazz__ == "org.example.NotAMessage"
+    assert msg.value == 1
+
+
+@pytest.mark.parametrize("json_obj", [
+    {},
+    {"clazz": "org.example.UnknownMessage"},
+    {"data": {"value": 1}},
+])
+def test_message_from_json_rejects_malformed_objects(json_obj):
+    """Objects without both clazz and data should remain invalid."""
+    assert Message.from_json(json_obj) is None

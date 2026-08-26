@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 def test_jsonmessage_serialize_deserialize():
@@ -28,3 +30,22 @@ def test_jsonmessage_base64_numeric_arrays():
     str_data = '{"action":"send","relay":false,"message":{"clazz":"org.arl.fjage.test.TestMessage","data":{"msgID":"12345678901234567890123456789012","sender":"test","recipient":"echo","perf":"REQUEST","data":{"clazz":"[B","data":"SGVsbG8sIFdvcmxkIQ=="}}}}'
     json_msg = JSONMessage(str_data)
     assert json_msg.message.data == DATA_ARRAY
+
+
+def test_jsonmessage_retains_unregistered_embedded_message():
+    """An embedded message should survive even when its class is unknown."""
+    from fjagepy import JSONMessage, Message
+
+    raw_message = {
+        "clazz": "org.example.UnknownMessage",
+        "data": {"value": {"nested": True}},
+    }
+    json_msg = JSONMessage(json.dumps({"action": "send", "relay": False, "message": raw_message}))
+
+    assert type(json_msg.message) is Message
+    assert json_msg.message.__clazz__ == raw_message["clazz"]
+    assert json_msg.message.value == {"nested": True}
+
+    encoded = json.loads(json_msg.to_json())
+    assert encoded["message"]["clazz"] == raw_message["clazz"]
+    assert encoded["message"]["data"]["value"] == {"nested": True}
