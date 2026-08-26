@@ -93,7 +93,7 @@ export class Message {
    * Create a message from a parsed JSON representation.
    *
    * @param {MessageJSON} jsonObj - parsed message JSON
-   * @returns {Message|null} message created from the JSON object
+   * @returns {Message} message created from the JSON object
    */
   static fromJSON(jsonObj) {
     if (!jsonObj || typeof jsonObj !== 'object' || typeof jsonObj.clazz !== 'string' ||
@@ -101,20 +101,18 @@ export class Message {
       throw new Error(`Invalid Object for Message : ${jsonObj}`);
     }
     const registeredClass = messageClassForName(jsonObj.clazz);
-    if (!registeredClass) {
-      console.warn(`No registered message class for ${jsonObj.clazz}, skipping inflation`);
-      return null;
-    }
+    const messageClass = registeredClass || Message;
 
     let message;
     try {
       // @ts-ignore Function is validated by registerMessage().
-      message = new registeredClass();
+      message = new messageClass();
     } catch (error) {
       if (!(error instanceof TypeError)) throw error;
-      message = Object.create(registeredClass.prototype);
+      message = Object.create(messageClass.prototype);
       initializeMessage(message);
     }
+    if (!registeredClass) message.__clazz__ = jsonObj.clazz;
 
     for (const key in jsonObj.data) {
       if ((key === 'sender' || key === 'recipient') && typeof jsonObj.data[key] === 'string') {
