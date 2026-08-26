@@ -610,6 +610,17 @@ describe('A JSONMessage', function () {
     const jsonMsg = new JSONMessage(str);
     expect(jsonMsg.message.data).toEqual(DATA_ARRAY);
   });
+
+  it('should retain an unregistered embedded message', function () {
+    const jsonMsg = new JSONMessage(JSON.stringify({
+      action: 'send',
+      relay: false,
+      message: {clazz: 'org.example.UnknownMessage', data: {value: 1}}
+    }));
+    expect(jsonMsg.message).toEqual(jasmine.any(Message));
+    expect(jsonMsg.message.__clazz__).toBe('org.example.UnknownMessage');
+    expect(jsonMsg.message.value).toBe(1);
+  });
 });
 
 describe('A Message', function () {
@@ -719,9 +730,37 @@ describe('Message registration', function () {
     expect(message.value).toBe(1);
   });
 
-  it('should skip inflation of an unregistered message', function () {
-    const message = Message.fromJSON({clazz: 'org.example.UnknownMessage', data: {value: 1}});
-    expect(message).toBeNull();
+  it('should inflate an unregistered message without warning', function () {
+    const json = {
+      clazz: 'org.example.UnknownMessage',
+      data: {
+        msgID: '12345678901234567890123456789012',
+        perf: Performative.INFORM,
+        sender: 'sender',
+        recipient: '#topic',
+        inReplyTo: 'reply-id',
+        sentAt: 1,
+        value: {nested: true}
+      }
+    };
+    spyOn(console, 'warn');
+    const message = Message.fromJSON(json);
+    expect(message).toEqual(jasmine.any(Message));
+    expect(message.__clazz__).toBe(json.clazz);
+    expect(message.sender).toEqual(jasmine.any(AgentID));
+    expect(message.sender.name).toBe('sender');
+    expect(message.recipient).toEqual(jasmine.any(AgentID));
+    expect(message.recipient.isTopic()).toBeTrue();
+    expect(message.value).toEqual({nested: true});
+    expect(JSON.parse(JSON.stringify(message.toJSON()))).toEqual(json);
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it('should inflate an unregistered unqualified message', function () {
+    const message = Message.fromJSON({clazz: 'UnknownMessage', data: {value: 1}});
+    expect(message).toEqual(jasmine.any(Message));
+    expect(message.__clazz__).toBe('UnknownMessage');
+    expect(message.value).toBe(1);
   });
 });
 
