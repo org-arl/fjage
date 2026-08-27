@@ -164,7 +164,7 @@ public class WebServer {
    * The Jetty based WebServer has a set of handlers that are initialized
    * and more handlers can be added to it. The handler stack setup is
    * <p>
-   * <code> GzipHandler -> RewriteHandler -> ContextHandlerCollection[ contexts[] , DefaultHandler] </code>
+   * <code>{@code GzipHandler -> RewriteHandler -> ContextHandlerCollection[ contexts[] , DefaultHandler] }</code>
    * </p>
    * Any new handlers added to the server will be added to the list of ContextHandlers (contexts).
    *

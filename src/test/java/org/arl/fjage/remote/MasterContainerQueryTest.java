@@ -36,7 +36,7 @@ public class MasterContainerQueryTest {
   public void duplicateLookupReturnsAfterFastMatchingSlave() throws Exception {
     setup();
     CountDownLatch slowEntered = new CountDownLatch(1);
-    DelayedSlaveContainer slow = addSlave(2500, slowEntered, null);
+    addSlave(2500, slowEntered, null);
     DelayedSlaveContainer fast = addSlave(0, null, slowEntered);
     fast.add("remote", new Agent());
     start();
@@ -53,7 +53,7 @@ public class MasterContainerQueryTest {
   public void serviceLookupReturnsAfterFastProvider() throws Exception {
     setup();
     CountDownLatch slowEntered = new CountDownLatch(1);
-    DelayedSlaveContainer slow = addSlave(2500, slowEntered, null);
+    addSlave(2500, slowEntered, null);
     DelayedSlaveContainer fast = addSlave(0, null, slowEntered);
     AgentID provider = new AgentID("provider");
     fast.register(provider, "service");

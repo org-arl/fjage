@@ -59,6 +59,7 @@ public class NamedParameter implements Parameter, Serializable {
    *
    * @return name of parameter.
    */
+  @Override
   public String name() {
     return name;
   }

@@ -15,6 +15,7 @@ package org.arl.fjage;
  *
  * @author  Mandar Chitre
  */
+@SuppressWarnings("OverrideThrowableToString")
 public class FjageException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;

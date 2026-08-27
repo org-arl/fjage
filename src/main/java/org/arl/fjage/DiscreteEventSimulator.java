@@ -39,7 +39,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
   /////////// Private attributes
 
   private volatile long time = 0;
-  private Queue<DiscreteEvent> events = new PriorityBlockingQueue<DiscreteEvent>();
+  private final Queue<DiscreteEvent> events = new PriorityBlockingQueue<DiscreteEvent>();
   private Logger log = Logger.getLogger(getClass().getName());
   private Thread thread = null;
   private float speed = Float.NaN;

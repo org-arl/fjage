@@ -37,6 +37,8 @@ import org.junit.Test;
 
 public class WebServerTest {
 
+  private static final Logger WEB_SERVER_LOG = Logger.getLogger(WebServer.class.getName());
+
   private WebServer svr = null;
 
   @After
@@ -134,7 +136,7 @@ public class WebServerTest {
   public void portAlreadyInUseIsReported() throws IOException {
     try (ServerSocket blocker = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
       svr = WebServer.getInstance(blocker.getLocalPort());
-      Logger logger = Logger.getLogger(WebServer.class.getName());
+      Logger logger = WEB_SERVER_LOG;
       final List<LogRecord> records = new ArrayList<>();
       Handler handler = new Handler() {
         @Override public void publish(LogRecord r) { records.add(r); }
@@ -150,7 +152,7 @@ public class WebServerTest {
       assertFalse("server should not report itself as started", svr.started);
       boolean reported = false;
       for (LogRecord r: records) {
-        if (r.getLevel() == Level.WARNING && r.getMessage().contains("port "+blocker.getLocalPort()+" is already in use")) reported = true;
+        if (Level.WARNING.equals(r.getLevel()) && r.getMessage().contains("port "+blocker.getLocalPort()+" is already in use")) reported = true;
       }
       assertTrue("expected a warning naming the busy port, got: "+records, reported);
     }

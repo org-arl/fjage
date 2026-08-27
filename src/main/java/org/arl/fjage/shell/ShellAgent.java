@@ -34,7 +34,7 @@ public class ShellAgent extends Agent {
 
   ////// private classes
 
-  protected class InitScript {
+  protected static class InitScript {
     String name;
     File file;
     Reader reader;
@@ -71,6 +71,7 @@ public class ShellAgent extends Agent {
   protected Thread consoleThread = null;
   protected ScriptEngine engine;
   protected Callable<Void> exec = null;
+  protected final Object executorLock = new Object();
   protected CyclicBehavior executor = null;
   protected List<MessageListener> listeners = new ArrayList<MessageListener>();
   protected List<InitScript> initScripts = new ArrayList<InitScript>();
@@ -206,7 +207,7 @@ public class ShellAgent extends Agent {
                 engine.abort();
                 aborted = true;
               }
-              synchronized(executor) {
+              synchronized(executorLock) {
                 if (exec != null) {
                   exec = null;
                   aborted = true;
@@ -225,7 +226,7 @@ public class ShellAgent extends Agent {
                 final String p2 = prompt2==null ? "\n" : "\n"+prompt2;
                 s = null;
                 if (cmd.length() > 0) {
-                  synchronized(executor) {
+                  synchronized(executorLock) {
                     exec = () -> {
                       log.fine("> "+cmd);
                       shell.input(p1+cmd.replaceAll("\n", p2));
@@ -367,7 +368,7 @@ public class ShellAgent extends Agent {
         log.warning(script+" not found");
         return;
       }
-      addInitrc(script, new InputStreamReader(inp));
+      addInitrc(script, new InputStreamReader(inp, java.nio.charset.StandardCharsets.UTF_8));
     } else if (script.startsWith("cls://")) {
       try {
         initScripts.add(new InitScript(Class.forName(script.substring(6))));
@@ -479,7 +480,7 @@ public class ShellAgent extends Agent {
    * @return description.
    */
   public String getDescription() {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     if (shell != null) sb.append("Interactive ");
     else if (ephemeral) sb.append("Ephemeral ");
     else sb.append("Non-interactive ");
@@ -511,7 +512,7 @@ public class ShellAgent extends Agent {
       if (req.isScript()) {
         boolean ok = false;
         final File file = req.getScriptFile();
-        synchronized(executor) {
+        synchronized(executorLock) {
           if (exec == null && file != null && file.exists()) {
             ok = true;
             exec = new Callable<Void>() {
@@ -578,7 +579,7 @@ public class ShellAgent extends Agent {
         }
         rsp = new GetFileRsp(req);
         rsp.setDirectory(true);
-        rsp.setContents(sb.toString().getBytes());
+        rsp.setContents(sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
       } else if (f.canRead()) {
         long ofs = req.getOffset();
         long len = req.getLength();

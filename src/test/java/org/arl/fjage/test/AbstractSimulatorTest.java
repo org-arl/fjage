@@ -28,6 +28,8 @@ import java.util.stream.Stream;
 public abstract class AbstractSimulatorTest {
 
   private final Logger log = Logger.getLogger(getClass().getName());
+  private static final Logger CONTAINER_LOG = Logger.getLogger(Container.class.getName());
+  private static final Logger SIMULATOR_LOG = Logger.getLogger(DiscreteEventSimulator.class.getName());
   private Platform platform;
   private Container container;
   private Waiter waiter;
@@ -36,12 +38,8 @@ public abstract class AbstractSimulatorTest {
 
   @BeforeClass
   public static void beforeSimulatorTestClass() {
-    setLogLevel(Container.class.getName(), Level.WARNING);
-    setLogLevel(DiscreteEventSimulator.class.getName(), Level.WARNING);
-  }
-
-  private static void setLogLevel(String loggerName, Level level) {
-    Logger.getLogger(loggerName).setLevel(level);
+    CONTAINER_LOG.setLevel(Level.WARNING);
+    SIMULATOR_LOG.setLevel(Level.WARNING);
   }
 
   @Before
@@ -109,9 +107,10 @@ public abstract class AbstractSimulatorTest {
             expectation.check(testEvents);
           }
         } catch (InterruptedException e) {
-          Assert.fail(e.toString());
+          Thread.currentThread().interrupt();
+          throw new AssertionError(e);
         } catch (TimeoutException e) {
-          Assert.fail("test simulation timed out");
+          throw new AssertionError("test simulation timed out", e);
         } catch (AssertionError e) {
           assertionError = e;
           break;
@@ -128,13 +127,10 @@ public abstract class AbstractSimulatorTest {
         }
       }
       log.info("Simulation finished");
-      if (assertionError != null) {
-        throw assertionError;
-      }
-      for (final Expectation expectation : expectations) {
-        expectation.checkAtEnd(testEvents);
-      }
     }
+    if (assertionError != null) throw assertionError;
+    for (final Expectation expectation : expectations)
+      expectation.checkAtEnd(testEvents);
   }
 
   /**

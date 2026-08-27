@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.logging.Logger;
 
 /**
  * Utility class for random number generation in simulations.
@@ -28,7 +27,6 @@ public class AgentLocalRandom extends Random {
 
   //// static stuff
 
-  private static Logger log = Logger.getLogger(AgentLocalRandom.class.getName());
 
   private static AgentLocalRandom root = new AgentLocalRandom();
   private static Map<Object,AgentLocalRandom> rng = Collections.synchronizedMap(new HashMap<Object,AgentLocalRandom>());

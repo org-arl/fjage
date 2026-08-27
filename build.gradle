@@ -32,10 +32,9 @@ def ops = objects.newInstance(Ops)
 
 // check if npm exists
 def npmcmd = Os.isFamily(Os.FAMILY_WINDOWS) ? "npm.cmd" : "npm"
-def npmExists = providers.exec {
-  commandLine npmcmd, '--version'
-  ignoreExitValue = true
-}.standardOutput.asText.map { it.trim() }.orElse("").map { it != "" }
+def npmExists = providers.environmentVariable('PATH').map { path ->
+  path.split(File.pathSeparator).any { new File(it, npmcmd).isFile() }
+}.orElse(false).get()
 
 // targetCompatibility = 1.8
 // sourceCompatibility = 1.8
@@ -78,6 +77,15 @@ compileJava {
 compileTestJava {
   options.compilerArgs << "-Xlint:all"
   options.compilerArgs << "-Xlint:-options"
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.errorprone {
+    // These usages are deliberate API or scheduling choices in fjage.
+    disable 'FutureReturnValueIgnored', 'JavaUtilDate', 'StringSplitter',
+      'ThreadPriorityCheck', 'UnsynchronizedOverridesSynchronized'
+  }
+  options.compilerArgs << '-Werror'
 }
 
 codenarc {

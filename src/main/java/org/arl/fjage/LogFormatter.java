@@ -38,7 +38,7 @@ public class LogFormatter extends Formatter {
    */
   @Override
   public String format(LogRecord record) {
-    StringBuffer s = new StringBuffer();
+    StringBuilder s = new StringBuilder();
     s.append(record.getMillis());
     s.append('|');
     s.append(record.getLevel());
@@ -56,7 +56,7 @@ public class LogFormatter extends Formatter {
     return s.toString();
   }
 
-  private void printStackTrace(Throwable t, StringBuffer s) {
+  private void printStackTrace(Throwable t, StringBuilder s) {
     s.append('\n');
     String msg = t.toString();
     if (msg == null) msg = t.getClass().getName();
@@ -104,4 +104,3 @@ public class LogFormatter extends Formatter {
   }
 
 }
-

@@ -192,7 +192,7 @@ public class FirewallTests {
     }
 
     try {
-      final AgentID server2AgentId = gw.agentForService("server2");
+      gw.agentForService("server2");
       fail("Should have thrown AuthFailureException");
     } catch (AuthFailureException ex) {
       // all good

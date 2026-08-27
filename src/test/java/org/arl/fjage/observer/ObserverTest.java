@@ -52,6 +52,7 @@ public class ObserverTest {
 
   private static final String CONTEXT = "/observer";
   private static final AtomicInteger delivered = new AtomicInteger(0);
+  private static final Logger FJAGE_LOG = Logger.getLogger("org.arl.fjage");
 
   private static Platform platform;
   private static Container container;
@@ -62,7 +63,7 @@ public class ObserverTest {
 
   @BeforeClass
   public static void setUpClass() throws Exception {
-    Logger.getLogger("org.arl.fjage").setLevel(Level.WARNING);
+    FJAGE_LOG.setLevel(Level.WARNING);
     port = freePort();
     platform = new RealTimePlatform();
     container = new Container(platform);

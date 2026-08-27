@@ -26,7 +26,7 @@ public class TcpHubConnector extends Thread implements Connector {
   protected boolean telnet;
   protected ServerSocket sock = null;
   protected OutputThread outThread = null;
-  protected List<ClientThread> clientThreads = Collections.synchronizedList(new ArrayList<ClientThread>());
+  protected final List<ClientThread> clientThreads = Collections.synchronizedList(new ArrayList<ClientThread>());
   protected Logger log = Logger.getLogger(getClass().getName());
   protected PseudoInputStream pin = new PseudoInputStream();
   protected PseudoOutputStream pout = new PseudoOutputStream();
@@ -64,7 +64,7 @@ public class TcpHubConnector extends Thread implements Connector {
    * Get the TCP port on which the server listens for connections.
    */
   public synchronized int getPort() {
-    if (port == 0) {
+    while (port == 0) {
       try {
         wait(100);
       } catch (InterruptedException ex) {

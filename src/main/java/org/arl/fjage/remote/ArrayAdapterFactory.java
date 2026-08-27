@@ -39,6 +39,7 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
   }
 
   @SuppressWarnings("unchecked")
+  @Override
   public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
     final Class<T> rawType = (Class<T>)type.getRawType();
     if (!rawType.isArray()) return null;
@@ -112,7 +113,6 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
       private T decodeString(String s) {
         byte[] data = Base64.getDecoder().decode(s);
         if (compType.equals(byte.class)) return (T)data;
-        ByteBuffer buf = ByteBuffer.wrap(data);
         if (compType.equals(int.class)) {
           IntBuffer buf2 = ByteBuffer.wrap(Base64.getDecoder().decode(s)).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
           int[] array = new int[buf2.limit()];

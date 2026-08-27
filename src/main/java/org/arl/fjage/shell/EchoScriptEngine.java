@@ -51,9 +51,7 @@ public class EchoScriptEngine implements ScriptEngine {
     busy = true;
     println(cmd);
     try {
-      synchronized(this) {
-        wait(500);
-      }
+      Thread.sleep(500);
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
     }

@@ -31,10 +31,10 @@ import java.util.List;
 @SuppressWarnings({"unchecked", "rawtypes"})
 class GenericValueAdapterFactory implements TypeAdapterFactory {
 
+  @Override
   public <T> TypeAdapter<T> create(final Gson gson, TypeToken<T> type) {
     final Class<T> rawType = (Class<T>)type.getRawType();
     if (!rawType.equals(GenericValue.class)) return null;
-    final GenericValueAdapterFactory parent = this;
     return new TypeAdapter<T>() {
 
       @Override

@@ -22,7 +22,9 @@ public class MessageQueue {
 
   /////////// Private attributes
 
+  @SuppressWarnings("JdkObsolete")
   private LinkedList<Message> queue = new LinkedList<Message>();
+  @SuppressWarnings("JdkObsolete")
   private LinkedList<Message> quarantine = new LinkedList<Message>();
   private int maxQueueLen;
 
@@ -94,4 +96,3 @@ public class MessageQueue {
   }
 
 }
-

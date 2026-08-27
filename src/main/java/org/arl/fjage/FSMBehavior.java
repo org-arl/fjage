@@ -315,6 +315,7 @@ public class FSMBehavior extends Behavior {
      *
      * @see java.lang.Object#toString()
      */
+    @Override
     public String toString() {
       return name.toString();
     }

@@ -476,7 +476,7 @@ public class BasicTests {
     msg.setSender(new AgentID("test-c1"));
     c1.send(msg);
     platform.delay(250);
-    assertTrue(l2.msgs.get(l2.msgs.size()-1) instanceof Message);
+    assertNotNull(l2.msgs.get(l2.msgs.size()-1));
     platform.shutdown();
   }
 
@@ -1035,7 +1035,7 @@ public class BasicTests {
           Message req = new ShellExecReq(shell, "boo");
           Message rsp = request(req);
           if (rsp != null && rsp.getPerformative() == Performative.AGREE) exec = true;
-          byte[] bytes = "this is a test".getBytes();
+          byte[] bytes = "this is a test".getBytes(java.nio.charset.StandardCharsets.UTF_8);
           req = new PutFileReq(shell, DIRNAME+File.separator+FILENAME, bytes);
           rsp = request(req);
           log.info("put1 rsp: "+rsp);
@@ -1050,7 +1050,7 @@ public class BasicTests {
             byte[] contents = ((GetFileRsp)rsp).getContents();
             log.info("get data len: "+contents.length);
             if (contents.length == bytes.length && ((GetFileRsp)rsp).getOffset() == 0) {
-              log.info("get data: "+new String(contents));
+              log.info("get data: "+new String(contents, java.nio.charset.StandardCharsets.UTF_8));
               get = true;
               for (int i = 0; i < contents.length; i++)
                 if (contents[i] != bytes[i]) {
@@ -1066,7 +1066,7 @@ public class BasicTests {
             byte[] contents = ((GetFileRsp)rsp).getContents();
             log.info("get data len: "+contents.length);
             if (contents.length == 4 && ((GetFileRsp)rsp).getOffset() == 5) {
-              log.info("get data: "+new String(contents));
+              log.info("get data: "+new String(contents, java.nio.charset.StandardCharsets.UTF_8));
               get2 = true;
               for (int i = 0; i < contents.length; i++)
                 if (contents[i] != bytes[5 + i]) {
@@ -1082,7 +1082,7 @@ public class BasicTests {
             byte[] contents = ((GetFileRsp)rsp).getContents();
             log.info("get data len: "+contents.length);
             if (contents.length == bytes.length-9 && ((GetFileRsp)rsp).getOffset() == 9) {
-              log.info("get data: "+new String(contents));
+              log.info("get data: "+new String(contents, java.nio.charset.StandardCharsets.UTF_8));
               get3 = true;
               for (int i = 0; i < contents.length; i++)
                 if (contents[i] != bytes[9 + i]) {
@@ -1125,7 +1125,7 @@ public class BasicTests {
           rsp = request(req);
           log.info("get dir rsp: "+rsp);
           if (rsp instanceof GetFileRsp) {
-            String contents = new String(((GetFileRsp)rsp).getContents());
+            String contents = new String(((GetFileRsp)rsp).getContents(), java.nio.charset.StandardCharsets.UTF_8);
             String[] lines = contents.split("\\r?\\n");
             for (String s: lines) {
               log.info("DIR: "+s);

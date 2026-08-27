@@ -33,6 +33,7 @@ public class SerialPortConnector implements Connector {
   public SerialPortConnector(String devname, int baud, String settings) throws IOException {
     if (settings != null && !settings.equals("N81")) throw new IOException("Bad serial port settings");
     com = AccessController.doPrivileged(new PrivilegedAction<SerialPort>() {
+      @Override
       public SerialPort run() {
         SerialPort c = SerialPort.getCommPort(devname);
         c.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);

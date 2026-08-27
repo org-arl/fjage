@@ -87,6 +87,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   private Queue<Behavior> newBehaviors = new ArrayDeque<>();
   private Queue<Behavior> activeBehaviors = new PriorityQueue<>();
   private Queue<Behavior> blockedBehaviors = new ArrayDeque<>();
+  @SuppressWarnings("JdkObsolete")
   private Stack<MessageFilter> exclusions = new Stack<>();
   private volatile boolean restartBehaviors = false;
   private boolean unblocked = false;
@@ -181,6 +182,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * Blocks the agent until its woken up by a message or a call to the
    * {@link #wake()} method.
    */
+  @SuppressWarnings("WaitNotInLoop")
   protected synchronized void block() {
     if (state == AgentState.FINISHING) return;
     if (!unblocked) {
@@ -194,6 +196,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
     state = AgentState.IDLE;
     container.reportIdle(aid);
     try {
+      // wake() uses this notification without changing the agent state.
       wait();
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
@@ -358,7 +361,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return object representing the topic.
    */
   public AgentID topic(Enum<?> topic) {
-    return new AgentID(topic.getClass().getName()+"."+topic.toString(), true, this);
+    return new AgentID(topic.getDeclaringClass().getName()+"."+topic.toString(), true, this);
   }
 
   /**
@@ -391,7 +394,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return object representing the topic.
    */
   public AgentID topic(AgentID agent, Enum<?> topic) {
-    return new AgentID(agent.getName()+"__"+topic.getClass().getName()+"."+topic.toString()+"__ntf", true, this);
+    return new AgentID(agent.getName()+"__"+topic.getDeclaringClass().getName()+"."+topic.toString()+"__ntf", true, this);
   }
 
   /**
@@ -599,7 +602,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return true if the registration was successful, false otherwise.
    */
   public boolean register(Enum<?> service) {
-    return container.register(aid, service.getClass().getName()+"."+service.toString());
+    return container.register(aid, service.getDeclaringClass().getName()+"."+service.toString());
   }
 
   /**
@@ -621,7 +624,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return true if the de-registration was successful, false otherwise.
    */
   public boolean deregister(Enum<?> service) {
-    return container.deregister(aid, service.getClass().getName()+"."+service.toString());
+    return container.deregister(aid, service.getDeclaringClass().getName()+"."+service.toString());
   }
 
   /**
@@ -645,7 +648,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return an agent id for an agent that provides the service.
    */
   public AgentID agentForService(Enum<?> service) {
-    AgentID a = container.agentForService(service.getClass().getName()+"."+service.toString());
+    AgentID a = container.agentForService(service.getDeclaringClass().getName()+"."+service.toString());
     if (a != null) a = new AgentID(a, this);
     return a;
   }
@@ -672,7 +675,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return an array of agent ids representing all agent that provide the service.
    */
   public AgentID[] agentsForService(Enum<?> service) {
-    AgentID[] a = container.agentsForService(service.getClass().getName()+"."+service.toString());
+    AgentID[] a = container.agentsForService(service.getDeclaringClass().getName()+"."+service.toString());
     if (a != null) {
       for (int i = 0; i < a.length; i++)
         a[i] = new AgentID(a[i], this);
@@ -798,7 +801,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       }
     } catch (Throwable ex) {
       if (ignoreExceptions) log.log(Level.WARNING, "Exception in agent: "+aid, ex);
-      else throw(ex);
+      else throw ex;
     }
     synchronized (this) {
       return (newBehaviors.size() > 0);

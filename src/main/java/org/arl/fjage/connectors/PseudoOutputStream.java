@@ -84,7 +84,7 @@ public class PseudoOutputStream extends OutputStream {
   public String readLine() {
     byte[] buf = q.readDelimited((byte)10);
     if (buf == null) return null;
-    return new String(buf);
+    return new String(buf, java.nio.charset.StandardCharsets.UTF_8);
   }
 
   /**

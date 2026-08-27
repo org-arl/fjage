@@ -64,7 +64,7 @@ public class WebSocketConnector implements Connector{
 
     @OnWebSocketMessage
     public void onWebSocketText(String message) {
-        byte[] buf = message.getBytes();
+        byte[] buf = message.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         synchronized (pin) {
             // TODO: Check if we need any filters here.
             // The WebSocketHubConnector filters for the likes of ^D

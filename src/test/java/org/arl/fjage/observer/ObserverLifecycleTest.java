@@ -33,9 +33,11 @@ import org.junit.Test;
  */
 public class ObserverLifecycleTest {
 
+  private static final Logger FJAGE_LOG = Logger.getLogger("org.arl.fjage");
+
   @Test
   public void testInstallAndRemove() throws Exception {
-    Logger.getLogger("org.arl.fjage").setLevel(Level.WARNING);
+    FJAGE_LOG.setLevel(Level.WARNING);
     int port = freePort();
     Platform platform = new RealTimePlatform();
     Container container = new Container(platform);
@@ -96,7 +98,7 @@ public class ObserverLifecycleTest {
 
   @Test
   public void testAutoPortFollowsTheApplicationWebServer() throws Exception {
-    Logger.getLogger("org.arl.fjage").setLevel(Level.WARNING);
+    FJAGE_LOG.setLevel(Level.WARNING);
     // Web servers are registered per JVM, and an observer deliberately does not
     // stop the one it used, since it may be sharing it with the application. So
     // servers created by other test classes are still registered here, and this

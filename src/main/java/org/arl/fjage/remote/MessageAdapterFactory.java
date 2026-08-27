@@ -37,7 +37,7 @@ class MessageAdapterFactory implements TypeAdapterFactory {
   static {
     try {
       Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
-      classloader = (ClassLoader)cls.newInstance();
+      classloader = (ClassLoader)cls.getDeclaredConstructor().newInstance();
       Logger log = Logger.getLogger(MessageAdapterFactory.class.getName());
       log.info("Groovy detected, using GroovyClassLoader");
     } catch (Exception ex) {
@@ -46,6 +46,7 @@ class MessageAdapterFactory implements TypeAdapterFactory {
   }
 
   @SuppressWarnings("unchecked")
+  @Override
   public <T> TypeAdapter<T> create(final Gson gson, TypeToken<T> type) {
     final Class<T> rawType = (Class<T>)type.getRawType();
     if (!Message.class.isAssignableFrom(rawType)) return null;

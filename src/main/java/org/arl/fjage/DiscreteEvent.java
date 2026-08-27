@@ -56,12 +56,14 @@ class DiscreteEvent implements Comparable<DiscreteEvent> {
   
   //////////// For display
   
+  @Override
   public String toString() {
     return (passive?"PEvent #":"Event #")+hashCode()+" @"+time+" created:"+created+" id:"+tid+"/"+id;
   }
 
   /////////// Comparison operator
 
+  @Override
   public int compareTo(DiscreteEvent e) {
     if (time < e.time) return -1;
     if (time > e.time) return 1;

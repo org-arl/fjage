@@ -30,11 +30,13 @@ final public class GenericValue implements Serializable {
     return data.getClass();
   }
 
+  @Override
   public int hashCode() {
     if (data == null) return super.hashCode();
     return data.hashCode();
   }
 
+  @Override
   public boolean equals(Object value) {
     if (data == null) {
       if (value == null) return true;
@@ -45,6 +47,7 @@ final public class GenericValue implements Serializable {
     return data.equals(value);
   }
 
+  @Override
   public String toString() {
     if (data == null) return "null";
     return data.toString();

@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 public class TunnelNotificationsTest {
 
   private static class MyMessageListener implements MessageListener {
-    public List<Message> msgs = Collections.synchronizedList(new ArrayList<>());
+    public final List<Message> msgs = Collections.synchronizedList(new ArrayList<>());
     @Override
     public boolean onReceive(Message msg) {
       msgs.add(msg);

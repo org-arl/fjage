@@ -25,14 +25,12 @@ public class DumbShell implements Shell {
   private PrintStream out = null;
   private BufferedReader in = null;
   private Connector connector = null;
-  private ScriptEngine scriptEngine = null;
-  private Logger log = Logger.getLogger(getClass().getName());
 
   /**
    * Create a dumb console shell attached to the system terminal.
    */
   public DumbShell() {
-    this.in = new BufferedReader(new InputStreamReader(System.in));
+    this.in = new BufferedReader(new InputStreamReader(System.in, java.nio.charset.Charset.defaultCharset()));
     this.out = System.out;
   }
 
@@ -43,8 +41,8 @@ public class DumbShell implements Shell {
    * @param out output stream.
    */
   public DumbShell(InputStream in, OutputStream out) {
-    this.in = new BufferedReader(new InputStreamReader(in));
-    this.out = new PrintStream(out);
+    this.in = new BufferedReader(new InputStreamReader(in, java.nio.charset.Charset.defaultCharset()));
+    this.out = utf8PrintStream(out);
   }
 
   /**
@@ -53,14 +51,14 @@ public class DumbShell implements Shell {
    * @param connector input/output streams.
    */
   public DumbShell(Connector connector) {
-    this.in = new BufferedReader(new InputStreamReader(connector.getInputStream()));
-    this.out = new PrintStream(connector.getOutputStream());
+    this.in = new BufferedReader(new InputStreamReader(connector.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+    this.out = utf8PrintStream(connector.getOutputStream());
     this.connector = connector;
   }
 
   @Override
   public void init(ScriptEngine engine) {
-    scriptEngine = engine;
+    // no initialization required
   }
 
   @Override
@@ -118,6 +116,14 @@ public class DumbShell implements Shell {
     }
     in = null;
     out = null;
+  }
+
+  private static PrintStream utf8PrintStream(OutputStream out) {
+    try {
+      return new PrintStream(out, true, java.nio.charset.StandardCharsets.UTF_8.name());
+    } catch (UnsupportedEncodingException ex) {
+      throw new AssertionError(ex);
+    }
   }
 
   @Override

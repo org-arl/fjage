@@ -78,7 +78,7 @@ public class ConnectionHandler extends Thread {
   public void run() {
     Connector c = conn;
     if (c == null) return;
-    BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream()));
+    BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
     out = new DataOutputStream(c.getOutputStream());
     send(ALIVE);
     if (closeOnDead) {
@@ -250,12 +250,12 @@ public class ConnectionHandler extends Thread {
     }
   }
 
-  JsonMessage request(JsonMessage msg, long timeout) {
+  JsonMessage request(JsonMessage msg, long requestTimeout) {
     if (conn == null) return null;
     if (!alive && container instanceof MasterContainer) return null;
     PendingRequest request = new PendingRequest();
     pending.put(msg.id, request);
-    long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout);
+    long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(requestTimeout);
     send(msg.toJson());
     synchronized(request) {
       if (conn == null) {

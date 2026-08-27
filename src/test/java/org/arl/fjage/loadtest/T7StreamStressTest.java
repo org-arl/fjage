@@ -114,8 +114,8 @@ public class T7StreamStressTest {
         pool.execute(() -> {
           try {
             while (true) {
-              pin.write("0123456789abcdef\n".getBytes());
-              pout.write("0123456789abcdef\n".getBytes());
+              pin.write("0123456789abcdef\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+              pout.write("0123456789abcdef\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
             }
           } catch (IOException expected) {
             // one of the streams closed under us

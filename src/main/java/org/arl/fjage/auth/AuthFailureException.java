@@ -15,6 +15,7 @@ package org.arl.fjage.auth;
  *
  * @author  Mandar Chitre
  */
+@SuppressWarnings("OverrideThrowableToString")
 public class AuthFailureException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;

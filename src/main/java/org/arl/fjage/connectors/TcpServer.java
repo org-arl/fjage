@@ -42,7 +42,7 @@ public class TcpServer extends Thread implements Closeable {
    * Get the TCP port on which the server listens for connections.
    */
   public synchronized int getPort() {
-    if (port == 0) {
+    while (port == 0) {
       try {
         wait(100);
       } catch (InterruptedException ex) {

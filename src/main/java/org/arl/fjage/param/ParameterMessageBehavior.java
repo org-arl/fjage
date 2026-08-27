@@ -227,7 +227,6 @@ public class ParameterMessageBehavior extends MessageBehavior {
         } else {
           // set request
           try {
-            Method m = null;
             Object sv = null;
             if (ndx < 0) sv = invokeCompatibleSetter("set" + methodNameFragment, evalue);
             else sv = invokeCompatibleSetter("set" + methodNameFragment, ndx, evalue);

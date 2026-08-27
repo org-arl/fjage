@@ -252,6 +252,7 @@ public class Gateway implements Messenger, Closeable {
     return agent.receive(filter, timeout);
   }
 
+  @Override
   public Message receive(final MessageFilter filter) {
     return receive(filter, NON_BLOCKING);
   }
@@ -433,7 +434,7 @@ public class Gateway implements Messenger, Closeable {
    */
   public AgentID agentForService(Enum<?> service) {
     if (container == null) return null;
-    AgentID t = container.agentForService(service.getClass().getName()+"."+service);
+    AgentID t = container.agentForService(service.getDeclaringClass().getName()+"."+service);
     if (t == null) return null;
     return new AgentID(t, this);
   }
@@ -461,7 +462,7 @@ public class Gateway implements Messenger, Closeable {
    */
   public AgentID[] agentsForService(Enum<?> service) {
     if (container == null) return null;
-    AgentID[] t = container.agentsForService(service.getClass().getName()+"."+service);
+    AgentID[] t = container.agentsForService(service.getDeclaringClass().getName()+"."+service);
     if (t == null) return null;
     for (int i = 0; i < t.length; i++)
       t[i] = new AgentID(t[i], this);

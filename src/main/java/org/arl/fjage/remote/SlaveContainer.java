@@ -303,35 +303,41 @@ public class SlaveContainer extends RemoteContainer {
 
   /////////////// Observers
 
+  @Override
   public AgentID add(String name, Agent agent) {
     AgentID aid = super.add(name, agent);
     if (aid != null) updateWatchList();
     return aid;
   }
 
+  @Override
   protected void start() {
     super.start();
     updateWatchList();
   }
 
+  @Override
   public boolean kill(AgentID aid) {
     boolean rv = super.kill(aid);
     if (rv) updateWatchList();
     return rv;
   }
 
+  @Override
   public boolean subscribe(AgentID aid, AgentID topic) {
     boolean rv = super.subscribe(aid, topic);
     if (rv) updateWatchList();
     return rv;
   }
 
+  @Override
   public boolean unsubscribe(AgentID aid, AgentID topic) {
     boolean rv = super.unsubscribe(aid, topic);
     if (rv) updateWatchList();
     return rv;
   }
 
+  @Override
   public void unsubscribe(AgentID aid) {
     super.unsubscribe(aid);
     updateWatchList();

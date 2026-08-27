@@ -178,7 +178,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
         } else {
           byte[] buf = pout.readAvailable();
           if (buf == null) break;
-          s = new String(buf);
+          s = new String(buf, java.nio.charset.StandardCharsets.UTF_8);
         }
         for (WSHandler t: wsHandlers)
           t.write(s);
@@ -236,7 +236,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
     @OnWebSocketMessage
     public void onMessage(String message) {
-      byte[] buf = message.getBytes();
+      byte[] buf = message.getBytes(java.nio.charset.StandardCharsets.UTF_8);
       synchronized (conn.pin) {
         for (int c : buf) {
           if (c < 0) c += 256;

@@ -184,7 +184,7 @@ public class LoggingShellTest {
       container.add("shell", new ShellAgent(new DumbShell(pis, bos), new EchoScriptEngine()));
       platform.start();
       platform.delay(2000);
-      pos.write("hello\n".getBytes());
+      pos.write("hello\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
       pos.flush();
       long t0 = System.currentTimeMillis();
       while (!handler.contains("< hello") && System.currentTimeMillis()-t0 < 10000)
@@ -284,13 +284,13 @@ public class LoggingShellTest {
       container.add("shell", agent);
       platform.start();
       platform.delay(2000);
-      pos.write("shell.logLevel = FINE\n".getBytes());
+      pos.write("shell.logLevel = FINE\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
       pos.flush();
       long t0 = System.currentTimeMillis();
-      while (agent.getLogLevel() != Level.FINE && System.currentTimeMillis()-t0 < 10000)
+      while (!Level.FINE.equals(agent.getLogLevel()) && System.currentTimeMillis()-t0 < 10000)
         platform.delay(100);
       assertEquals("shell.logLevel = FINE command failed", Level.FINE, agent.getLogLevel());
-      pos.write("println 'hello e2e'\n".getBytes());
+      pos.write("println 'hello e2e'\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
       pos.flush();
       t0 = System.currentTimeMillis();
       while (!handler.contains("< hello e2e") && System.currentTimeMillis()-t0 < 10000)

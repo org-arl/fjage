@@ -411,7 +411,7 @@ public class GroovyScriptEngine implements ScriptEngine {
         try {
           InputStream in = groovy.getClassLoader().getResourceAsStream(offendingGroovyScript);
           if (in != null) {
-            groovy.parse(new InputStreamReader(in), offendingGroovyScript);
+            groovy.parse(new InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8), offendingGroovyScript);
           }
         } catch (Throwable ex1) {
           ex = ex1;
