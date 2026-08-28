@@ -113,7 +113,12 @@ export class Message {
     for (const key of Object.keys(this)) {
       if (!key.startsWith('_')) data[key] = this[key];
     }
-    return {clazz: this.__clazz__, data};
+    // if not a registered class, set __clazz__ to the actual class name
+    let clazz = this.__clazz__;
+    if (this.__clazz__ === 'org.arl.fjage.Message' && !messageClassForName(this.__clazz__)) {
+      clazz = this.constructor.name;
+    }
+    return {clazz: clazz, data};
   }
 
   /**
