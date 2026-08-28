@@ -367,7 +367,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
         // do nothing
       }
       try {
-        return MethodUtils.invokeMethod(agent, name, (Object)lvalue.toArray(new Object[0]));
+        return MethodUtils.invokeMethod(agent, name, (Object)lvalue.toArray(new String[0]));
       } catch (NoSuchMethodException | ArrayStoreException ex) {
         // do nothing
       }
@@ -438,7 +438,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
         // do nothing
       }
       try {
-        return MethodUtils.invokeMethod(agent, name, ndx, lvalue.toArray(new Object[0]));
+        return MethodUtils.invokeMethod(agent, name, ndx, lvalue.toArray(new String[0]));
       } catch (NoSuchMethodException | ArrayStoreException ex) {
         // do nothing
       }
