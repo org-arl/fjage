@@ -188,9 +188,8 @@ def test_message_keyword_field_round_trip_uses_wire_name():
 
 def test_message_decorator_registers_external_class():
     """@message should register decorated classes for inflation."""
-    clazz = f'{DecoratedMessage.__module__}.{DecoratedMessage.__name__}'
-    assert DecoratedMessage.__clazz__ == clazz
-    assert DecoratedMessage().to_json()['clazz'] == clazz
+    assert DecoratedMessage.__clazz__ == 'DecoratedMessage'
+    assert DecoratedMessage().to_json()['clazz'] == 'DecoratedMessage'
     js = {"clazz": "DecoratedMessage", "data": {"value": 7}}
     msg = Message.from_json(js)
     assert isinstance(msg, DecoratedMessage)

@@ -8,7 +8,6 @@ from typing import Callable, Optional, Any, Dict, TYPE_CHECKING, Union, get_type
 from .AgentID import AgentID
 from .Performative import Performative
 from .Utils import UUID7
-from .messageregistry import message_class_for_name, register_message
 
 if TYPE_CHECKING:
     from .Gateway import Gateway
@@ -16,6 +15,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+_MESSAGE_REGISTRY: Dict[str, type["Message"]] = {}
 _NUMPY_AVAILABLE:bool = False
 
 # Attempt to import numpy for array handling
@@ -43,6 +43,24 @@ def _normalize_field_name(name: str) -> str:
         return name[:-1]
     return name
 
+
+def register_message(class_name: str, message_class: type["Message"]) -> type["Message"]:
+    """Register a Message subclass under its wire class name.
+
+    The class is registered under both the given name and its unqualified
+    short name, and serializes with the given name as its ``clazz``.
+    """
+    if not isinstance(class_name, str) or not class_name:
+        raise TypeError('class_name must be a non-empty string')
+    if not isinstance(message_class, type) or not issubclass(message_class, Message):
+        raise TypeError('message_class must be a Message subclass')
+    for name in {class_name, class_name.split('.')[-1]}:
+        existing = _MESSAGE_REGISTRY.get(name)
+        if existing is not None and existing is not message_class:
+            logger.warning("Overriding message class registered as '%s': %s -> %s", name, existing, message_class)
+        _MESSAGE_REGISTRY[name] = message_class
+    message_class.__clazz__ = class_name
+    return message_class
 
 def _message_clazz(class_: type["Message"]) -> str:
     clazz_name = class_.__dict__.get('__clazz__')
@@ -133,7 +151,7 @@ class Message:
         qclazz = json_obj["clazz"]
         clazz_name = qclazz.split(".")[-1]
 
-        registered_cls = message_class_for_name(qclazz)
+        registered_cls = _MESSAGE_REGISTRY.get(qclazz)
         rv_cls = registered_cls
 
         if rv_cls is None:
@@ -244,16 +262,17 @@ def message(arg: str) -> Callable[[type[Message]], type[Message]]: ...
 def message(arg: type[Message] | str)  -> Union[type[Message], Callable[..., type[Message]]]:
     """Decorator to register a Message subclass for JSON inflation.
 
-    Can be used as ``@message`` or ``@message('org.example.MyMessage')``.
-    The former uses the module-qualified Python class name.
+    Can be used as ``@message`` or ``@message('org.example.MyMessage')``. The
+    former registers the class under its unqualified Python class name, and is
+    only interoperable with peers that accept unqualified names; prefer the
+    fully qualified form.
     """
 
     def decorate(class_: type["Message"], fqcn: Optional[str] = None) -> type["Message"]:
         if not issubclass(class_, Message):
             raise TypeError('@message can only be used with Message subclasses')
 
-        qualified_name = fqcn or class_.__dict__.get('__clazz__') or f'{class_.__module__}.{class_.__name__}'
-        return register_message(qualified_name, class_)
+        return register_message(fqcn or class_.__dict__.get('__clazz__') or class_.__name__, class_)
 
     if isinstance(arg, type):
         return decorate(arg)

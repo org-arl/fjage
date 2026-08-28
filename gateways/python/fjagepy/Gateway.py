@@ -14,9 +14,8 @@ from .Connector import Connector
 from .TCPConnector import TCPConnector
 from .AgentID import AgentID
 from .JSONMessage import JSONMessage, Actions
-from .Message import Message
+from .Message import Message, register_message
 from .Utils import UUID7
-from .messageregistry import MESSAGE_REGISTRY, register_message
 
 DEFAULT_MAX_QUEUE_SIZE = 512
 DEFAULT_REQUEST_TIMEOUT = 1000
@@ -44,15 +43,12 @@ class Gateway:
 
     NON_BLOCKING = 0
     BLOCKING = -1
-    _MESSAGE_REGISTRY = MESSAGE_REGISTRY
 
     @staticmethod
-    def registerMessage(class_name: str, message_class: type[Any]) -> Type[Message]:
+    def registerMessage(class_name: str, message_class: type[Message]) -> type[Message]:
         """Register a Message subclass under a fully qualified wire name."""
-        if not isinstance(class_name, str) or not class_name:
-            raise TypeError('class_name must be a non-empty string')
-        if not isinstance(message_class, type) or not issubclass(message_class, Message):
-            raise TypeError('message_class must be a Message subclass')
+        if not isinstance(class_name, str) or '.' not in class_name or any(not part for part in class_name.split('.')):
+            raise TypeError('class_name must be a fully qualified class name')
         return register_message(class_name, message_class)
 
     def __init__(self, hostname: str = 'localhost', port: int = 1100, connector: Optional[Connector] = None, reconnect: bool = True, timeout: int = DEFAULT_REQUEST_TIMEOUT, directory_timeout: int = DEFAULT_DIRECTORY_TIMEOUT) -> None:
