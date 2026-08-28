@@ -129,12 +129,10 @@ from fjagepy import Message, message
 
 @message('org.example.CustomReq')
 class CustomReq(Message):
-    def __init__(self, text=None):
-        super().__init__()
-        self.text = text
+    pass
 
 
-outgoing = CustomReq('hello')
+outgoing = CustomReq(text='hello')
 payload = outgoing.to_json()
 
 # Later, when a message with the same clazz arrives from fjage:
@@ -142,6 +140,12 @@ incoming = Message.from_json(payload)
 assert isinstance(incoming, CustomReq)
 assert incoming.text == 'hello'
 ```
+
+Without a custom `__init__`, the class inherits the default constructor
+`Message(in_reply_to_msg=None, perf=Performative.INFORM, **kwargs)`. Pass message
+fields as keyword arguments. When constructing a reply, `in_reply_to_msg` sets
+`recipient` and `inReplyTo` from the original message. Message classes whose names
+end in `Req` use `Performative.REQUEST` by default.
 
 Always pass the fully qualified name. Bare `@message` registers the class under its
 unqualified Python class name, which only works with peers that accept unqualified names.
