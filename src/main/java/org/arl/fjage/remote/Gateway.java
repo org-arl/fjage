@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.io.*;
+import java.util.Objects;
 import org.arl.fjage.*;
 
 /**
@@ -280,15 +281,8 @@ public class Gateway implements Messenger, Closeable {
   public Message receive(final Message m, long timeout) {
     if (container instanceof SlaveContainer)
       ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
-    Message rsp = receive(new MessageFilter() {
-      private final String mid = m.getMessageID();
-      @Override
-      public boolean matches(Message m) {
-        String s = m.getInReplyTo();
-        if (s == null) return false;
-        return s.equals(mid);
-      }
-    }, timeout);
+    final String mid = m.getMessageID();
+    Message rsp = receive(m1 -> Objects.equals(m1.getInReplyTo(), mid), timeout);
     if (rsp != null) return rsp;
     if (container instanceof SlaveContainer)
       ((SlaveContainer)container).checkAuthFailure(m.getMessageID());

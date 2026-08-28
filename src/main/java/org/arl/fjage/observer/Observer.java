@@ -37,7 +37,6 @@ import org.arl.fjage.MessageListener;
 import org.arl.fjage.Platform;
 import org.arl.fjage.TickerBehavior;
 import org.arl.fjage.connectors.Connector;
-import org.arl.fjage.connectors.ConnectionListener;
 import org.arl.fjage.connectors.WebServer;
 import org.arl.fjage.connectors.WebSocketHubConnector;
 import org.arl.fjage.param.ParameterMessageBehavior;
