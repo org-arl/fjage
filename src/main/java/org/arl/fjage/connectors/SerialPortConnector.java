@@ -31,15 +31,13 @@ public class SerialPortConnector implements Connector {
    * @param settings serial port settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
    */
   public SerialPortConnector(String devname, int baud, String settings) throws IOException {
-    if (settings != null && settings != "N81") throw new IOException("Bad serial port settings");
-    com = AccessController.doPrivileged(new PrivilegedAction<SerialPort>() {
-      public SerialPort run() {
-        SerialPort c = SerialPort.getCommPort(devname);
-        c.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
-        c.openPort();
-        c.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
-        return c;
-      }
+    if (settings != null && !settings.equals("N81")) throw new IOException("Bad serial port settings");
+    com = AccessController.doPrivileged((PrivilegedAction<SerialPort>) () -> {
+      SerialPort c = SerialPort.getCommPort(devname);
+      c.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
+      c.openPort();
+      c.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+      return c;
     });
   }
 

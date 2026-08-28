@@ -29,7 +29,7 @@ public interface MessageFilter {
    * @param m message to check.
    * @return true if the message matches the criteria, false otherwise.
    */
-  public boolean matches(Message m);
+  boolean matches(Message m);
 
 }
 

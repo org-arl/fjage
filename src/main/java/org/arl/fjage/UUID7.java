@@ -77,6 +77,13 @@ public final class UUID7 implements Comparable<UUID7>, Serializable {
 
 
     // 2-bit variant and 62-bit rand_b
+    long leastSigBits = getLeastSigBits(randomBytes);
+
+
+    return new UUID7(mostSigBits, leastSigBits);
+  }
+
+  private static long getLeastSigBits(byte[] randomBytes) {
     long leastSigBits = 0x8000000000000000L; // Variant '10'
     leastSigBits |= ((long) (randomBytes[1] & 0x0F)) << 60;
     leastSigBits |= ((long) (randomBytes[2] & 0xFF)) << 52;
@@ -87,9 +94,7 @@ public final class UUID7 implements Comparable<UUID7>, Serializable {
     leastSigBits |= ((long) (randomBytes[7] & 0xFF)) << 12;
     leastSigBits |= ((long) (randomBytes[8] & 0xFF)) << 4;
     leastSigBits |= ((long) (randomBytes[9] & 0xFF)) >> 4;
-
-
-    return new UUID7(mostSigBits, leastSigBits);
+    return leastSigBits;
   }
 
   /**
