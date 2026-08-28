@@ -71,7 +71,7 @@ public class ParameterReq extends Message {
   public ParameterReq get(Parameter param) {
     if (this.param == null) this.param = param;
     else {
-      if (requests == null) requests = new ArrayList<Entry>();
+      if (requests == null) requests = new ArrayList<>();
       requests.add(new Entry(param, null));
     }
     return this;
@@ -103,7 +103,7 @@ public class ParameterReq extends Message {
       this.param = param;
       this.value = new GenericValue(value);
     } else {
-      if (requests == null) requests = new ArrayList<Entry>();
+      if (requests == null) requests = new ArrayList<>();
       requests.add(new Entry(param, value));
     }
     return this;
@@ -117,7 +117,7 @@ public class ParameterReq extends Message {
   public List<Entry> requests() {
     int n = 0;
     if (requests != null) n = requests.size();
-    List<Entry> rq = new ArrayList<Entry>(n+1);
+    List<Entry> rq = new ArrayList<>(n+1);
     if (param != null) rq.add(new Entry(param, value));
     if (requests != null) rq.addAll(requests);
     return rq;
@@ -125,7 +125,7 @@ public class ParameterReq extends Message {
 
   @Override
   public String toString() {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append(getClass().getSimpleName());
     sb.append('[');
     if (index >= 0) {
@@ -155,7 +155,7 @@ public class ParameterReq extends Message {
    * Representation for parameter and value.
    *
    */
-  public class Entry implements Serializable {
+  public static class Entry implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

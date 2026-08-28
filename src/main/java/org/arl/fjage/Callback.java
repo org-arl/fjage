@@ -5,5 +5,5 @@ package org.arl.fjage;
  */
 @FunctionalInterface
 public interface Callback {
-  public void call(Object param);
+  void call(Object param);
 }

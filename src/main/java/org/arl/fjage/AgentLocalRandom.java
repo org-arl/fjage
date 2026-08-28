@@ -27,9 +27,9 @@ public class AgentLocalRandom extends Random {
 
   //// static stuff
 
-  private static Logger log = Logger.getLogger(AgentLocalRandom.class.getName());
+  private static final Logger log = Logger.getLogger(AgentLocalRandom.class.getName());
 
-  private static AgentLocalRandom root = new AgentLocalRandom();
+  private static final AgentLocalRandom root = new AgentLocalRandom();
   private static final Map<Object,AgentLocalRandom> rng = new ConcurrentHashMap<>();
 
   /**
@@ -109,8 +109,7 @@ public class AgentLocalRandom extends Random {
    * @return random number.
    */
   public double nextExp() {
-    double r = -Math.log(nextDouble());
-    return r;
+    return -Math.log(nextDouble());
   }
 
   /**

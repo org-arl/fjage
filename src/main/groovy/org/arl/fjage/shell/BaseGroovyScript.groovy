@@ -11,10 +11,9 @@ for full license details.
 package org.arl.fjage.shell
 
 import org.arl.fjage.*
-import org.arl.fjage.param.*
+
 import java.util.logging.Level
 import java.util.logging.Logger
-
 /**
  * Methods and attributes available to Groovy scripts.
  *
@@ -297,7 +296,7 @@ abstract class BaseGroovyScript extends Script {
    * @param name name of the logger.
    * @param level log level.
    */
-  void logLevel(String name, Level level) {
+  static void logLevel(String name, Level level) {
     Logger logger = Logger.getLogger(name)
     logger.setLevel(level)
   }
@@ -307,7 +306,7 @@ abstract class BaseGroovyScript extends Script {
    *
    * @param level log level.
    */
-  void logLevel(Level level) {
+  static void logLevel(Level level) {
     Logger logger = Logger.getLogger('')
     logger.setLevel(level)
   }
@@ -387,8 +386,8 @@ abstract class BaseGroovyScript extends Script {
    * @return clickable link String that can be printed to terminal
    */
   String href(String url, String text) {
-    if (out == null || out.isDumb()) return text;
-    return "\033]8;;" + url + "\007" + text + "\033]8;;\007";
+    if (out == null || out.isDumb()) return text
+    return "\033]8;;" + url + "\007" + text + "\033]8;;\007"
   }
 
   /**
@@ -617,7 +616,7 @@ abstract class BaseGroovyScript extends Script {
         boolean matches(Message m) {
           String s = m.getInReplyTo()
           if (s == null) return false
-          return s.equals(mid)
+          return s == mid
         }
       }
       return a.receive(f, timeout)
@@ -668,7 +667,7 @@ abstract class BaseGroovyScript extends Script {
         GroovyShell groovy = binding.getVariable('__groovy__')
         return groovy.evaluate(name+'()')
       }
-    } catch (FjageException ex) {
+    } catch (FjageException ignored) {
       // rethrow this below
     }
     throw new FjageException("Unknown command or property: ${name}")
@@ -680,7 +679,7 @@ abstract class BaseGroovyScript extends Script {
   void methodMissing(String name, args) {
     try {
       run(name, args as String[])
-    } catch (FileNotFoundException ex) {
+    } catch (FileNotFoundException ignored) {
       throw new FjageException("Unknown method: ${name}(...)")
     }
   }

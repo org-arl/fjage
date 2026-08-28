@@ -31,7 +31,7 @@ public abstract class Platform implements TimestampProvider {
   protected List<Container> containers = new CopyOnWriteArrayList<>();
   protected boolean running = false;
   private String hostname = null;
-  private int port = 1099;
+  private final int port = 1099;
   private NetworkInterface nif = null;
 
   ////////// Interface methods for platforms to implement
@@ -221,6 +221,7 @@ public abstract class Platform implements TimestampProvider {
     try {
       Class<?> cls = Platform.class;
       URL res = cls.getResource(cls.getSimpleName() + ".class");
+      if (res == null) return "(unknown)";
       JarURLConnection conn = (JarURLConnection) res.openConnection();
       Manifest mf = conn.getManifest();
       Attributes a = mf.getMainAttributes();

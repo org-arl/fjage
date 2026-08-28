@@ -34,7 +34,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
   protected boolean linemode = false;
   protected WebServer server;
   protected ContextHandler handler;
-  protected List<WSHandler> wsHandlers = new CopyOnWriteArrayList<WSHandler>();
+  protected List<WSHandler> wsHandlers = new CopyOnWriteArrayList<>();
   protected OutputThread outThread = null;
   protected final PseudoInputStream pin = new PseudoInputStream();
   protected PseudoOutputStream pout = new PseudoOutputStream();

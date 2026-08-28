@@ -72,9 +72,9 @@ public class ShellAgent extends Agent {
   protected ScriptEngine engine;
   protected Callable<Void> exec = null;
   protected CyclicBehavior executor = null;
-  protected List<MessageListener> listeners = new ArrayList<MessageListener>();
-  protected List<InitScript> initScripts = new ArrayList<InitScript>();
-  protected Map<String,InputStreamCacheEntry> isCache = new HashMap<String,InputStreamCacheEntry>();
+  protected List<MessageListener> listeners = new ArrayList<>();
+  protected List<InitScript> initScripts = new ArrayList<>();
+  protected Map<String,InputStreamCacheEntry> isCache = new HashMap<>();
   protected boolean quit = false;
   protected boolean ephemeral = false;
   protected boolean enabled = true;
@@ -479,7 +479,7 @@ public class ShellAgent extends Agent {
    * @return description.
    */
   public String getDescription() {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     if (shell != null) sb.append("Interactive ");
     else if (ephemeral) sb.append("Ephemeral ");
     else sb.append("Non-interactive ");

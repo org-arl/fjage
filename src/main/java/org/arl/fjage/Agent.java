@@ -88,15 +88,15 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   // matches all messages; used in place of a null filter, since ArrayDeque rejects nulls
   private static final MessageFilter ANY_MESSAGE = m -> true;
 
-  private ConcurrentLinkedQueue<Behavior> newBehaviors = new ConcurrentLinkedQueue<>();
-  private Queue<Behavior> activeBehaviors = new PriorityQueue<>();
-  private Queue<Behavior> blockedBehaviors = new ArrayDeque<>();
-  private Deque<MessageFilter> exclusions = new ArrayDeque<>();
+  private final ConcurrentLinkedQueue<Behavior> newBehaviors = new ConcurrentLinkedQueue<>();
+  private final Queue<Behavior> activeBehaviors = new PriorityQueue<>();
+  private final Queue<Behavior> blockedBehaviors = new ArrayDeque<>();
+  private final Deque<MessageFilter> exclusions = new ArrayDeque<>();
   private volatile boolean restartBehaviors = false;
   private boolean unblocked = false;
   private Platform platform = null;
   private Container container = null;
-  private MessageQueue queue = new MessageQueue(256);
+  private final MessageQueue queue = new MessageQueue(256);
   private boolean yieldDuringReceive = false;
   protected long tid = -1;
   protected Thread thread = null;
@@ -362,7 +362,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return object representing the topic.
    */
   public AgentID topic(Enum<?> topic) {
-    return new AgentID(topic.getClass().getName()+"."+topic.toString(), true, this);
+    return new AgentID(topic.getClass().getName()+"."+ topic, true, this);
   }
 
   /**
@@ -395,7 +395,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return object representing the topic.
    */
   public AgentID topic(AgentID agent, Enum<?> topic) {
-    return new AgentID(agent.getName()+"__"+topic.getClass().getName()+"."+topic.toString()+"__ntf", true, this);
+    return new AgentID(agent.getName()+"__"+topic.getClass().getName()+"."+ topic +"__ntf", true, this);
   }
 
   /**
@@ -596,7 +596,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return true if the registration was successful, false otherwise.
    */
   public boolean register(Enum<?> service) {
-    return container.register(aid, service.getClass().getName()+"."+service.toString());
+    return container.register(aid, service.getClass().getName()+"."+ service);
   }
 
   /**
@@ -618,7 +618,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return true if the de-registration was successful, false otherwise.
    */
   public boolean deregister(Enum<?> service) {
-    return container.deregister(aid, service.getClass().getName()+"."+service.toString());
+    return container.deregister(aid, service.getClass().getName()+"."+ service);
   }
 
   /**
@@ -642,7 +642,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return an agent id for an agent that provides the service.
    */
   public AgentID agentForService(Enum<?> service) {
-    AgentID a = container.agentForService(service.getClass().getName()+"."+service.toString());
+    AgentID a = container.agentForService(service.getClass().getName()+"."+ service);
     if (a != null) a = new AgentID(a, this);
     return a;
   }
@@ -669,7 +669,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * @return an array of agent ids representing all agent that provide the service.
    */
   public AgentID[] agentsForService(Enum<?> service) {
-    AgentID[] a = container.agentsForService(service.getClass().getName()+"."+service.toString());
+    AgentID[] a = container.agentsForService(service.getClass().getName()+"."+ service);
     if (a != null) {
       for (int i = 0; i < a.length; i++)
         a[i] = new AgentID(a[i], this);
@@ -742,7 +742,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    */
   final void deliver(Message m) {
     if (container == null) return;
-    log.finer("MSG "+m.getSender()+" > "+aid+"@"+tid+" : "+m.toString());
+    log.finer("MSG "+m.getSender()+" > "+aid+"@"+tid+" : "+ m);
     queue.add(container.autoclone(m));
     synchronized (this) {
       restartBehaviors = true;
@@ -1049,8 +1049,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       }
 
       @Override
-      public Message get()
-          throws InterruptedException, ExecutionException {
+      public Message get() {
         try {
           return doGet(0, null);
         } catch (TimeoutException e) {
@@ -1061,7 +1060,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
 
       @Override
       public Message get(long timeout, TimeUnit unit)
-          throws InterruptedException, ExecutionException, TimeoutException {
+          throws TimeoutException {
         if (unit == null) {
           throw new NullPointerException();
         }

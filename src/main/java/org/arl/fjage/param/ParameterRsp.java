@@ -77,7 +77,7 @@ public class ParameterRsp extends Message {
       this.param = param;
       this.value =  new GenericValue(value);
     } else {
-      if (values == null) values = new HashMap<Parameter, GenericValue>();
+      if (values == null) values = new HashMap<>();
       values.put(param, new GenericValue(value));
     }
     if (readonly) this.readonly.add(param);
@@ -92,7 +92,7 @@ public class ParameterRsp extends Message {
   public Object get(Parameter param) {
     if (this.param == null || param == null) return null;
     param = resolve(param);
-    Object rv = null;
+    Object rv;
     if (this.param.equals(param)) {
       if (value == null) return null;
       rv = value.getValue();
@@ -102,7 +102,7 @@ public class ParameterRsp extends Message {
       if (v == null) return null;
       rv = v.getValue();
     }
-    if (rv instanceof Double && ((Double)rv).intValue() == ((Double)rv).doubleValue()) rv = new Integer(((Double)rv).intValue());
+    if (rv instanceof Double && ((Double)rv).intValue() == (Double) rv) rv = ((Double)rv).intValue();
     return rv;
   }
 
@@ -124,7 +124,7 @@ public class ParameterRsp extends Message {
    * @return the parameter set
    */
   public Set<Parameter> parameters() {
-    Set<Parameter> set = new HashSet<Parameter>();
+    Set<Parameter> set = new HashSet<>();
     if (param != null) set.add(param);
     if (values != null) set.addAll(values.keySet());
     return set;
@@ -136,7 +136,7 @@ public class ParameterRsp extends Message {
    * @return the parameter map
    */
   public Map<Parameter, Object> getParameters() {
-    Map<Parameter, Object> map = new HashMap<Parameter, Object>();
+    Map<Parameter, Object> map = new HashMap<>();
     if (param != null) map.put(param, value);
     if (values != null) map.putAll(values);
     return map;
@@ -150,7 +150,7 @@ public class ParameterRsp extends Message {
    */
   protected Parameter resolve(Parameter param) {
     if (!(param instanceof NamedParameter)) return param;
-    String p = ((NamedParameter)param).name();
+    String p = param.name();
     if (this.param != null && this.param.name().equals(p)) return this.param;
     if (values != null) {
       for (Entry<Parameter, GenericValue> e : values.entrySet()) {
@@ -162,7 +162,7 @@ public class ParameterRsp extends Message {
 
   @Override
   public String toString() {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append(getClass().getSimpleName());
     sb.append('[');
     if (index >= 0) {
@@ -170,15 +170,14 @@ public class ParameterRsp extends Message {
       sb.append(index);
       if (param != null) sb.append(' ');
     }
-    String s = null;
-    Object v = null;
+    Object v;
     if (param != null) {
       sb.append(param);
       if (isReadonly(param)) sb.append('*');
       sb.append(':');
       if (value != null) {
         v = value.getValue();
-        if (v instanceof Double && ((Double)v).intValue() == ((Double)v).doubleValue()) v = new Integer(((Double)v).intValue());
+        if (v instanceof Double && ((Double)v).intValue() == (Double) v) v = ((Double)v).intValue();
         sb.append(v);
       } else {
         sb.append("null");
@@ -192,12 +191,10 @@ public class ParameterRsp extends Message {
           GenericValue gv = e.getValue();
           v = null;
           if (gv != null) v = gv.getValue();
-          if (v instanceof Double && ((Double)v).intValue() == ((Double)v).doubleValue()) v = new Integer(((Double)v).intValue());
+          if (v instanceof Double && ((Double)v).intValue() == (Double) v) v = ((Double)v).intValue();
           sb.append(v);
         }
       }
-      s = sb.toString();
-      if (s.length() == 0) s = null;
     }
     sb.append(']');
     return sb.toString();

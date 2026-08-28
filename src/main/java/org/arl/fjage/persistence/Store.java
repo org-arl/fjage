@@ -176,7 +176,7 @@ public class Store implements Closeable {
    */
   public <T> List<T> getByType(Class<T> type) {
     if (root == null) throw new FjageException("Store has been closed");
-    List<T> out = new ArrayList<T>();
+    List<T> out = new ArrayList<>();
     File[] list = new File(root, type.getName()).listFiles();
     if (list == null) return out;
     for (File file : list) {

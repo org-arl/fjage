@@ -38,8 +38,7 @@ final public class GenericValue implements Serializable {
   public boolean equals(Object value) {
     if (data == null) {
       if (value == null) return true;
-      if (value instanceof GenericValue && ((GenericValue)value).data == null) return true;
-      return false;
+      return value instanceof GenericValue && ((GenericValue) value).data == null;
     }
     if (value instanceof GenericValue) return data.equals(((GenericValue)value).data);
     return data.equals(value);

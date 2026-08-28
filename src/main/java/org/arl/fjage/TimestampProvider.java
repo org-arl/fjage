@@ -24,7 +24,7 @@ public interface TimestampProvider {
    *
    * @return time in milliseconds.
    */
-  public long currentTimeMillis();
+  long currentTimeMillis();
 
   /**
    * Gets the current platform time in nanoseconds. For real-time platforms,
@@ -33,7 +33,7 @@ public interface TimestampProvider {
    * 
    * @return time in nanoseconds.
    */
-  public long nanoTime();
+  long nanoTime();
 
 }
 

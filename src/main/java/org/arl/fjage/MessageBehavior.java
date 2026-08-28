@@ -23,7 +23,7 @@ public class MessageBehavior extends Behavior {
 
   ///////////// Private attributes
 
-  private MessageFilter filter;
+  private final MessageFilter filter;
 
   //////////// Interface methods
 
