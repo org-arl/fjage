@@ -66,7 +66,9 @@ def _message_clazz(class_: type["Message"]) -> str:
     clazz_name = class_.__dict__.get('__clazz__')
     if isinstance(clazz_name, str) and clazz_name:
         return clazz_name
-    return "org.arl.fjage.Message"
+    if class_ is Message:
+        return "org.arl.fjage.Message"
+    return class_.__name__
 
 def _instantiate_message(class_: type["Message"]) -> "Message":
     try:
