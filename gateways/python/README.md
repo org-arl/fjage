@@ -143,6 +143,9 @@ assert isinstance(incoming, CustomReq)
 assert incoming.text == 'hello'
 ```
 
+Always pass the fully qualified name. Bare `@message` registers the class under its
+unqualified Python class name, which only works with peers that accept unqualified names.
+
 The equivalent programmatic form uses `Gateway.registerMessage()`:
 
 ```python
@@ -159,6 +162,8 @@ Gateway.registerMessage('org.example.CustomReq', CustomReq)
 `MessageClass` is deprecated. Replace code such as:
 
 ```python
+from fjagepy import MessageClass
+
 CustomReq = MessageClass('org.example.CustomReq')
 ```
 
