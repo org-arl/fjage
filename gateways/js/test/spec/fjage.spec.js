@@ -675,12 +675,17 @@ describe('A Message', function () {
 });
 
 describe('Message registration', function () {
-  it('should register an unqualified class name', function () {
+  it('should reject an unqualified class name', function () {
     class UnqualifiedMessage extends Message {}
-    expect(Gateway.registerMessage('UnqualifiedMessage', UnqualifiedMessage)).toBe(UnqualifiedMessage);
-    expect(new UnqualifiedMessage().toJSON().clazz).toBe('UnqualifiedMessage');
-    expect(Message.fromJSON({clazz: 'UnqualifiedMessage', data: {}}))
-      .toEqual(jasmine.any(UnqualifiedMessage));
+    expect(() => Gateway.registerMessage('UnqualifiedMessage', UnqualifiedMessage)).toThrow();
+  });
+
+  it('should inflate a qualified registration from its unqualified name', function () {
+    class QualifiedMessage extends Message {}
+    expect(Gateway.registerMessage('org.example.QualifiedMessage', QualifiedMessage)).toBe(QualifiedMessage);
+    expect(new QualifiedMessage().toJSON().clazz).toBe('org.example.QualifiedMessage');
+    expect(Message.fromJSON({clazz: 'QualifiedMessage', data: {}}))
+      .toEqual(jasmine.any(QualifiedMessage));
   });
 
   it('should retain fields-object construction for deprecated MessageClass', function () {
@@ -712,6 +717,7 @@ describe('Message registration', function () {
   it('should validate registrations before changing the registry', function () {
     class ValidMessage extends Message {}
     expect(() => Gateway.registerMessage('', ValidMessage)).toThrow();
+    expect(() => Gateway.registerMessage('InvalidMessage', ValidMessage)).toThrow();
     expect(() => Gateway.registerMessage('org.example.InvalidMessage', class {})).toThrow();
   });
 
