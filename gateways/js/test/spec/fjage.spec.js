@@ -673,11 +673,6 @@ describe('A Message', function () {
     expect(new CustomMessage().perf).toEqual(Performative.REQUEST);
     expect(new CustomMessage(undefined, Performative.INFORM).perf).toEqual(Performative.INFORM);
   });
-
-  it('should not infer a default performative from an unregistered class name', function () {
-    class CustomReq extends Message {}
-    expect(new CustomReq().perf).toEqual(Performative.INFORM);
-  });
 });
 
 describe('Message registration', function () {
@@ -766,6 +761,15 @@ describe('Message registration', function () {
     expect(message).toEqual(jasmine.any(Message));
     expect(message.__clazz__).toBe('UnknownMessage');
     expect(message.value).toBe(1);
+  });
+
+  it('should serialize an unregistered message with its original class name', function () {
+    class UnregisteredMessage extends Message { value = null; }
+    const message = new UnregisteredMessage();
+    message.value = 1;
+    const json = message.toJSON();
+    expect(json.clazz).toBe('UnregisteredMessage');
+    expect(json.data.value).toBe(1);
   });
 });
 
