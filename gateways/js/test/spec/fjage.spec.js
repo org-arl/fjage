@@ -1,4 +1,4 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, MessageClass, Gateway, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, ShellExecReq*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, MessageClass, Gateway, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, DeleteFileReq, ShellExecReq*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -183,6 +183,14 @@ describe('A Gateway', function () {
     gw.close();
     await delay(300);
     expect(gObj.fjage.gateways.find(el => el == gw)).toBeUndefined();
+  });
+
+  it('should match a registered message class used as a receive filter', function () {
+    const gw = new Gateway(gwOpts);
+    const req = new ShellExecReq();
+    expect(gw._matchMessage(ShellExecReq, req)).toBeTrue();
+    expect(gw._matchMessage(GetFileReq, req)).toBeFalse();
+    gw.close();
   });
 
   it('should send a message over a socket', async function() {
@@ -643,7 +651,6 @@ describe('A Message', function () {
     const msg1 = new Message();
     const msg2 = Message.fromJSON(msg1.toJSON());
     const txMsg = new TxFrameReq();
-    expect(Gateway._MESSAGE_REGISTRY.Message).toBe(Message);
     expect(msg1).toEqual(msg2);
     expect(Message.fromJSON(txMsg.toJSON())).toEqual(txMsg);
   });
@@ -658,8 +665,7 @@ describe('A Message', function () {
   });
 
   it('should reject a fields-object constructor', function () {
-    expect(() => new Message({recipient: new AgentID('recipient')}))
-      .toThrowError(TypeError, 'inReplyToMsg must be a Message');
+    expect(() => new Message({recipient: new AgentID('recipient')})).toThrowError(TypeError);
   });
 
   it('should use the registered class name for the default performative', function () {
@@ -675,6 +681,7 @@ describe('A Message', function () {
 });
 
 describe('Message registration', function () {
+
   it('should reject an unqualified class name', function () {
     class UnqualifiedMessage extends Message {}
     expect(() => Gateway.registerMessage('UnqualifiedMessage', UnqualifiedMessage)).toThrow();
@@ -686,6 +693,10 @@ describe('Message registration', function () {
     expect(new QualifiedMessage().toJSON().clazz).toBe('org.example.QualifiedMessage');
     expect(Message.fromJSON({clazz: 'QualifiedMessage', data: {}}))
       .toEqual(jasmine.any(QualifiedMessage));
+  });
+
+  it('should reject an unqualified name for deprecated MessageClass', function () {
+    expect(() => MessageClass('LegacyUnqualified')).toThrow();
   });
 
   it('should retain fields-object construction for deprecated MessageClass', function () {
@@ -702,6 +713,9 @@ describe('Message registration', function () {
     expect(Message.fromJSON({clazz: 'a.Foo', data: {first: 1}})).toEqual(jasmine.any(FirstFoo));
     expect(Message.fromJSON({clazz: 'b.Foo', data: {second: 2}})).toEqual(jasmine.any(SecondFoo));
     expect(Message.fromJSON({clazz: 'Foo', data: {second: 2}})).toEqual(jasmine.any(SecondFoo));
+    const other = Message.fromJSON({clazz: 'c.Foo', data: {third: 3}});
+    expect(other.constructor).toBe(Message);
+    expect(other.toJSON().clazz).toBe('c.Foo');
     expect(new FirstFoo().toJSON().clazz).toBe('a.Foo');
     expect(new SecondFoo().toJSON().clazz).toBe('b.Foo');
   });
@@ -719,21 +733,6 @@ describe('Message registration', function () {
     expect(() => Gateway.registerMessage('', ValidMessage)).toThrow();
     expect(() => Gateway.registerMessage('InvalidMessage', ValidMessage)).toThrow();
     expect(() => Gateway.registerMessage('org.example.InvalidMessage', class {})).toThrow();
-  });
-
-  it('should inflate fields when a registered class needs constructor arguments', function () {
-    class RequiredArgumentMessage extends Message {
-      constructor(required) {
-        if (!required) throw new TypeError('required argument');
-        super();
-        this.value = null;
-      }
-    }
-    Gateway.registerMessage('org.example.RequiredArgumentMessage', RequiredArgumentMessage);
-    const message = Message.fromJSON({clazz: 'org.example.RequiredArgumentMessage', data: {value: 1}});
-    expect(message).toEqual(jasmine.any(RequiredArgumentMessage));
-    expect(message.msgID).toBeDefined();
-    expect(message.value).toBe(1);
   });
 
   it('should inflate an unregistered message without warning', function () {

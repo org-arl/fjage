@@ -2,11 +2,7 @@
 
 import { isBrowser, isNode, isJsDom, isWebWorker } from 'browser-or-node';
 import { AgentID } from './agentid.js';
-import {
-  Message, GenericMessage, ParameterReq, ParameterRsp, PutFileReq, GetFileReq,
-  GetFileRsp, DeleteFileReq, ShellExecReq
-} from './message.js';
-import { MESSAGE_REGISTRY, registerMessageClass } from './messageregistry.js';
+import { Message, registerMessageClass } from './message.js';
 import { _guid, UUID7 } from './utils.js';
 
 import TCPConnector from './tcpconnector.js';
@@ -90,24 +86,15 @@ export function init(){
 */
 export class Gateway {
 
-  static _MESSAGE_REGISTRY = MESSAGE_REGISTRY;
-
   /**
-  * Registers a message class for JSON serialization and inflation.
+  * Registers a message class for JSON serialization and inflation. The registry is shared by
+  * all gateways.
+  *
   * @param {string} className - fully qualified message class name
-  * @param {Function} messageClass - class to register
+  * @param {Function} messageClass - Message subclass to register
   * @returns {Function} registered message class
   */
   static registerMessage(className, messageClass) {
-    if (typeof className !== 'string' || className.trim() === '') {
-      throw new Error('Message class name must be a non-empty string');
-    }
-    if (!className.includes('.')) {
-      throw new Error(`Message class name '${className}' must be fully qualified`);
-    }
-    if (typeof messageClass !== 'function' || !(messageClass.prototype instanceof Message)) {
-      throw new Error('Message class must be a subclass of Message');
-    }
     return registerMessageClass(className, messageClass);
   }
 
@@ -357,8 +344,6 @@ export class Gateway {
       return 'inReplyTo' in msg && msg.inReplyTo == filter;
     } else if (Object.prototype.hasOwnProperty.call(filter, 'msgID')) {
       return 'inReplyTo' in msg && msg.inReplyTo == filter.msgID;
-    } else if (filter.__proto__.name == 'Message' || filter.__proto__.__proto__.name == 'Message') {
-      return filter.__clazz__ == msg.__clazz__;
     } else if (typeof filter == 'function' && !this._isConstructor(filter)) {
       try {
         return filter(msg);
@@ -721,13 +706,3 @@ export class Gateway {
   }
 
 }
-
-registerMessageClass('org.arl.fjage.Message', Message);
-Gateway.registerMessage('org.arl.fjage.GenericMessage', GenericMessage);
-Gateway.registerMessage('org.arl.fjage.param.ParameterReq', ParameterReq);
-Gateway.registerMessage('org.arl.fjage.param.ParameterRsp', ParameterRsp);
-Gateway.registerMessage('org.arl.fjage.shell.PutFileReq', PutFileReq);
-Gateway.registerMessage('org.arl.fjage.shell.DeleteFileReq', DeleteFileReq);
-Gateway.registerMessage('org.arl.fjage.shell.GetFileReq', GetFileReq);
-Gateway.registerMessage('org.arl.fjage.shell.GetFileRsp', GetFileRsp);
-Gateway.registerMessage('org.arl.fjage.shell.ShellExecReq', ShellExecReq);

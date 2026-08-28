@@ -1,36 +1,56 @@
 import { Performative } from './performative.js';
 import { UUID7 } from './utils.js';
 import { AgentID } from './agentid.js';
-import { DEFAULT_PERF, messageClassForName, registerMessageClass } from './messageregistry.js';
+
+const MESSAGE_REGISTRY = Object.create(null);
+
+/**
+ * Gets a registered message class by name. Message classes are registered under both their
+ * qualified and unqualified names, so either will resolve, but a qualified name never falls
+ * back to a class registered for the same unqualified name in a different package.
+ *
+ * @param {string} name - qualified or unqualified message class name
+ * @returns {Function|undefined} registered message class
+ */
+export function messageClassForName(name) {
+  return MESSAGE_REGISTRY[name];
+}
+
+/**
+ * Registers a message class for JSON serialization and inflation.
+ *
+ * @param {string} className - fully qualified message class name
+ * @param {Function} messageClass - Message subclass to register
+ * @returns {Function} registered message class
+ */
+export function registerMessageClass(className, messageClass) {
+  if (typeof className !== 'string' || className.trim() === '') {
+    throw new Error('Message class name must be a non-empty string');
+  }
+  if (!className.includes('.')) {
+    throw new Error(`Message class name '${className}' must be fully qualified`);
+  }
+  if (typeof messageClass !== 'function' ||
+      !(messageClass === Message || messageClass.prototype instanceof Message)) {
+    throw new Error('Message class must be a subclass of Message');
+  }
+  const shortName = className.split('.').pop();
+  if (!shortName) throw new Error('Message class name must not end with a dot');
+  for (const name of [className, shortName]) {
+    if (MESSAGE_REGISTRY[name] && MESSAGE_REGISTRY[name] !== messageClass) {
+      console.warn(`Overriding existing message class registered with name '${name}'`);
+    }
+    MESSAGE_REGISTRY[name] = messageClass;
+  }
+  messageClass.prototype.__clazz__ = className;
+  return messageClass;
+}
 
 /**
  * @typedef {Object} MessageJSON
  * @property {string} clazz - qualified or unqualified message class name
  * @property {Object.<string, *>} data - message data
  */
-
-/**
- * Initialize the base fields of a message.
- *
- * @param {Message} message - message to initialize
- * @param {Message} [inReplyToMsg] - message to reply to
- * @param {Performative} [perf] - performative of the message
- */
-function initializeMessage(message, inReplyToMsg, perf) {
-  message.msgID = UUID7.generate().toString();
-  message.perf = perf === undefined ? message[DEFAULT_PERF] || Performative.INFORM : perf;
-  message.sender = null;
-  message.recipient = null;
-  message.inReplyTo = null;
-
-  if (inReplyToMsg != null && !(inReplyToMsg instanceof Message)) {
-    throw new TypeError('inReplyToMsg must be a Message');
-  }
-  if (inReplyToMsg) {
-    message.recipient = inReplyToMsg.sender;
-    message.inReplyTo = inReplyToMsg.msgID;
-  }
-}
 
 /**
  * Base class for messages transmitted by one agent to another.
@@ -61,7 +81,15 @@ export class Message {
    * @param {Performative} [perf] - performative of the message
    */
   constructor(inReplyToMsg, perf) {
-    initializeMessage(this, inReplyToMsg, perf);
+    if (inReplyToMsg != null && !(inReplyToMsg instanceof Message)) {
+      throw new TypeError('Message fields cannot be passed to the constructor, set them after construction; the first argument must be the Message being replied to');
+    }
+    this.msgID = UUID7.generate().toString();
+    // messages named like Java requests default to a REQUEST performative
+    this.perf = perf ?? (this.__clazz__.endsWith('Req') ? Performative.REQUEST : Performative.INFORM);
+    this.sender = null;
+    this.recipient = inReplyToMsg ? inReplyToMsg.sender : null;
+    this.inReplyTo = inReplyToMsg ? inReplyToMsg.msgID : null;
   }
 
   /**
@@ -100,17 +128,8 @@ export class Message {
       throw new Error(`Invalid Object for Message : ${jsonObj}`);
     }
     const registeredClass = messageClassForName(jsonObj.clazz);
-    const messageClass = registeredClass || Message;
-
-    let message;
-    try {
-      // @ts-ignore Function is validated by registerMessage().
-      message = new messageClass();
-    } catch (error) {
-      if (!(error instanceof TypeError)) throw error;
-      message = Object.create(messageClass.prototype);
-      initializeMessage(message);
-    }
+    // @ts-ignore Registered classes are validated by registerMessageClass().
+    const message = registeredClass ? new registeredClass() : new Message();
     if (!registeredClass) message.__clazz__ = jsonObj.clazz;
 
     for (const key in jsonObj.data) {
@@ -124,8 +143,10 @@ export class Message {
   }
 }
 
-/** Default class name for messages that are not of a specific subclass. */
+/** Fully qualified class name, set on the prototype of each registered message class. */
 Message.prototype.__clazz__ = 'org.arl.fjage.Message';
+
+registerMessageClass('org.arl.fjage.Message', Message);
 
 /**
  * @deprecated since version 3.0.0. Use `Gateway.registerMessage()` instead.
@@ -233,3 +254,12 @@ export class ShellExecReq extends Message {
   /** @type {boolean} */
   ans = false;
 }
+
+registerMessageClass('org.arl.fjage.GenericMessage', GenericMessage);
+registerMessageClass('org.arl.fjage.param.ParameterReq', ParameterReq);
+registerMessageClass('org.arl.fjage.param.ParameterRsp', ParameterRsp);
+registerMessageClass('org.arl.fjage.shell.PutFileReq', PutFileReq);
+registerMessageClass('org.arl.fjage.shell.DeleteFileReq', DeleteFileReq);
+registerMessageClass('org.arl.fjage.shell.GetFileReq', GetFileReq);
+registerMessageClass('org.arl.fjage.shell.GetFileRsp', GetFileRsp);
+registerMessageClass('org.arl.fjage.shell.ShellExecReq', ShellExecReq);

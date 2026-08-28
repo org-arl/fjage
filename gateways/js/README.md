@@ -67,7 +67,7 @@ const gw = new Gateway({
 
 ### Custom message classes
 
-Define a normal `Message` subclass, then register it under its fully qualified class name, such as `org.example.TemperatureNtf`. Registration sets the outgoing JSON `clazz` and lets the gateway create the same class when matching JSON arrives. Incoming messages are matched on the qualified name first, and on the unqualified name as a fallback.
+Define a normal `Message` subclass, then register it under its fully qualified class name, such as `org.example.TemperatureNtf`. Registration sets the outgoing JSON `clazz`, gives the class a `REQUEST` performative by default if its name ends in `Req`, and lets the gateway create the same class when matching JSON arrives. Incoming messages are matched on the fully qualified name, falling back to the unqualified name only when the incoming `clazz` is itself unqualified. A message whose class is not registered is inflated as a `Message` that retains its original `clazz`.
 
 ```js
 import { Gateway, Message } from 'fjage.js';
@@ -82,11 +82,17 @@ const ntf = new TemperatureNtf();
 ntf.temperature = 24.5;
 ```
 
+Every subclass you send needs its own registration. An unregistered subclass inherits its parent's `clazz`, and so goes on the wire as its parent:
+
+```js
+class TxFrameReq extends Message {}          // not registered
+new TxFrameReq().toJSON().clazz              // 'org.arl.fjage.Message'
+```
+
 The `Message` constructor accepts an optional message to reply to and an optional performative. Set custom fields after construction or initialize them in the custom class constructor.
 
 ```js
-
-import { Gateway, Message } from 'fjage.js';
+import { Gateway, Message, Performative } from 'fjage.js';
 
 class QueryRsp extends Message {
     response = null;
@@ -99,5 +105,10 @@ rsp.response = "42";
 gw.send(rsp);
 ```
 
+Once registered, a class can also be used as a filter when receiving messages:
+
+```js
+const rsp = await gw.receive(QueryRsp, 1000);
+```
 
 `MessageClass` is deprecated. Use `Gateway.registerMessage()` when adding custom message classes.
