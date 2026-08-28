@@ -129,15 +129,19 @@ If a gateway's agent name collides with an existing agent known to the master, t
 
 ### `registerMessage()` :: String className, Class messageClass -> Class
 
-- Registers a `Message` subclass with the serialization and deserialization machinery using a qualified or unqualified class name.
-- Should be a static method on `Gateway` if the language supports static methods.
+- Registers a `Message` subclass for serialization and deserialization under a **fully qualified** class name.
+- Should be a static method of `Gateway` in languages that support static methods.
 - Serializing an instance of the registered class must set the JSON `clazz` field to `className`.
 - Deserializing JSON whose `clazz` field matches `className` must create an instance of `messageClass`.
-- The registered class should be returned if the language supports returning classes.
-- Languages that support annotations or decorators may also provide `@message`, including a form that accepts the qualified or unqualified class name, instead of or in addition to `registerMessage()`.
-- Registrations must retain their fully qualified names even when multiple classes have the same unqualified name. For example, if `a.Foo` is registered and then `b.Foo` is registered, JSON with `clazz` set to `a.Foo` must inflate to the class registered as `a.Foo`, and JSON with `clazz` set to `b.Foo` must inflate to the class registered as `b.Foo`. JSON with `clazz` set to the unqualified name `Foo` must inflate to the class whose matching unqualified name was registered most recently, which is `b.Foo` in this example.
-- When inflating a newly received JSON message, the Gateway MUST use the list of registered message classes to determine which class to inflate the message into. If no registered message class matches the `clazz` field in the JSON message, the Gateway MAY (language dependent) try to look up the class by name using the language's reflection capabilities. If no class is found, the Gateway CAN EITHER (language dependent) inflate the message into a generic `Message` and make it behave like an inflated Object of the type, by adding all the fields from the JSON message to the `Message` object (in languages where arbitrary fields are supported), or inflate the message into a `GenericMessage` class that has a `Map<String, Object>` field to hold the fields from the JSON message.
-- If the language supports sub-classing and if the sub-class information can't be captured by the class itself, then `registerMessage` and supported annotations or decorators like `@message` MAY allow passing in the parent class to capture that relationship.
+- Should return the registered class in languages that can return classes.
+- Languages that support annotations or decorators may provide `@message` instead of, or in addition to, `registerMessage()`.
+- Implementations MAY also support lookup by unqualified class name during deserialization.
+- When deserializing a received JSON message, the Gateway MUST first look for a registered class whose name matches the JSON `clazz` field.
+- If no registered class matches, the Gateway MAY use the language's reflection capabilities to find the class by name.
+- If the class is still unknown, the Gateway MAY use either of these language-dependent fallbacks:
+    - Create a generic `Message` and add every field from the JSON message to it, in languages that support arbitrary object fields.
+    - Create a `GenericMessage` with a `Map<String, Object>` field containing the fields from the JSON message.
+- In languages that support subclassing, `registerMessage()` and equivalent annotations or decorators MAY accept a parent class when `messageClass` cannot represent that relationship itself.
 
 ## AgentID Class
 
