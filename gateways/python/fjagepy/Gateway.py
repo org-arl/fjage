@@ -48,7 +48,7 @@ class Gateway:
 
     @staticmethod
     def registerMessage(class_name: str, message_class: type[Any]) -> Type[Message]:
-        """Register a Message subclass for JSON serialization and inflation."""
+        """Register a Message subclass under a fully qualified wire name."""
         if not isinstance(class_name, str) or not class_name:
             raise TypeError('class_name must be a non-empty string')
         if not isinstance(message_class, type) or not issubclass(message_class, Message):
