@@ -141,6 +141,7 @@ If a gateway's agent name collides with an existing agent known to the master, t
 - If the class is still unknown, the Gateway MAY use either of these language-dependent fallbacks:
     - Create a generic `Message` and add every field from the JSON message to it, in languages that support arbitrary object fields.
     - Create a `GenericMessage` with a `Map<String, Object>` field containing the fields from the JSON message.
+- Whichever fallback is used, the message MUST retain the original `clazz` value as its class name. Re-serializing the message MUST emit the same `clazz` value.
 - In languages that support subclassing, `registerMessage()` and equivalent annotations or decorators MAY accept a parent class when `messageClass` cannot represent that relationship itself.
 
 ## AgentID Class
