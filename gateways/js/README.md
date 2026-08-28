@@ -96,6 +96,7 @@ Gateway.registerMessage('org.example.QueryRsp', QueryRsp);
 
 const rsp = new QueryRsp(queryReq, Performative.INFORM);
 rsp.response = "42";
+gw.send(rsp);
 ```
 
 
