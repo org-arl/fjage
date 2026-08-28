@@ -22,7 +22,6 @@ function initializeMessage(message, inReplyToMsg, perf) {
   message.sender = null;
   message.recipient = null;
   message.inReplyTo = null;
-  message.sentAt = 0;
 
   if (inReplyToMsg != null && !(inReplyToMsg instanceof Message)) {
     throw new TypeError('inReplyToMsg must be a Message');
@@ -41,7 +40,7 @@ function initializeMessage(message, inReplyToMsg, perf) {
  * @property {AgentID|null} sender - AgentID of the sender
  * @property {AgentID|null} recipient - AgentID of the recipient
  * @property {string|null} inReplyTo - ID of the message being replied to
- * @property {number} sentAt - timestamp when the message was sent
+ * @property {number} [sentAt] - timestamp when the message was sent, set by the container on receipt
  */
 export class Message {
   /** @type {string} */
@@ -54,7 +53,7 @@ export class Message {
   recipient;
   /** @type {string|null} */
   inReplyTo;
-  /** @type {number} */
+  /** @type {number|undefined} */
   sentAt;
 
   /**

@@ -94,13 +94,16 @@ export class Gateway {
 
   /**
   * Registers a message class for JSON serialization and inflation.
-  * @param {string} className - qualified or unqualified message class name
+  * @param {string} className - fully qualified message class name
   * @param {Function} messageClass - class to register
   * @returns {Function} registered message class
   */
   static registerMessage(className, messageClass) {
     if (typeof className !== 'string' || className.trim() === '') {
       throw new Error('Message class name must be a non-empty string');
+    }
+    if (!className.includes('.')) {
+      throw new Error(`Message class name '${className}' must be fully qualified`);
     }
     if (typeof messageClass !== 'function' || !(messageClass.prototype instanceof Message)) {
       throw new Error('Message class must be a subclass of Message');
