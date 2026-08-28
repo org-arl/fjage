@@ -298,12 +298,17 @@ public class Container {
       Agent agent = agents.get(aid);
       if (agent == null) return false;
       agent.stop();
-      agents.remove(aid);
+      // remove from idle first: the transient "in agents but not idle" state reads
+      // as busy, never as a false-positive idle container
       idle.remove(aid);
+      agents.remove(aid);
       unsubscribe(aid);
       deregister(aid);
       notify();   // if we are waiting for shutdown
     }
+    // removing an agent may have turned the container idle; without this notify a
+    // platform that read a transient not-idle state during the removal would wait forever
+    if (running && isIdle()) platform.idle();
     return true;
   }
 
@@ -587,35 +592,28 @@ public class Container {
    */
   public void shutdown() {
     if (!running) return;
-    while (true) {
-      try {
-        log.info("Initiating shutdown...");
-        for (Agent a: agents.values())
-          a.stop();
-        log.fine("Waiting for agents to shutdown...");
-        synchronized (this) {
-          while (!agents.isEmpty()) {
-            try {
-              wait(100);   // wait for all agents to kill themselves
-            } catch (InterruptedException ex) {
-              log.warning("Shutdown interrupted!");
-              Thread.currentThread().interrupt();
-              agents.clear();
-              idle.clear();
-              running = false;
-              return;
-            }
-          }
+    log.info("Initiating shutdown...");
+    for (Agent a: agents.values())
+      a.stop();
+    log.fine("Waiting for agents to shutdown...");
+    synchronized (this) {
+      while (!agents.isEmpty()) {
+        try {
+          wait(100);   // wait for all agents to kill themselves
+        } catch (InterruptedException ex) {
+          log.warning("Shutdown interrupted!");
+          Thread.currentThread().interrupt();
+          agents.clear();
+          idle.clear();
+          running = false;
+          return;
         }
-        log.info("All agents have shutdown");
-        agents.clear();
-        idle.clear();
-        running = false;
-        return;
-      } catch (ConcurrentModificationException ex) {
-        // do nothing, try again
       }
     }
+    log.info("All agents have shutdown");
+    agents.clear();
+    idle.clear();
+    running = false;
   }
 
   /**
