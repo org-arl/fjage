@@ -133,7 +133,8 @@ class Message:
         qclazz = json_obj["clazz"]
         clazz_name = qclazz.split(".")[-1]
 
-        rv_cls = message_class_for_name(qclazz)
+        registered_cls = message_class_for_name(qclazz)
+        rv_cls = registered_cls
 
         if rv_cls is None:
             reflected_cls = globals().get(clazz_name)
@@ -144,7 +145,8 @@ class Message:
             rv_cls = Message
 
         rv = _instantiate_message(rv_cls)
-        rv.__clazz__ = qclazz
+        if registered_cls is None:
+            rv.__clazz__ = qclazz
 
         for key, value in json_obj["data"].items():
             normalized_key = _normalize_field_name(key)
@@ -243,13 +245,14 @@ def message(arg: type[Message] | str)  -> Union[type[Message], Callable[..., typ
     """Decorator to register a Message subclass for JSON inflation.
 
     Can be used as ``@message`` or ``@message('org.example.MyMessage')``.
+    The former uses the module-qualified Python class name.
     """
 
     def decorate(class_: type["Message"], fqcn: Optional[str] = None) -> type["Message"]:
         if not issubclass(class_, Message):
             raise TypeError('@message can only be used with Message subclasses')
 
-        qualified_name = fqcn or class_.__dict__.get('__clazz__') or class_.__name__
+        qualified_name = fqcn or class_.__dict__.get('__clazz__') or f'{class_.__module__}.{class_.__name__}'
         return register_message(qualified_name, class_)
 
     if isinstance(arg, type):

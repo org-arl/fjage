@@ -80,12 +80,20 @@ def test_register_message_keeps_qualified_names_and_updates_unqualified_name():
     assert isinstance(Message.from_json({'clazz': 'a.TestFoo', 'data': {}}), FirstFoo)
     assert isinstance(Message.from_json({'clazz': 'b.TestFoo', 'data': {}}), SecondFoo)
     assert isinstance(Message.from_json({'clazz': 'TestFoo', 'data': {}}), SecondFoo)
+    assert Message.from_json({'clazz': 'TestFoo', 'data': {}}).to_json()['clazz'] == 'b.TestFoo'
+    unknown = Message.from_json({'clazz': 'c.TestFoo', 'data': {}})
+    assert type(unknown) is Message
+    assert unknown.__clazz__ == 'c.TestFoo'
 
 
 def test_gateway_register_message_rejects_invalid_arguments():
     """Gateway.registerMessage should require a name and a Message subclass."""
     with pytest.raises(TypeError, match='class_name'):
         Gateway.registerMessage('', Message)
+    with pytest.raises(TypeError, match='fully qualified'):
+        Gateway.registerMessage('Invalid', Message)
+    with pytest.raises(TypeError, match='fully qualified'):
+        Gateway.registerMessage('org..Invalid', Message)
     with pytest.raises(TypeError, match='message_class'):
         Gateway.registerMessage('org.arl.fjage.test.Invalid', object)
 
@@ -180,10 +188,25 @@ def test_message_keyword_field_round_trip_uses_wire_name():
 
 def test_message_decorator_registers_external_class():
     """@message should register decorated classes for inflation."""
+    clazz = f'{DecoratedMessage.__module__}.{DecoratedMessage.__name__}'
+    assert DecoratedMessage.__clazz__ == clazz
+    assert DecoratedMessage().to_json()['clazz'] == clazz
     js = {"clazz": "DecoratedMessage", "data": {"value": 7}}
     msg = Message.from_json(js)
     assert isinstance(msg, DecoratedMessage)
     assert msg.value == 7
+
+
+def test_register_message_does_not_register_python_class_name_as_alias():
+    class LocalMessage(Message):
+        pass
+
+    Gateway.registerMessage('org.arl.fjage.WireMessage', LocalMessage)
+
+    msg = Message.from_json({'clazz': 'LocalMessage', 'data': {'value': 12}})
+    assert type(msg) is Message
+    assert msg.__clazz__ == 'LocalMessage'
+    assert msg.value == 12
 
 
 def test_message_decorator_sets_registered_clazz_and_perf():
