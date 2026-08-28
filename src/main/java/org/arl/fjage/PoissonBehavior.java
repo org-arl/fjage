@@ -24,7 +24,7 @@ public class PoissonBehavior extends Behavior {
   private int ticks;
   private long expDelay;
   private long wakeupTime;
-  private boolean quit;
+  private volatile boolean quit;
 
   //////////// Interface methods
 

@@ -23,7 +23,7 @@ public class TickerBehavior extends Behavior {
   private int ticks;
   private long period;
   private long wakeupTime;
-  private boolean quit;
+  private volatile boolean quit;
 
   ////////// Interface methods
 

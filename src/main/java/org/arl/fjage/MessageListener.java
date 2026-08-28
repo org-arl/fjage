@@ -17,6 +17,7 @@ import org.arl.fjage.Message;
  *
  * @author  Mandar Chitre
  */
+@FunctionalInterface
 public interface MessageListener {
 
   /**

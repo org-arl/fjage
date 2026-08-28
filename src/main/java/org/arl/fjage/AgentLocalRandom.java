@@ -10,10 +10,9 @@ for full license details.
 
 package org.arl.fjage;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -31,7 +30,7 @@ public class AgentLocalRandom extends Random {
   private static Logger log = Logger.getLogger(AgentLocalRandom.class.getName());
 
   private static AgentLocalRandom root = new AgentLocalRandom();
-  private static Map<Object,AgentLocalRandom> rng = Collections.synchronizedMap(new HashMap<Object,AgentLocalRandom>());
+  private static final Map<Object,AgentLocalRandom> rng = new ConcurrentHashMap<>();
 
   /**
    * Returns the current agent's AgentLocalRandom.
