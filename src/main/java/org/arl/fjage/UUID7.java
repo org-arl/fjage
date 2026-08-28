@@ -42,7 +42,9 @@ public final class UUID7 implements Comparable<UUID7>, Serializable {
   private final long leastSigBits;
 
   private static final class Holder {
-    static final SecureRandom numberGenerator = new SecureRandom();
+    // SecureRandom is internally synchronized; a per-thread instance avoids
+    // contention on message-ID generation across agent threads
+    static final ThreadLocal<SecureRandom> numberGenerator = ThreadLocal.withInitial(SecureRandom::new);
   }
 
   /**
@@ -64,7 +66,7 @@ public final class UUID7 implements Comparable<UUID7>, Serializable {
   public static UUID7 generate() {
     final long timestamp = System.currentTimeMillis();
     final byte[] randomBytes = new byte[10]; // 74 bits of random data
-    Holder.numberGenerator.nextBytes(randomBytes);
+    Holder.numberGenerator.get().nextBytes(randomBytes);
 
     // 48-bit timestamp
     long mostSigBits = timestamp << 16;

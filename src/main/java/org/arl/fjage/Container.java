@@ -56,7 +56,7 @@ public class Container {
   protected Object cloner;
   protected Method doClone;
   protected boolean autoclone = false;
-  protected final Set<AgentID> idle = new HashSet<>();
+  protected final Set<AgentID> idle = ConcurrentHashMap.newKeySet();
   protected final Set<MessageListener> listeners = new CopyOnWriteArraySet<>();
 
   //////////// Interface methods
@@ -141,7 +141,7 @@ public class Container {
         doClone = Class.forName(SERIAL_CLONER).getDeclaredMethod("clone", Serializable.class);
       } else if (name.equals(FAST_CLONER)) {
         Class<?> cls = Class.forName(FAST_CLONER);
-        cloner = cls.newInstance();
+        cloner = cls.getDeclaredConstructor().newInstance();
         doClone = cls.getMethod("deepClone", Object.class);
       } else {
         cloner = null;
@@ -432,10 +432,7 @@ public class Container {
   public synchronized void unsubscribe(AgentID aid) {
     Agent agent = agents.get(aid);
     if (agent == null) return;
-    for (AgentID topic: topics.keySet()) {
-      Set<Agent> subscribers = topics.get(topic);
-      subscribers.remove(agent);
-    }
+    topics.values().forEach(subscribers -> subscribers.remove(agent));
   }
 
   /**
@@ -504,10 +501,7 @@ public class Container {
    * @param aid id of agent to deregister.
    */
   public synchronized void deregister(AgentID aid) {
-    for (String service: services.keySet()) {
-      Set<AgentID> providers = services.get(service);
-      providers.remove(aid);
-    }
+    services.values().forEach(providers -> providers.remove(aid));
   }
 
   /**
@@ -639,10 +633,7 @@ public class Container {
    * @return true if all agents are idle, false otherwise.
    */
   public boolean isIdle() {
-    int nAgents = agents.size();
-    synchronized (idle) {
-      return nAgents == idle.size();
-    }
+    return agents.size() == idle.size();
   }
 
   /**
@@ -702,9 +693,7 @@ public class Container {
    * @param aid agent that is idle.
    */
   void reportIdle(AgentID aid) {
-    synchronized (idle) {
-      idle.add(aid);
-    }
+    idle.add(aid);
     if (running && isIdle()) platform.idle();
   }
 
@@ -714,9 +703,7 @@ public class Container {
    * @param aid agent that is busy.
    */
   void reportBusy(AgentID aid) {
-    synchronized (idle) {
-      idle.remove(aid);
-    }
+    idle.remove(aid);
   }
 
 }

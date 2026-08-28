@@ -147,7 +147,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
         while (e != null && e.time <= time) {
           log.fine("Fire "+e);
           synchronized (events) {
-            if (events.size() > 0) events.poll().task.run();
+            if (!events.isEmpty()) events.poll().task.run();
           }
           e = events.peek();
         }
