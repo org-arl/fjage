@@ -18,6 +18,7 @@ package org.arl.fjage;
  *
  * @author  Mandar Chitre
  */
+@FunctionalInterface
 public interface MessageFilter {
 
   /**

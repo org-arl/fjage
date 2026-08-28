@@ -23,7 +23,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
 
   //////////// Private attributes
 
-  private Map<Object,GenericValue> map = new HashMap<Object,GenericValue>();
+  private Map<Object,GenericValue> map = new HashMap<>();
 
   //////////// Interface methods
 
@@ -98,14 +98,15 @@ public class GenericMessage extends Message implements Map<Object,Object> {
     return map.containsValue(new GenericValue(value));
   }
 
+  /**
+   * Note: this returns a copy of the entries, not a live view, and is rebuilt
+   * on every call; avoid calling it in a loop.
+   */
   @Override
   public Set<Map.Entry<Object,Object>> entrySet() {
-    Set<Map.Entry<Object,Object>> set = new HashSet<Map.Entry<Object,Object>>();
-    for (Map.Entry<Object,GenericValue> entry: map.entrySet()) {
-      Object k = entry.getKey();
-      GenericValue v = entry.getValue();
-      set.add(new AbstractMap.SimpleEntry<Object,Object>(k, v));
-    }
+    Set<Map.Entry<Object,Object>> set = new HashSet<>();
+    for (Map.Entry<Object,GenericValue> entry: map.entrySet())
+      set.add(new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
     return set;
   }
 

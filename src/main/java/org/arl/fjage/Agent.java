@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.arl.fjage.persistence.Store;
 import org.arl.fjage.remote.SlaveContainer;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Base class to be extended by all agents. An agent must be added to a container
@@ -84,10 +85,13 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   private AgentID aid = null;
   private volatile AgentState state = AgentState.INIT;
   private volatile AgentState oldState = AgentState.NONE;
-  private Queue<Behavior> newBehaviors = new ArrayDeque<>();
+  // matches all messages; used in place of a null filter, since ArrayDeque rejects nulls
+  private static final MessageFilter ANY_MESSAGE = m -> true;
+
+  private ConcurrentLinkedQueue<Behavior> newBehaviors = new ConcurrentLinkedQueue<>();
   private Queue<Behavior> activeBehaviors = new PriorityQueue<>();
   private Queue<Behavior> blockedBehaviors = new ArrayDeque<>();
-  private Stack<MessageFilter> exclusions = new Stack<>();
+  private Deque<MessageFilter> exclusions = new ArrayDeque<>();
   private volatile boolean restartBehaviors = false;
   private boolean unblocked = false;
   private Platform platform = null;
@@ -464,7 +468,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
     if (m == null && timeout != NON_BLOCKING) {
       if (timeout != BLOCKING) deadline = currentTimeMillis() + timeout;
       do {
-        exclusions.push(filter);
+        exclusions.push(filter == null ? ANY_MESSAGE : filter);
         if (timeout == BLOCKING) {
           if (!yieldDuringReceive || !executeBehavior()) block();
         } else if (!yieldDuringReceive || !executeBehavior()) {
@@ -503,7 +507,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
 
   @Override
   public Message receive(final Class<?> cls, long timeout) {
-    return receive(m -> cls.isInstance(m), timeout);
+    return receive(cls::isInstance, timeout);
   }
 
   @Override
@@ -515,15 +519,8 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   public Message receive(final Message m, long timeout) {
     if (container instanceof SlaveContainer)
       ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
-    Message rsp = receive(new MessageFilter() {
-      private String mid = m.getMessageID();
-      @Override
-      public boolean matches(Message m) {
-        String s = m.getInReplyTo();
-        if (s == null) return false;
-        return s.equals(mid);
-      }
-    }, timeout);
+    final String mid = m.getMessageID();
+    Message rsp = receive(m1 -> m1.getInReplyTo() != null && Objects.equals(m1.getInReplyTo(), mid), timeout);
     if (rsp != null) return rsp;
     if (container instanceof SlaveContainer)
       ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
@@ -800,9 +797,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       if (ignoreExceptions) log.log(Level.WARNING, "Exception in agent: "+aid, ex);
       else throw(ex);
     }
-    synchronized (this) {
-      return (newBehaviors.size() > 0);
-    }
+    return !newBehaviors.isEmpty();
   }
 
   /**
@@ -1140,7 +1135,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
         extends Behavior {
 
       private final MessageFilter filter;
-      private boolean quit = false;
+      private volatile boolean quit = false;
 
       public StoppableMessageBehavior() {
         this((MessageFilter) null);
