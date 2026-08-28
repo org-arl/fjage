@@ -53,6 +53,23 @@ def test_message_serialization():
     assert msg2.sender == msg.sender
     assert msg2.recipient == msg.recipient
 
+
+def test_base_message_serializes_with_qualified_name():
+    assert Message().to_json()['clazz'] == 'org.arl.fjage.Message'
+
+
+def test_unregistered_message_subclass_serializes_with_class_name():
+    class UnregisteredMessage(Message):
+        pass
+
+    assert UnregisteredMessage().to_json()['clazz'] == 'UnregisteredMessage'
+
+
+def test_gateway_send_rejects_non_message():
+    with pytest.raises(ValueError, match='msg must be a Message'):
+        Gateway.send(object.__new__(Gateway), object())
+
+
 def test_gateway_register_message_serializes_and_inflates_registered_class():
     """Gateway.registerMessage should use the registered name in both directions."""
     class RegisteredReq(Message):
