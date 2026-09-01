@@ -147,10 +147,9 @@ fields as keyword arguments. When constructing a reply, `in_reply_to_msg` sets
 `recipient` and `inReplyTo` from the original message. Message classes whose names
 end in `Req` use `Performative.REQUEST` by default.
 
-Always pass the fully qualified name. Bare `@message` registers the class under its
-unqualified Python class name, which only works with peers that accept unqualified names.
+The decorator requires a fully qualified wire name. Bare `@message` is not supported.
 
-The equivalent programmatic form uses `Gateway.registerMessage()`:
+The equivalent programmatic form uses `Gateway.register_message()`:
 
 ```python
 from fjagepy import Gateway, Message
@@ -160,7 +159,7 @@ class CustomReq(Message):
     pass
 
 
-Gateway.registerMessage('org.example.CustomReq', CustomReq)
+Gateway.register_message('org.example.CustomReq', CustomReq)
 ```
 
 `MessageClass` is deprecated. Replace code such as:
@@ -171,7 +170,11 @@ from fjagepy import MessageClass
 CustomReq = MessageClass('org.example.CustomReq')
 ```
 
-with a normal `Message` subclass registered using `Gateway.registerMessage()` or `@message`.
+with a normal `Message` subclass registered using `Gateway.register_message()` or `@message`.
+
+Incoming classes that have not been registered are inflated as `Message` instances.
+The received `clazz` and data fields are retained, but fjagepy does not search loaded
+Python modules for a class with the same name.
 
 ## Advanced Usage
 

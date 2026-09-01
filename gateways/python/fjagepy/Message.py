@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import keyword
 import warnings
-from typing import Callable, Optional, Any, Dict, TYPE_CHECKING, Union, get_type_hints, overload
+from typing import Callable, Optional, Any, Dict, TYPE_CHECKING, get_type_hints
 
 from .AgentID import AgentID
 from .Performative import Performative
@@ -140,9 +140,9 @@ class Message:
     def from_json(cls, json_obj: Dict[str, Any], owner: Optional["Gateway"] = None) -> Optional["Message"]:
         """Inflate a Message or subclass from a JSON object.
 
-        Registered classes take precedence over module-level classes with the
-        same short name. Unknown classes are inflated as Message instances and
-        retain their wire class name and fields. Malformed objects return None.
+        Registered classes are inflated as their Python type. Unknown classes
+        are inflated as Message instances and retain their wire class name and
+        fields. Malformed objects return None.
 
         :meta private:
         """
@@ -151,18 +151,9 @@ class Message:
             return None
 
         qclazz = json_obj["clazz"]
-        clazz_name = qclazz.split(".")[-1]
 
         registered_cls = _MESSAGE_REGISTRY.get(qclazz)
-        rv_cls = registered_cls
-
-        if rv_cls is None:
-            reflected_cls = globals().get(clazz_name)
-            if isinstance(reflected_cls, type) and issubclass(reflected_cls, Message):
-                rv_cls = reflected_cls
-
-        if rv_cls is None:
-            rv_cls = Message
+        rv_cls = registered_cls or Message
 
         rv = _instantiate_message(rv_cls)
         if registered_cls is None:
@@ -226,7 +217,7 @@ class GenericMessage(Message):
 def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
     """Creates an unqualified message class based on a fully qualified name.
 
-    Deprecated. Use :py:meth:`Gateway.registerMessage` or :py:func:`message` instead.
+    Deprecated. Use :py:meth:`Gateway.register_message` or :py:func:`message` instead.
 
     Args:
         name : fully qualified name of the message class
@@ -238,7 +229,7 @@ def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
 
     warnings.warn(
         "MessageClass is deprecated and will be removed in a future version. "
-        "Use Gateway.registerMessage or the @message decorator instead.",
+        "Use Gateway.register_message or the @message decorator instead.",
         DeprecationWarning,
         stacklevel=2
     )
@@ -255,32 +246,19 @@ def MessageClass(name: str, parent: type[Message] = Message) -> type[Message]:
     class_ = type(sname, (parent,), {"__init__": __init__})
     return register_message(name, class_)
 
-@overload
-def message(arg: type[Message]) -> type[Message]: ...
-
-@overload
-def message(arg: str) -> Callable[[type[Message]], type[Message]]: ...
-
-def message(arg: type[Message] | str)  -> Union[type[Message], Callable[..., type[Message]]]:
+def message(class_name: str) -> Callable[[type[Message]], type[Message]]:
     """Decorator to register a Message subclass for JSON inflation.
 
-    Can be used as ``@message`` or ``@message('org.example.MyMessage')``. The
-    former registers the class under its unqualified Python class name, and is
-    only interoperable with peers that accept unqualified names; prefer the
-    fully qualified form.
+    The class must be registered under a fully qualified wire name, for example
+    ``@message('org.example.MyMessage')``.
     """
-
-    def decorate(class_: type["Message"], fqcn: Optional[str] = None) -> type["Message"]:
-        if not issubclass(class_, Message):
-            raise TypeError('@message can only be used with Message subclasses')
-
-        return register_message(fqcn or class_.__dict__.get('__clazz__') or class_.__name__, class_)
-
-    if isinstance(arg, type):
-        return decorate(arg)
+    if not isinstance(class_name, str) or '.' not in class_name or any(not part for part in class_name.split('.')):
+        raise TypeError('class_name must be a fully qualified class name')
 
     def decorator(class_: type["Message"]) -> type["Message"]:
-        return decorate(class_, arg)
+        if not isinstance(class_, type) or not issubclass(class_, Message):
+            raise TypeError('@message can only be used with Message subclasses')
+        return register_message(class_name, class_)
 
     return decorator
 
