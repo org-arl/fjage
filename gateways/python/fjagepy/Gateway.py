@@ -45,7 +45,7 @@ class Gateway:
     BLOCKING = -1
 
     @staticmethod
-    def registerMessage(class_name: str, message_class: type[Message]) -> type[Message]:
+    def register_message(class_name: str, message_class: type[Message]) -> type[Message]:
         """Register a Message subclass under a fully qualified wire name."""
         if not isinstance(class_name, str) or '.' not in class_name or any(not part for part in class_name.split('.')):
             raise TypeError('class_name must be a fully qualified class name')
