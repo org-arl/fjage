@@ -14,7 +14,7 @@ from .Connector import Connector
 from .TCPConnector import TCPConnector
 from .AgentID import AgentID
 from .JSONMessage import JSONMessage, Actions
-from .Message import Message, register_message
+from .Message import Message, register_message, is_qualified_class_name
 from .Utils import UUID7
 
 DEFAULT_MAX_QUEUE_SIZE = 512
@@ -47,7 +47,7 @@ class Gateway:
     @staticmethod
     def register_message(class_name: str, message_class: type[Message]) -> type[Message]:
         """Register a Message subclass under a fully qualified wire name."""
-        if not isinstance(class_name, str) or '.' not in class_name or any(not part for part in class_name.split('.')):
+        if not is_qualified_class_name(class_name):
             raise TypeError('class_name must be a fully qualified class name')
         return register_message(class_name, message_class)
 
