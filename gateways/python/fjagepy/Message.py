@@ -252,7 +252,7 @@ def message(class_name: str) -> Callable[[type[Message]], type[Message]]:
     The class must be registered under a fully qualified wire name, for example
     ``@message('org.example.MyMessage')``.
     """
-    if not isinstance(class_name, str) or '.' not in class_name or any(not part for part in class_name.split('.')):
+    if not is_qualified_class_name(class_name):
         raise TypeError('class_name must be a fully qualified class name')
 
     def decorator(class_: type["Message"]) -> type["Message"]:
@@ -286,6 +286,10 @@ def _value(v):
         if 'data' in v:
             return v['data']
     return v
+
+def is_qualified_class_name(name: str) -> bool:
+    """Check if a class name is fully qualified (contains at least one dot)."""
+    return isinstance(name, str) and '.' in name and not any(not part for part in name.split('.'))
 
 class _GenericObject:
     def __init__(self, **kwargs):

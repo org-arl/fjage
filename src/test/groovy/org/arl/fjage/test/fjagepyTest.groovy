@@ -51,7 +51,8 @@ class fjagepyTest {
     def st = platform.currentTimeMillis();
     if (System.getProperty('manualPyTest') == null){
       println "Running automated tests."
-      def proc = "python -m pytest".execute([], new File("gateways/python"))
+      def python = System.getenv('PYTHON') ?: 'python3'
+      def proc = [python, '-m', 'pytest'].execute([], new File("gateways/python"))
       def sout = new StringBuilder()
       def serr = new StringBuilder()
       proc.consumeProcessOutput(sout, serr)
