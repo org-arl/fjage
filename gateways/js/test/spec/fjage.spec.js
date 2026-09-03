@@ -771,6 +771,26 @@ describe('Message registration', function () {
     expect(json.clazz).toBe('UnregisteredMessage');
     expect(json.data.value).toBe(1);
   });
+
+  it('should serialize an unregistered leaf with its own class name', function () {
+    class RegisteredMessage extends Message { parentValue = null; }
+    Gateway.registerMessage('org.example.RegisteredMessage', RegisteredMessage);
+    class UnregisteredMessage extends RegisteredMessage { childValue = null; }
+    const message = new UnregisteredMessage();
+    message.parentValue = 1;
+    message.childValue = 2;
+    const json = message.toJSON();
+    expect(json.clazz).toBe('UnregisteredMessage');
+    expect(json.data.parentValue).toBe(1);
+    expect(json.data.childValue).toBe(2);
+  });
+
+  it('should retain the class name of an unregistered incoming message', function () {
+    const json = {clazz: 'org.example.UnknownMessage', data: {value: 1}};
+    const message = Message.fromJSON(json);
+    expect(message.toJSON().clazz).toBe(json.clazz);
+    expect(message.value).toBe(1);
+  });
 });
 
 describe('Shell GetFile/PutFile', function () {
