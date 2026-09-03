@@ -33,7 +33,7 @@ At runtime, fjage.js will check its context (browser or Node.js) and accordingly
 ### [CommonJS](dist/cjs)
 
 ```js
-const { Performative, AgentID, Message, Gateway, MessageClass } = require('fjage');
+const { Performative, AgentID, Message, Gateway, ShellExecReq } = require('fjage');
 const shell = new AgentID('shell');
 const gw = new Gateway({
     hostname: 'localhost',
@@ -44,7 +44,7 @@ const gw = new Gateway({
 ### [ECMAScript modules](dist/esm)
 
 ```js
-import { Performative, AgentID, Message, Gateway, MessageClass } from 'fjage.js'
+import { Performative, AgentID, Message, Gateway, ShellExecReq } from 'fjage.js'
 const shell = new AgentID('shell');
 const gw = new Gateway({
     hostname: 'localhost',
@@ -64,3 +64,53 @@ const gw = new Gateway({
     });
 </script>
 ```
+
+### Custom message classes
+
+Define a normal `Message` subclass, then register it under its fully qualified class name, such as `org.example.TemperatureNtf`. Registration sets the outgoing JSON `clazz`, gives the class a `REQUEST` performative by default if its name ends in `Req`, and lets the gateway create the same class when matching JSON arrives. Incoming messages are matched on the fully qualified name, falling back to the unqualified name only when the incoming `clazz` is itself unqualified. A message whose class is not registered is inflated as a `Message` that retains its original `clazz`.
+
+```js
+import { Gateway, Message } from 'fjage.js';
+
+class TemperatureNtf extends Message {
+    temperature = null;
+}
+
+Gateway.registerMessage('org.example.TemperatureNtf', TemperatureNtf);
+
+const ntf = new TemperatureNtf();
+ntf.temperature = 24.5;
+```
+
+An unregistered subclass goes on the wire using its JavaScript class name and all of its public fields:
+
+```js
+class TxFrameReq extends Message {}          // not registered
+new TxFrameReq().toJSON().clazz              // 'TxFrameReq'
+```
+
+Register message classes used to communicate with another gateway or a fjåge agent. Registration supplies a stable, fully qualified protocol name; an unregistered class name may change when an application bundle is minified.
+
+The `Message` constructor accepts an optional message to reply to and an optional performative. Set custom fields after construction or initialize them in the custom class constructor.
+
+```js
+import { Gateway, Message, Performative } from 'fjage.js';
+
+class QueryRsp extends Message {
+    response = null;
+}
+
+Gateway.registerMessage('org.example.QueryRsp', QueryRsp);
+
+const rsp = new QueryRsp(queryReq, Performative.INFORM);
+rsp.response = "42";
+gw.send(rsp);
+```
+
+Once registered, a class can also be used as a filter when receiving messages:
+
+```js
+const rsp = await gw.receive(QueryRsp, 1000);
+```
+
+`MessageClass` is deprecated. Use `Gateway.registerMessage()` when adding custom message classes.

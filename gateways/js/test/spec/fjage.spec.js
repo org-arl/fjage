@@ -1,12 +1,41 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, Gateway, MessageClass, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine*/
+/* global global isBrowser isJsDom isNode Performative, AgentID, Message, MessageClass, Gateway, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, DeleteFileReq, ShellExecReq*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
 const TEST_STRING = 'this is a test';
 const NEW_STRING = 'new test';
-const SendMsgReq = MessageClass('org.arl.fjage.test.SendMsgReq');
-const SendMsgRsp = MessageClass('org.arl.fjage.test.SendMsgRsp');
-const TestCompleteNtf = MessageClass('org.arl.fjage.test.TestCompleteNtf');
+
+class TxFrameReq extends Message {}
+Gateway.registerMessage('org.arl.unet.phy.TxFrameReq', TxFrameReq);
+
+class SendMsgReq extends Message {
+  num = 0;
+  type = 0;
+  constructor() {
+    super();
+    this.perf = Performative.REQUEST;
+  }
+}
+Gateway.registerMessage('org.arl.fjage.test.SendMsgReq', SendMsgReq);
+
+class SendMsgRsp extends Message {
+  id = 0;
+  type = 0;
+}
+Gateway.registerMessage('org.arl.fjage.test.SendMsgRsp', SendMsgRsp);
+
+class TestCompleteNtf extends Message {
+  status = null;
+  trace = null;
+  type = null;
+}
+Gateway.registerMessage('org.arl.fjage.test.TestCompleteNtf', TestCompleteNtf);
+
+class TestMessage extends Message {
+  data = null;
+}
+Gateway.registerMessage('org.arl.fjage.test.TestMessage', TestMessage);
+
 
 const ValidFjageActions = ['agents', 'containsAgent', 'services', 'agentForService', 'agentsForService', 'send', 'shutdown'];
 const ValidFjagePerformatives = ['REQUEST', 'AGREE', 'REFUSE', 'FAILURE', 'INFORM', 'CONFIRM', 'DISCONFIRM', 'QUERY_IF', 'NOT_UNDERSTOOD', 'CFP', 'PROPOSE', 'CANCEL', ];
@@ -156,6 +185,14 @@ describe('A Gateway', function () {
     expect(gObj.fjage.gateways.find(el => el == gw)).toBeUndefined();
   });
 
+  it('should match a registered message class used as a receive filter', function () {
+    const gw = new Gateway(gwOpts);
+    const req = new ShellExecReq();
+    expect(gw._matchMessage(ShellExecReq, req)).toBeTrue();
+    expect(gw._matchMessage(GetFileReq, req)).toBeFalse();
+    gw.close();
+  });
+
   it('should send a message over a socket', async function() {
     const shell = new AgentID('shell');
     const gw = new Gateway(gwOpts);
@@ -195,19 +232,6 @@ describe('A Gateway', function () {
     const req = new ShellExecReq();
     req.recipient = shell;
     req.command = 'boo';
-    gw.request(req);
-    await delay(300);
-    expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
-    gw.close();
-  });
-
-  it('should send correct ShellExecReq of valid fjage message structure created using param constructor', async function() {
-    const shell = new AgentID('shell');
-    const gw = new Gateway(gwOpts);
-    await delay(300); // delay allow for imports
-    spyOn(gw.connector.sock, 'send').and.callThrough();
-    gw.connector.sock.send.calls.reset();
-    const req = new ShellExecReq({recipient: shell, cmd: 'boo'});
     gw.request(req);
     await delay(300);
     expect(gw.connector.sock.send).toHaveBeenCalledWith(ShellExecReqChecker());
@@ -575,7 +599,6 @@ describe('An AgentID setup to reject promises', function () {
 
 describe('A JSONMessage', function () {
   it('should serialise and deserialise correctly', function () {
-    const TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq');
     const txMsg = new TxFrameReq();
     const jsonMsg = new JSONMessage();
     jsonMsg.action = 'send';
@@ -594,6 +617,17 @@ describe('A JSONMessage', function () {
     const str = '{"action":"send","relay":false,"message":{"clazz":"org.arl.fjage.test.TestMessage","data":{"msgID":"12345678901234567890123456789012","sender":"test","recipient":"echo","perf":"REQUEST","data":{"clazz":"[B","data":"SGVsbG8sIFdvcmxkIQ=="}}}}';
     const jsonMsg = new JSONMessage(str);
     expect(jsonMsg.message.data).toEqual(DATA_ARRAY);
+  });
+
+  it('should retain an unregistered embedded message', function () {
+    const jsonMsg = new JSONMessage(JSON.stringify({
+      action: 'send',
+      relay: false,
+      message: {clazz: 'org.example.UnknownMessage', data: {value: 1}}
+    }));
+    expect(jsonMsg.message).toEqual(jasmine.any(Message));
+    expect(jsonMsg.message.__clazz__).toBe('org.example.UnknownMessage');
+    expect(jsonMsg.message.value).toBe(1);
   });
 });
 
@@ -616,43 +650,146 @@ describe('A Message', function () {
   it('should serialise and deserialise correctly', function () {
     const msg1 = new Message();
     const msg2 = Message.fromJSON(msg1.toJSON());
-    const TxFrameReq = MessageClass('org.arl.unet.phy.TxFrameReq');
     const txMsg = new TxFrameReq();
     expect(msg1).toEqual(msg2);
     expect(Message.fromJSON(txMsg.toJSON())).toEqual(txMsg);
   });
+
+  it('should support a reply constructor', function () {
+    const request = new Message();
+    request.sender = new AgentID('sender');
+    const reply = new Message(request, Performative.CONFIRM);
+    expect(reply.recipient).toEqual(request.sender);
+    expect(reply.inReplyTo).toEqual(request.msgID);
+    expect(reply.perf).toEqual(Performative.CONFIRM);
+  });
+
+  it('should reject a fields-object constructor', function () {
+    expect(() => new Message({recipient: new AgentID('recipient')})).toThrowError(TypeError);
+  });
+
+  it('should use the registered class name for the default performative', function () {
+    const CustomMessage = Gateway.registerMessage('org.example.CustomReq', class extends Message {});
+    expect(new CustomMessage().perf).toEqual(Performative.REQUEST);
+    expect(new CustomMessage(undefined, Performative.INFORM).perf).toEqual(Performative.INFORM);
+  });
 });
 
-describe('A MessageClass', function () {
-  it('should be able to create a custom Message', function () {
-    expect(() => {
-      let msgName = 'NewMessage';
-      const NewMessage = MessageClass(msgName);
-      expect(typeof NewMessage).toEqual('function');
-      expect(NewMessage.__clazz__).toEqual(msgName);
-      new NewMessage();
-    }).not.toThrow();
+describe('Message registration', function () {
+
+  it('should reject an unqualified class name', function () {
+    class UnqualifiedMessage extends Message {}
+    expect(() => Gateway.registerMessage('UnqualifiedMessage', UnqualifiedMessage)).toThrow();
   });
 
-  it('should be able to create a custom Message with parent Message', function () {
-    expect(() => {
-      let msgName = 'New2Message';
-      let parentName = 'ParentMessage';
-      const ParentMessage = MessageClass(parentName);
-      const NewMessage = MessageClass(msgName, ParentMessage);
-      expect(typeof NewMessage).toEqual('function');
-      expect(NewMessage.__clazz__).toEqual(msgName);
-      let nm = new NewMessage();
-      expect(nm instanceof NewMessage).toBeTruthy();
-      expect(nm instanceof ParentMessage).toBeTruthy();
-    }).not.toThrow();
+  it('should inflate a qualified registration from its unqualified name', function () {
+    class QualifiedMessage extends Message {}
+    expect(Gateway.registerMessage('org.example.QualifiedMessage', QualifiedMessage)).toBe(QualifiedMessage);
+    expect(new QualifiedMessage().toJSON().clazz).toBe('org.example.QualifiedMessage');
+    expect(Message.fromJSON({clazz: 'QualifiedMessage', data: {}}))
+      .toEqual(jasmine.any(QualifiedMessage));
   });
 
-  it('should make sure that a MessageClass name that ends with Req has a perf of REQUEST', function () {
-    let msgName = 'NewReq';
-    const NewReq = MessageClass(msgName);
-    let nr = new NewReq();
-    expect(nr.perf).toEqual(Performative.REQUEST);
+  it('should reject an unqualified name for deprecated MessageClass', function () {
+    expect(() => MessageClass('LegacyUnqualified')).toThrow();
+  });
+
+  it('should retain fields-object construction for deprecated MessageClass', function () {
+    const LegacyMessage = MessageClass('org.example.LegacyMessage');
+    const message = new LegacyMessage({value: 1});
+    expect(message.value).toBe(1);
+  });
+
+  it('should resolve an exact class name before a short class name', function () {
+    class FirstFoo extends Message { first = null; }
+    class SecondFoo extends Message { second = null; }
+    expect(Gateway.registerMessage('a.Foo', FirstFoo)).toBe(FirstFoo);
+    expect(Gateway.registerMessage('b.Foo', SecondFoo)).toBe(SecondFoo);
+    expect(Message.fromJSON({clazz: 'a.Foo', data: {first: 1}})).toEqual(jasmine.any(FirstFoo));
+    expect(Message.fromJSON({clazz: 'b.Foo', data: {second: 2}})).toEqual(jasmine.any(SecondFoo));
+    expect(Message.fromJSON({clazz: 'Foo', data: {second: 2}})).toEqual(jasmine.any(SecondFoo));
+    const other = Message.fromJSON({clazz: 'c.Foo', data: {third: 3}});
+    expect(other.constructor).toBe(Message);
+    expect(other.toJSON().clazz).toBe('c.Foo');
+    expect(new FirstFoo().toJSON().clazz).toBe('a.Foo');
+    expect(new SecondFoo().toJSON().clazz).toBe('b.Foo');
+  });
+
+  it('should inflate all fields from registered messages', function () {
+    class CustomMessage extends Message { value = null; }
+    Gateway.registerMessage('org.example.CustomMessage', CustomMessage);
+    const message = Message.fromJSON({clazz: 'org.example.CustomMessage', data: {value: 1, extra: 2}});
+    expect(message.value).toBe(1);
+    expect(message.extra).toBe(2);
+  });
+
+  it('should validate registrations before changing the registry', function () {
+    class ValidMessage extends Message {}
+    expect(() => Gateway.registerMessage('', ValidMessage)).toThrow();
+    expect(() => Gateway.registerMessage('InvalidMessage', ValidMessage)).toThrow();
+    expect(() => Gateway.registerMessage('org.example.InvalidMessage', class {})).toThrow();
+  });
+
+  it('should inflate an unregistered message without warning', function () {
+    const json = {
+      clazz: 'org.example.UnknownMessage',
+      data: {
+        msgID: '12345678901234567890123456789012',
+        perf: Performative.INFORM,
+        sender: 'sender',
+        recipient: '#topic',
+        inReplyTo: 'reply-id',
+        sentAt: 1,
+        value: {nested: true}
+      }
+    };
+    spyOn(console, 'warn');
+    const message = Message.fromJSON(json);
+    expect(message).toEqual(jasmine.any(Message));
+    expect(message.__clazz__).toBe(json.clazz);
+    expect(message.sender).toEqual(jasmine.any(AgentID));
+    expect(message.sender.name).toBe('sender');
+    expect(message.recipient).toEqual(jasmine.any(AgentID));
+    expect(message.recipient.isTopic()).toBeTrue();
+    expect(message.value).toEqual({nested: true});
+    expect(JSON.parse(JSON.stringify(message.toJSON()))).toEqual(json);
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it('should inflate an unregistered unqualified message', function () {
+    const message = Message.fromJSON({clazz: 'UnknownMessage', data: {value: 1}});
+    expect(message).toEqual(jasmine.any(Message));
+    expect(message.__clazz__).toBe('UnknownMessage');
+    expect(message.value).toBe(1);
+  });
+
+  it('should serialize an unregistered message with its original class name', function () {
+    class UnregisteredMessage extends Message { value = null; }
+    const message = new UnregisteredMessage();
+    message.value = 1;
+    const json = message.toJSON();
+    expect(json.clazz).toBe('UnregisteredMessage');
+    expect(json.data.value).toBe(1);
+  });
+
+  it('should serialize an unregistered leaf with its own class name', function () {
+    class RegisteredMessage extends Message { parentValue = null; }
+    Gateway.registerMessage('org.example.RegisteredMessage', RegisteredMessage);
+    class UnregisteredMessage extends RegisteredMessage { childValue = null; }
+    const message = new UnregisteredMessage();
+    message.parentValue = 1;
+    message.childValue = 2;
+    const json = message.toJSON();
+    expect(json.clazz).toBe('UnregisteredMessage');
+    expect(json.data.parentValue).toBe(1);
+    expect(json.data.childValue).toBe(2);
+  });
+
+  it('should retain the class name of an unregistered incoming message', function () {
+    const json = {clazz: 'org.example.UnknownMessage', data: {value: 1}};
+    const message = Message.fromJSON(json);
+    expect(message.toJSON().clazz).toBe(json.clazz);
+    expect(message.value).toBe(1);
   });
 });
 

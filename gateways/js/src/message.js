@@ -1,248 +1,270 @@
 import { Performative } from './performative.js';
 import { UUID7 } from './utils.js';
-import { AgentID } from './agentid.js';  // import AgentID class for type checking. Remove if not needed.
+import { AgentID } from './agentid.js';
+
+const MESSAGE_REGISTRY = Object.create(null);
 
 /**
-* Base class for messages transmitted by one agent to another. Creates an empty message.
-* @class
-*
-* @property {string} msgID - unique message ID
-* @property {Performative} perf - performative of the message
-* @property {AgentID} [sender] - AgentID of the sender of the message
-* @property {AgentID} [recipient] - AgentID of the recipient of the message
-* @property {string} [inReplyTo] - ID of the message to which this message is a response
-* @property {number} [sentAt] - timestamp when the message was sent
-*/
+ * Gets a registered message class by name. Message classes are registered under both their
+ * qualified and unqualified names, so either will resolve, but a qualified name never falls
+ * back to a class registered for the same unqualified name in a different package.
+ *
+ * @param {string} name - qualified or unqualified message class name
+ * @returns {Function|undefined} registered message class
+ */
+export function messageClassForName(name) {
+  return MESSAGE_REGISTRY[name];
+}
+
+/**
+ * Registers a message class for JSON serialization and inflation.
+ *
+ * @param {string} className - fully qualified message class name
+ * @param {Function} messageClass - Message subclass to register
+ * @returns {Function} registered message class
+ */
+export function registerMessageClass(className, messageClass) {
+  if (typeof className !== 'string' || className.trim() === '') {
+    throw new Error('Message class name must be a non-empty string');
+  }
+  if (!className.includes('.')) {
+    throw new Error(`Message class name '${className}' must be fully qualified`);
+  }
+  if (typeof messageClass !== 'function' ||
+      !(messageClass === Message || messageClass.prototype instanceof Message)) {
+    throw new Error('Message class must be a subclass of Message');
+  }
+  const shortName = className.split('.').pop();
+  if (!shortName) throw new Error('Message class name must not end with a dot');
+  for (const name of [className, shortName]) {
+    if (MESSAGE_REGISTRY[name] && MESSAGE_REGISTRY[name] !== messageClass) {
+      console.warn(`Overriding existing message class registered with name '${name}'`);
+    }
+    MESSAGE_REGISTRY[name] = messageClass;
+  }
+  messageClass.prototype.__clazz__ = className;
+  return messageClass;
+}
+
+/**
+ * @typedef {Object} MessageJSON
+ * @property {string} clazz - qualified or unqualified message class name
+ * @property {Object.<string, *>} data - message data
+ */
+
+/**
+ * Base class for messages transmitted by one agent to another.
+ *
+ * @property {string} msgID - unique message ID
+ * @property {Performative} perf - performative of the message
+ * @property {AgentID|null} sender - AgentID of the sender
+ * @property {AgentID|null} recipient - AgentID of the recipient
+ * @property {string|null} inReplyTo - ID of the message being replied to
+ * @property {number} [sentAt] - timestamp when the message was sent, set by the container on receipt
+ */
 export class Message {
+  /** @type {string} */
+  msgID;
+  /** @type {Performative} */
+  perf;
+  /** @type {AgentID|null} */
+  sender;
+  /** @type {AgentID|null} */
+  recipient;
+  /** @type {string|null} */
+  inReplyTo;
+  /** @type {number|undefined} */
+  sentAt;
 
   /**
-  * @param {Message} [inReplyToMsg] - message to which this message is a response
-  * @param {Performative} [perf=Performative.INFORM] - performative of the message
-  */
-  constructor(inReplyToMsg, perf=Performative.INFORM) {
-    this.__clazz__ = 'org.arl.fjage.Message';
+   * @param {Message} [inReplyToMsg] - message to reply to
+   * @param {Performative} [perf] - performative of the message
+   */
+  constructor(inReplyToMsg, perf) {
+    if (inReplyToMsg != null && !(inReplyToMsg instanceof Message)) {
+      throw new TypeError('Message fields cannot be passed to the constructor, set them after construction; the first argument must be the Message being replied to');
+    }
     this.msgID = UUID7.generate().toString();
-    this.perf = perf;
+    // messages named like Java requests default to a REQUEST performative
+    this.perf = perf ?? (this.__clazz__.endsWith('Req') ? Performative.REQUEST : Performative.INFORM);
     this.sender = null;
     this.recipient = inReplyToMsg ? inReplyToMsg.sender : null;
     this.inReplyTo = inReplyToMsg ? inReplyToMsg.msgID : null;
   }
 
   /**
-  * Gets a string representation of the message.
-  *
-  * @returns {string} - string representation
-  */
+   * Gets a string representation of the message.
+   *
+   * @returns {string} string representation
+   */
   toString() {
-    let p = this.perf ? this.perf.toString() : 'MESSAGE';
-    if (this.__clazz__ == 'org.arl.fjage.Message') return p;
-    return p + ': ' + this.__clazz__.replace(/^.*\./, '');
+    const p = this.perf ? this.perf.toString() : 'MESSAGE';
+    if (this.__clazz__ === 'org.arl.fjage.Message') return p;
+    return `${p}: ${this.__clazz__.replace(/^.*\./, '')}`;
   }
-
-  /** Convert a message into a object for JSON serialization.
-  *
-  * NOTE: we don't do any base64 encoding for TX as
-  *       we don't know what data type is intended
-  *
-  * @return {Object} - JSON string representation of the message
-  */
-  toJSON() {
-    let props = {};
-    for (let key in this) {
-      if (key.startsWith('_')) continue; // skip private properties
-      // @ts-ignore
-      props[key] = this[key];
-    }
-    return { 'clazz': this.__clazz__, 'data': props };
-  }
-
 
   /**
-  * Create a message from a object parsed from the JSON representation of the message.
-  *
-  * @param {Object} jsonObj - Object containing all the properties of the message
-  * @returns {Message} - A message created from the Object
-  *
-  */
+   * Convert a message into an object for JSON serialization.
+   *
+   * @returns {MessageJSON} JSON representation of the message
+   */
+  toJSON() {
+    const data = {};
+    for (const key of Object.keys(this)) {
+      if (!key.startsWith('_')) data[key] = this[key];
+    }
+    // Unregistered subclasses inherit their parent's __clazz__. Use their own name instead.
+    let clazz = this.__clazz__;
+    if (!Object.prototype.hasOwnProperty.call(this, '__clazz__') && messageClassForName(this.__clazz__) !== this.constructor) {
+      clazz = this.constructor.name;
+    }
+    return {clazz: clazz, data};
+  }
+
+  /**
+   * Create a message from a parsed JSON representation.
+   *
+   * @param {MessageJSON} jsonObj - parsed message JSON
+   * @returns {Message} message created from the JSON object
+   */
   static fromJSON(jsonObj) {
-    if (!( 'clazz' in jsonObj) || !( 'data' in jsonObj)) {
+    if (!jsonObj || typeof jsonObj !== 'object' || typeof jsonObj.clazz !== 'string' ||
+        !jsonObj.data || typeof jsonObj.data !== 'object') {
       throw new Error(`Invalid Object for Message : ${jsonObj}`);
     }
-    let qclazz = jsonObj.clazz;
-    let clazz = qclazz.replace(/^.*\./, '');
-    let rv = MessageClass[clazz] ? new MessageClass[clazz] : new Message();
-    rv.__clazz__ = qclazz;
-    // copy all properties from the data object
-    for (var key in jsonObj.data){
-      if (key === 'sender' || key === 'recipient') {
-        if (jsonObj.data[key] && typeof jsonObj.data[key] === 'string') {
-          rv[key] = AgentID.fromJSON(jsonObj.data[key]);
-        }
-      } else rv[key] = jsonObj.data[key];
-    }
-    return rv;
-  }
-}
+    const registeredClass = messageClassForName(jsonObj.clazz);
+    // @ts-ignore Registered classes are validated by registerMessageClass().
+    const message = registeredClass ? new registeredClass() : new Message();
+    if (!registeredClass) message.__clazz__ = jsonObj.clazz;
 
-/**
-* A message class that can convey generic messages represented by key-value pairs.
-* @class
-* @extends Message
-*/
-export class GenericMessage extends Message {
-  /**
-  * Creates an empty generic message.
-  */
-  constructor() {
-    super();
-    this.__clazz__ = 'org.arl.fjage.GenericMessage';
-  }
-}
-
-/**
-* Creates a unqualified message class based on a fully qualified name.
-* @param {string} name - fully qualified name of the message class to be created
-* @param {typeof Message} [parent] - class of the parent MessageClass to inherit from
-* @constructs Message
-* @example
-* const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
-* let pReq = new ParameterReq()
-*/
-export function MessageClass(name, parent=Message) {
-  let sname = name.replace(/^.*\./, '');
-  if (MessageClass[sname]) return MessageClass[sname];
-  let cls = class extends parent {
-    /**
-    * @param {{ [x: string]: any; }} params
-    */
-    constructor(params) {
-      super();
-      this.__clazz__ = name;
-      if (params){
-        const keys = Object.keys(params);
-        for (let k of keys) {
-          this[k] = params[k];
-        }
+    for (const key in jsonObj.data) {
+      if ((key === 'sender' || key === 'recipient') && typeof jsonObj.data[key] === 'string') {
+        message[key] = AgentID.fromJSON(jsonObj.data[key]);
+      } else {
+        message[key] = jsonObj.data[key];
       }
-      if (name.endsWith('Req')) this.perf = Performative.REQUEST;
+    }
+    return message;
+  }
+}
+
+/** Fully qualified class name, set on the prototype of each registered message class. */
+Message.prototype.__clazz__ = 'org.arl.fjage.Message';
+
+registerMessageClass('org.arl.fjage.Message', Message);
+
+/**
+ * @deprecated since version 3.0.0. Use `Gateway.registerMessage()` instead.
+ *
+ * Creates an unqualified message class based on a fully qualified name.
+ *
+ * @param {string} name - fully qualified message class name
+ * @param {Function} [parent] - parent Message class
+ * @returns {Function} message class
+ */
+export function MessageClass(name, parent=Message) {
+  if (!(parent === Message || parent.prototype instanceof Message)) {
+    throw new Error(`Parent class ${parent.name} is not a subclass of Message`);
+  }
+  const registeredClass = messageClassForName(name);
+  if (registeredClass) return registeredClass;
+  // @ts-ignore Parent is validated above.
+  const messageClass = class extends parent {
+    constructor(fields={}) {
+      super();
+      Object.assign(this, fields);
     }
   };
-  cls.__clazz__ = name;
-  MessageClass[sname] = cls;
-  return cls;
+  registerMessageClass(name, messageClass);
+  return messageClass;
 }
 
-/**
-* @typedef {Object} ParameterReq.Entry
-* @property {string} param - parameter name
-* @property {Object} value - parameter value
-* @exports ParameterReq.Entry
-*/
+/** A message class that can convey generic key-value messages. */
+export class GenericMessage extends Message {}
 
 /**
-* A message that requests one or more parameters of an agent.
-*
-* @example <caption>Setting a parameter myAgent.x to 42</caption>
-* let req = new ParameterReq({
-*  recipient: myAgentId,
-*  param: 'x',
-*  value: 42
-* });
-*
-* @example <caption>Getting the value of myAgent.x</caption>
-* let req = new ParameterReq({
-* recipient: myAgentId,
-* param: 'x'
-* });
-*
-* @typedef {Message} ParameterReq
-* @property {string} param - parameters name to be get/set if only a single parameter is to be get/set
-* @property {Object} value - parameters value to be set if only a single parameter is to be set
-* @property {Array<ParameterReq.Entry>} requests - a list of multiple parameters to be get/set
-* @property {number} [index=-1] - index of parameter(s) to be set*
-* @exports ParameterReq
-*/
-export const ParameterReq = MessageClass('org.arl.fjage.param.ParameterReq');
+ * @typedef {Object} ParameterReq.Entry
+ * @property {string} param - parameter name
+ * @property {*} [value] - parameter value
+ */
 
-/**
-* A message that is a response to a {@link ParameterReq} message.
-*
-* @example <caption>Receiving a parameter from myAgent</caption>
-* let rsp = gw.receive(ParameterRsp)
-* rsp.sender // = myAgentId; sender of the message
-* rsp.param  // = 'x'; parameter name that was get/set
-* rsp.value  // = 42;  value of the parameter that was set
-* rsp.readonly // = [false]; indicates if the parameter is read-only
-*
-*
-* @typedef {Message} ParameterRsp
-* @property {string} param - parameters name if only a single parameter value was requested
-* @property {Object} value - parameters value if only a single parameter was requested
-* @property {Map<string, Object>} values - a map of multiple parameter names and their values if multiple parameters were requested
-* @property {Array<boolean>} readonly - a list of booleans indicating if the parameters are read-only
-* @property {number} [index=-1] - index of parameter(s) being returned
-* @exports ParameterReq
-*/
-export const ParameterRsp = MessageClass('org.arl.fjage.param.ParameterRsp');
+/** A message that requests one or more parameters of an agent. */
+export class ParameterReq extends Message {
+  /** @type {string|null} */
+  param = null;
+  /** @type {*} */
+  value = null;
+  /** @type {Array<ParameterReq.Entry>} */
+  requests = [];
+  /** @type {number} */
+  index = -1;
+}
 
-/**
-* Request to write contents to a file, or delete a file.
-*
-* @typedef {Message} PutFileReq
-* @property {string} filename - name of the file to be written to or deleted
-* @property {number} [content] - content to be written to the file as a byte array. If not provided, the file will be deleted.
-* @property {number} [offset=0] - offset in the file to write the content to.
-* @exports PutFileReq
-*/
-export const PutFileReq = MessageClass('org.arl.fjage.shell.PutFileReq');
+/** A message that responds to a {@link ParameterReq}. */
+export class ParameterRsp extends Message {
+  /** @type {string|null} */
+  param = null;
+  /** @type {*} */
+  value = null;
+  /** @type {Object.<string, *>} */
+  values = {};
+  /** @type {Array<boolean>} */
+  readonly = [];
+  /** @type {number} */
+  index = -1;
+}
 
-/**
-* Request to delete a file, or a directory (if the file name ends with a path separator).
-*
-* @typedef {Message} DeleteFileReq
-* @property {string} filename - name of the file or directory to delete
-* @exports DeleteFileReq
-*/
-export const DeleteFileReq = MessageClass('org.arl.fjage.shell.DeleteFileReq');
+/** Request to write contents to a file, or delete a file. */
+export class PutFileReq extends Message {
+  /** @type {string|null} */
+  filename = null;
+  /** @type {Array<number>|null} */
+  contents = null;
+  /** @type {number} */
+  offset = 0;
+}
 
-/**
-* Request to read a file or a directory.
-*
-* If the filename specified represents a directory, then the contents of the
-* directory (list of files) are returned as a tab separated string with:
-*   filename, file size, last modification time.
-*
-* The time is represented as epoch time (milliseconds since 1 Jan 1970).
-*
-* @typedef {Message} GetFileReq
-* @property {string} filename - name of the file or directory to be read
-* @property {number} [offset=0] - offset in the file to read from (ignored for directories)
-* @property {number} [length=0] - number of bytes to read from the file (ignored for directories). If 0,
-* the entire file will be read.
-*  @exports GetFileReq
-*/
-export const GetFileReq = MessageClass('org.arl.fjage.shell.GetFileReq');
+/** Request to delete a file or directory. */
+export class DeleteFileReq extends Message {
+  /** @type {string|null} */
+  filename = null;
+}
 
-/**
-* Response to a {@link GetFileReq}, with the contents of the file or the directory.
-*
-* @typedef {Message} GetFileRsp
-* @property {string} filename - name of the file or directory that was read
-* @property {number} [content] - content of the file as a byte array. If the filename represents a directory,
-* the content consists of a list of files (one file per line). Each line starts with the filename
-* (with a trailing "/" if it is a directory), "\t", file size in bytes, "\t", and last modification date.
-* @property {number} [offset=0] - offset in the file that the content corresponds to (ignored for directories)
-* @property {boolean} [directory=false] - indicates if the filename represents a directory
-* @exports GetFileRsp
-*/
-export const GetFileRsp = MessageClass('org.arl.fjage.shell.GetFileRsp');
+/** Request to read a file or directory. */
+export class GetFileReq extends Message {
+  /** @type {string|null} */
+  filename = null;
+  /** @type {number} */
+  offset = 0;
+  /** @type {number} */
+  length = 0;
+}
 
-/**
-* Request to execute shell command/script.
-*
-* @typedef {Message} ShellExecReq
-* @property {string} command - shell command or script to be executed
-* @property {boolean} ans  - indicates if the response to this request should include the output of the command/script execution
-* @exports ShellExecReq
-*/
-export const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
+/** Response to a {@link GetFileReq}. */
+export class GetFileRsp extends Message {
+  /** @type {string|null} */
+  filename = null;
+  /** @type {Array<number>|null} */
+  contents = null;
+  /** @type {number} */
+  offset = 0;
+  /** @type {boolean} */
+  directory = false;
+}
+
+/** Request to execute a shell command or script. */
+export class ShellExecReq extends Message {
+  /** @type {string|null} */
+  command = null;
+  /** @type {boolean} */
+  ans = false;
+}
+
+registerMessageClass('org.arl.fjage.GenericMessage', GenericMessage);
+registerMessageClass('org.arl.fjage.param.ParameterReq', ParameterReq);
+registerMessageClass('org.arl.fjage.param.ParameterRsp', ParameterRsp);
+registerMessageClass('org.arl.fjage.shell.PutFileReq', PutFileReq);
+registerMessageClass('org.arl.fjage.shell.DeleteFileReq', DeleteFileReq);
+registerMessageClass('org.arl.fjage.shell.GetFileReq', GetFileReq);
+registerMessageClass('org.arl.fjage.shell.GetFileRsp', GetFileRsp);
+registerMessageClass('org.arl.fjage.shell.ShellExecReq', ShellExecReq);

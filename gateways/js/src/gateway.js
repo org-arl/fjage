@@ -2,7 +2,7 @@
 
 import { isBrowser, isNode, isJsDom, isWebWorker } from 'browser-or-node';
 import { AgentID } from './agentid.js';
-import { Message} from './message.js';
+import { Message, registerMessageClass } from './message.js';
 import { _guid, UUID7 } from './utils.js';
 
 import TCPConnector from './tcpconnector.js';
@@ -85,6 +85,18 @@ export function init(){
 * @param {boolean} [opts.cancelPendingOnDisconnect=false] - cancel pending requests on disconnects
 */
 export class Gateway {
+
+  /**
+  * Registers a message class for JSON serialization and inflation. The registry is shared by
+  * all gateways.
+  *
+  * @param {string} className - fully qualified message class name
+  * @param {Function} messageClass - Message subclass to register
+  * @returns {Function} registered message class
+  */
+  static registerMessage(className, messageClass) {
+    return registerMessageClass(className, messageClass);
+  }
 
   constructor(opts = {}) {
     // Similar to Object.assign but also overwrites `undefined` and empty strings with defaults
@@ -332,8 +344,6 @@ export class Gateway {
       return 'inReplyTo' in msg && msg.inReplyTo == filter;
     } else if (Object.prototype.hasOwnProperty.call(filter, 'msgID')) {
       return 'inReplyTo' in msg && msg.inReplyTo == filter.msgID;
-    } else if (filter.__proto__.name == 'Message' || filter.__proto__.__proto__.name == 'Message') {
-      return filter.__clazz__ == msg.__clazz__;
     } else if (typeof filter == 'function' && !this._isConstructor(filter)) {
       try {
         return filter(msg);
@@ -643,7 +653,7 @@ export class Gateway {
   * Returns a response message received by the gateway. This method returns a {Promise} which resolves when
   * a response is received or if no response is received after the timeout.
   *
-  * @param {function|Message|typeof Message} filter - original message to which a response is expected, or a MessageClass of the type
+  * @param {Function|Message} filter - original message to which a response is expected, or a message constructor for the type
   * of message to match, or a closure to use to match against the message
   * @param {number} [timeout=0] - timeout in milliseconds
   * @returns {Promise<Message|void>} - received response message, null on timeout

@@ -1,8 +1,7 @@
 <html>
     <head>
         <script type="module">
-            import { AgentID, Gateway, MessageClass } from './node_modules/fjage/dist/esm/fjage.js'
-            const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
+            import { AgentID, Gateway, ShellExecReq } from './node_modules/fjage/dist/esm/fjage.js'
             (async function () {
                 const shell = new AgentID('shell');
                 const gw = new Gateway({
@@ -12,7 +11,7 @@
                 });
                 const req = new ShellExecReq();
                 req.recipient = shell;
-                req.cmd = 'a=2; a+2;';
+                req.command = 'a=2; a+2;';
                 req.ans = true;
                 let rsp = await gw.request(req);
                 console.log(rsp);
