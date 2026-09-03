@@ -39,7 +39,7 @@ Here `WebServer.addStatic()` serves the static web resources bundled in the fjå
 
 ## Use the JavaScript module
 
-fjage.js is distributed as ready-to-use bundles for the common JavaScript module systems (ESM, CommonJS and UMD). In a web application built with a bundler, you simply `import { Gateway, ShellExecReq } from 'fjage'`; in a plain web page, you can either load the UMD bundle with `<script src="fjage.min.js"></script>`, or import the ESM bundle (`dist/esm/fjage.js`) directly from a `<script type="module">`. Examples for each module system are available in the [examples](https://github.com/org-arl/fjage/tree/master/gateways/js/examples) directory.
+fjage.js is distributed as ready-to-use bundles for the common JavaScript module systems (ESM, CommonJS and UMD). In a web application built with a bundler, you simply `import { Gateway } from 'fjage'`; in a plain web page, you can either load the UMD bundle with `<script src="fjage.min.js"></script>`, or import the ESM bundle (`dist/esm/fjage.js`) directly from a `<script type="module">`. Examples for each module system are available in the [examples](https://github.com/org-arl/fjage/tree/master/gateways/js/examples) directory.
 
 It is easiest to illustrate the use of the JavaScript API though a simple code example:
 
@@ -82,7 +82,7 @@ This code first opens a gateway through the web socket interface back to the web
 The same API works in Node.js, where the gateway connects to the master container's TCP port instead of a web socket:
 
 ``` javascript
-const { Gateway, ShellExecReq } = require('fjage');
+const { Gateway } = require('fjage');
 
 const gw = new Gateway({
     hostname: 'localhost',
