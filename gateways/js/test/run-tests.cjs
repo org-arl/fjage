@@ -45,7 +45,7 @@ if (serveBrowserTest) {
   if (runNodeTest) {
     console.log('Running jasmine..');
     let startTime = new Date();
-    await runJasmine('test/spec/', ['fjageSpec.cjs']);
+    await runJasmine('test/spec/', ['fjageSpec.cjs', 'minified-spec.cjs']);
     console.log('Node.js test Complete [' + (new Date() - startTime) + ' ms]');
   }
 

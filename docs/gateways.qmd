@@ -60,12 +60,14 @@ gw.close()
 ## JavaScript
 
 ```javascript
-import { Gateway, MessageClass } from 'fjage';
+import { Gateway, ShellExecReq } from 'fjage';
 
-const ShellExecReq = MessageClass('org.arl.fjage.shell.ShellExecReq');
 const gw = new Gateway({ hostname: 'localhost', port: 1100 });
 const shell = await gw.agentForService('org.arl.fjage.shell.Services.SHELL');
-const rsp = await gw.request(new ShellExecReq({ recipient: shell, command: 'ps' }));
+const req = new ShellExecReq();
+req.recipient = shell;
+req.command = 'ps';
+const rsp = await gw.request(req);
 console.log(rsp.perf);
 gw.close();
 ```

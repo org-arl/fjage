@@ -82,12 +82,14 @@ const ntf = new TemperatureNtf();
 ntf.temperature = 24.5;
 ```
 
-Every subclass you send needs its own registration. An unregistered subclass inherits its parent's `clazz`, and so goes on the wire as its parent:
+An unregistered subclass goes on the wire using its JavaScript class name and all of its public fields:
 
 ```js
 class TxFrameReq extends Message {}          // not registered
-new TxFrameReq().toJSON().clazz              // 'org.arl.fjage.Message'
+new TxFrameReq().toJSON().clazz              // 'TxFrameReq'
 ```
+
+Register message classes used to communicate with another gateway or a fjåge agent. Registration supplies a stable, fully qualified protocol name; an unregistered class name may change when an application bundle is minified.
 
 The `Message` constructor accepts an optional message to reply to and an optional performative. Set custom fields after construction or initialize them in the custom class constructor.
 

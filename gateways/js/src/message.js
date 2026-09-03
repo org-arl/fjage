@@ -113,9 +113,9 @@ export class Message {
     for (const key of Object.keys(this)) {
       if (!key.startsWith('_')) data[key] = this[key];
     }
-    // if not a registered class, set __clazz__ to the actual class name
+    // Unregistered subclasses inherit their parent's __clazz__. Use their own name instead.
     let clazz = this.__clazz__;
-    if (this.__clazz__ === 'org.arl.fjage.Message' && !messageClassForName(this.__clazz__)) {
+    if (!Object.prototype.hasOwnProperty.call(this, '__clazz__') && messageClassForName(this.__clazz__) !== this.constructor) {
       clazz = this.constructor.name;
     }
     return {clazz: clazz, data};
