@@ -10,10 +10,12 @@ for full license details.
 
 package org.arl.fjage.test
 
+import org.arl.fjage.Message
+
 /**
  * Internal class for unit testing.
  */
-class TestMessage extends org.arl.fjage.Message {
+class TestMessage extends Message {
   String mystring
   int myint
   long mylong

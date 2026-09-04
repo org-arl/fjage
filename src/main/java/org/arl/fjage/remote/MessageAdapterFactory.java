@@ -37,7 +37,7 @@ class MessageAdapterFactory implements TypeAdapterFactory {
   static {
     try {
       Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
-      classloader = (ClassLoader)cls.newInstance();
+      classloader = (ClassLoader)cls.getDeclaredConstructor().newInstance();
       Logger log = Logger.getLogger(MessageAdapterFactory.class.getName());
       log.info("Groovy detected, using GroovyClassLoader");
     } catch (Exception ex) {

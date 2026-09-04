@@ -18,8 +18,8 @@ import org.arl.fjage.param.*;
 
 public class Documentation {
 
-  protected List<String> doc = new ArrayList<String>();
-  protected Map<String,String> cache = new HashMap<String,String>();
+  protected List<String> doc = new ArrayList<>();
+  protected Map<String,String> cache = new HashMap<>();
   protected int staticSize = 0;
 
   protected static final Pattern heading = Pattern.compile("^#+ +([^ ]+) +-.*$");
@@ -47,7 +47,7 @@ public class Documentation {
    */
   public String get(Agent agent) {
     build(agent);
-    List<String> topics = new ArrayList<String>();
+    List<String> topics = new ArrayList<>();
     for (String s: doc)
       if (s.startsWith("# ")) topics.add(s.substring(2));
     topics.sort(null);
@@ -95,14 +95,14 @@ public class Documentation {
    */
   protected void search(StringBuilder sb, String keyword) {
     keyword = keyword.toLowerCase();
-    Set<String> topics = new HashSet<String>();
+    Set<String> topics = new HashSet<>();
     String topic = null;
     for (String s: doc) {
       Matcher m = section.matcher(s);
       if (m.matches()) topic = s.replaceAll(header, "- ");
       if (s.toLowerCase().contains(keyword)) topics.add(topic);
     }
-    if (topics.size() == 0) return;
+    if (topics.isEmpty()) return;
     sb.append("Possible topics:\n");
     for (String s: topics) {
       sb.append(s);

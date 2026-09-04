@@ -20,9 +20,9 @@ public class WakerBehavior extends Behavior {
 
   ///////////// Private attributes
 
-  private long timeout;
+  private final long timeout;
   private long wakeupTime;
-  private boolean quit;
+  private volatile boolean quit;
 
   ///////////// Public interface
 

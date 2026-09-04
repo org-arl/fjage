@@ -45,7 +45,7 @@ public class FSMBehavior extends Behavior {
   private final static State FINAL = new State("#FINAL#");
   private final static State REENTER = new State("#REENTER#");
 
-  private Map<Object,State> states = new HashMap<Object,State>();
+  private final Map<Object,State> states = new HashMap<>();
   private State initial = FINAL;
   private State state = INIT;
   private State next = INIT;
@@ -223,7 +223,7 @@ public class FSMBehavior extends Behavior {
 
     /////////// Private attributes
 
-    private Object name;
+    private final Object name;
     private Runnable runnable;
 
     /**

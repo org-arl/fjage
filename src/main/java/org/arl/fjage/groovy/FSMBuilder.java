@@ -130,9 +130,9 @@ public class FSMBuilder extends FSMBehavior {
   public static class FSMState extends FSMBehavior.State {
 
     public Closure<?> onEnterClosure, actionClosure, onExitClosure;
-    public Map<Object,Closure<?>> onEventClosures = new HashMap<Object,Closure<?>>();
-    public List<WakerBehavior> timers = new ArrayList<WakerBehavior>();
-    public List<WakerBehavior> tmpTimers = new ArrayList<WakerBehavior>();
+    public Map<Object,Closure<?>> onEventClosures = new HashMap<>();
+    public List<WakerBehavior> timers = new ArrayList<>();
+    public List<WakerBehavior> tmpTimers = new ArrayList<>();
 
     public FSMState(Object name) {
       super(name);

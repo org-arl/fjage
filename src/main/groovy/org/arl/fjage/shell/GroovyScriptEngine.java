@@ -212,7 +212,7 @@ public class GroovyScriptEngine implements ScriptEngine {
         binding.setVariable("script", script.getAbsoluteFile());
         binding.setVariable("args", null);
         groovy.getClassLoader().clearCache();
-        groovy.run(script, args!=null?args:new ArrayList<String>());
+        groovy.run(script, args!=null?args:new ArrayList<>());
       } catch (Throwable ex) {
         error(ex);
       } finally {
@@ -298,7 +298,7 @@ public class GroovyScriptEngine implements ScriptEngine {
           binding.setVariable("script", name);
           binding.setVariable("args", null);
           groovy.getClassLoader().clearCache();
-          groovy.run(reader, name, args!=null?args:new ArrayList<String>());
+          groovy.run(reader, name, args!=null?args:new ArrayList<>());
         } catch (Throwable ex) {
           error(ex);
         } finally {

@@ -26,7 +26,7 @@ public class BlockingByteQueue {
   protected boolean closed;
 
   public BlockingByteQueue() {
-    queue = new LinkedBlockingQueue<byte[]>();
+    queue = new LinkedBlockingQueue<>();
     wbuf = new byte[BLOCK_SIZE];
     wlen = 0;
     bytes = 0;
@@ -88,8 +88,6 @@ public class BlockingByteQueue {
    */
   public synchronized boolean write(byte[] buf) {
     if (closed) return false;
-    //for (int i = 0; i < buf.length; i++)
-    //  write(buf[i]);
     bytes += buf.length;
     if (wlen == 0 && buf.length > BLOCK_SIZE) {
       queue.add(buf);

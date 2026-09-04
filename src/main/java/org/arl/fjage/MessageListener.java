@@ -10,13 +10,12 @@ for full license details.
 
 package org.arl.fjage;
 
-import org.arl.fjage.Message;
-
 /**
  * An interface for a client interested in monitoring messages.
  *
  * @author  Mandar Chitre
  */
+@FunctionalInterface
 public interface MessageListener {
 
   /**
@@ -28,6 +27,6 @@ public interface MessageListener {
    * @param msg received message.
    * @return true if the message is consumed, false otherwise.
    */
-  public boolean onReceive(Message msg);
+  boolean onReceive(Message msg);
 
 }
