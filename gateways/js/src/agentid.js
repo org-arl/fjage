@@ -26,7 +26,7 @@ export class AgentID {
 
   /**
    * Gateway owner for this AgentID
-   * @type {Gateway}
+   * @type {Gateway|undefined}
    */
   owner;
 
@@ -153,6 +153,7 @@ export class AgentID {
   */
   async set (params, values, index=-1, timeout=this._timeout) {
     if (!params) return null;
+    if (!this.owner) throw new Error('Unowned AgentID cannot set parameters');
     let msg = new ParameterReq();
     msg.recipient = this;
 
@@ -231,6 +232,7 @@ export class AgentID {
   * @returns {Promise<unknown | unknown[]>} - a promise which returns the value(s) of the parameters
   */
   async get(params, index=-1, timeout=this._timeout) {
+    if (!this.owner) throw new Error('Unowned AgentID cannot get parameters');
     let msg = new ParameterReq();
     msg.recipient = this;
     if (params){
