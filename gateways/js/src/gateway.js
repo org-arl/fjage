@@ -658,14 +658,36 @@ export class Gateway {
   }
 
   /**
-  * Returns a response message received by the gateway. This method returns a {Promise} which resolves when
-  * a response is received or if no response is received after the timeout.
-  *
-  * @param {Function|Message} filter - original message to which a response is expected, or a message constructor for the type
-  * of message to match, or a closure to use to match against the message
-  * @param {number} [timeout=0] - timeout in milliseconds
-  * @returns {Promise<Message|void>} - received response message, null on timeout
-  */
+   * @template {typeof Message} T
+   * @overload
+   * @param {T} filter - message constructor to match
+   * @param {number} [timeout=0] - timeout in milliseconds
+   * @returns {Promise<InstanceType<T>|undefined>} matching message, or undefined on timeout
+   */
+
+  /**
+   * @template {Message} M
+   * @overload
+   * @param {(msg: Message) => msg is M} filter - type-guard predicate used to match messages
+   * @param {number} [timeout=0] - timeout in milliseconds
+   * @returns {Promise<M|undefined>} matching message, or undefined on timeout
+   */
+
+  /**
+   * @overload
+   * @param {Message|string|((msg: Message) => boolean)} filter - original message, message ID, or predicate to match
+   * @param {number} [timeout=0] - timeout in milliseconds
+   * @returns {Promise<Message|undefined>} matching message, or undefined on timeout
+   */
+
+  /**
+   * Returns a response message received by the gateway. This method returns a promise which resolves when
+   * a response is received or when the timeout expires.
+   *
+   * @param {typeof Message|Message|string|((msg: Message) => boolean)} filter
+   * @param {number} [timeout=0]
+   * @returns {Promise<Message|undefined>}
+   */
   async receive(filter, timeout=0) {
     return new Promise(resolve => {
       let msg = this._getMessageFromQueue.call(this,filter);
@@ -675,7 +697,7 @@ export class Gateway {
       }
       if (timeout == 0) {
         if (this.debug) console.log('Receive Timeout : ' + filter);
-        resolve();
+        resolve(undefined);
         return;
       }
       let lid = UUID7.generate().toString();
@@ -684,7 +706,7 @@ export class Gateway {
         timer = setTimeout(() => {
           this._pending_receives[lid] && delete this._pending_receives[lid];
           if (this.debug) console.log('Receive Timeout : ' + filter);
-          resolve();
+          resolve(undefined);
         }, timeout);
       }
       // listener for each pending receive
