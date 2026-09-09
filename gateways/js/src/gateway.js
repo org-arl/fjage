@@ -1,5 +1,3 @@
-/* global global */
-
 import { isBrowser, isNode, isJsDom, isWebWorker } from 'browser-or-node';
 import { AgentID } from './agentid.js';
 import { Message, registerMessageClass } from './message.js';
@@ -22,31 +20,24 @@ const GATEWAY_DEFAULTS = {
 };
 
 let DEFAULT_URL;
-let gObj = {};
 
 /**
 *
 * @private
 *
 * Initializes the Gateway module. This function should be called before using the Gateway class.
-* It sets up the default values for the Gateway and initializes the global object.
-* It also sets up the default URL for the Gateway based on the environment (browser, Node.js, etc.).
+* It sets up the default values for the Gateway based on the environment (browser, Node.js, etc.).
 * @returns {void}
 */
 export function init(){
   if (isBrowser || isWebWorker){
-    gObj = window;
     Object.assign(GATEWAY_DEFAULTS, {
-      'hostname': gObj.location.hostname,
-      'port': gObj.location.port,
+      'hostname': window.location.hostname,
+      'port': window.location.port,
       'pathname' : '/ws/'
     });
     DEFAULT_URL = new URL('ws://localhost');
-    // Enable caching of Gateways in browser
-    if (typeof gObj.fjage === 'undefined') gObj.fjage = {};
-    if (typeof gObj.fjage.gateways == 'undefined') gObj.fjage.gateways = [];
   } else if (isJsDom || isNode){
-    gObj = global;
     Object.assign(GATEWAY_DEFAULTS, {
       'hostname': 'localhost',
       'port': '1100',
@@ -66,6 +57,10 @@ export function init(){
 *
 * @example <caption>Connects to the origin</caption>
 * const gw = new Gateway();
+*
+* Every construction opens a new connection to the master container, even if one already
+* exists to the same master. Applications that want a shared connection should construct
+* one gateway and reuse it, rather than constructing a second one.
 *
 * @class
 * @property {AgentID} aid - agent id of the gateway
@@ -107,8 +102,6 @@ export class Gateway {
     url.hostname = opts.hostname;
     url.port = opts.port;
     url.pathname = opts.pathname;
-    let existing = this._getGWCache(url);
-    if (existing) return existing;
     this._timeout = opts.timeout;         // timeout for request() and receive()
     this._directoryTimeout = opts.directoryTimeout; // timeout for directory queries
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
@@ -124,7 +117,6 @@ export class Gateway {
     this.debug = false;                   // debug info to be logged to console?
     this.aid = new AgentID('gateway-'+_guid(4));         // gateway agent name
     this.connector = this._createConnector(url);
-    this._addGWCache(this);
   }
 
   /**
@@ -367,40 +359,6 @@ export class Gateway {
     let matchedMsg = this._queue.find( msg => this._matchMessage(filter, msg));
     if (matchedMsg) this._queue.splice(this._queue.indexOf(matchedMsg), 1);
     return matchedMsg;
-  }
-
-  /**
-  * Gets a cached gateway object for the given URL (if it exists).
-  * @private
-  * @param {URL} url - URL object of the master container to connect to
-  * @returns {Gateway|void} - gateway object for the given URL
-  */
-  _getGWCache(url){
-    if (!gObj.fjage || !gObj.fjage.gateways) return null;
-    var f = gObj.fjage.gateways.filter(g => g.connector.url.toString() == url.toString());
-    if (f.length ) return f[0];
-    return null;
-  }
-
-  /**
-  * Adds a gateway object to the cache if it doesn't already exist.
-  * @private
-  * @param {Gateway} gw - gateway object to be added to the cache
-  */
-  _addGWCache(gw){
-    if (!gObj.fjage || !gObj.fjage.gateways) return;
-    gObj.fjage.gateways.push(gw);
-  }
-
-  /**
-  * Removes a gateway object from the cache if it exists.
-  * @private
-  * @param {Gateway} gw - gateway object to be removed from the cache
-  */
-  _removeGWCache(gw){
-    if (!gObj.fjage || !gObj.fjage.gateways) return;
-    var index = gObj.fjage.gateways.indexOf(gw);
-    if (index != null) gObj.fjage.gateways.splice(index,1);
   }
 
   /** @private */
@@ -702,7 +660,6 @@ export class Gateway {
       this.connector.write('{"alive": false}');
       this.connector.close();
     }
-    this._removeGWCache(this);
   }
 
 }

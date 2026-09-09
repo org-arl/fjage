@@ -11,6 +11,7 @@
 * Bugfix: WebSocket writes are now bounded and non-blocking, so a slow client can no longer stall the container
 * Bugfix: Correct handling of closed state in `BlockingByteQueue`, `PseudoInputStream` and `PseudoOutputStream`
 * Chore: Migrate the developer's guide from Sphinx/ReadTheDocs to Quarto
+* Browser gateways are no longer cached: each `new Gateway()` creates a new connection with its own options, matching Node.js behavior
 * Classify gateway connections (single `gateway-` prefixed agent) as lightweight: not asked directory queries.
 
 ### 2.5.0

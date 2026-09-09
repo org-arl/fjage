@@ -1,4 +1,4 @@
-/* global global isBrowser isJsDom isNode Performative, AgentID, Message, MessageClass, Gateway, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, DeleteFileReq, ShellExecReq*/
+/* global isBrowser isJsDom isNode Performative, AgentID, Message, MessageClass, Gateway, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, DeleteFileReq, ShellExecReq*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -41,10 +41,8 @@ const ValidFjageActions = ['agents', 'containsAgent', 'services', 'agentForServi
 const ValidFjagePerformatives = ['REQUEST', 'AGREE', 'REFUSE', 'FAILURE', 'INFORM', 'CONFIRM', 'DISCONFIRM', 'QUERY_IF', 'NOT_UNDERSTOOD', 'CFP', 'PROPOSE', 'CANCEL', ];
 
 var gwOpts;
-var gObj = {};
 var testType;
 if (isBrowser){
-  gObj = window;
   gwOpts = {
     hostname: 'localhost',
     port : '8080',
@@ -52,7 +50,6 @@ if (isBrowser){
   };
   testType = 'browser';
 } else if (isJsDom || isNode){
-  gObj = global;
   gwOpts = {
     hostname: 'localhost',
     port : '5081',
@@ -144,12 +141,15 @@ describe('A Gateway', function () {
     gw.close();
   });
 
-  it('should cache Gateways to the same url+port in browser', async function () {
-    if (!isBrowser) return;
+  it('should create independent gateways for the same url+port', async function () {
     const gw = new Gateway(gwOpts);
-    const gw2 = new Gateway(gwOpts);
-    expect(gw).toBe(gw2);
+    const gw2 = new Gateway(Object.assign({}, gwOpts, { timeout: 2500 }));
+    expect(gw2).not.toBe(gw);
+    expect(gw2.connector).not.toBe(gw.connector);
+    expect(gw._timeout).toBe(1000);
+    expect(gw2._timeout).toBe(2500);
     gw.close();
+    gw2.close();
   });
 
   it('should use split default timeouts for requests and directory queries', async function () {
@@ -160,13 +160,6 @@ describe('A Gateway', function () {
     gw.close();
   });
 
-  it('should register itself with the global fjage object', async function () {
-    if (!isBrowser) return;
-    var gw = new Gateway(gwOpts);
-    expect(gObj.fjage.gateways).toContain(gw);
-    gw.close();
-  });
-
   it('should close the socket when close is called on it', async function () {
     const gw = new Gateway(gwOpts);
     await delay(700);
@@ -174,15 +167,6 @@ describe('A Gateway', function () {
     gw.close();
     await delay(300);
     expect([gw.connector.sock.CLOSED, 'closed']).toContain(gw.connector.sock.readyState);
-  });
-
-  it('should remove itself from global array when closed', async function () {
-    if (!isBrowser) return;
-    const gw = new Gateway(gwOpts);
-    await delay(300);
-    gw.close();
-    await delay(300);
-    expect(gObj.fjage.gateways.find(el => el == gw)).toBeUndefined();
   });
 
   it('should match a registered message class used as a receive filter', function () {
