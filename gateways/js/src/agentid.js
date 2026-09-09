@@ -208,10 +208,18 @@ export class AgentID {
 
   /**
    * @overload
-   * @param {string[] | null} param - names of the parameters to get, or null to get the value of all parameters on the Agent
+   * @param {string[]} params - names of the parameters to get
    * @param {number} [index=-1] - index of parameters to get
    * @param {number} [timeout=owner.timeout] - timeout for the response
    * @returns {Promise<unknown[]>} - a promise which returns the values of the parameters
+   */
+
+  /**
+   * @overload
+   * @param {null} [params] - null or omitted to get all parameters on the Agent
+   * @param {number} [index=-1] - index of parameters to get
+   * @param {number} [timeout=owner.timeout] - timeout for the response
+   * @returns {Promise<Record<string, unknown>>} - a promise which returns a map of parameter names to values
    */
 
   /**
