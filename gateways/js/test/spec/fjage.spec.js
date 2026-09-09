@@ -330,7 +330,7 @@ describe('A Gateway', function () {
   });
 
   it('should cancel requests when disconnected', async function() {
-    const gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnFailedResponse: false, cancelPendingOnDisconnect: true}));
+    const gw = new Gateway(Object.assign({}, gwOpts, {cancelPendingOnDisconnect: true}));
     const shell = gw.agent('shell');
     expectAsync(shell.get('language')).toBeRejectedWithError();
     if (isBrowser) gw.connector.sock.close();
@@ -396,6 +396,15 @@ describe('A Gateway', function () {
     gw.close();
   });
 
+  it('should reject failed directory lookups', async function() {
+    const gw = new Gateway(gwOpts);
+    spyOn(gw, '_msgTxRx').and.resolveTo(null);
+    await expectAsync(gw.containsAgent('S')).toBeRejectedWithError('Unable to check if agent exists');
+    await expectAsync(gw.agentForService('server')).toBeRejectedWithError('Unable to get agent for service');
+    await expectAsync(gw.agentsForService('server')).toBeRejectedWithError('Unable to get agents for service');
+    gw.close();
+  });
+
 });
 
 describe('An AgentID', function () {
@@ -431,10 +440,10 @@ describe('An AgentID', function () {
     expect(val).toEqual(2);
   });
 
-  it('should return null if asked to get the value of unknown parameter', async function () {
+  it('should reject if asked to get the value of unknown parameter', async function () {
+    spyOn(gw, 'request').and.resolveTo(null);
     const aid = new AgentID('S', false, gw);
-    let val = await aid.get('k');
-    expect(val).toEqual(null);
+    await expectAsync(aid.get('k')).toBeRejectedWithError('Unable to get S.k');
   });
 
   it('should set the value of a single parameter and return the new value', async function () {
@@ -445,10 +454,10 @@ describe('An AgentID', function () {
     expect(val).toEqual(0);
   });
 
-  it('should return null if asked to set the value of unknown parameter',  async function () {
+  it('should reject if asked to set the value of unknown parameter',  async function () {
+    spyOn(gw, 'request').and.resolveTo(null);
     const aid = new AgentID('S', false, gw);
-    let val = await aid.set('k', 42);
-    expect(val).toEqual(null);
+    await expectAsync(aid.set('k', 42)).toBeRejectedWithError('Unable to set S.k to 42');
   });
 
   it('should get the values of an array of parameters', async function () {
@@ -484,10 +493,10 @@ describe('An AgentID', function () {
     expect(val).toEqual(4);
   });
 
-  it('should return null if asked to get the value of unknown indexed parameter', async function () {
+  it('should reject if asked to get the value of unknown indexed parameter', async function () {
+    spyOn(gw, 'request').and.resolveTo(null);
     const aid = new AgentID('S', false, gw);
-    let val = await aid.get('k', 1);
-    expect(val).toEqual(null);
+    await expectAsync(aid.get('k', 1)).toBeRejectedWithError('Unable to get S.k');
   });
 
   it('should set the value of a single indexed parameter and return the new value',  async function () {
@@ -498,10 +507,10 @@ describe('An AgentID', function () {
     expect(val).toEqual(4);
   });
 
-  it('should return null if asked to set the value of unknown indexed parameter', async function () {
+  it('should reject if asked to set the value of unknown indexed parameter', async function () {
+    spyOn(gw, 'request').and.resolveTo(null);
     const aid = new AgentID('S', false, gw);
-    let val = await aid.get('k', 1);
-    expect(val).toEqual(null);
+    await expectAsync(aid.set('k', 42, 1)).toBeRejectedWithError('Unable to set S.k to 42');
   });
 
   it('should get the values of an array of indexed parameters',  async function () {
@@ -544,39 +553,6 @@ describe('An AgentID', function () {
     aid = new AgentID('T', false, gw);
     val = await gw.containsAgent(aid);
     expect(val).toEqual(false);
-  });
-
-});
-
-describe('An AgentID setup to reject promises', function () {
-  var gw;
-
-  beforeAll(() => {
-    gw = new Gateway(Object.assign({}, gwOpts, {returnNullOnFailedResponse: false}));
-  });
-
-  afterAll(async () => {
-    gw.close();
-  });
-
-  it('should reject the promise if asked to get the value of unknown parameter', async function () {
-    const aid = new AgentID('S', false, gw);
-    return expectAsync(aid.get('k')).toBeRejected();
-  });
-
-  it('should reject the promise if asked to set the value of unknown parameter',  async function () {
-    const aid = new AgentID('S', false, gw);
-    return expectAsync(aid.set('k', 42)).toBeRejected();
-  });
-
-  it('should reject the promise if asked to get the value of unknown indexed parameter', async function () {
-    const aid = new AgentID('S', false, gw);
-    return expectAsync(aid.get('k', 1)).toBeRejected();
-  });
-
-  it('should reject the promise if asked to set the value of unknown indexed parameter', async function () {
-    const aid = new AgentID('S', false, gw);
-    await expectAsync(aid.set('k', 42, 1)).toBeRejected();
   });
 
 });

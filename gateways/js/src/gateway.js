@@ -15,8 +15,7 @@ const GATEWAY_DEFAULTS = {
   'timeout': DEFAULT_REQUEST_TIMEOUT,
   'directoryTimeout': DEFAULT_DIRECTORY_TIMEOUT,
   'keepAlive' : true,
-  'queueSize': DEFAULT_QUEUE_SIZE,
-  'returnNullOnFailedResponse': true
+  'queueSize': DEFAULT_QUEUE_SIZE
 };
 
 let DEFAULT_URL;
@@ -76,7 +75,6 @@ export function init(){
 * @param {number} [opts.queueSize=128]      - size of the _queue of received messages that haven't been consumed yet
 * @param {number} [opts.timeout=1000]        - default timeout for request() in ms
 * @param {number} [opts.directoryTimeout=6000] - default timeout for directory queries in ms
-* @param {boolean} [opts.returnNullOnFailedResponse=true] - return null instead of throwing an error when a parameter is not found
 * @param {boolean} [opts.cancelPendingOnDisconnect=false] - cancel pending requests on disconnects
 */
 export class Gateway {
@@ -106,7 +104,6 @@ export class Gateway {
     this._directoryTimeout = opts.directoryTimeout; // timeout for directory queries
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
     this._queueSize = opts.queueSize;     // size of _queue
-    this._returnNullOnFailedResponse = opts.returnNullOnFailedResponse; // null or error
     this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect; // cancel pending requests on disconnect
     this._pending_actions = {};            // msgid to callback mapping for pending actions
     this._subscriptions = {};              // map for all topics that are subscribed
@@ -529,10 +526,7 @@ export class Gateway {
   async containsAgent(agentID, timeout=this._directoryTimeout) {
     let jsonMsg = JSONMessage.createContainsAgent(agentID instanceof AgentID ? agentID : new AgentID(agentID));
     let rsp = await this._msgTxRx(jsonMsg, timeout);
-    if (!rsp) {
-      if (this._returnNullOnFailedResponse) return null;
-      else throw new Error('Unable to check if agent exists');
-    }
+    if (!rsp) throw new Error('Unable to check if agent exists');
     return !!rsp.answer;
   }
 
@@ -547,10 +541,7 @@ export class Gateway {
   async agentForService(service, timeout=this._directoryTimeout) {
     let jsonMsg = JSONMessage.createAgentForService(service);
     let rsp = await this._msgTxRx(jsonMsg, timeout);
-    if (!rsp) {
-      if (this._returnNullOnFailedResponse) return null;
-      else throw new Error('Unable to get agent for service');
-    }
+    if (!rsp) throw new Error('Unable to get agent for service');
     return rsp.agentID;
   }
 
@@ -564,10 +555,7 @@ export class Gateway {
   async agentsForService(service, timeout=this._directoryTimeout) {
     let jsonMsg = JSONMessage.createAgentsForService(service);
     let rsp = await this._msgTxRx(jsonMsg, timeout);
-    if (!rsp) {
-      if (this._returnNullOnFailedResponse) return null;
-      else throw new Error('Unable to get agents for service');
-    }
+    if (!rsp) throw new Error('Unable to get agents for service');
     return rsp.agentIDs || [];
   }
 
