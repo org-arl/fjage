@@ -138,11 +138,7 @@ export class AgentID {
     }
     msg.index = Number.isInteger(index) ? index : -1;
     const rsp = await this.owner.request(msg, timeout);
-    var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
-    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) {
-      if (this.owner._returnNullOnFailedResponse) return ret;
-      else throw new Error(`Unable to set ${this.name}.${params} to ${values}`);
-    }
+    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) throw new Error(`Unable to set ${this.name}.${params} to ${values}`);
     if (Array.isArray(params)) {
       if (!rsp.values) rsp.values = {};
       if (rsp.param) rsp.values[rsp.param] = rsp.value;
@@ -183,11 +179,7 @@ export class AgentID {
     }
     msg.index = Number.isInteger(index) ? index : -1;
     const rsp = await this.owner.request(msg, timeout);
-    var ret = Array.isArray(params) ? new Array(params.length).fill(null) : null;
-    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) {
-      if (this.owner._returnNullOnFailedResponse) return ret;
-      else throw new Error(`Unable to get ${this.name}.${params}`);
-    }
+    if (!rsp || rsp.perf != Performative.INFORM || !rsp.param) throw new Error(`Unable to get ${this.name}.${params}`);
     // Request for listing of all parameters.
     if (!params) {
       if (!rsp.values) rsp.values = {};
