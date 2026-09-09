@@ -51,7 +51,7 @@ export function registerMessageClass(className, messageClass) {
 /**
  * @typedef {Object} MessageJSON
  * @property {string} clazz - qualified or unqualified message class name
- * @property {Object.<string, *>} data - message data
+ * @property {Record<string, unknown>} data - message data
  */
 
 /**
@@ -111,6 +111,7 @@ export class Message {
    * @returns {MessageJSON} JSON representation of the message
    */
   toJSON() {
+    /** @type {Record<string, unknown>} */
     const data = {};
     for (const key of Object.keys(this)) {
       if (!key.startsWith('_')) data[key] = this[key];
@@ -187,14 +188,14 @@ export class GenericMessage extends Message {}
 /**
  * @typedef {Object} ParameterReq.Entry
  * @property {string} param - parameter name
- * @property {*} [value] - parameter value
+ * @property {unknown} [value] - parameter value
  */
 
 /** A message that requests one or more parameters of an agent. */
 export class ParameterReq extends Message {
   /** @type {string|null} */
   param = null;
-  /** @type {*} */
+  /** @type {unknown} */
   value = null;
   /** @type {Array<ParameterReq.Entry>} */
   requests = [];
@@ -206,9 +207,9 @@ export class ParameterReq extends Message {
 export class ParameterRsp extends Message {
   /** @type {string|null} */
   param = null;
-  /** @type {*} */
+  /** @type {unknown} */
   value = null;
-  /** @type {Object.<string, *>} */
+  /** @type {Record<string, unknown>} */
   values = {};
   /** @type {Array<boolean>} */
   readonly = [];
