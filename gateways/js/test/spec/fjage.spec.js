@@ -314,7 +314,7 @@ describe('A Gateway', function () {
     // Since the 'tick' property is not yet enabled, we should not receive any messages
     expect(pubCount).toBe(0);
     // Enable publishing
-    pub.set('tick', true);
+    await pub.set('tick', true);
     await delay(600);
     // Since we're not subscribing to any topics, we should not receive any messages
     expect(pubCount).toBe(0);
@@ -325,7 +325,7 @@ describe('A Gateway', function () {
     expect(pubCount).toBeGreaterThan(0);
     // Unsubscribe from the topic
     gw.unsubscribe(gw.topic('test-topic'));
-    pub.set('tick', false);
+    await pub.set('tick', false);
     gw.close();
   });
 
