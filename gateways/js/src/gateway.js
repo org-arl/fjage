@@ -59,9 +59,20 @@ export function init(){
  */
 
 /**
- * @callback EventListener
- * @param {unknown} value
- * @returns {void}
+ * Maps Gateway event names to the values supplied to their listeners.
+ * @typedef {Object} GatewayEventMap
+ * @property {string} rx - raw JSON received from the master container
+ * @property {JSONMessage} rxp - parsed JSON message received from the master container
+ * @property {Message} rxmsg - message received from the master container
+ * @property {Message} message - message addressed to this Gateway
+ * @property {string} tx - raw JSON sent to the master container
+ * @property {Message} txmsg - message sent by this Gateway
+ * @property {boolean} conn - connection state
+ */
+
+/**
+ * Maps Gateway event names to their listener types.
+ * @typedef {{[K in keyof GatewayEventMap]?: Array<(value: GatewayEventMap[K]) => void>}} GatewayListenerMap
  */
 
 /**
@@ -130,7 +141,7 @@ export class Gateway {
   /** @type {Record<string, (msg: Message) => boolean>} */
   _pending_receives;
 
-  /** @type {Record<string, EventListener[]>} */
+  /** @type {GatewayListenerMap} */
   _eventListeners;
 
   /** @type {Message[]} */
@@ -181,8 +192,9 @@ export class Gateway {
   /**
   * Sends an event to all registered listeners of the given type.
   * @private
-  * @param {string} type - type of event
-  * @param {Object|Message|string} val - value to be sent to the listeners
+  * @template {keyof GatewayEventMap} K
+  * @param {K} type - type of event
+  * @param {GatewayEventMap[K]} val - value to be sent to the listeners
   */
   _sendEvent(type, val) {
     if (!Array.isArray(this._eventListeners[type])) return;
@@ -431,8 +443,9 @@ export class Gateway {
   /**
   * Add an event listener to listen to various events happening on this Gateway
   *
-  * @param {string} type - type of event to be listened to
-  * @param {EventListener} listener - new callback/function to be called when the event happens
+  * @template {keyof GatewayEventMap} K
+  * @param {K} type - type of event to be listened to
+  * @param {(value: GatewayEventMap[K]) => void} listener - new callback/function to be called when the event happens
   * @returns {void}
   */
   addEventListener(type, listener) {
@@ -445,8 +458,9 @@ export class Gateway {
   /**
   * Remove an event listener.
   *
-  * @param {string} type - type of event the listener was for
-  * @param {EventListener} listener - callback/function which was to be called when the event happens
+  * @template {keyof GatewayEventMap} K
+  * @param {K} type - type of event the listener was for
+  * @param {(value: GatewayEventMap[K]) => void} listener - callback/function which was to be called when the event happens
   * @returns {void}
   */
   removeEventListener(type, listener) {
@@ -458,7 +472,7 @@ export class Gateway {
   /**
   * Add a new listener to listen to all {Message}s sent to this Gateway
   *
-  * @param {EventListener} listener - new callback/function to be called when a {Message} is received
+  * @param {(message: Message) => void} listener - new callback/function to be called when a {Message} is received
   * @returns {void}
   */
   addMessageListener(listener) {
@@ -468,7 +482,7 @@ export class Gateway {
   /**
   * Remove a message listener.
   *
-  * @param {EventListener} listener - removes a previously registered listener/callback
+  * @param {(message: Message) => void} listener - removes a previously registered listener/callback
   * @returns {void}
   */
   removeMessageListener(listener) {
@@ -478,7 +492,7 @@ export class Gateway {
   /**
   * Add a new listener to get notified when the connection to master is created and terminated.
   *
-  * @param {EventListener} listener - new callback/function to be called connection to master is created and terminated
+  * @param {(connected: boolean) => void} listener - new callback/function to be called connection to master is created and terminated
   * @returns {void}
   */
   addConnListener(listener) {
@@ -488,7 +502,7 @@ export class Gateway {
   /**
   * Remove a connection listener.
   *
-  * @param {EventListener} listener - removes a previously registered listener/callback
+  * @param {(connected: boolean) => void} listener - removes a previously registered listener/callback
   * @returns {void}
   */
   removeConnListener(listener) {
