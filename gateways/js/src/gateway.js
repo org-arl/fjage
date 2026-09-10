@@ -213,7 +213,7 @@ export class Gateway {
   * Sends the message to all registered receivers.
   *
   * @private
-  * @param {Message} msg
+  * @param {Message} [msg]
   * @returns {boolean} - true if the message was consumed by any listener
   */
   _sendReceivers(msg) {
@@ -370,7 +370,7 @@ export class Gateway {
         this._update_watch();
       } else{
         if (this._cancelPendingOnDisconnect) {
-          this._sendReceivers(null);
+          this._sendReceivers(undefined);
           this.flush();
         }
       }
