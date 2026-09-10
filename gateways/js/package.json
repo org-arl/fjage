@@ -3,14 +3,16 @@
   "version": "2.4.0",
   "description": "JS Gateway for fjåge",
   "main": "./dist/cjs/fjage.cjs",
-  "types": "./dist/esm/fjage.d.ts",
+  "types": "./fjage.d.ts",
   "exports": {
+    "types": "./fjage.d.ts",
     "import": "./dist/esm/fjage.js",
     "require": "./dist/cjs/fjage.cjs"
   },
   "type": "module",
   "files": [
-    "dist/**"
+    "dist/**",
+    "fjage.d.ts"
   ],
   "scripts": {
     "build": "npx eslint src/*.js && tsc && rollup --silent -c rollup.config.js",
