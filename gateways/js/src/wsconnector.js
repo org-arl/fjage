@@ -15,7 +15,7 @@ class WSConnector {
    * Whether to try to reconnect if the connection is lost
    * @type {boolean}
    */
-  keepAlive;
+  _keepAlive;
 
   /**
    * Time in milliseconds before a reconnection is attempted after an error
