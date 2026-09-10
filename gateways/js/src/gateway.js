@@ -177,7 +177,7 @@ export class Gateway {
     this._directoryTimeout = opts.directoryTimeout; // timeout for directory queries
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
     this._queueSize = opts.queueSize;     // size of _queue
-    this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect; // cancel pending requests on disconnect
+    this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect ?? false; // cancel pending requests on disconnect
     this._pending_actions = {};            // msgid to callback mapping for pending actions
     this._subscriptions = {};              // map for all topics that are subscribed
     this._pending_receives = {};           // uuid to callbacks mapping for pending receives
