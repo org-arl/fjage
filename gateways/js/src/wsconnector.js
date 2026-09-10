@@ -42,7 +42,7 @@ class WSConnector {
   _firstReConn;
 
   /**
-   * List of callbacks make as soon as gateway is open
+   * List of callbacks invoked as soon as the gateway is open
    * @type {(() => void)[]}
    */
   pendingOnOpen;

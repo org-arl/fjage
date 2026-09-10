@@ -72,7 +72,7 @@ class TCPConnector {
     this._buf = '';
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
-    this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
+    this.pendingOnOpen = [];              // list of callbacks invoked as soon as the gateway is open
     this.connListeners = [];              // external listeners wanting to listen connection events
     this.debug = false;
     this._sockInit(host, port);
