@@ -474,6 +474,12 @@ describe('An AgentID', function () {
     expect(val).toEqual([0, 42]);
   });
 
+  it('should reject if an array of parameters is set with a non-array value', async function () {
+    const aid = new AgentID('S', false, gw);
+    await expectAsync(aid.set(['a', 'b'], 42))
+      .toBeRejectedWithError('Values must be an array because an array was passed for parameters');
+  });
+
   it('should get the values of all parameter on a Agent', async function () {
     const aid = new AgentID('S', false, gw);
     let val = await aid.get();

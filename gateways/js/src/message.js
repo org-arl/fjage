@@ -2,6 +2,7 @@ import { Performative } from './performative.js';
 import { UUID7 } from './utils.js';
 import { AgentID } from './agentid.js';
 
+/** @type {Record<string, typeof Message>} */
 const MESSAGE_REGISTRY = Object.create(null);
 
 /**
@@ -10,7 +11,7 @@ const MESSAGE_REGISTRY = Object.create(null);
  * back to a class registered for the same unqualified name in a different package.
  *
  * @param {string} name - qualified or unqualified message class name
- * @returns {Function|undefined} registered message class
+ * @returns {typeof Message|undefined} registered message class
  */
 export function messageClassForName(name) {
   return MESSAGE_REGISTRY[name];
@@ -20,8 +21,9 @@ export function messageClassForName(name) {
  * Registers a message class for JSON serialization and inflation.
  *
  * @param {string} className - fully qualified message class name
- * @param {Function} messageClass - Message subclass to register
- * @returns {Function} registered message class
+ * @template {typeof Message} T
+ * @param {T} messageClass - Message subclass to register
+ * @returns {T} registered message class
  */
 export function registerMessageClass(className, messageClass) {
   if (typeof className !== 'string' || className.trim() === '') {
@@ -49,7 +51,7 @@ export function registerMessageClass(className, messageClass) {
 /**
  * @typedef {Object} MessageJSON
  * @property {string} clazz - qualified or unqualified message class name
- * @property {Object.<string, *>} data - message data
+ * @property {Record<string, unknown>} data - message data
  */
 
 /**
@@ -109,6 +111,7 @@ export class Message {
    * @returns {MessageJSON} JSON representation of the message
    */
   toJSON() {
+    /** @type {Record<string, unknown>} */
     const data = {};
     for (const key of Object.keys(this)) {
       if (!key.startsWith('_')) data[key] = this[key];
@@ -154,20 +157,28 @@ Message.prototype.__clazz__ = 'org.arl.fjage.Message';
 registerMessageClass('org.arl.fjage.Message', Message);
 
 /**
+ * A Message subclass that can also be constructed from a fields object. Used by
+ * the {@link MessageClass}, whose generated classes assign the fields object
+ * passed to their constructor.
+ *
+ * @typedef {typeof Message & (new (fields?: Record<string, unknown>) => Message)} MessageClassConstructor
+ */
+
+/**
  * @deprecated since version 3.0.0. Use `Gateway.registerMessage()` instead.
  *
  * Creates an unqualified message class based on a fully qualified name.
  *
  * @param {string} name - fully qualified message class name
- * @param {Function} [parent] - parent Message class
- * @returns {Function} message class
+ * @param {typeof Message} [parent] - parent Message class
+ * @returns {MessageClassConstructor} message class
  */
 export function MessageClass(name, parent=Message) {
   if (!(parent === Message || parent.prototype instanceof Message)) {
     throw new Error(`Parent class ${parent.name} is not a subclass of Message`);
   }
   const registeredClass = messageClassForName(name);
-  if (registeredClass) return registeredClass;
+  if (registeredClass) return /** @type {MessageClassConstructor} */ (registeredClass);
   // @ts-ignore Parent is validated above.
   const messageClass = class extends parent {
     constructor(fields={}) {
@@ -176,7 +187,7 @@ export function MessageClass(name, parent=Message) {
     }
   };
   registerMessageClass(name, messageClass);
-  return messageClass;
+  return /** @type {MessageClassConstructor} */ (messageClass);
 }
 
 /** A message class that can convey generic key-value messages. */
@@ -185,14 +196,14 @@ export class GenericMessage extends Message {}
 /**
  * @typedef {Object} ParameterReq.Entry
  * @property {string} param - parameter name
- * @property {*} [value] - parameter value
+ * @property {unknown} [value] - parameter value
  */
 
 /** A message that requests one or more parameters of an agent. */
 export class ParameterReq extends Message {
   /** @type {string|null} */
   param = null;
-  /** @type {*} */
+  /** @type {unknown} */
   value = null;
   /** @type {Array<ParameterReq.Entry>} */
   requests = [];
@@ -204,9 +215,9 @@ export class ParameterReq extends Message {
 export class ParameterRsp extends Message {
   /** @type {string|null} */
   param = null;
-  /** @type {*} */
+  /** @type {unknown} */
   value = null;
-  /** @type {Object.<string, *>} */
+  /** @type {Record<string, unknown>} */
   values = {};
   /** @type {Array<boolean>} */
   readonly = [];
