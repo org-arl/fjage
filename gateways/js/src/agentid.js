@@ -19,7 +19,7 @@ export class AgentID {
   name;
 
   /**
-   * Whether the identifer is for a topic
+   * Whether the identifier is for a topic
    * @type {boolean}
    */
   topic;
