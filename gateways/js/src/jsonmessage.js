@@ -278,9 +278,9 @@ export class JSONMessage {
 * Actions supported by the fjåge JSON message protocol. See
 * {@link https://org-arl.github.io/fjage/protocol.html#json-message-requestresponse-attributes fjage documentation} for more details.
 *
-* @enum {string} Actions
+* @enum {'agents'|'containsAgent'|'services'|'agentForService'|'agentsForService'|'send'|'wantsMessagesFor'|'shutdown'} Actions
 */
-export const Actions = {
+export const Actions = /** @type {const} */ ({
   AGENTS : 'agents',
   CONTAINS_AGENT : 'containsAgent',
   SERVICES : 'services',
@@ -289,7 +289,7 @@ export const Actions = {
   SEND : 'send',
   WANTS_MESSAGES_FOR : 'wantsMessagesFor',
   SHUTDOWN : 'shutdown'
-};
+});
 
 ////// private utilities
 

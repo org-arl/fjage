@@ -1,9 +1,9 @@
 /**
 * An action represented by a message. The performative actions are a subset of the
 * FIPA ACL recommendations for interagent communication.
-* @enum {string}
+* @enum {'REQUEST'|'AGREE'|'REFUSE'|'FAILURE'|'INFORM'|'CONFIRM'|'DISCONFIRM'|'QUERY_IF'|'NOT_UNDERSTOOD'|'CFP'|'PROPOSE'|'CANCEL'}
 */
-export const Performative = {
+export const Performative = /** @type {const} */ ({
   REQUEST: 'REQUEST',               // Request an action to be performed
   AGREE: 'AGREE',                   // Agree to performing the requested action
   REFUSE: 'REFUSE',                 // Refuse to perform the requested action
@@ -16,4 +16,4 @@ export const Performative = {
   CFP: 'CFP',                       // Call for proposal
   PROPOSE: 'PROPOSE',               // Response for CFP
   CANCEL: 'CANCEL'                  // Cancel pending request
-};
+});
