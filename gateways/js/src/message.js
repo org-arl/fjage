@@ -157,20 +157,28 @@ Message.prototype.__clazz__ = 'org.arl.fjage.Message';
 registerMessageClass('org.arl.fjage.Message', Message);
 
 /**
+ * A Message subclass that can also be constructed from a fields object. Used by
+ * the {@link MessageClass}, whose generated classes assign the fields object
+ * passed to their constructor.
+ *
+ * @typedef {typeof Message & (new (fields?: Record<string, unknown>) => Message)} MessageClassConstructor
+ */
+
+/**
  * @deprecated since version 3.0.0. Use `Gateway.registerMessage()` instead.
  *
  * Creates an unqualified message class based on a fully qualified name.
  *
  * @param {string} name - fully qualified message class name
  * @param {typeof Message} [parent] - parent Message class
- * @returns {typeof Message} message class
+ * @returns {MessageClassConstructor} message class
  */
 export function MessageClass(name, parent=Message) {
   if (!(parent === Message || parent.prototype instanceof Message)) {
     throw new Error(`Parent class ${parent.name} is not a subclass of Message`);
   }
   const registeredClass = messageClassForName(name);
-  if (registeredClass) return registeredClass;
+  if (registeredClass) return /** @type {MessageClassConstructor} */ (registeredClass);
   // @ts-ignore Parent is validated above.
   const messageClass = class extends parent {
     constructor(fields={}) {
@@ -179,7 +187,7 @@ export function MessageClass(name, parent=Message) {
     }
   };
   registerMessageClass(name, messageClass);
-  return messageClass;
+  return /** @type {MessageClassConstructor} */ (messageClass);
 }
 
 /** A message class that can convey generic key-value messages. */
