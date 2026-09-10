@@ -664,7 +664,7 @@ export class Gateway {
   *
   * @param {Message} msg - message to send
   * @param {number} [timeout=opts.timeout] - timeout in milliseconds
-  * @returns {Promise<Message|void>} - a promise which resolves with the received response message, null on timeout
+  * @returns {Promise<Message|undefined>} - a promise which resolves with the received response message, or undefined on timeout
   */
   async request(msg, timeout=this._timeout) {
     this.send(msg);
