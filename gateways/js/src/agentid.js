@@ -110,7 +110,7 @@ export class AgentID {
    *
    * @param {string} json - JSON string to be converted to an AgentID
    * @param {Gateway} [owner] - Gateway owner for this AgentID
-   * @returns {AgentID} - AgentID created from the JSON string or object
+   * @returns {AgentID} - AgentID created from the JSON string
    */
   static fromJSON(json, owner) {
     if (typeof json !== 'string') {
