@@ -1,0 +1,72 @@
+---
+title: "Observing message traffic"
+---
+
+The `Observer` agent helps debug a fjåge application by displaying the messages sent within a container as a sequence diagram in a web browser. It does not consume messages or change their delivery.
+
+## Adding an observer
+
+Add one observer to the container you want to inspect:
+
+``` groovy
+import org.arl.fjage.observer.Observer
+
+def observer = new Observer()
+container.add 'observer', observer
+```
+
+The observer shares the application's web server when one is available. Otherwise, it starts a server on port 8081. It logs the web interface URL when it starts, and exposes the same URL through its `url` parameter:
+
+``` groovy
+> observer = agent('observer')
+> observer.url
+http://localhost:8081/observer/
+```
+
+To use a specific port or context path, pass them to the constructor:
+
+``` groovy
+container.add 'observer', new Observer(8082, '/traffic')
+```
+
+An observer sees only traffic in its own container. Add an observer to each container whose local traffic you need to inspect in a distributed application.
+
+## Using the web interface
+
+The web interface shows agents and topics as lifelines, and each message as an arrow between them. It supports endpoint selection and ordering, class and endpoint filters, pause and resume, light and dark themes, and per-endpoint message counts.
+
+Display choices are local to the browser and can reveal messages already buffered there. Dropping an endpoint or excluding a message class applies inside the container before serialization. Those messages are not sent to any connected browser and cannot be recovered by removing the filter later.
+
+The observer records messages when they are sent, before delivery is attempted. It therefore cannot report whether a message was delivered. A message sent to a topic appears once, addressed to the topic, rather than once for each subscriber.
+
+## Controlling the observer
+
+The observer exposes parameters that can be read or changed from a shell:
+
+``` groovy
+> observer.enabled
+true
+> observer.maxRate
+500
+> observer.maxRate = 100
+100
+> observer.count
+42
+> observer.dropped
+0
+```
+
+`maxRate` limits the number of messages published per second. Set it to `0` to disable rate limiting. The read-only `connections` and `endpoints` parameters report connected browsers and the agents or topics seen so far.
+
+For programmatic filtering, use `ObserverFilter`. Regular expressions use substring matching unless anchored:
+
+``` groovy
+import org.arl.fjage.observer.ObserverFilter
+
+observer.filter = new ObserverFilter(
+  excludeClazz: 'org\\.arl\\.fjage\\.param\\.',
+  excludeEndpoints: ['noisy-agent'] as Set
+)
+```
+
+The browser can set the same shared filter without application code.
