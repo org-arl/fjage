@@ -6,7 +6,7 @@ public class BackoffBehavior extends Behavior {
 
   private long period;
   private long wakeupTime;
-  private boolean quit;
+  private volatile boolean quit;
 
   ////////// Interface methods
 

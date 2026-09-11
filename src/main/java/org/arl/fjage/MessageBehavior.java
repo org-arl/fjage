@@ -23,7 +23,7 @@ public class MessageBehavior extends Behavior {
 
   ///////////// Private attributes
 
-  private MessageFilter filter;
+  private final MessageFilter filter;
 
   //////////// Interface methods
 
@@ -41,7 +41,7 @@ public class MessageBehavior extends Behavior {
    * @param cls message class of interest.
    */
   public MessageBehavior(final Class<?> cls) {
-    filter = m -> cls.isInstance(m);
+    filter = cls::isInstance;
   }
 
   /**

@@ -24,9 +24,9 @@ public class AgentID implements Serializable, Comparable<AgentID> {
 
   /////////////// Private attributes
 
-  private String name;
-  private boolean isTopic;
-  private transient Messenger owner;
+  private final String name;
+  private final boolean isTopic;
+  private final transient Messenger owner;
   private transient String type;
 
   /////////////// Interface methods

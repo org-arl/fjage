@@ -27,7 +27,7 @@ public interface Firewall {
    * @param creds credentials, or null if logging out.
    * @return true if authenticated successfully, false otherwise.
    */
-  public boolean authenticate(String creds);
+  boolean authenticate(String creds);
 
   /**
    * Checks whether a JSON message can be accepted over this connection.
@@ -35,7 +35,7 @@ public interface Firewall {
    * @param rq incoming JSON request.
    * @return true to accept, false to reject.
    */
-  public boolean permit(JsonMessage rq);
+  boolean permit(JsonMessage rq);
 
   /**
    * Checks whether a message intended for the specified agent/topic may be sent
@@ -44,12 +44,12 @@ public interface Firewall {
    * @param aid recipient agent/topic for the message.
    * @return true to permit, false to reject.
    */
-  public boolean permit(AgentID aid);
+  boolean permit(AgentID aid);
 
   /**
    * Called when the connection is closed.
    * The <code>Firewall</code> instance should perform cleanup.
    */
-  public void signoff();
+  void signoff();
 
 }

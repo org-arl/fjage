@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage
 
+import groovy.transform.PackageScope
 import org.arl.fjage.param.*
 
 /**
@@ -74,7 +75,7 @@ class GroovyExtensions {
       try {
         rsp = request(req, 10000)
         if (rsp == null) return null
-      } catch (ex) {
+      } catch (ignored) {
         return null
       }
       List<String> out = new ArrayList<String>()
@@ -107,14 +108,14 @@ class GroovyExtensions {
         pos = it.substring(0, pos).lastIndexOf('.')
         if (pos <= 0) {
           def pc = 'NamedParameter'
-          if (!pc.equals(pcls)) {
+          if (pc != pcls) {
             sb.append "\n[${pc}]\n"
             pcls = pc
           }
           if (pos == 0) it = it.substring(1)
         } else {
           def pc = it.substring(0, pos).replace('$', '.')
-          if (!pc.equals(pcls)) {
+          if (pc != pcls) {
             sb.append "\n[${pc}]\n"
             pcls = pc
           }
@@ -127,7 +128,7 @@ class GroovyExtensions {
 
     AgentID.metaClass.getAt = { int n ->
       if (delegate.owner == null) throw new FjageException('Parameters not suported on unowned AgentID')
-      if (n < 0) throw new FjageException("Index must be non-negative");
+      if (n < 0) throw new FjageException("Index must be non-negative")
       return new IndexedParameterHelper(parent: delegate, index: n)
     }
 
@@ -140,7 +141,7 @@ class GroovyExtensions {
   }
 }
 
-@groovy.transform.PackageScope
+@PackageScope
 class IndexedParameterHelper {
 
   def parent

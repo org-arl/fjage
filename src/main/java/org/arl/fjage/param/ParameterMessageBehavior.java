@@ -30,7 +30,7 @@ import java.util.logging.Level;
  */
 public class ParameterMessageBehavior extends MessageBehavior {
 
-  private List<? extends Parameter> params;
+  private final List<? extends Parameter> params;
 
   /**
    * Creates a parameter message behavior with no parameters.
@@ -54,9 +54,8 @@ public class ParameterMessageBehavior extends MessageBehavior {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public ParameterMessageBehavior(Class ... paramEnumClasses) {
     super(ParameterReq.class);
-    params = new ArrayList<Parameter>();
-    for (int i = 0; i < paramEnumClasses.length; i++)
-      params.addAll(EnumSet.allOf(paramEnumClasses[i]));
+    params = new ArrayList<>();
+    for (Class paramEnumClass : paramEnumClasses) params.addAll(EnumSet.allOf(paramEnumClass));
   }
 
   @Override
@@ -165,9 +164,8 @@ public class ParameterMessageBehavior extends MessageBehavior {
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected static List<? extends Parameter> allOf(Class ... paramEnumClasses) {
-    List<? extends Parameter> p = new ArrayList<Parameter>();
-    for (int i = 0; i < paramEnumClasses.length; i++)
-      p.addAll(EnumSet.allOf(paramEnumClasses[i]));
+    List<? extends Parameter> p = new ArrayList<>();
+    for (Class paramEnumClass : paramEnumClasses) p.addAll(EnumSet.allOf(paramEnumClass));
     return p;
   }
 
@@ -194,7 +192,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
       if (e.param instanceof NamedParameter) {
         if (plist == null) {
           plist = ndx < 0 ? getParameterList() : getParameterList(ndx);
-          if (plist == null) plist = new ArrayList<Parameter>(1);
+          if (plist == null) plist = new ArrayList<>(1);
         }
         for (Parameter p: plist) {
           if (p.toString().equals(e.param.toString())) {
@@ -207,7 +205,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
         String fldName = e.param.toString();
         String methodNameFragment = fldName.substring(0, 1).toUpperCase() + fldName.substring(1);
         Object evalue = e.getValue();
-        Object current = null;
+        Object current;
         try {
           if (fldName.equals("type")) current = agent.getClass().getName(); // special automatic parameter
           else if (ndx < 0) current = MethodUtils.invokeMethod(agent, "get" + methodNameFragment);
@@ -228,7 +226,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
           // set request
           try {
             Method m = null;
-            Object sv = null;
+            Object sv;
             if (ndx < 0) sv = invokeCompatibleSetter("set" + methodNameFragment, evalue);
             else sv = invokeCompatibleSetter("set" + methodNameFragment, ndx, evalue);
             if (sv == null) {
@@ -248,7 +246,6 @@ public class ParameterMessageBehavior extends MessageBehavior {
             Object rv = setParam(e.param, ndx, evalue);
             if (rv != null) {
               rsp.set(e.param, rv, isReadOnly(e.param, ndx));
-              if (!rv.equals(current)) onParamChange(e.param, ndx, rv);
             } else {
               if (ndx >= 0) throw ex;
               Field f = cls.getField(fldName);
@@ -260,8 +257,8 @@ public class ParameterMessageBehavior extends MessageBehavior {
               }
               rv = f.get(agent);
               rsp.set(e.param, rv, ro);
-              if (!rv.equals(current)) onParamChange(e.param, ndx, rv);
             }
+            if (!rv.equals(current)) onParamChange(e.param, ndx, rv);
           }
         }
       } catch (InvocationTargetException ex){
@@ -318,7 +315,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
   }
 
   private Object invokeCompatibleSetter(String name, Object value) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    NoSuchMethodException nsme = null;
+    NoSuchMethodException nsme;
     try {
       return MethodUtils.invokeMethod(agent, name, value);
     } catch (NoSuchMethodException ex) {
@@ -379,7 +376,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
   }
 
   private Object invokeCompatibleSetter(String name, int ndx, Object value) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    NoSuchMethodException nsme = null;
+    NoSuchMethodException nsme;
     try {
       return MethodUtils.invokeMethod(agent, name, ndx, value);
     } catch (NoSuchMethodException ignored) {

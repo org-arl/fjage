@@ -10,8 +10,9 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Iterator;
-import java.util.LinkedList;
 
 /**
  * Internal class representing a message queue.
@@ -22,8 +23,8 @@ public class MessageQueue {
 
   /////////// Private attributes
 
-  private LinkedList<Message> queue = new LinkedList<Message>();
-  private LinkedList<Message> quarantine = new LinkedList<Message>();
+  private final Deque<Message> queue = new ArrayDeque<>();
+  private final Deque<Message> quarantine = new ArrayDeque<>();
   private int maxQueueLen;
 
   /////////// Interface methods

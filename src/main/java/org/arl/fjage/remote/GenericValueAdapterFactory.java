@@ -93,7 +93,7 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
         if (tok == JsonToken.BEGIN_OBJECT) {
           TypeToken tt = null;
           GenericValue rv = null;
-          Map<String,Object> map = new HashMap<String,Object>();
+          Map<String,Object> map = new HashMap<>();
           in.beginObject();
           while (in.hasNext()) {
             String name = in.nextName();
@@ -141,7 +141,7 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
           return (T)rv;
         }
         if (tok == JsonToken.BEGIN_ARRAY) {
-          List<Object> list = new ArrayList<Object>();
+          List<Object> list = new ArrayList<>();
           in.beginArray();
           while (in.hasNext()) {
             JsonToken tok2 = in.peek();

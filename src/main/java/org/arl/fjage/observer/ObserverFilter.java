@@ -80,7 +80,7 @@ public class ObserverFilter implements MessageFilter {
     clazzRe = compile(clazz);
     excludeClazzRe = compile(excludeClazz);
     excluded = excludeEndpoints == null || excludeEndpoints.isEmpty() ? null
-                                                                     : new HashSet<String>(excludeEndpoints);
+                                                                     : new HashSet<>(excludeEndpoints);
     compiled = true;
     return this;
   }
@@ -112,7 +112,7 @@ public class ObserverFilter implements MessageFilter {
    * @return this filter, for chaining.
    */
   public ObserverFilter exclude(Collection<String> endpoints) {
-    excludeEndpoints = endpoints == null ? null : new HashSet<String>(endpoints);
+    excludeEndpoints = endpoints == null ? null : new HashSet<>(endpoints);
     compiled = false;
     return this;
   }
@@ -127,7 +127,7 @@ public class ObserverFilter implements MessageFilter {
     }
     if (excluded != null) {
       if (excluded.contains(Observer.endpoint(m.getSender()))) return false;
-      if (excluded.contains(Observer.endpoint(m.getRecipient()))) return false;
+      return !excluded.contains(Observer.endpoint(m.getRecipient()));
     }
     return true;
   }

@@ -42,7 +42,7 @@ public class GroovyBoot {
    */
   public static void main(String[] args) {
     Logger log = null;
-    List<Logger> loggers = new ArrayList<Logger>();
+    List<Logger> loggers = new ArrayList<>();
     try {
 
       // setup Groovy extensions
@@ -62,7 +62,7 @@ public class GroovyBoot {
 
       // parse command line and execute scripts
       GroovyScriptEngine engine = new GroovyScriptEngine();
-      List<String> arglist = new ArrayList<String>();
+      List<String> arglist = new ArrayList<>();
       for (String a: args) {
         if (a.equals("-debug")) {
           log.info("Setting root logger level to ALL");
@@ -85,7 +85,7 @@ public class GroovyBoot {
             InputStream inp = GroovyBoot.class.getResourceAsStream(a.substring(5));
             if (inp == null) throw new FileNotFoundException(a+" not found");
             engine.exec(new InputStreamReader(inp), a, arglist);
-            if (arglist.size() > 0) arglist = new ArrayList<String>();
+            if (!arglist.isEmpty()) arglist = new ArrayList<>();
           } else if (a.startsWith("cls://")) {
             // execute pre-compiled script from class file
             Class<?> cls = Class.forName(a.substring(6));
@@ -93,7 +93,7 @@ public class GroovyBoot {
           } else {
             // execute script from file
             engine.exec(new File(a), arglist);
-            if (arglist.size() > 0) arglist = new ArrayList<String>();
+            if (!arglist.isEmpty()) arglist = new ArrayList<>();
           }
         }
       }

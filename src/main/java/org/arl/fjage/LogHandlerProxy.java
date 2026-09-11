@@ -24,7 +24,7 @@ public class LogHandlerProxy extends Handler {
 
   ////////// Private attributes
 
-  private Handler delegate;
+  private final Handler delegate;
   private TimestampProvider timesrc;
 
   ////////// Interface methods

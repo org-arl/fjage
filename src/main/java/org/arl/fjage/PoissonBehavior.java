@@ -22,9 +22,9 @@ public class PoissonBehavior extends Behavior {
   //////////// Private attributes
 
   private int ticks;
-  private long expDelay;
+  private final long expDelay;
   private long wakeupTime;
-  private boolean quit;
+  private volatile boolean quit;
 
   //////////// Interface methods
 
