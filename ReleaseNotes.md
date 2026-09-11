@@ -1,5 +1,31 @@
 # Release Notes
 
+### 2.7.0
+
+* Add an `Observer` agent with a web interface for viewing, filtering and rate-limiting message traffic in a container
+* Add `DeleteFileReq` for deleting files and directories through a shell agent, and normalize paths used for cached file reads
+* Change `AgentID.send(Message)` to return the message delivery result; code compiled against an earlier fjåge release must be recompiled if it uses this method
+* Add global and per-context error handlers to `WebServer`, and allow a separate temporary directory for file uploads
+* Change `WebServer.getInstance()` to start the web server immediately and throw `UncheckedIOException` if it cannot start (e.g. port already in use); `WebServer.start()` is deprecated and does nothing
+* Change `WebServer.addHandler()` to reject a context that is already in use; `WebSocketHubConnector` and `WebSocketServer` throw `UncheckedIOException` if the web server cannot start or the context is taken, and `MasterContainer.openWebSocketServer()` returns `false`
+* Change `TcpHubConnector` to bind its port in the constructor and throw `UncheckedIOException` on failure, and detect port overlaps on macOS
+* Change `SerialPortConnector` to throw `IOException`, including the OS error code, when the serial port cannot be opened
+* Log `TcpServer` bind failures instead of ignoring them
+* Allow WebSocket upgrades on bare context paths and handle empty web servers safely
+* Use UTF-8 for TCP and WebSocket transport and for console and connector shells, regardless of the JVM default charset
+* Prevent `MessageListener` exceptions and lock-ordering hazards from disrupting container message delivery
+* Bugfix: Allow sandboxed scripts running under a `SecurityManager` to send messages to remote containers
+* Bugfix: Log exceptions thrown by scheduled tasks in `RealTimePlatform`, and keep running later tasks
+* Bugfix: Copy caller buffers in `BlockingByteQueue` writes, and fix slice validation and end-of-stream handling in `BlockingByteQueue` and pseudo streams
+* Bugfix: Honor negative `GetFileReq` offsets (relative to end of file), and fix cached read positions
+* Bugfix: Hash objects in `Store` without buffering their full serialized form
+* Bugfix: Honor `Gateway.receive()` timeouts when called from non-agent threads, including during exceptions and shutdown
+* Bugfix: Avoid null pointer exceptions and check-then-reread races when a `SlaveContainer` loses its master connection
+* Bugfix: Treat unknown parameter enum constants as named parameters so the rest of a JSON message can still be deserialized
+* Bugfix: Render nested shell documentation sections without collapsing their content into bullet lists
+* Update the bundled web shell to xterm.js 6.0.0 and update related add-ons
+* Update Commons Lang to 3.21.0, Commons IO to 2.22.0 and Gson to 2.14.0
+
 ### 2.6.0
 
 * Add `services()` to the Gateway API to list all services visible through a gateway
