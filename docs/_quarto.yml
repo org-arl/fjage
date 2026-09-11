@@ -52,6 +52,7 @@ website:
         contents:
           - remote.qmd
           - shell.qmd
+          - observer.qmd
           - simulation.qmd
       - section: "Gateways"
         contents:

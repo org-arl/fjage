@@ -1,5 +1,20 @@
 # Release Notes
 
+### 2.7.0
+
+* Add an `Observer` agent with a web interface for viewing, filtering and rate-limiting message traffic in a container
+* Add `DeleteFileReq` for deleting files and directories through a shell agent, and normalize paths used for cached file reads
+* Change `AgentID.send(Message)` to return the message delivery result; Java callers compiled against an earlier fjåge release must be recompiled if they use this method
+* Add global and per-context error handlers to `WebServer`, and allow a separate temporary directory for file uploads
+* Allow WebSocket upgrades on bare context paths, handle empty web servers safely, and improve diagnostics when a port is already in use
+* Prevent `MessageListener` exceptions and lock-ordering hazards from disrupting container message delivery
+* Bugfix: Honor `Gateway.receive()` timeouts when called from non-agent threads, including during exceptions and shutdown
+* Bugfix: Avoid null pointer exceptions and check-then-reread races when a `SlaveContainer` loses its master connection
+* Bugfix: Treat unknown parameter enum constants as named parameters so the rest of a JSON message can still be deserialized
+* Bugfix: Render nested shell documentation sections without collapsing their content into bullet lists
+* Update the bundled web shell to xterm.js 6.0.0 and update related add-ons
+* Update Commons IO to 2.22.0 and Gson to 2.14.0
+
 ### 2.6.0
 
 * Add `services()` to the Gateway API to list all services visible through a gateway
