@@ -14,6 +14,8 @@ import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A platform that runs the agents in its containers in real-time.  The notion
@@ -35,6 +37,8 @@ import java.util.concurrent.TimeUnit;
 public final class RealTimePlatform extends Platform {
 
   /////////// Private attributes
+
+  private static final Logger log = Logger.getLogger(RealTimePlatform.class.getName());
 
   // a ScheduledThreadPoolExecutor is used rather than a java.util.Timer, as it
   // survives exceptions thrown by scheduled tasks
@@ -58,7 +62,14 @@ public final class RealTimePlatform extends Platform {
 
   @Override
   public void schedule(TimerTask task, long millis) {
-    timer.schedule(task, Math.max(0, millis), TimeUnit.MILLISECONDS);
+    timer.schedule(() -> {
+      try {
+        task.run();
+      } catch (RuntimeException | Error ex) {
+        log.log(Level.WARNING, "Exception in scheduled task", ex);
+        throw ex;
+      }
+    }, Math.max(0, millis), TimeUnit.MILLISECONDS);
   }
 
   @Override
@@ -76,4 +87,3 @@ public final class RealTimePlatform extends Platform {
   }
 
 }
-
