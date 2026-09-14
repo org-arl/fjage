@@ -121,15 +121,20 @@ gw.close()
 
 ### User-Defined Message Classes
 
-Register your own `Message` subclasses so outgoing JSON uses the correct `clazz` and incoming JSON inflates back into the right Python type. The `@message` decorator is the shortest form:
+Register your own `Message` subclasses so outgoing JSON uses the correct `clazz` and
+incoming JSON inflates back into the right Python type. The `@message` decorator is the
+shortest form:
 
 ```python
+from typing import Optional
+
 from fjagepy import Message, message
 
 
 @message('org.example.CustomReq')
 class CustomReq(Message):
-    pass
+    text: Optional[str] = None
+    tags: list[str] = []
 
 
 outgoing = CustomReq(text='hello')
@@ -142,12 +147,37 @@ assert incoming.text == 'hello'
 ```
 
 Without a custom `__init__`, the class inherits the default constructor
-`Message(in_reply_to_msg=None, perf=Performative.INFORM, **kwargs)`. Pass message
-fields as keyword arguments. When constructing a reply, `in_reply_to_msg` sets
-`recipient` and `inReplyTo` from the original message. Message classes whose names
-end in `Req` use `Performative.REQUEST` by default.
+`Message(in_reply_to_msg=None, perf=None, **kwargs)`.
 
 The decorator requires a fully qualified wire name. Bare `@message` is not supported.
+
+#### Fields and construction
+
+Subclasses need no `__init__` of their own. They inherit the `Message` constructor,
+`Message(in_reply_to_msg=None, perf=None, **kwargs)`.
+
+* Declare fields as annotated class attributes. A field declared without a default (`text: Optional[str]`)
+  is simply unset until assigned.
+* Pass any field as a keyword argument: `CustomReq(text='hello')`. Fields not declared on
+  the class are accepted too, and are serialized like any other.
+* `in_reply_to_msg` sets the `inReplyTo` for a message being replied to.
+* `perf` defaults to a class-level `perf` if the class declares one, else
+  `Performative.INFORM` — except for classes whose wire name ends in `Req`, which use
+  `Performative.REQUEST`.
+
+```python
+@message('org.example.CustomRsp')
+class CustomRsp(Message):
+    text: Optional[str] = None
+
+
+rsp = CustomRsp(req, Performative.AGREE, text='done')
+assert rsp.inReplyTo == req.msgID
+assert rsp.recipient == req.sender
+```
+
+Defining an `__init__` is still supported for classes that need computed defaults or
+validation; call `super().__init__(**kwargs)` from it.
 
 The equivalent programmatic form uses `Gateway.register_message()`:
 
