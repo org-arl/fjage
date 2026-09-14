@@ -85,7 +85,6 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   private AgentID aid = null;
   private volatile AgentState state = AgentState.INIT;
   private volatile AgentState oldState = AgentState.NONE;
-  // matches all messages; used in place of a null filter, since ArrayDeque rejects nulls
   private static final MessageFilter ANY_MESSAGE = m -> true;
 
   private final ConcurrentLinkedQueue<Behavior> newBehaviors = new ConcurrentLinkedQueue<>();
