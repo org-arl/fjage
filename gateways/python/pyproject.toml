@@ -25,6 +25,7 @@ addopts = "-ra -q"
 [project.optional-dependencies]
 dev = ["pytest==8.3.5", "numpy==2.0.2", "mypy==1.19.0", "pyserial>=3.5"]
 docs = ["sphinx==8.2.3", "sphinx-rtd-theme==3.0.2", "myst-parser==4.0.1"]
+serial = ["pyserial>=3.5"]
 
 [tool.mypy]
 check_untyped_defs = true
