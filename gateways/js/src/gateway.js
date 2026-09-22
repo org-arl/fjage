@@ -47,6 +47,35 @@ export function init(){
 }
 
 /**
+ * @typedef {Object} GatewayOptions
+ * @property {string} [hostname="localhost"] - hostname/ip address of the master container
+ * @property {number|string} [port=1100] - port number of the master container
+ * @property {string} [pathname=""] - WebSocket path of the master container
+ * @property {boolean} [keepAlive=true] - reconnect if the connection is lost
+ * @property {number} [queueSize=128] - maximum number of queued received messages
+ * @property {number} [timeout=1000] - default request timeout in milliseconds
+ * @property {number} [directoryTimeout=6000] - default directory-query timeout in milliseconds
+ * @property {boolean} [cancelPendingOnDisconnect=false] - cancel pending requests on disconnect
+ */
+
+/**
+ * Maps Gateway event names to the values supplied to their listeners.
+ * @typedef {Object} GatewayEventMap
+ * @property {string} rx - raw JSON received from the master container
+ * @property {JSONMessage} rxp - parsed JSON message received from the master container
+ * @property {Message} rxmsg - message received from the master container
+ * @property {Message} message - message addressed to this Gateway
+ * @property {string} tx - raw JSON sent to the master container
+ * @property {Message} txmsg - message sent by this Gateway
+ * @property {boolean} conn - connection state
+ */
+
+/**
+ * Maps Gateway event names to their listener types.
+ * @typedef {{[K in keyof GatewayEventMap]?: Array<(value: GatewayEventMap[K]) => void>}} GatewayListenerMap
+ */
+
+/**
 * A gateway for connecting to a fjage master container. This class provides methods to
 * send and receive messages, subscribe to topics, and manage connections to the master container.
 * It can be used to connect to a fjage master container over WebSockets or TCP.
@@ -79,18 +108,62 @@ export function init(){
 */
 export class Gateway {
 
+  /** @type {AgentID} */
+  aid;
+
+  /** @type {boolean} */
+  connected;
+
+  /** @type {boolean} */
+  debug;
+
+  /** @type {number} */
+  _timeout;
+
+  /** @type {number} */
+  _directoryTimeout;
+
+  /** @type {boolean} */
+  _keepAlive;
+
+  /** @type {number} */
+  _queueSize;
+
+  /** @type {boolean} */
+  _cancelPendingOnDisconnect;
+
+  /** @type {Record<string, (msg: JSONMessage) => void>} */
+  _pending_actions;
+
+  /** @type {Record<string, boolean>} */
+  _subscriptions;
+
+  /** @type {Record<string, (msg: Message) => boolean>} */
+  _pending_receives;
+
+  /** @type {GatewayListenerMap} */
+  _eventListeners;
+
+  /** @type {Message[]} */
+  _queue;
+
+  /** @type {TCPConnector|WSConnector} */
+  connector;
+
   /**
   * Registers a message class for JSON serialization and inflation. The registry is shared by
   * all gateways.
   *
   * @param {string} className - fully qualified message class name
-  * @param {Function} messageClass - Message subclass to register
-  * @returns {Function} registered message class
+  * @template {typeof Message} T
+  * @param {T} messageClass - Message subclass to register
+  * @returns {T} registered message class
   */
   static registerMessage(className, messageClass) {
     return registerMessageClass(className, messageClass);
   }
 
+  /** @param {GatewayOptions} [opts] */
   constructor(opts = {}) {
     // Similar to Object.assign but also overwrites `undefined` and empty strings with defaults
     for (var key in GATEWAY_DEFAULTS){
@@ -104,7 +177,7 @@ export class Gateway {
     this._directoryTimeout = opts.directoryTimeout; // timeout for directory queries
     this._keepAlive = opts.keepAlive;     // reconnect if connection gets closed/errored
     this._queueSize = opts.queueSize;     // size of _queue
-    this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect; // cancel pending requests on disconnect
+    this._cancelPendingOnDisconnect = opts.cancelPendingOnDisconnect ?? false; // cancel pending requests on disconnect
     this._pending_actions = {};            // msgid to callback mapping for pending actions
     this._subscriptions = {};              // map for all topics that are subscribed
     this._pending_receives = {};           // uuid to callbacks mapping for pending receives
@@ -119,8 +192,9 @@ export class Gateway {
   /**
   * Sends an event to all registered listeners of the given type.
   * @private
-  * @param {string} type - type of event
-  * @param {Object|Message|string} val - value to be sent to the listeners
+  * @template {keyof GatewayEventMap} K
+  * @param {K} type - type of event
+  * @param {GatewayEventMap[K]} val - value to be sent to the listeners
   */
   _sendEvent(type, val) {
     if (!Array.isArray(this._eventListeners[type])) return;
@@ -139,7 +213,7 @@ export class Gateway {
   * Sends the message to all registered receivers.
   *
   * @private
-  * @param {Message} msg
+  * @param {Message} [msg]
   * @returns {boolean} - true if the message was consumed by any listener
   */
   _sendReceivers(msg) {
@@ -207,7 +281,7 @@ export class Gateway {
         rsp.services = [];
         break;
         case 'agentForService':
-        rsp.agentID = '';
+        rsp.agentID = null;
         break;
         case 'agentsForService':
         rsp.agentIDs = [];
@@ -296,7 +370,7 @@ export class Gateway {
         this._update_watch();
       } else{
         if (this._cancelPendingOnDisconnect) {
-          this._sendReceivers(null);
+          this._sendReceivers(undefined);
           this.flush();
         }
       }
@@ -369,8 +443,9 @@ export class Gateway {
   /**
   * Add an event listener to listen to various events happening on this Gateway
   *
-  * @param {string} type - type of event to be listened to
-  * @param {function} listener - new callback/function to be called when the event happens
+  * @template {keyof GatewayEventMap} K
+  * @param {K} type - type of event to be listened to
+  * @param {(value: GatewayEventMap[K]) => void} listener - new callback/function to be called when the event happens
   * @returns {void}
   */
   addEventListener(type, listener) {
@@ -383,8 +458,9 @@ export class Gateway {
   /**
   * Remove an event listener.
   *
-  * @param {string} type - type of event the listener was for
-  * @param {function} listener - callback/function which was to be called when the event happens
+  * @template {keyof GatewayEventMap} K
+  * @param {K} type - type of event the listener was for
+  * @param {(value: GatewayEventMap[K]) => void} listener - callback/function which was to be called when the event happens
   * @returns {void}
   */
   removeEventListener(type, listener) {
@@ -396,7 +472,7 @@ export class Gateway {
   /**
   * Add a new listener to listen to all {Message}s sent to this Gateway
   *
-  * @param {function} listener - new callback/function to be called when a {Message} is received
+  * @param {(message: Message) => void} listener - new callback/function to be called when a {Message} is received
   * @returns {void}
   */
   addMessageListener(listener) {
@@ -406,7 +482,7 @@ export class Gateway {
   /**
   * Remove a message listener.
   *
-  * @param {function} listener - removes a previously registered listener/callback
+  * @param {(message: Message) => void} listener - removes a previously registered listener/callback
   * @returns {void}
   */
   removeMessageListener(listener) {
@@ -416,7 +492,7 @@ export class Gateway {
   /**
   * Add a new listener to get notified when the connection to master is created and terminated.
   *
-  * @param {function} listener - new callback/function to be called connection to master is created and terminated
+  * @param {(connected: boolean) => void} listener - new callback/function to be called connection to master is created and terminated
   * @returns {void}
   */
   addConnListener(listener) {
@@ -426,7 +502,7 @@ export class Gateway {
   /**
   * Remove a connection listener.
   *
-  * @param {function} listener - removes a previously registered listener/callback
+  * @param {(connected: boolean) => void} listener - removes a previously registered listener/callback
   * @returns {void}
   */
   removeConnListener(listener) {
@@ -460,7 +536,7 @@ export class Gateway {
   * @returns {AgentID} - object representing the topic
   */
   topic(topic, topic2) {
-    if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic, true, this);
+    if (typeof topic == 'string' || topic instanceof String) return new AgentID(topic.toString(), true, this);
     if (topic instanceof AgentID) {
       if (topic.isTopic()) return topic;
       return new AgentID(topic.getName()+(topic2 ? '__' + topic2 : '')+'__ntf', true, this);
@@ -588,7 +664,7 @@ export class Gateway {
   *
   * @param {Message} msg - message to send
   * @param {number} [timeout=opts.timeout] - timeout in milliseconds
-  * @returns {Promise<Message|void>} - a promise which resolves with the received response message, null on timeout
+  * @returns {Promise<Message|undefined>} - a promise which resolves with the received response message, or undefined on timeout
   */
   async request(msg, timeout=this._timeout) {
     this.send(msg);
@@ -596,14 +672,36 @@ export class Gateway {
   }
 
   /**
-  * Returns a response message received by the gateway. This method returns a {Promise} which resolves when
-  * a response is received or if no response is received after the timeout.
-  *
-  * @param {Function|Message} filter - original message to which a response is expected, or a message constructor for the type
-  * of message to match, or a closure to use to match against the message
-  * @param {number} [timeout=0] - timeout in milliseconds
-  * @returns {Promise<Message|void>} - received response message, null on timeout
-  */
+   * @template {typeof Message} T
+   * @overload
+   * @param {T} filter - message constructor to match
+   * @param {number} [timeout=0] - timeout in milliseconds
+   * @returns {Promise<InstanceType<T>|undefined>} matching message, or undefined on timeout
+   */
+
+  /**
+   * @template {Message} M
+   * @overload
+   * @param {(msg: Message) => msg is M} filter - type-guard predicate used to match messages
+   * @param {number} [timeout=0] - timeout in milliseconds
+   * @returns {Promise<M|undefined>} matching message, or undefined on timeout
+   */
+
+  /**
+   * @overload
+   * @param {Message|string|((msg: Message) => boolean)} filter - original message, message ID, or predicate to match
+   * @param {number} [timeout=0] - timeout in milliseconds
+   * @returns {Promise<Message|undefined>} matching message, or undefined on timeout
+   */
+
+  /**
+   * Returns a response message received by the gateway. This method returns a promise which resolves when
+   * a response is received or when the timeout expires.
+   *
+   * @param {typeof Message|Message|string|((msg: Message) => boolean)} filter
+   * @param {number} [timeout=0]
+   * @returns {Promise<Message|undefined>}
+   */
   async receive(filter, timeout=0) {
     return new Promise(resolve => {
       let msg = this._getMessageFromQueue.call(this,filter);
@@ -613,7 +711,7 @@ export class Gateway {
       }
       if (timeout == 0) {
         if (this.debug) console.log('Receive Timeout : ' + filter);
-        resolve();
+        resolve(undefined);
         return;
       }
       let lid = UUID7.generate().toString();
@@ -622,7 +720,7 @@ export class Gateway {
         timer = setTimeout(() => {
           this._pending_receives[lid] && delete this._pending_receives[lid];
           if (this.debug) console.log('Receive Timeout : ' + filter);
-          resolve();
+          resolve(undefined);
         }, timeout);
       }
       // listener for each pending receive
