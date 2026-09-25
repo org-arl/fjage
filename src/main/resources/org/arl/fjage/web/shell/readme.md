@@ -22,10 +22,12 @@ A very simple API is provided for the shell to interact with the host applicatio
 The shell and all it's dependencies are bundled as resources in the fjåge JAR file. To use the shell, you will need to serve the static HTML/CSS/JS files from the JAR and also provide a WebSocket endpoint for the terminal to connect to.
 
 ```groovy
-WebServer.getInstance(8080).addStatic("/", "/org/arl/fjage/web")          // Serve static files from the JAR
+def websvr = WebServer.getInstance(8080)
+websvr.addStatic("/", "/org/arl/fjage/web")                               // Serve static files from the JAR
 Connector conn = new WebSocketHubConnector(8080, "/shell/ws")             // WebSocket endpoint for the terminal
 shell = new ShellAgent(new ConsoleShell(conn), new GroovyScriptEngine())  // Create a ShellAgent with a ConsoleShell
 container.openWebSocketServer(8080, "/ws")                                // Open WebSocket server for Connector
+websvr.start()                                                            // Start serving (false if the port is in use)
 ```
 
 The served shell can be accessed at `http://localhost:8080/shell/index.html`.

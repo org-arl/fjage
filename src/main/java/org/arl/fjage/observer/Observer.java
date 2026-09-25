@@ -190,6 +190,7 @@ public class Observer extends Agent implements MessageListener {
       publishState();
       publishEndpoints(null);
     });
+    server.start();       // a failure to start is logged by the web server
     startControlThread();
     if (c != null) c.addListener(this);
     add(new ParameterMessageBehavior(ObserverParam.class));

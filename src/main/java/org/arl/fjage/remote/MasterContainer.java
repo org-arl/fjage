@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage.remote;
 
+import java.io.UncheckedIOException;
 import java.util.*;
 import org.arl.fjage.*;
 import org.arl.fjage.auth.*;
@@ -478,18 +479,42 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     slaves.remove(handler);
   }
 
+  /**
+   * Opens a WebSocket server at the given context on the web server running on a port.
+   * The web server must be started using {@link WebServer#start()} for the WebSocket
+   * server to accept connections.
+   *
+   * @param port web server port.
+   * @param context context path for the WebSocket server.
+   * @return true if opened, false if already open or the context is already in use.
+   */
   public boolean openWebSocketServer( int port, String context) {
     return openWebSocketServer(port, context, -1);
   }
 
+  /**
+   * Opens a WebSocket server at the given context on the web server running on a port.
+   * The web server must be started using {@link WebServer#start()} for the WebSocket
+   * server to accept connections.
+   *
+   * @param port web server port.
+   * @param context context path for the WebSocket server.
+   * @param maxMsgSize maximum text message size, or -1 for the default.
+   * @return true if opened, false if already open or the context is already in use.
+   */
   public boolean openWebSocketServer( int port, String context, int maxMsgSize) {
     if (websocketListener != null) {
       log.warning("WebSocket server already running at :" + websocketListener.getPort() + websocketListener.getContext());
       return false;
     }
     if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
-    websocketListener = new WebSocketServer(port, context, this, maxMsgSize);
-    log.info("WebSocketServer running at :" + websocketListener.getPort() + websocketListener.getContext());
+    try {
+      websocketListener = new WebSocketServer(port, context, this, maxMsgSize);
+    } catch (UncheckedIOException ex) {
+      log.warning(ex.getMessage());
+      return false;
+    }
+    log.info("WebSocketServer added at :" + websocketListener.getPort() + websocketListener.getContext());
     return true;
   }
 

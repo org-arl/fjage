@@ -142,12 +142,13 @@ public class WebServerTest {
         @Override public void close() { }
       };
       logger.addHandler(handler);
+      boolean started;
       try {
-        svr.start();
+        started = svr.start();
       } finally {
         logger.removeHandler(handler);
       }
-      assertFalse("server should not report itself as started", svr.started);
+      assertFalse("server should not report itself as started", started);
       boolean reported = false;
       for (LogRecord r: records) {
         if (r.getLevel() == Level.WARNING && r.getMessage().contains("port "+blocker.getLocalPort()+" is already in use")) reported = true;

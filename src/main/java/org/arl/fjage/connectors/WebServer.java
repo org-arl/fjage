@@ -202,10 +202,13 @@ public class WebServer {
   }
 
   /**
-   * Starts the web server.
+   * Starts the web server, if not already started. A failure to start
+   * (e.g. port already in use) is logged.
+   *
+   * @return true if the server is running, false if it failed to start.
    */
-  public void start() {
-    if (started) return;
+  public boolean start() {
+    if (started) return true;
     try {
       server.start();
       log.info("Started web server on port "+port);
@@ -216,6 +219,7 @@ public class WebServer {
       if (isPortInUse(ex)) log.log(Level.WARNING, "Unable to start web server: port "+port+" is already in use", ex);
       else log.log(Level.WARNING, "Unable to start web server on port "+port, ex);
     }
+    return started;
   }
 
   /**
@@ -466,12 +470,16 @@ public class WebServer {
    *
    * @param context context path.
    * @param handler handler to add.
-   * @return ContextHandler object if added, null otherwise.
+   * @return ContextHandler object if added, null otherwise (e.g. context already in use).
    */
   public ContextHandler addHandler(String context, AbstractHandler handler) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
     if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
+    if (hasHandler(context)) {
+      log.warning("Context "+context+" already in use on port "+port);
+      return null;
+    }
     ContextHandler c = new ContextHandler(context);
     // serve the bare context path directly, rather than redirecting it to the path with a
     // trailing slash; web socket clients cannot follow a redirect on an upgrade request

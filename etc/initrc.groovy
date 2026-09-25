@@ -24,14 +24,21 @@ if (devname != null) {
 platform = new RealTimePlatform()
 container = new MasterContainer(platform, port)
 if (devname != null)  container.addConnector(new SerialPortConnector(devname, baud, 'N81'))
+def history = Paths.get(".fjage-shell-history")
+Connector conn = null
 if (web) {
-  WebServer.getInstance(8080).addStatic("/", "/org/arl/fjage/web")
-  Connector conn = new WebSocketHubConnector(8080, "/shell/ws")
-  shell = new ShellAgent(new ConsoleShell(conn, Paths.get(".fjage-shell-history")), new GroovyScriptEngine())
-  container.openWebSocketServer(8080, "/ws")
-} else {
-  shell = new ShellAgent(new ConsoleShell(Paths.get(".fjage-shell-history")), new GroovyScriptEngine())
+  def websvr = WebServer.getInstance(8080)
+  if (websvr.start()) {
+    websvr.addStatic("/", "/org/arl/fjage/web")
+    conn = new WebSocketHubConnector(8080, "/shell/ws")
+    container.openWebSocketServer(8080, "/ws")
+  } else {
+    // fall back to the console shell if the web server is unavailable
+    println "fjåge web shell unavailable: unable to start web server on port 8080"
+    web = false
+  }
 }
+shell = new ShellAgent(conn ? new ConsoleShell(conn, history) : new ConsoleShell(history), new GroovyScriptEngine())
 container.add 'shell', shell
 platform.start()
 
