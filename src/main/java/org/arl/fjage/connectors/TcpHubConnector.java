@@ -22,6 +22,8 @@ import java.util.logging.Logger;
  */
 public class TcpHubConnector extends Thread implements Connector {
 
+  private static final boolean MACOS = System.getProperty("os.name", "").toLowerCase().startsWith("mac");
+
   protected int port;
   protected boolean telnet;
   protected ServerSocket sock = null;
@@ -43,8 +45,13 @@ public class TcpHubConnector extends Thread implements Connector {
   public TcpHubConnector(int port, boolean telnet) {
     this.telnet = telnet;
     try {
-      sock = new ServerSocket(port);
+      sock = new ServerSocket();
+      // on macOS, address reuse lets a socket on all addresses share a port with a socket
+      // listening on one address (e.g. 127.0.0.1), so a port in use would go undetected
+      if (MACOS) sock.setReuseAddress(false);
+      sock.bind(new InetSocketAddress(port));
     } catch (IOException ex) {
+      close();
       throw new UncheckedIOException("Unable to listen on TCP port " + port, ex);
     }
     this.port = sock.getLocalPort();
