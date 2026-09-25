@@ -12,6 +12,7 @@ package org.arl.fjage.connectors;
 
 import java.io.*;
 import java.net.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -89,7 +90,9 @@ public class TcpServer extends Thread implements Closeable {
         }
       }
     } catch (IOException ex) {
-      // do nothing
+      // only binding the server socket can fail here
+      log.log(Level.WARNING, "Unable to listen on TCP port "+port, ex);
+      return;
     }
     log.info("Stopped listening");
   }
