@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage.remote;
 
+import java.io.UncheckedIOException;
 import java.util.*;
 import org.arl.fjage.*;
 import org.arl.fjage.auth.*;
@@ -488,7 +489,12 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       return false;
     }
     if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
-    websocketListener = new WebSocketServer(port, context, this, maxMsgSize);
+    try {
+      websocketListener = new WebSocketServer(port, context, this, maxMsgSize);
+    } catch (UncheckedIOException ex) {
+      log.warning(ex.getMessage());
+      return false;
+    }
     log.info("WebSocketServer running at :" + websocketListener.getPort() + websocketListener.getContext());
     return true;
   }

@@ -202,7 +202,17 @@ public class WebServer {
   }
 
   /**
-   * Starts the web server.
+   * Checks if the web server has started successfully.
+   *
+   * @return true if started, false if not yet started or if starting failed.
+   */
+  public boolean isStarted() {
+    return started;
+  }
+
+  /**
+   * Starts the web server. A failure to start (e.g. port already in use) is
+   * logged, and can be detected using {@link #isStarted()}.
    */
   public void start() {
     if (started) return;
@@ -466,12 +476,16 @@ public class WebServer {
    *
    * @param context context path.
    * @param handler handler to add.
-   * @return ContextHandler object if added, null otherwise.
+   * @return ContextHandler object if added, null otherwise (e.g. context already in use).
    */
   public ContextHandler addHandler(String context, AbstractHandler handler) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
     if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
+    if (hasHandler(context)) {
+      log.warning("Context "+context+" already in use on port "+port);
+      return null;
+    }
     ContextHandler c = new ContextHandler(context);
     // serve the bare context path directly, rather than redirecting it to the path with a
     // trailing slash; web socket clients cannot follow a redirect on an upgrade request

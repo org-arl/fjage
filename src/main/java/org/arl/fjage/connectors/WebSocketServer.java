@@ -27,6 +27,9 @@ public class WebSocketServer implements WebSocketCreator {
     protected ContextHandler handler;
     protected Logger log = Logger.getLogger(getClass().getName());
 
+    /**
+     * @throws java.io.UncheckedIOException if the web server cannot start or the context is already in use.
+     */
     public WebSocketServer(int port, String context, ConnectionListener listener, int maxMsgSize) {
         this.context = context;
         this.port = port;
@@ -39,7 +42,12 @@ public class WebSocketServer implements WebSocketCreator {
                 factory.setCreator(WebSocketServer.this);
             }
         });
+        if (handler == null) throw WebSocketHubConnector.unavailable("Unable to add WebSocket handler at :"+port+context);
         server.start();
+        if (!server.isStarted()) {
+            server.removeHandler(handler);
+            throw WebSocketHubConnector.unavailable("Unable to start web server on port "+port);
+        }
     }
 
     public WebSocketServer(int port, String context, ConnectionListener listener) {
