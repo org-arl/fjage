@@ -102,17 +102,17 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
         if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize(maxMsgSize);
       }
     });
-    if (handler == null) throw unavailable("Unable to add WebSocket handler at :"+port+context);
+    if (handler == null) {
+      String msg = "Unable to add WebSocket handler at :"+port+context;
+      throw new UncheckedIOException(msg, new IOException(msg));
+    }
     if (!server.start()) {
       server.removeHandler(handler);
-      throw unavailable("Unable to start web server on port "+port);
+      String msg = "Unable to start web server on port "+port;
+      throw new UncheckedIOException(msg, new IOException(msg));
     }
     outThread = new OutputThread();
     outThread.start();
-  }
-
-  static UncheckedIOException unavailable(String msg) {
-    return new UncheckedIOException(msg, new IOException(msg));
   }
 
   @Override

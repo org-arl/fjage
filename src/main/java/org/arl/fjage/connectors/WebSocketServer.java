@@ -7,6 +7,8 @@ import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
 import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.util.logging.Logger;
 
@@ -28,7 +30,7 @@ public class WebSocketServer implements WebSocketCreator {
     protected Logger log = Logger.getLogger(getClass().getName());
 
     /**
-     * @throws java.io.UncheckedIOException if the web server cannot start or the context is already in use.
+     * @throws UncheckedIOException if the web server cannot start or the context is already in use.
      */
     public WebSocketServer(int port, String context, ConnectionListener listener, int maxMsgSize) {
         this.context = context;
@@ -42,10 +44,14 @@ public class WebSocketServer implements WebSocketCreator {
                 factory.setCreator(WebSocketServer.this);
             }
         });
-        if (handler == null) throw WebSocketHubConnector.unavailable("Unable to add WebSocket handler at :"+port+context);
+        if (handler == null) {
+            String msg = "Unable to add WebSocket handler at :"+port+context;
+            throw new UncheckedIOException(msg, new IOException(msg));
+        }
         if (!server.start()) {
             server.removeHandler(handler);
-            throw WebSocketHubConnector.unavailable("Unable to start web server on port "+port);
+            String msg = "Unable to start web server on port "+port;
+            throw new UncheckedIOException(msg, new IOException(msg));
         }
     }
 
