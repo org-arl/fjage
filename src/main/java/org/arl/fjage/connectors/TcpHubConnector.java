@@ -22,6 +22,8 @@ import java.util.logging.Logger;
  */
 public class TcpHubConnector extends Thread implements Connector {
 
+  private static final boolean MACOS = System.getProperty("os.name", "").toLowerCase().startsWith("mac");
+
   protected int port;
   protected boolean telnet;
   protected ServerSocket sock = null;
@@ -35,17 +37,28 @@ public class TcpHubConnector extends Thread implements Connector {
   /**
    * Creates a TCP server running on a specified port.
    *
-   * @param port TCP port number.
+   * @param port TCP port number (0 to autoselect).
    * @param telnet true to negotiate character mode using telnet protocol,
    *               false to leave the choice to the client.
+   * @throws UncheckedIOException if the port cannot be bound (e.g. already in use).
    */
   public TcpHubConnector(int port, boolean telnet) {
-    this.port = port;
     this.telnet = telnet;
     try {
-      setName("tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port);
+      sock = new ServerSocket();
+      // on macOS, address reuse lets a socket on all addresses share a port with a socket
+      // listening on one address (e.g. 127.0.0.1), so a port in use would go undetected
+      if (MACOS) sock.setReuseAddress(false);
+      sock.bind(new InetSocketAddress(port));
+    } catch (IOException ex) {
+      close();
+      throw new UncheckedIOException("Unable to listen on TCP port " + port, ex);
+    }
+    this.port = sock.getLocalPort();
+    try {
+      setName("tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+this.port);
     } catch (UnknownHostException ex) {
-      setName("tcp://0.0.0.0:"+port);
+      setName("tcp://0.0.0.0:"+this.port);
     }
     setDaemon(true);
     start();
@@ -54,7 +67,8 @@ public class TcpHubConnector extends Thread implements Connector {
   /**
    * Creates a TCP server running on a specified port.
    *
-   * @param port TCP port number.
+   * @param port TCP port number (0 to autoselect).
+   * @throws UncheckedIOException if the port cannot be bound (e.g. already in use).
    */
   public TcpHubConnector(int port) {
     this(port, false);
@@ -63,15 +77,7 @@ public class TcpHubConnector extends Thread implements Connector {
   /**
    * Get the TCP port on which the server listens for connections.
    */
-  public synchronized int getPort() {
-    if (port == 0) {
-      try {
-        wait(100);
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-        return -1;
-      }
-    }
+  public int getPort() {
     return port;
   }
 
@@ -122,27 +128,14 @@ public class TcpHubConnector extends Thread implements Connector {
   public void run() {
     outThread = new OutputThread();
     outThread.start();
-    try {
-      synchronized (this) {
-        sock = new ServerSocket(port);
-        port = sock.getLocalPort();
-        notify();
-      }
+    log.info("Listening on port "+port);
+    ServerSocket s;
+    while ((s = sock) != null) {
       try {
-        setName("tcp://"+InetAddress.getLocalHost().getHostAddress()+":"+port);
-      } catch (UnknownHostException ex) {
-        setName("tcp://0.0.0.0:"+port);
+        new ClientThread(this, s.accept()).start();
+      } catch (IOException ex) {
+        // socket closed by close(), or a failed accept
       }
-      log.info("Listening on port "+port);
-      while (sock != null) {
-        try {
-          new ClientThread(this, sock.accept()).start();
-        } catch (IOException ex) {
-          // do nothing
-        }
-      }
-    } catch (IOException ex) {
-      // do nothing
     }
     log.info("Stopped listening");
     outThread.close();

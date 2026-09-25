@@ -15,6 +15,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortInvalidPortException;
 
 /**
  * Serial port connector.
@@ -29,16 +30,25 @@ public class SerialPortConnector implements Connector {
    * @param devname device name of the serial port.
    * @param baud baud rate for the serial port.
    * @param settings serial port settings (null for defaults, or "N81" for no parity, 8 bits, 1 stop bit).
+   * @throws IOException if the settings are invalid or the port cannot be opened (e.g. missing or already in use).
    */
   public SerialPortConnector(String devname, int baud, String settings) throws IOException {
     if (settings != null && !settings.equals("N81")) throw new IOException("Bad serial port settings");
-    com = AccessController.doPrivileged((PrivilegedAction<SerialPort>) () -> {
-      SerialPort c = SerialPort.getCommPort(devname);
-      c.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
-      c.openPort();
-      c.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
-      return c;
+    SerialPort c = AccessController.doPrivileged((PrivilegedAction<SerialPort>) () -> {
+      SerialPort p;
+      try {
+        p = SerialPort.getCommPort(devname);
+      } catch (SerialPortInvalidPortException ex) {
+        return null;
+      }
+      p.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
+      if (p.openPort()) p.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+      return p;
     });
+    if (c == null) throw new IOException("Unable to open serial port " + devname);
+    // the OS error code distinguishes e.g. a busy port from missing permissions
+    if (!c.isOpen()) throw new IOException("Unable to open serial port " + devname + " (error " + c.getLastErrorCode() + ")");
+    com = c;
   }
 
   /**
