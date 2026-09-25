@@ -27,13 +27,14 @@ if (devname != null)  container.addConnector(new SerialPortConnector(devname, ba
 def history = Paths.get(".fjage-shell-history")
 Connector conn = null
 if (web) {
-  WebServer.getInstance(8080).addStatic("/", "/org/arl/fjage/web")
-  try {
+  def websvr = WebServer.getInstance(8080)
+  if (websvr.start()) {
+    websvr.addStatic("/", "/org/arl/fjage/web")
     conn = new WebSocketHubConnector(8080, "/shell/ws")
     container.openWebSocketServer(8080, "/ws")
-  } catch (UncheckedIOException ex) {
+  } else {
     // fall back to the console shell if the web server is unavailable
-    println "fjåge web shell unavailable: ${ex.message}"
+    println "fjåge web shell unavailable: unable to start web server on port 8080"
     web = false
   }
 }

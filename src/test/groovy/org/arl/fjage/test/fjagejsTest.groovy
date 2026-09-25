@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.test
 
 import org.arl.fjage.*
+import org.arl.fjage.connectors.WebServer
 import org.arl.fjage.connectors.WebSocketHubConnector
 import org.arl.fjage.remote.MasterContainer
 import org.arl.fjage.shell.EchoScriptEngine
@@ -39,6 +40,7 @@ class fjagejsTest {
     def platform = new RealTimePlatform()
     def container = new MasterContainer(platform, 5081)
     container.addConnector(new WebSocketHubConnector(8080, "/ws", true))
+    WebServer.getInstance(8080).start()
     container.add("shell", new ShellAgent(new EchoScriptEngine()))
     platform.start()
     container.add('echo', new EchoServerAgent())

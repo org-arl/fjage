@@ -102,6 +102,7 @@ public class T6WebSocketTest {
       wsPort = ss.getLocalPort();
       ss.close();
       assertTrue("failed to open WS server", fx.master.openWebSocketServer(wsPort, "/ws"));
+      assertTrue("failed to start web server", org.arl.fjage.connectors.WebServer.getInstance(wsPort).start());
 
       client.start();
       WsEndpoint ep = new WsEndpoint();

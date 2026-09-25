@@ -16,7 +16,6 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import org.junit.After;
 import org.junit.Test;
@@ -33,20 +32,6 @@ public class WebSocketHubConnectorTest {
   private static int freePort() throws IOException {
     try (ServerSocket s = new ServerSocket(0)) {
       return s.getLocalPort();
-    }
-  }
-
-  @Test
-  public void busyPortFails() throws Exception {
-    try (ServerSocket blocker = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
-      port = blocker.getLocalPort();
-      try {
-        new WebSocketHubConnector(port, "/ws");
-        fail("connector on a busy port should not be created");
-      } catch (UncheckedIOException ex) {
-        // expected
-      }
-      assertFalse("failed connector should not leave its handler behind", WebServer.getInstance(port).hasHandler("/ws"));
     }
   }
 

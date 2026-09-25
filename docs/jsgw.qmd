@@ -30,12 +30,13 @@ def websvr = WebServer.getInstance(8080)
 websvr.addStatic('/', '/org/arl/fjage/web')
 // add any other contexts needed to serve your application here
 container.openWebSocketServer(8080, '/ws')
+websvr.start()
 container.add 'shell', new ShellAgent(new GroovyScriptEngine())
 // add other agents to the container here
 platform.start()
 ```
 
-Here `WebServer.addStatic()` serves the static web resources bundled in the fjåge jar, and `openWebSocketServer()` opens a WebSocket endpoint (at `ws://hostname:8080/ws`) that fjage.js gateways connect to. If you just want to try things out, running `./fjage.sh -web` in the fjåge repository sets up an equivalent web-enabled container for you.
+Here `WebServer.addStatic()` serves the static web resources bundled in the fjåge jar, and `openWebSocketServer()` opens a WebSocket endpoint (at `ws://hostname:8080/ws`) that fjage.js gateways connect to. `WebServer.start()` starts serving once everything is set up, and returns `false` if the web server cannot start (for example, if the port is already in use). If you just want to try things out, running `./fjage.sh -web` in the fjåge repository sets up an equivalent web-enabled container for you.
 
 ## Use the JavaScript module
 
