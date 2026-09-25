@@ -14,6 +14,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import org.junit.Test;
@@ -23,6 +25,16 @@ public class TcpHubConnectorTest {
   @Test(expected = UncheckedIOException.class)
   public void busyPortFailsToBind() throws Exception {
     try (ServerSocket blocker = new ServerSocket(0)) {
+      new TcpHubConnector(blocker.getLocalPort());
+    }
+  }
+
+  @Test(expected = UncheckedIOException.class)
+  public void portInUseOnOneAddressFailsToBind() throws Exception {
+    // e.g. a web server listening only on 127.0.0.1
+    try (ServerSocket blocker = new ServerSocket()) {
+      blocker.setReuseAddress(true);
+      blocker.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
       new TcpHubConnector(blocker.getLocalPort());
     }
   }
