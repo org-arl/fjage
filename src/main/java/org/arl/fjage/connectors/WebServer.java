@@ -202,20 +202,13 @@ public class WebServer {
   }
 
   /**
-   * Checks if the web server has started successfully.
+   * Starts the web server, if not already started. A failure to start
+   * (e.g. port already in use) is logged.
    *
-   * @return true if started, false if not yet started or if starting failed.
+   * @return true if the server is running, false if it failed to start.
    */
-  public boolean isStarted() {
-    return started;
-  }
-
-  /**
-   * Starts the web server. A failure to start (e.g. port already in use) is
-   * logged, and can be detected using {@link #isStarted()}.
-   */
-  public void start() {
-    if (started) return;
+  public boolean start() {
+    if (started) return true;
     try {
       server.start();
       log.info("Started web server on port "+port);
@@ -226,6 +219,7 @@ public class WebServer {
       if (isPortInUse(ex)) log.log(Level.WARNING, "Unable to start web server: port "+port+" is already in use", ex);
       else log.log(Level.WARNING, "Unable to start web server on port "+port, ex);
     }
+    return started;
   }
 
   /**

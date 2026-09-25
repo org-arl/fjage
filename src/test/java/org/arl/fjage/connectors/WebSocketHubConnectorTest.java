@@ -73,7 +73,7 @@ public class WebSocketHubConnectorTest {
       // expected
     }
     WebServer server = WebServer.getInstance(port);
-    assertTrue(server.isStarted());
+    assertTrue(server.start());
     assertTrue(server.hasHandler("/ws"));
     first.close();
     assertFalse(server.hasHandler("/ws"));

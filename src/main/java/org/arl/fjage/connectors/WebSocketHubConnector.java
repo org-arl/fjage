@@ -103,8 +103,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
       }
     });
     if (handler == null) throw unavailable("Unable to add WebSocket handler at :"+port+context);
-    server.start();
-    if (!server.isStarted()) {
+    if (!server.start()) {
       server.removeHandler(handler);
       throw unavailable("Unable to start web server on port "+port);
     }
