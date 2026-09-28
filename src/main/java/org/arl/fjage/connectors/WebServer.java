@@ -83,9 +83,10 @@ public class WebServer {
 
   /**
    * Gets an instance of a web server running on the specified port. If an instance is not
-   * already available, a new one is created.
+   * already available, a new one is created and started.
    *
    * @param port HTTP port number.
+   * @throws UncheckedIOException if a new web server cannot be started (e.g. port already in use).
    */
   public static WebServer getInstance(int port) {
     synchronized (servers) {
@@ -97,10 +98,11 @@ public class WebServer {
 
   /**
    * Gets an instance of a web server running on the specified port. If an instance is not
-   * already available, a new one is created.
+   * already available, a new one is created and started.
    *
    * @param port HTTP port number.
    * @param ip IP address to bind HTTP server to.
+   * @throws UncheckedIOException if a new web server cannot be started (e.g. port already in use).
    */
   public static WebServer getInstance(int port, String ip) {
     synchronized (servers) {
@@ -167,15 +169,16 @@ public class WebServer {
    * <code> GzipHandler -> RewriteHandler -> ContextHandlerCollection[ contexts[] , DefaultHandler] </code>
    * </p>
    * Any new handlers added to the server will be added to the list of ContextHandlers (contexts).
+   * The server is started right away, and handlers and rules may be added to it while it runs.
    *
    * @param port HTTP port number.
    * @param ip IP address to bind HTTP server to.
+   * @throws UncheckedIOException if the server cannot be started (e.g. port already in use).
    */
   protected WebServer(int port, String ip) {
     this.port = port;
     server = new Server(InetSocketAddress.createUnresolved(ip, port));
     server.setStopAtShutdown(true);
-    if (port > 0) servers.put(port, this);
     rewrite = new RewriteHandler();
     rewrite.setRewriteRequestURI(true);
     rewrite.setRewritePathInfo(true);
@@ -189,7 +192,21 @@ public class WebServer {
     server.setHandler(gzipHandler);
     ThreadPool pool = server.getThreadPool();
     if (pool instanceof QueuedThreadPool) ((QueuedThreadPool)pool).setDaemon(true);
-    started = false;
+    try {
+      server.start();
+    } catch (Exception ex) {
+      try {
+        server.stop();
+      } catch (Exception ignored) {
+        // best effort cleanup of a server that never started
+      }
+      // name the most common cause explicitly
+      String msg = isPortInUse(ex) ? "Unable to start web server: port "+port+" is already in use" : "Unable to start web server on port "+port;
+      throw new UncheckedIOException(msg, ex instanceof IOException ? (IOException)ex : new IOException(msg, ex));
+    }
+    started = true;
+    log.info("Started web server on port "+port);
+    if (port > 0) servers.put(port, this);
   }
 
   /**
@@ -202,20 +219,14 @@ public class WebServer {
   }
 
   /**
-   * Starts the web server.
+   * Starts the web server. The web server is started when it is created, so this method
+   * does nothing, and is kept for backward compatibility.
+   *
+   * @deprecated the web server is started by {@link #getInstance(int)}.
    */
+  @Deprecated
   public void start() {
-    if (started) return;
-    try {
-      server.start();
-      log.info("Started web server on port "+port);
-      started = true;
-    } catch (Exception ex) {
-      // a web server that fails to start is not fatal, but the caller gets back a server
-      // that quietly serves nothing, so name the most common cause explicitly
-      if (isPortInUse(ex)) log.log(Level.WARNING, "Unable to start web server: port "+port+" is already in use", ex);
-      else log.log(Level.WARNING, "Unable to start web server on port "+port, ex);
-    }
+    // already started
   }
 
   /**
@@ -466,12 +477,16 @@ public class WebServer {
    *
    * @param context context path.
    * @param handler handler to add.
-   * @return ContextHandler object if added, null otherwise.
+   * @return ContextHandler object if added, null otherwise (e.g. context already in use).
    */
   public ContextHandler addHandler(String context, AbstractHandler handler) {
     if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
     if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
     if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
+    if (hasHandler(context)) {
+      log.warning("Context "+context+" already in use on port "+port);
+      return null;
+    }
     ContextHandler c = new ContextHandler(context);
     // serve the bare context path directly, rather than redirecting it to the path with a
     // trailing slash; web socket clients cannot follow a redirect on an upgrade request
@@ -569,9 +584,7 @@ public class WebServer {
 
   /**
    * Adds a rule to rewrite handler.
-   * <p>
-   * NOTE: Rules cannot be added after the server is started.
-   * </p>
+   *
    * @param rule rewrite rule.
    * @return true if added, false otherwise.
    */
@@ -609,8 +622,7 @@ public class WebServer {
   //////// private methods
 
   /**
-   * Adds a context handler to the server. Context handler should be added before the web
-   * server is started.
+   * Adds a context handler to the running server, and starts it.
    *
    * @param handler context handler
    * @return true if added, false otherwise.

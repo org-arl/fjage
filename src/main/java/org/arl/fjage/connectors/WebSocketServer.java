@@ -7,6 +7,8 @@ import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
 import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.util.logging.Logger;
 
@@ -27,6 +29,12 @@ public class WebSocketServer implements WebSocketCreator {
     protected ContextHandler handler;
     protected Logger log = Logger.getLogger(getClass().getName());
 
+    /**
+     * Create a WebSocket server and add it to a web server running on a given
+     * port. If a web server isn't already created, this will start the web server.
+     *
+     * @throws UncheckedIOException if the web server cannot be started, or the context is already in use.
+     */
     public WebSocketServer(int port, String context, ConnectionListener listener, int maxMsgSize) {
         this.context = context;
         this.port = port;
@@ -39,7 +47,10 @@ public class WebSocketServer implements WebSocketCreator {
                 factory.setCreator(WebSocketServer.this);
             }
         });
-        server.start();
+        if (handler == null) {
+            String msg = "Unable to add WebSocket handler at :"+port+context;
+            throw new UncheckedIOException(msg, new IOException(msg));
+        }
     }
 
     public WebSocketServer(int port, String context, ConnectionListener listener) {

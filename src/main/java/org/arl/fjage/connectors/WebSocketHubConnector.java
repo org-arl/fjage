@@ -45,6 +45,8 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
    * Create a web socket connector and add it to a web server running on a
    * given port. If a web server isn't already created, this will start the
    * web server.
+   *
+   * @throws UncheckedIOException if the web server cannot be started, or the context is already in use.
    */
   public WebSocketHubConnector(int port, String context) {
     init(port, context, -1);
@@ -54,6 +56,8 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
    * Create a web socket connector and add it to a web server running on a
    * given port. If a web server isn't already created, this will start the
    * web server.
+   *
+   * @throws UncheckedIOException if the web server cannot be started, or the context is already in use.
    */
   public WebSocketHubConnector(int port, String context, boolean linemode) {
     init(port, context, -1);
@@ -64,6 +68,8 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
    * Create a web socket connector and add it to a web server running on a
    * given port. If a web server isn't already created, this will start the
    * web server.
+   *
+   * @throws UncheckedIOException if the web server cannot be started, or the context is already in use.
    */
   public WebSocketHubConnector(int port, String context, int maxMsgSize) {
     init(port, context, maxMsgSize);
@@ -73,6 +79,8 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
    * Create a web socket connector and add it to a web server running on a
    * given port. If a web server isn't already created, this will start the
    * web server.
+   *
+   * @throws UncheckedIOException if the web server cannot be started, or the context is already in use.
    */
   public WebSocketHubConnector(int port, String context, boolean linemode, int maxMsgSize) {
     init(port, context, maxMsgSize);
@@ -94,7 +102,10 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
         if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize(maxMsgSize);
       }
     });
-    server.start();
+    if (handler == null) {
+      String msg = "Unable to add WebSocket handler at :"+port+context;
+      throw new UncheckedIOException(msg, new IOException(msg));
+    }
     outThread = new OutputThread();
     outThread.start();
   }
