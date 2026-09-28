@@ -35,7 +35,7 @@ container.add 'shell', new ShellAgent(new GroovyScriptEngine())
 platform.start()
 ```
 
-Here `WebServer.addStatic()` serves the static web resources bundled in the fjåge jar, and `openWebSocketServer()` opens a WebSocket endpoint (at `ws://hostname:8080/ws`) that fjage.js gateways connect to. If you just want to try things out, running `./fjage.sh -web` in the fjåge repository sets up an equivalent web-enabled container for you.
+Here `WebServer.addStatic()` serves the static web resources bundled in the fjåge jar, and `openWebSocketServer()` opens a WebSocket endpoint (at `ws://hostname:8080/ws`) that fjage.js gateways connect to. `WebServer.getInstance()` starts the web server, and throws an `UncheckedIOException` if it cannot (for example, if the port is already in use). If you just want to try things out, running `./fjage.sh -web` in the fjåge repository sets up an equivalent web-enabled container for you.
 
 ## Use the JavaScript module
 

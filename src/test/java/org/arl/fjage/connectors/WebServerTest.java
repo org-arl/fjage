@@ -14,20 +14,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.rewrite.handler.RewritePatternRule;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -123,7 +120,6 @@ public class WebServerTest {
   public void handlerContextIsServedOnBarePath() throws IOException {
     WebServer svr = newServer();
     assertNotNull(svr.addHandler("/ws", okHandler()));
-    svr.start();
     assertEquals(200, statusOf(svr, "/ws"));
     assertEquals(200, statusOf(svr, "/ws/"));
   }
@@ -132,28 +128,34 @@ public class WebServerTest {
 
   @Test
   public void portAlreadyInUseIsReported() throws IOException {
+    int port;
     try (ServerSocket blocker = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
-      svr = WebServer.getInstance(blocker.getLocalPort());
-      Logger logger = Logger.getLogger(WebServer.class.getName());
-      final List<LogRecord> records = new ArrayList<>();
-      Handler handler = new Handler() {
-        @Override public void publish(LogRecord r) { records.add(r); }
-        @Override public void flush() { }
-        @Override public void close() { }
-      };
-      logger.addHandler(handler);
+      port = blocker.getLocalPort();
       try {
-        svr.start();
-      } finally {
-        logger.removeHandler(handler);
+        svr = WebServer.getInstance(port);
+        fail("web server should not start on a port already in use");
+      } catch (UncheckedIOException ex) {
+        assertTrue(ex.getMessage(), ex.getMessage().contains("port "+port+" is already in use"));
       }
-      assertFalse("server should not report itself as started", svr.started);
-      boolean reported = false;
-      for (LogRecord r: records) {
-        if (r.getLevel() == Level.WARNING && r.getMessage().contains("port "+blocker.getLocalPort()+" is already in use")) reported = true;
-      }
-      assertTrue("expected a warning naming the busy port, got: "+records, reported);
+      assertFalse(WebServer.hasInstance(port));
     }
+    // once the port is free, a new attempt succeeds
+    svr = WebServer.getInstance(port);
+    assertEquals(404, statusOf(svr, "/"));
+  }
+
+  //////////// the server runs from creation, so rules and contexts may be added any time
+
+  @Test
+  public void ruleAddedToRunningServerIsApplied() throws IOException {
+    WebServer svr = newServer();
+    assertNotNull(svr.addHandler("/new", okHandler()));
+    assertEquals(404, statusOf(svr, "/old"));
+    RewritePatternRule rule = new RewritePatternRule();
+    rule.setPattern("/old");
+    rule.setReplacement("/new");
+    assertTrue(svr.addRule(rule));
+    assertEquals(200, statusOf(svr, "/old"));
   }
 
   @Test
@@ -161,7 +163,6 @@ public class WebServerTest {
     WebServer svr = newServer();
     // any resource directory on the test classpath will do
     assertFalse(svr.addStatic("/static", "org/arl/fjage/shell").isEmpty());
-    svr.start();
     assertEquals(302, statusOf(svr, "/static"));
   }
 

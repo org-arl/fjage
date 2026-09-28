@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage.remote;
 
+import java.io.UncheckedIOException;
 import java.util.*;
 import org.arl.fjage.*;
 import org.arl.fjage.auth.*;
@@ -478,17 +479,41 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     slaves.remove(handler);
   }
 
+  /**
+   * Opens a WebSocket server at the given context on the web server running on a port.
+   * If a web server isn't already created, this will start the web server.
+   *
+   * @param port web server port.
+   * @param context context path for the WebSocket server.
+   * @return true if opened, false if already open, the web server cannot be started,
+   *         or the context is already in use.
+   */
   public boolean openWebSocketServer( int port, String context) {
     return openWebSocketServer(port, context, -1);
   }
 
+  /**
+   * Opens a WebSocket server at the given context on the web server running on a port.
+   * If a web server isn't already created, this will start the web server.
+   *
+   * @param port web server port.
+   * @param context context path for the WebSocket server.
+   * @param maxMsgSize maximum text message size, or -1 for the default.
+   * @return true if opened, false if already open, the web server cannot be started,
+   *         or the context is already in use.
+   */
   public boolean openWebSocketServer( int port, String context, int maxMsgSize) {
     if (websocketListener != null) {
       log.warning("WebSocket server already running at :" + websocketListener.getPort() + websocketListener.getContext());
       return false;
     }
     if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
-    websocketListener = new WebSocketServer(port, context, this, maxMsgSize);
+    try {
+      websocketListener = new WebSocketServer(port, context, this, maxMsgSize);
+    } catch (UncheckedIOException ex) {
+      log.warning(ex.getMessage());
+      return false;
+    }
     log.info("WebSocketServer running at :" + websocketListener.getPort() + websocketListener.getContext());
     return true;
   }
