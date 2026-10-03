@@ -273,4 +273,47 @@ public class FluentRequestTest
     // ---- run ----
     run(Duration.ofMinutes(5));
   }
+
+  @Test
+  public void testLaterResponseIsNotSwallowed() {
+    // ---- given ----
+    final AgentID testService = getContainer().add(new TestServiceAgent());
+    final TestRequestFactory testRequestFactory = new TestRequestFactory(testService);
+    getContainer().add(new Agent() {
+
+      @Override
+      protected void init() {
+        super.init();
+
+        add(new MessageBehavior() {
+
+          @Override
+          public void onReceive(Message message) {
+            if (message instanceof TestDeliverySucceededNtf) {
+              emitTestEvent("EVENT2");
+            }
+          }
+        });
+
+        add(new WakerBehavior(5000, () -> {
+          final TestRequest testRequest = testRequestFactory.newBuilder()
+              .replyAfter(Duration.ofSeconds(1), Performative.AGREE)
+              .replyDelivered(Duration.ofSeconds(1))
+              .build();
+
+          prepareRequest(testRequest)
+              .onAgree(message -> emitTestEvent("EVENT1"))
+              .onTimeout(Duration.ofSeconds(10).toMillis(), () -> getWaiter().fail("timeout not expected"))
+              .send();
+        }));
+      }
+    });
+
+    // ---- expect ----
+    expectOneAndOnlyOneEvent("EVENT1");
+    expectOneAndOnlyOneEvent("EVENT2");
+
+    // ---- run ----
+    run(Duration.ofMinutes(5));
+  }
 }

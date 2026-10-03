@@ -1,5 +1,10 @@
 # Release Notes
 
+### 2.7.0
+
+* Add `prepareMultiResponseRequest()` fluent API for requests with several responses, such as an `AGREE` followed by `INFORM` messages
+* Bugfix: Fluent requests no longer leave a behavior behind that discards later responses to the request
+
 ### 2.6.0
 
 * Add `services()` to the Gateway API to list all services visible through a gateway

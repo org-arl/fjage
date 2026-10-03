@@ -135,6 +135,54 @@ This alternate syntax sometimes yields more readable code, and is supported by f
 If you create an `AgentID` explicitly as `new AgentID('WeatherStation')`, it does not have an owner, and therefore cannot be used with this alternate syntax. It can, however, be used with the original syntax as a recipient for a message.
 :::
 
+## Handling responses without blocking
+
+The `request()` method blocks the calling behavior until a response arrives or the timeout expires. If you would rather carry on and be told when the response arrives, prepare the request with `prepareRequest()`, add a handler for each kind of response you care about, and send it:
+
+``` groovy
+def req = new WeatherForecastReq(city: 'London', country: 'UK', recipient: agent('WeatherStation'))
+prepareRequest(req)
+  .onInform({ rsp -> println "The lowest temperature today is ${rsp.minTemp}" })
+  .onRefuse({ rsp -> println 'The weather station refused the request' })
+  .onTimeout(1000, { println 'The weather station did not respond' })
+  .send()
+```
+
+The [RequestSender](https://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/RequestSender.html) returned by `prepareRequest()` provides the handlers `onAgree()`, `onRefuse()`, `onFailure()` and `onInform()` for responses with those performatives, `otherwise()` for responses with any other performative, and `onTimeout()`. The request ends with the first response that has a handler, or when a timeout expires. A response without a handler is ignored, and the agent continues to wait.
+
+The handlers are called from the agent's thread, just like behaviors, so they can safely access the agent's state.
+
+`send()` returns immediately with a `Future` that can be used to cancel the request. If you want to wait for the request to end, use `sendAndWait()` in place of `send()`. It returns the response that ended the request, or `null` on timeout.
+
+### Requests with several responses
+
+Some requests are answered with more than one message. For example, an agent may respond with an `AGREE` to accept a long task, and follow up with one or more `INFORM` messages as the task progresses. Such requests are prepared with `prepareMultiResponseRequest()`. Each handler returns `true` to end the request, or `false` to continue to wait for more responses:
+
+``` groovy
+prepareMultiResponseRequest(req)
+  .onAgree({ rsp ->
+    println 'Request accepted'
+    false                           // more responses to come
+  })
+  .onInform({ rsp ->
+    println "Progress: ${rsp.progress}%"
+    rsp.progress >= 100             // end the request once the task is complete
+  })
+  .onTimeout(10000, { println 'Gave up waiting' })
+  .send()
+```
+
+The [MultiResponseRequestSender](https://org-arl.github.io/fjage/javadoc/index.html?org/arl/fjage/MultiResponseRequestSender.html) differs from the `RequestSender` in a few ways:
+
+* The request ends only when a handler returns `true`, or when a timeout expires.
+* If there is no handler for it, a `REFUSE` or `FAILURE` response ends the request. Any other response without a handler is ignored.
+* Every response to the request restarts the timeouts, so a timeout is the longest time to wait between responses, and not the time allowed for the whole request.
+* `sendAndWait()` returns the response that ended the request, or `null` on timeout.
+
+::: {.callout-note}
+A Groovy closure returns the value of its last expression. A handler that ends with a statement that has no value, such as a `println`, is treated as returning `false`, and the request continues to wait.
+:::
+
 ## Publishing and subscribing
 
 So far we have sent messages to recipients whose `AgentID` we know. There are times when we may want to publish a message without explicitly knowing who the recipients are. All agents *subscribing* to the *topic* that we publish on would then receive the published message.
