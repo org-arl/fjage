@@ -69,7 +69,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
    */
   public ConsoleShell(InputStream in, OutputStream out) {
     try {
-      term = TerminalBuilder.builder().system(false).type("xterm").jni(false).jansi(false).encoding(StandardCharsets.UTF_8).streams(in, out).build();
+      term = TerminalBuilder.builder().system(false).type("xterm").jni(false).encoding(StandardCharsets.UTF_8).streams(in, out).build();
       setupStyles();
     } catch (IOException ex) {
       log.log(Level.WARNING, "Unable to open terminal: ", ex);
@@ -87,7 +87,7 @@ public class ConsoleShell implements Shell, ConnectionListener {
       OutputStream out = connector.getOutputStream();
       connector.setConnectionListener(this);
       this.connector = connector;
-      term = TerminalBuilder.builder().system(false).type("xterm").jni(false).jansi(false).encoding(StandardCharsets.UTF_8).streams(in, out).build();
+      term = TerminalBuilder.builder().system(false).type("xterm").jni(false).encoding(StandardCharsets.UTF_8).streams(in, out).build();
       setupStyles();
     } catch (IOException ex) {
       log.log(Level.WARNING, "Unable to open terminal: ", ex);
