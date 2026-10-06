@@ -44,9 +44,9 @@ def pyvenv = layout.buildDirectory.dir('pyvenv').get().asFile
 def pyvenvPython = new File(pyvenv, windows ? "Scripts/python.exe" : "bin/python")
 
 java {
-  // compile, test and javadoc with JDK 8, whichever JVM runs Gradle
+  // compile, test and javadoc with JDK 17, whichever JVM runs Gradle
   toolchain {
-    languageVersion = JavaLanguageVersion.of(8)
+    languageVersion = JavaLanguageVersion.of(17)
   }
   withJavadocJar()
   withSourcesJar()
@@ -184,7 +184,7 @@ processResources {
   exclude '**/readme.md'
   doLast {
     copy {
-      into "$buildDir/libs"
+      into layout.buildDirectory.dir('libs')
       from configurations.runtimeClasspath
     }
   }
@@ -204,7 +204,10 @@ test {
     // run fjagepy tests with the venv python
     if (pyvenvPython.exists()) environment 'PYTHON', pyvenvPython.path
   }
-  systemProperties project.properties.subMap(["manualJSTest", "manualPyTest", "manualCTest"])
+  ['manualJSTest', 'manualPyTest', 'manualCTest'].each { name ->
+    def value = providers.gradleProperty(name).orNull
+    if (value != null) systemProperty name, value
+  }
 }
 
 tasks.register('encodingTest', Test) {

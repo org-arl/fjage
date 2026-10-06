@@ -4,7 +4,7 @@ title: "Getting Started"
 
 ## Quick start
 
-We also assume a UNIX style platform (Linux, Mac OS X or [Cygwin](https://www.cygwin.com/) on Windows) with Java Development Kit (JDK) 1.8 or higher installed. If you don't have one, you'll need to [install](https://www.oracle.com/java/technologies/downloads/) one. We also assume that you have network connectivity to download the relevant files automatically.
+We also assume a UNIX style platform (Linux, Mac OS X or [Cygwin](https://www.cygwin.com/) on Windows) with Java Development Kit (JDK) 17 or higher installed. If you don't have one, you'll need to [install](https://www.oracle.com/java/technologies/downloads/) one. We also assume that you have network connectivity to download the relevant files automatically.
 
 Create a new folder for your first fjåge project. Lets call it `MyFjageProject`. Open a terminal window in this folder and download the [fjage_quickstart.sh](https://raw.githubusercontent.com/org-arl/fjage/master/docs/fjage_quickstart.sh) script in that folder:
 

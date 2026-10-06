@@ -4,7 +4,7 @@ fjåge Build Instructions
 Prerequisites
 -------------
 
-* JDK 8 - the build compiles and tests with a JDK 8 toolchain. Gradle is fetched by `./gradlew` and can run on JDK 8 to 24.
+* JDK 17 - the build compiles and tests with a JDK 17 toolchain. Gradle is fetched by `./gradlew`.
 * [Quarto](https://quarto.org/) - required for building documentation
 * Python 3 - required for building and testing the fjagepy gateway
 * Node.js and pnpm/npm - required for building and testing the fjage.js gateway
