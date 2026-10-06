@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage.remote;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Date;
 import java.util.Objects;
 import java.time.Instant;
@@ -73,12 +75,16 @@ public class JsonMessage {
     gson = gsonBuilder.create();
   }
 
+  // Gson reflects over fields, which needs suppressAccessChecks under a SecurityManager. Run it
+  // with fjage's own permissions, so that a caller without them (e.g. a sandboxed script) can
+  // still send and receive messages.
+
   public static JsonMessage fromJson(String s) {
-    return gson.fromJson(s, JsonMessage.class);
+    return AccessController.doPrivileged((PrivilegedAction<JsonMessage>) () -> gson.fromJson(s, JsonMessage.class));
   }
 
   public String toJson() {
-    return gson.toJson(this);
+    return AccessController.doPrivileged((PrivilegedAction<String>) () -> gson.toJson(this));
   }
 
   static JsonMessage createActionRequest(Action action) {
