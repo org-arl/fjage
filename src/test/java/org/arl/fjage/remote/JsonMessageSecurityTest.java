@@ -12,8 +12,10 @@ package org.arl.fjage.remote;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.security.AccessControlContext;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.Permissions;
@@ -41,6 +43,14 @@ public class JsonMessageSecurityTest {
   public static class InMsg extends Message {
     private static final long serialVersionUID = 1L;
     private String secret;
+  }
+
+  // message type whose constructor needs a permission other than suppressAccessChecks
+  public static class CheckedMsg extends Message {
+    private static final long serialVersionUID = 1L;
+    public CheckedMsg() {
+      System.getProperty("user.home");
+    }
   }
 
   private static final AccessControlContext UNTRUSTED = new AccessControlContext(new ProtectionDomain[] {
@@ -87,6 +97,20 @@ public class JsonMessageSecurityTest {
       + "\",\"data\":{\"msgID\":\"1\",\"perf\":\"INFORM\",\"secret\":\"in\"}}}";
     JsonMessage jmsg = untrusted(() -> JsonMessage.fromJson(json));
     assertEquals("in", ((InMsg) jmsg.message).secret);
+  }
+
+  @Test
+  public void fromJsonGrantsNoOtherPermissions() {
+    String json = "{\"action\":\"send\",\"message\":{\"clazz\":\"" + CheckedMsg.class.getName()
+      + "\",\"data\":{\"msgID\":\"2\",\"perf\":\"INFORM\"}}}";
+    try {
+      untrusted(() -> JsonMessage.fromJson(json));
+      fail("constructor ran with fjage's permissions");
+    } catch (RuntimeException ex) {
+      Throwable t = ex;
+      while (t != null && !(t instanceof AccessControlException)) t = t.getCause();
+      assertTrue("expected AccessControlException, got " + ex, t != null);
+    }
   }
 
 }
