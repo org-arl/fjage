@@ -13,8 +13,7 @@ import java.util.regex.Pattern;
 
 import org.arl.fjage.AgentID;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.WebSocketAdapter;
-import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
+import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.junit.Test;
 
@@ -35,14 +34,15 @@ public class T6WebSocketTest {
   private static final int M2C = 3000;   // master -> client messages
 
   /** Gateway-style WS endpoint: collects lines, auto-answers keep-alive. */
-  public static class WsEndpoint extends WebSocketAdapter {
+  public static class WsEndpoint implements Session.Listener.AutoDemanding {
+    private volatile Session session;
     final Queue<String> lines = new ConcurrentLinkedQueue<>();
     final CountDownLatch connected = new CountDownLatch(1);
     final AtomicInteger malformed = new AtomicInteger();
 
     @Override
-    public void onWebSocketConnect(Session sess) {
-      super.onWebSocketConnect(sess);
+    public void onWebSocketOpen(Session sess) {
+      session = sess;
       connected.countDown();
     }
 
@@ -60,9 +60,9 @@ public class T6WebSocketTest {
       }
     }
 
-    void sendLine(String s) {
+    synchronized void sendLine(String s) {
       try {
-        getRemote().sendString(s + "\n");
+        Callback.Completable.with(callback -> session.sendText(s + "\n", callback)).get(5, TimeUnit.SECONDS);
       } catch (Exception ex) {
         // connection closed
       }
@@ -105,8 +105,7 @@ public class T6WebSocketTest {
 
       client.start();
       WsEndpoint ep = new WsEndpoint();
-      Session session = client.connect(ep, URI.create("ws://127.0.0.1:" + wsPort + "/ws"),
-          new ClientUpgradeRequest()).get(10, TimeUnit.SECONDS);
+      Session session = client.connect(ep, URI.create("ws://127.0.0.1:" + wsPort + "/ws")).get(10, TimeUnit.SECONDS);
       assertTrue(ep.connected.await(5, TimeUnit.SECONDS));
 
       // register interest in "wsrx" so the master relays to us
@@ -121,7 +120,7 @@ public class T6WebSocketTest {
             + "\"src\": \"wsc\", \"seq\": " + i + ", \"tns\": " + System.nanoTime()
             + ", \"msgID\": \"ws-" + i + "\", \"perf\": \"INFORM\","
             + " \"recipient\": \"rx_m\", \"sender\": \"wsc\"}}}";
-        session.getRemote().sendString(json + "\n");
+        ep.sendLine(json);
       }
       TestUtil.waitUntil("master received all WS messages", () -> rxM.stats.countFrom("wsc") >= C2M, 60000);
       long c2mMs = System.currentTimeMillis() - t0;

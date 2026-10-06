@@ -1,11 +1,10 @@
 package org.arl.fjage.connectors;
 
 import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
-import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
-import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.websocket.server.ServerUpgradeRequest;
+import org.eclipse.jetty.websocket.server.ServerUpgradeResponse;
+import org.eclipse.jetty.websocket.server.WebSocketCreator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -40,13 +39,7 @@ public class WebSocketServer implements WebSocketCreator {
         this.port = port;
         this.listener = listener;
         server = WebServer.getInstance(port);
-        handler = server.addHandler(context, new WebSocketHandler() {
-            @Override
-            public void configure(WebSocketServletFactory factory) {
-                if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize(maxMsgSize);
-                factory.setCreator(WebSocketServer.this);
-            }
-        });
+        handler = server.addWebSocket(context, this, maxMsgSize);
         if (handler == null) {
             String msg = "Unable to add WebSocket handler at :"+port+context;
             throw new UncheckedIOException(msg, new IOException(msg));
@@ -58,7 +51,7 @@ public class WebSocketServer implements WebSocketCreator {
     }
 
     @Override
-    public Object createWebSocket(ServletUpgradeRequest servletUpgradeRequest, ServletUpgradeResponse servletUpgradeResponse) {
+    public Object createWebSocket(ServerUpgradeRequest request, ServerUpgradeResponse response, Callback callback) {
         WebSocketConnector ws = new WebSocketConnector(context);
         ws.setConnectionListener(listener);
         return ws;

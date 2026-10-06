@@ -1,0 +1,95 @@
+---
+title: "Embedded web server"
+---
+
+fjåge uses Jetty 12.1's native HTTP and WebSocket APIs on Java 17. Groovy 5 applications can use the same APIs. Static content, file uploads, the web shell, observer streams, and remote-container WebSockets share a `WebServer` instance on each port.
+
+## Handler structure
+
+The server starts when `WebServer.getInstance(port)` is called. Contexts and rewrite rules can be added while it is running. A context starts before it becomes available to requests, and the context collection owns its lifecycle. Removing a context stops and destroys its handlers and resources.
+
+```{mermaid}
+flowchart TD
+    Server --> CompressionHandler
+    CompressionHandler --> RewriteHandler
+    RewriteHandler --> Sequence
+    Sequence --> ContextHandlerCollection
+    Sequence --> DefaultHandler
+    ContextHandlerCollection --> ResourceHandler
+    ContextHandlerCollection --> UploadHandler
+    ContextHandlerCollection --> WebSocketUpgradeHandler
+```
+
+Compression uses gzip for HTML, plain text, XML, CSS, and JavaScript. Static resources support welcome files, cache headers, ETags, HEAD requests, and byte ranges. A bare static context such as `/files` redirects to `/files/` with HTTP 302. Custom HTTP handlers and WebSocket contexts accept the bare context path directly.
+
+## Migrating custom HTTP handlers from Jetty 9
+
+`WebServer.addHandler()` now takes `org.eclipse.jetty.server.Handler`. Replace subclasses of Jetty 9's `AbstractHandler` and the servlet request/response signature with `Handler.Abstract` and the native signature. Code that uses Jetty types must be migrated and recompiled, even when its imports have the same names. The servlet API is no longer supplied as a transitive dependency.
+
+Before:
+
+```java
+server.addHandler("/hello", new AbstractHandler() {
+  @Override
+  public void handle(String target, Request baseRequest,
+                     HttpServletRequest request, HttpServletResponse response) throws IOException {
+    response.setContentType("text/plain;charset=utf-8");
+    response.getWriter().print("hello");
+    baseRequest.setHandled(true);
+  }
+});
+```
+
+After:
+
+```java
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
+
+server.addHandler("/hello", new Handler.Abstract() {
+  @Override
+  public boolean handle(Request request, Response response, Callback callback) {
+    response.getHeaders().put(HttpHeader.CONTENT_TYPE, "text/plain;charset=utf-8");
+    Content.Sink.write(response, true, "hello", callback);
+    return true;
+  }
+});
+```
+
+Return `false` to pass a request to the next handler, leaving its callback untouched. Return `true` when accepting a request and complete its callback exactly once, after the response write finishes or processing fails. Passing the callback to `Content.Sink.write()` or `Response.writeError()` lets Jetty complete it. Use `Handler.Abstract.NonBlocking` only when all work performed by the handler is nonblocking. Java 17 does not provide virtual threads.
+
+Use `Request.getPathInContext(request)` for the path within a context and `request.getHeaders()` for HTTP headers. Replace servlet `sendError()` calls with `Response.writeError(request, response, callback, status)`. Custom `ErrorHandler` subclasses use the same native request/response/callback signature. The global and per-context `WebServer.setErrorHandler()` methods remain available.
+
+Built-in rewrite rules such as `RewritePatternRule` remain supported through `WebServer.addRule()`. Custom `Rule` subclasses must implement Jetty 12's `matchAndApply(Rule.Handler)` API.
+
+## WebSocket endpoints
+
+`WebSocketServer` and `WebSocketHubConnector` retain their fjåge constructors and stream interfaces. They use native `WebSocketUpgradeHandler` contexts. To register a custom endpoint, call `WebServer.addWebSocket(context, creator, maxMsgSize)`. The creator uses Jetty 12's `ServerUpgradeRequest`, `ServerUpgradeResponse`, and HTTP `Callback` parameters.
+
+Endpoints implement `org.eclipse.jetty.websocket.api.Session.Listener`. Store the session in `onWebSocketOpen()` and call `session.demand()` to receive an event. After processing a text message, demand the next event. Simple endpoints can implement `Session.Listener.AutoDemanding` instead. Send text with `session.sendText(text, websocketCallback)` and handle completion or failure through the WebSocket callback. The HTTP callback type and WebSocket callback type are different. Applications using Jetty's WebSocket client must declare `org.eclipse.jetty.websocket:jetty-websocket-jetty-client` themselves; fjåge uses that module only in its tests.
+
+The fjåge connectors preserve message order by waiting for send completion on their writer threads, with a two-second timeout. A timeout or failed send disconnects the affected session. WebSocket text uses UTF-8, including characters split across separate stream writes. The configured maximum text-message size and long idle timeout remain in effect.
+
+## File uploads and directory listings
+
+`WebServer.addUpload()` retains its overloads. Native multipart parsing enforces the configured maximum file size, request size, memory threshold, and temporary directory. The default upload limits remain 1 GiB per file and request, with a 100 MiB memory threshold. Jetty also applies its default limits of 100 parts per request and 8 KiB of headers per part. An empty temporary-directory setting uses the JVM temporary directory.
+
+Multipart parsing and file writes run as blocking work on Jetty worker threads. Uploaded filenames are URL-encoded before resolving them beneath the output directory. Successful uploads return the saved paths as UTF-8 plain text. Multipart failures return HTTP 400, unsupported methods return HTTP 405, and file-write failures return HTTP 500. Temporary multipart files are released on success, parsing failure, and disconnect.
+
+Directory listing remains opt-in through `WebServerOptions.directoryListed(true)`. Requests with `Content-Type: text/plain` receive names, sizes, and timestamps; requests with `Content-Type: application/json` receive JSON entries. JSON filenames are escaped and hidden files are omitted. Other requests use Jetty's resource handler.
+
+## Logging and packaging
+
+Jetty logs through SLF4J. The packaged runtime uses `slf4j-jdk14` to send those logs to Java logging, with the `org.eclipse.jetty` category set to `WARNING`. Applications that supply another SLF4J provider should select a single provider for their runtime.
+
+Use a clean build when upgrading to remove old Jetty and servlet JARs from `build/libs`:
+
+```sh
+./gradlew clean test loadTest jar javadoc
+```
+
+See Jetty's [HTTP programming guide](https://jetty.org/docs/jetty/12.1/programming-guide/server/http.html) and [WebSocket programming guide](https://jetty.org/docs/jetty/12.1/programming-guide/server/websocket.html) for the native APIs.

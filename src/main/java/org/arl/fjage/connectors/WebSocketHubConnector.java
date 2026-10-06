@@ -15,16 +15,13 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jetty.websocket.api.*;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
+import org.eclipse.jetty.websocket.server.ServerUpgradeRequest;
+import org.eclipse.jetty.websocket.server.ServerUpgradeResponse;
+import org.eclipse.jetty.websocket.server.WebSocketCreator;
 import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.websocket.servlet.*;
-import org.eclipse.jetty.websocket.api.annotations.*;
 
 /**
  * Web socket connector.
@@ -96,13 +93,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     }
     server = WebServer.getInstance(port);
     log.info ("Adding WebSocket handler at :"+port + context);
-    handler = server.addHandler(context, new WebSocketHandler() {
-      @Override
-      public void configure(WebSocketServletFactory factory) {
-        factory.setCreator(WebSocketHubConnector.this);
-        if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize(maxMsgSize);
-      }
-    });
+    handler = server.addWebSocket(context, this, maxMsgSize);
     if (handler == null) {
       String msg = "Unable to add WebSocket handler at :"+port+context;
       throw new UncheckedIOException(msg, new IOException(msg));
@@ -112,7 +103,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
   }
 
   @Override
-  public Object createWebSocket(ServletUpgradeRequest req, ServletUpgradeResponse resp) {
+  public Object createWebSocket(ServerUpgradeRequest req, ServerUpgradeResponse resp, org.eclipse.jetty.util.Callback callback) {
     return new WSHandler(this);
   }
 
@@ -138,10 +129,8 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
   @Override
   public String[] connections() {
-    // return all active (check if wsHandlers.session.isOpen()) connections in the format "ip:port"
-    return wsHandlers.stream().filter(h -> h.session != null && h.session.isOpen())
-        .map(h -> h.session.getRemoteAddress().getHostString()+":"+h.session.getRemoteAddress().getPort())
-        .toArray(String[]::new);
+    return wsHandlers.stream().map(h -> h.session).filter(s -> s != null && s.isOpen())
+        .map(WebSocketSupport::address).toArray(String[]::new);
   }
 
   @Override
@@ -156,6 +145,10 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
   @Override
   public void close() {
+    for (WSHandler endpoint : wsHandlers) {
+      Session current = endpoint.session;
+      if (current != null) current.disconnect();
+    }
     outThread.close();
     outThread = null;
     server.removeHandler(handler);
@@ -229,32 +222,32 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
   // POJO for each web socket connection
 
-  @WebSocket(maxIdleTime = Integer.MAX_VALUE, batchMode = BatchMode.OFF)
-  public class WSHandler {
+  public class WSHandler implements Session.Listener {
 
-    Session session = null;
+    volatile Session session = null;
     WebSocketHubConnector conn;
 
     public WSHandler(WebSocketHubConnector conn) {
       this.conn = conn;
     }
 
-    @OnWebSocketConnect
-    public void onConnect(Session session) {
-      log.fine("New connection from "+session.getRemoteAddress());
+    @Override
+    public void onWebSocketOpen(Session session) {
+      log.fine("New connection from "+session.getRemoteSocketAddress());
       this.session = session;
       wsHandlers.add(this);
       if (listener != null) listener.connected(conn);
+      session.demand();
     }
 
-    @OnWebSocketClose
-    public void onClose(int statusCode, String reason) {
-      log.fine("Connection from "+session.getRemoteAddress()+" closed");
+    @Override
+    public void onWebSocketClose(int statusCode, String reason) {
+      log.fine("WebSocket connection closed: "+statusCode+" "+reason);
       session = null;
       wsHandlers.remove(this);
     }
 
-    @OnWebSocketError
+    @Override
     public void onWebSocketError(Throwable cause)  {
       if (cause instanceof org.eclipse.jetty.io.EofException) {
         log.info(cause.toString());
@@ -263,8 +256,8 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
       log.log(Level.WARNING, "WebSocket error: ", cause);
     }
 
-    @OnWebSocketMessage
-    public void onMessage(String message) {
+    @Override
+    public void onWebSocketText(String message) {
       byte[] buf = message.getBytes(StandardCharsets.UTF_8);
       synchronized (conn.pin) {
         for (int c : buf) {
@@ -277,24 +270,12 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
           }
         }
       }
+      Session current = session;
+      if (current != null && current.isOpen()) current.demand();
     }
 
     void write(String s) {
-      try {
-        if (session != null && session.isOpen()) {
-          Future<Void> f = session.getRemote().sendStringByFuture(s);
-          try {
-            f.get(2, TimeUnit.SECONDS);
-          } catch (TimeoutException e){
-            log.fine("Sending timed out. Closing connection to " + session.getRemoteAddress());
-            session.disconnect();
-          } catch (Exception e){
-            log.log(Level.WARNING, "Error sending websocket message: ", e);
-          }
-        }
-      } catch (Exception e) {
-        log.log(Level.WARNING, "Error sending websocket message: ", e);
-      }
+      WebSocketSupport.sendText(session, s, log);
     }
   }
 }

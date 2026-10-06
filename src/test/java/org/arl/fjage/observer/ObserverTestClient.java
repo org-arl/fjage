@@ -19,8 +19,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import org.eclipse.jetty.websocket.api.Callback;
+import java.util.concurrent.TimeUnit;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 /**
@@ -28,8 +28,7 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
  * the events published by an observer, reassembling them on newline, since the
  * hub connector coalesces writes and frames do not align with events.
  */
-@WebSocket
-public class ObserverTestClient {
+public class ObserverTestClient implements Session.Listener.AutoDemanding {
 
   private final List<JsonObject> events = new CopyOnWriteArrayList<JsonObject>();
   private final WebSocketClient client = new WebSocketClient();
@@ -43,8 +42,8 @@ public class ObserverTestClient {
                     .get();
   }
 
-  @OnWebSocketMessage
-  public void onMessage(String s) {
+  @Override
+  public void onWebSocketText(String s) {
     synchronized (buf) {
       buf.append(s);
       int i;
@@ -63,7 +62,7 @@ public class ObserverTestClient {
 
   /** Sends a control command. */
   public void send(String json) throws Exception {
-    session.getRemote().sendString(json+"\n");
+    Callback.Completable.with(callback -> session.sendText(json+"\n", callback)).get(5, TimeUnit.SECONDS);
   }
 
   /** Discards everything collected so far. */
@@ -97,7 +96,7 @@ public class ObserverTestClient {
 
   public void close() {
     try {
-      if (session != null) session.close();
+      if (session != null) session.close(1000, null, Callback.NOOP);
       client.stop();
     } catch (Exception ex) {
       // nothing useful to do in a test teardown
