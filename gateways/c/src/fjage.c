@@ -667,7 +667,7 @@ fjage_gw_t fjage_rs232_open(const char* devname, int baud, const char* settings)
 #endif
   srand(get_time_ms());
   char s[64];
-  sprintf(s, "CGateway-%08x", rand());
+  sprintf(s, "gateway-%08x", rand());
   fgw->aid = fjage_aid_create(s);
   fgw->head = 0;
   return fgw;
