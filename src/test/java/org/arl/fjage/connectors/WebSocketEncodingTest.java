@@ -12,7 +12,7 @@ import org.junit.Test;
 
 public class WebSocketEncodingTest {
 
-  public static class Endpoint extends WebSocketAdapter {
+  public static class Endpoint implements Session.Listener.AutoDemanding {
     final BlockingQueue<String> messages = new LinkedBlockingQueue<>();
     @Override public void onWebSocketText(String text) { messages.add(text); }
   }
@@ -29,7 +29,8 @@ public class WebSocketEncodingTest {
         Endpoint endpoint = new Endpoint();
         Session session = client.connect(endpoint, URI.create("ws://localhost:" + port + "/utf8")).get(5, TimeUnit.SECONDS);
         byte[] bytes = "caf\u00e9 \u4e2d\u6587 \ud83d\ude42\n".getBytes(StandardCharsets.UTF_8);
-        session.getRemote().sendString(new String(bytes, StandardCharsets.UTF_8));
+        Callback.Completable.with(callback -> session.sendText(new String(bytes, StandardCharsets.UTF_8), callback))
+          .get(5, TimeUnit.SECONDS);
         byte[] incoming = new byte[bytes.length];
         int offset = 0;
         while (offset < incoming.length) {

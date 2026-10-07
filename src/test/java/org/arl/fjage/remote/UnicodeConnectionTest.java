@@ -7,6 +7,7 @@ import java.util.concurrent.*;
 import org.arl.fjage.*;
 import org.arl.fjage.connectors.WebServer;
 import org.eclipse.jetty.websocket.api.*;
+import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.junit.Test;
 
@@ -46,8 +47,10 @@ public class UnicodeConnectionTest {
     }
   }
 
-  public static class Endpoint extends WebSocketAdapter {
+  public static class Endpoint implements Session.Listener.AutoDemanding {
+    volatile Session session;
     final BlockingQueue<Message> messages = new LinkedBlockingQueue<>();
+    @Override public void onWebSocketOpen(Session session) { this.session = session; }
     @Override public void onWebSocketText(String text) {
       for (String line : text.split("\n")) {
         JsonMessage message = JsonMessage.fromJson(line);
@@ -57,8 +60,7 @@ public class UnicodeConnectionTest {
           response.id = message.id;
           response.inResponseTo = Action.AGENTS;
           response.agentIDs = new AgentID[] {new AgentID("gateway-unicode")};
-          try { getRemote().sendString(response.toJson() + "\n"); }
-          catch (Exception ex) { throw new RuntimeException(ex); }
+          session.sendText(response.toJson() + "\n", Callback.NOOP);
         }
       }
     }
@@ -82,7 +84,8 @@ public class UnicodeConnectionTest {
       JsonMessage envelope = new JsonMessage();
       envelope.action = Action.SEND;
       envelope.message = request;
-      session.getRemote().sendString(envelope.toJson() + "\n");
+      Callback.Completable.with(callback -> session.sendText(envelope.toJson() + "\n", callback))
+        .get(5, TimeUnit.SECONDS);
       Message response = endpoint.messages.poll(5, TimeUnit.SECONDS);
       assertTrue(response instanceof GenericMessage);
       assertEquals(TEXT, ((GenericMessage)response).get("text"));

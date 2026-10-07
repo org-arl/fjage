@@ -61,6 +61,8 @@ public class JsonMessageSecurityTest {
 
   @Before
   public void setUp() {
+    // Initialize the shared serializer before entering the sandbox. Message adapters are still uncached.
+    new JsonMessage();
     policy = Policy.getPolicy();
     Policy.setPolicy(new Policy() {
       @Override
