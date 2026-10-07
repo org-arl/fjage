@@ -266,6 +266,18 @@ describe('Gateway lifecycle', function () {
     expect(gw.connected).toBeFalse();
   });
 
+  it('should allow a disconnect listener to close and cancel reconnection', function () {
+    const connector = createGateway();
+    openConnection();
+    const setupSpy = isBrowser ? Connector.prototype[setup] : spyOn(connector, setup);
+    setupSpy.calls.reset();
+    gw.addConnListener(connected => { if (!connected) gw.close(); });
+    disconnect();
+    jasmine.clock().tick(200);
+    expect(setupSpy).not.toHaveBeenCalled();
+    expect(gw.connected).toBeFalse();
+  });
+
   it('should allow a connection listener to close before queued writes run', function () {
     const connector = createGateway();
     connector.write('queued');
@@ -275,7 +287,13 @@ describe('Gateway lifecycle', function () {
     expect(gw.connected).toBeFalse();
     expect(goodbye.calls.allArgs().filter(args => args[0] === '{"alive": false}\n').length).toBe(1);
     expect(socket.send).not.toHaveBeenCalledWith('queued\n');
-    expect(socket.on).not.toHaveBeenCalled();
+    if (isBrowser) {
+      expect(socket.onclose).toBeNull();
+      expect(socket.onmessage).toBeNull();
+    } else {
+      expect(socket.removeAllListeners).toHaveBeenCalledWith('close');
+      expect(socket.removeAllListeners).toHaveBeenCalledWith('data');
+    }
     expect(connector.pendingOnOpen.length).toBe(0);
   });
 });
