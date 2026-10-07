@@ -46,7 +46,7 @@ const gw = new Gateway({
 ### [ECMAScript modules](dist/esm)
 
 ```js
-import { Performative, AgentID, Message, Gateway, ShellExecReq } from 'fjage.js'
+import { Performative, AgentID, Message, Gateway, ShellExecReq } from 'fjage'
 const shell = new AgentID('shell');
 const gw = new Gateway({
     hostname: 'localhost',
@@ -72,7 +72,7 @@ const gw = new Gateway({
 Define a normal `Message` subclass, then register it under its fully qualified class name, such as `org.example.TemperatureNtf`. Registration sets the outgoing JSON `clazz`, gives the class a `REQUEST` performative by default if its name ends in `Req`, and lets the gateway create the same class when matching JSON arrives. Incoming messages are matched on the fully qualified name, falling back to the unqualified name only when the incoming `clazz` is itself unqualified. A message whose class is not registered is inflated as a `Message` that retains its original `clazz`.
 
 ```js
-import { Gateway, Message } from 'fjage.js';
+import { Gateway, Message } from 'fjage';
 
 class TemperatureNtf extends Message {
     temperature = null;
@@ -96,7 +96,7 @@ Register message classes used to communicate with another gateway or a fjåge ag
 The `Message` constructor accepts an optional message to reply to and an optional performative. Set custom fields after construction or initialize them in the custom class constructor.
 
 ```js
-import { Gateway, Message, Performative } from 'fjage.js';
+import { Gateway, Message, Performative } from 'fjage';
 
 class QueryRsp extends Message {
     response = null;
