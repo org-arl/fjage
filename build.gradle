@@ -131,7 +131,6 @@ tasks.register('updatexterm') {
 }
 
 jar {
-  dependsOn 'dependencyManifest'
   manifest {
     attributes (
         "Build-Owner": System.getenv().USER ?: "fjage",
@@ -143,21 +142,6 @@ jar {
       into "$buildDir/libs"
       from configurations.runtimeClasspath
     }
-  }
-}
-
-tasks.register('dependencyManifest') {
-  description = 'Writes the Maven paths of the resolved release runtime dependencies'
-  inputs.files configurations.runtimeClasspath
-  outputs.file "$buildDir/libs/fjage-${project.version}-dependencies.txt"
-  doLast {
-    def paths = configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.collect { artifact ->
-      def id = artifact.moduleVersion.id
-      "${id.group.replace('.', '/')}/${id.name}/${id.version}/${artifact.file.name}"
-    }.sort()
-    def manifest = outputs.files.singleFile
-    manifest.parentFile.mkdirs()
-    manifest.text = paths.join('\n') + '\n'
   }
 }
 
