@@ -84,14 +84,8 @@ tasks.register('buildjs') {
         executable npmcmd
         args 'run', 'build'
       }
-    } else if (file('gateways/js/dist/fjage.js').exists()) {
-      if (!gradle.taskGraph.hasTask(":javadoc")) { // only log if not building javadoc
-        project.logger.lifecycle('npm not found. Using cached fjage.js build')
-      }
     } else {
-      if (!gradle.taskGraph.hasTask(":javadoc")) { // only log if not building javadoc
-        project.logger.lifecycle('Not bundling fjage.js. WebShell will not work.')
-      }
+      project.logger.lifecycle('npm not found. Skipping fjage.js build needed by JS gateway tests.')
     }
   }
 }
@@ -153,10 +147,6 @@ jar {
 
 processResources {
   exclude '**/readme.md'
-  with copySpec {
-    from { tasks.named('buildjs').get()?.outputs?.files?.asFileTree?.matching {include 'dist/fjage.js'} ?: [] }
-    into('org/arl/fjage/web/shell')
-  }
 }
 
 test {
