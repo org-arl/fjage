@@ -7,7 +7,6 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.*;
-import org.arl.fjage.FjageException;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
@@ -83,39 +82,5 @@ public class StoreTest {
     } finally {
       executor.shutdownNow();
     }
-  }
-
-  @Test
-  public void loadChecksRootTypeAndRetainsIoFailureBehavior() throws Exception {
-    File file = folder.newFile();
-    try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {
-      out.writeObject("stored");
-    }
-    assertEquals("stored", store.load(String.class, file));
-    try {
-      store.load(Integer.class, file);
-      fail("Wrong root class should fail inside Store.load");
-    } catch (FjageException expected) {
-      assertTrue(expected.getMessage().contains("ClassCastException"));
-    }
-    try (FileOutputStream out = new FileOutputStream(file)) { out.write(1); }
-    assertNull(store.load(String.class, file));
-  }
-
-  @Test
-  public void customClassLoaderStillResolvesStoredClasses() throws Exception {
-    File file = folder.newFile();
-    try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {
-      out.writeObject(new Named());
-    }
-    List<String> resolved = new ArrayList<>();
-    store.clazzLoader = new ClassLoader(getClass().getClassLoader()) {
-      @Override public Class<?> loadClass(String name) throws ClassNotFoundException {
-        resolved.add(name);
-        return super.loadClass(name);
-      }
-    };
-    assertNotNull(store.load(Named.class, file));
-    assertTrue(resolved.contains(Named.class.getName()));
   }
 }

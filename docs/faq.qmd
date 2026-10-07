@@ -27,11 +27,3 @@ title: "Frequently Asked Questions"
 **Q:** Why does my precompiled script not work correctly?
 
 **A:** Precompiled scripts should be derived from the `org.arl.fjage.shell.BaseGroovyScript` base class. To do this, ensure that you have the `@groovy.transform.BaseScript org.arl.fjage.shell.BaseGroovyScript fGroovyScript` annotation in the script.
-
-## Persistent storage
-
-**Q:** How can I limit the resources used when loading serialized store files?
-
-**A:** On Java 8 update 121 or later, configure the JVM's opt-in `jdk.serialFilter` property. For example, `JAVA_TOOL_OPTIONS='-Djdk.serialFilter=maxdepth=20;maxrefs=10000;maxarray=1000000' ./fjage.sh` limits graph depth, references, and array size. Choose limits that fit your application. The setting applies to all Java deserialization in the JVM, including cloning. With no property configured, fjage keeps the runtime's existing filtering policy.
-
-Resource limits allow application and Groovy classes unless a class filter is also configured. Class filters must include all classes needed by stored objects, including their nested values. `Store.load()` checks the root object's requested type after deserialization; this check does not prevent code in a serialized object's `readObject()` method from running. Only load store files you trust. See [Java 8 serialization filtering](https://docs.oracle.com/javase/8/docs/technotes/guides/serialization/filters/serialization-filtering.html) for configuration details.

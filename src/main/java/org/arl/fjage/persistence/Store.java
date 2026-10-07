@@ -132,7 +132,9 @@ public class Store implements Closeable {
             return Class.forName(objectStreamClass.getName(), false, clazzLoader);
         }
       };
-      return type.cast(in.readObject());
+      @SuppressWarnings("unchecked")
+      T rv = (T) in.readObject();
+      return rv;
     } catch (IOException ex) {
       return null;
     } catch (Exception ex) {
