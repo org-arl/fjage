@@ -136,16 +136,16 @@ export class Gateway {
   }
 
   /**
-  * Sends the message to all registered receivers.
+  * Sends a message to the first matching receiver, or null to all receivers.
   *
   * @private
-  * @param {Message} msg
+  * @param {Message|null} msg
   * @returns {boolean} - true if the message was consumed by any listener
   */
   _sendReceivers(msg) {
     for (var lid in this._pending_receives){
       try {
-        if (this._pending_receives[lid] && this._pending_receives[lid](msg)) return true;
+        if (this._pending_receives[lid] && this._pending_receives[lid](msg) && msg !== null) return true;
       } catch (error) {
         console.warn('Error in listener : ' + error);
       }
@@ -639,15 +639,12 @@ export class Gateway {
   }
 
   /**
-  * Closes the gateway. The gateway functionality may not longer be accessed after
-  * this method is called.
+  * Closes the gateway and stops reconnection. Queued writes are discarded if the
+  * connection is not yet open. The gateway may no longer be used after this call.
   * @returns {void}
   */
   close() {
-    if (this.connected) {
-      this.connector.write('{"alive": false}');
-      this.connector.close();
-    }
+    this.connector.close();
   }
 
 }

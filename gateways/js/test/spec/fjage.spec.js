@@ -1119,6 +1119,9 @@ describe('Shell GetFile/PutFile', function () {
 
 async function sendTestStatus(status, trace, type) {
   var gw = new Gateway(gwOpts);
+  await new Promise(resolve => gw.addConnListener(connected => {
+    if (connected) resolve();
+  }));
   let msg = new TestCompleteNtf();
   msg.recipient = gw.agent('test');
   msg.perf = Performative.INFORM;
