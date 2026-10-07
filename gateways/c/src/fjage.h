@@ -534,16 +534,17 @@ float fjage_param_get_float(fjage_gw_t gw, fjage_aid_t aid, const char* param, i
 bool fjage_param_get_bool(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, bool defval);
 
 /// Get a string parameter from an agent. This is a utility function that sends a ParameterReq to an
-/// agent, and returns the value from the agent's response. The returned pointer should be freed by
-/// the caller after use.
+/// agent, and copies the value from the agent's response into a caller-owned buffer.
+/// The buffer is NUL-terminated only if the value is shorter than len; otherwise len bytes are copied without a terminator.
+/// Pass NULL to query the value length, then allow one extra byte for the NUL terminator when allocating a buffer.
 ///
 /// @param gw             Gateway
 /// @param aid            AgentID of the target agent
 /// @param param          Name of the parameter
 /// @param ndx            Index of the parameter (-1 for non-indexed parameters)
-/// @param strval         Pointer to a string to receive data, or NULL
-/// @param len            Size of the buffer, or 0 if strval is NULL
-/// @return               Length of the string copied into the buffer, or length of the string returned by the agent if strval is NULL, or -1 on error.
+/// @param strval         Caller-owned writable buffer, or NULL to query the value length
+/// @param len            Buffer capacity in bytes, or 0 if strval is NULL
+/// @return               Number of value bytes copied, excluding any NUL terminator; full value length if strval is NULL or len <= 0; or -1 on error.
 
 int fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, const char* strval, int len);
 
