@@ -6,6 +6,10 @@
 
 `fjagepy` is a Python gateway for the [fjåge](https://github.com/org-arl/fjage) multi-agent system framework. It enables Python applications to seamlessly communicate with fjåge agents over TCP connections, providing a Pythonic interface to the fjåge ecosystem.
 
+## Releases and changelog
+
+See the [changelog](CHANGELOG.md) for release history and unreleased changes. Python gateway [release tags](https://github.com/org-arl/fjage/tags) use the `fjagepy-v<version>` prefix. Published packages are available on [PyPI](https://pypi.org/project/fjagepy/#history).
+
 ## Features
 
 - **Agent Communication**: Send and receive messages to/from fjåge agents
