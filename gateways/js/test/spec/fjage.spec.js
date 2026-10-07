@@ -189,8 +189,9 @@ describe('Gateway lifecycle', function () {
     const receives = [gw.receive(Message, -1), gw.receive(Message, -1)];
     connector._sendConnEvent(false);
     expect(Object.keys(gw._pending_receives).length).toBe(2);
-    gw._sendReceivers(null);
+    expect(gw._sendReceivers(null)).toBeTrue();
     await Promise.all(receives);
+    expect(gw._sendReceivers(null)).toBeFalse();
   });
 
   it('should deliver a normal message to only one matching receive', async function () {
@@ -201,7 +202,7 @@ describe('Gateway lifecycle', function () {
     expect(gw._sendReceivers(message)).toBeTrue();
     expect(await first).toBe(message);
     expect(Object.keys(gw._pending_receives).length).toBe(1);
-    gw._sendReceivers(null);
+    expect(gw._sendReceivers(null)).toBeTrue();
     expect(await second).toBeNull();
   });
 
@@ -295,6 +296,23 @@ describe('Gateway lifecycle', function () {
       expect(socket.removeAllListeners).toHaveBeenCalledWith('data');
     }
     expect(connector.pendingOnOpen.length).toBe(0);
+  });
+
+  it('should stop a connected event when a listener closes the gateway', function () {
+    const connector = createGateway();
+    const closingListener = jasmine.createSpy('closing listener').and.callFake(connected => {
+      if (connected) gw.close();
+    });
+    const gatewayListener = jasmine.createSpy('later gateway listener');
+    const connectorListener = jasmine.createSpy('later connector listener');
+    gw.addConnListener(closingListener);
+    gw.addConnListener(gatewayListener);
+    connector.addConnectionListener(connectorListener);
+    openConnection();
+    expect(closingListener.calls.allArgs()).toEqual([[true], [false]]);
+    expect(gatewayListener.calls.allArgs()).toEqual([[false]]);
+    expect(connectorListener.calls.allArgs()).toEqual([[false]]);
+    expect(gw.connected).toBeFalse();
   });
 });
 
