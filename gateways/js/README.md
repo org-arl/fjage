@@ -6,7 +6,9 @@ A fjåge Gateway implementation in JavaScript supports both browser (WebSocket) 
 
 ## Versions
 
-fjage.js is included as a part of the [fjage.jar](https://search.maven.org/artifact/com.github.org-arl/fjage) package and also available seperately as a [npm package](https://www.npmjs.com/package/fjage.js).
+fjage.js is available separately as the [fjage npm package](https://www.npmjs.com/package/fjage).
+
+See the [changelog](CHANGELOG.md) for release history and unreleased changes. JavaScript gateway [release tags](https://github.com/org-arl/fjage/tags) use the `fjagejs-v<version>` prefix.
 
 ### fjage.js v2.0.0
 
