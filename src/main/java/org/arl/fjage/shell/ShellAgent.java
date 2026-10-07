@@ -631,26 +631,17 @@ public class ShellAgent extends Agent {
   }
 
   static void skipFully(InputStream in, long count) throws IOException {
-    while (count > 0) {
-      long skipped = in.skip(count);
-      if (skipped > 0) count -= skipped;
-      else {
-        if (in.read() < 0) throw new EOFException("File seek incomplete!");
-        count--;
-      }
-    }
+    in.skipNBytes(count);
   }
 
   static void readFully(InputStream in, byte[] bytes) throws IOException {
-    int offset = 0;
-    while (offset < bytes.length) {
-      int count = in.read(bytes, offset, bytes.length - offset);
-      if (count < 0) throw new EOFException("File read incomplete!");
-      if (count == 0) {
-        int b = in.read();
-        if (b < 0) throw new EOFException("File read incomplete!");
-        bytes[offset++] = (byte)b;
-      } else offset += count;
+    int count = in.readNBytes(bytes, 0, bytes.length);
+    while (count < bytes.length) {
+      // Detect EOF or make progress when a cached stream's bulk read returns zero.
+      int b = in.read();
+      if (b < 0) throw new EOFException("File read incomplete!");
+      bytes[count++] = (byte)b;
+      count += in.readNBytes(bytes, count, bytes.length - count);
     }
   }
 

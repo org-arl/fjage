@@ -208,7 +208,7 @@ public class BlockingByteQueue {
 
   private static void checkRange(byte[] buf, int ofs, int len) {
     Objects.requireNonNull(buf);
-    if (ofs < 0 || len < 0 || ofs > buf.length - len) throw new IndexOutOfBoundsException();
+    Objects.checkFromIndexSize(ofs, len, buf.length);
   }
 
   /**

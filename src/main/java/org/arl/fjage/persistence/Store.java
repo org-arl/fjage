@@ -24,13 +24,6 @@ public class Store implements Closeable {
   protected File root;
   protected String clazz;
   protected ClassLoader clazzLoader;
-  private static final OutputStream DISCARD = new OutputStream() {
-    @Override
-    public void write(int b) {}
-
-    @Override
-    public void write(byte[] b, int ofs, int len) {}
-  };
 
   protected Store(String clazz) {
     this.clazz = clazz;
@@ -88,7 +81,7 @@ public class Store implements Closeable {
     } catch (NoSuchAlgorithmException ex) {
       throw new FjageException("SHA-256 not available");
     }
-    try (ObjectOutputStream out = new ObjectOutputStream(new DigestOutputStream(DISCARD, digest))) {
+    try (ObjectOutputStream out = new ObjectOutputStream(new DigestOutputStream(OutputStream.nullOutputStream(), digest))) {
       out.writeObject(obj);
       out.flush();
       return new BigInteger(1, digest.digest()).toString(16);
