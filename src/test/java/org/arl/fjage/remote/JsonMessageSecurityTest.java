@@ -31,7 +31,9 @@ import org.junit.Test;
  * Tests that JSON conversion works when called from code that lacks
  * suppressAccessChecks, such as a sandboxed script running under a
  * SecurityManager.
+ * These tests intentionally exercise the security APIs retained by Java 17.
  */
+@SuppressWarnings("removal")
 public class JsonMessageSecurityTest {
 
   // message types used only here, so Gson builds their adapters during the test
