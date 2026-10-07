@@ -583,42 +583,34 @@ public class ShellAgent extends Agent {
         long ofs = req.getOffset();
         long len = req.getLength();
         long length = f.length();
-        if (ofs > length) {
+        long position = ofs < 0 ? length + ofs : ofs;
+        if (position < 0 || position > length) {
           send(new Message(req, Performative.REFUSE));
           return;
         }
-        if (len <= 0) len = length-ofs;
-        else if (ofs+len > length) len = length-ofs;
+        long remaining = length - position;
+        if (len <= 0 || len > remaining) len = remaining;
         if (len > Integer.MAX_VALUE) throw new IOException("File is too large!");
         byte[] bytes = new byte[(int)len];
         String key = cacheKey(filename);
-        InputStreamCacheEntry isce = isCache.get(key);
+        InputStreamCacheEntry isce = isCache.remove(key);
         if (isce != null) {
-          if (isce.pos == ofs) {
-            isce.lastUsed = currentTimeMillis();
-            isce.pos += len;
+          if (isce.pos == position) {
             is = isce.is;
           } else {
             isce.is.close();
-            isCache.remove(key);
           }
         }
-        int offset = 0;
-        int numRead;
         if (is == null) {
           is = new FileInputStream(f);
-          if (ofs > 0) is.skip(ofs);
-          else if (ofs < 0) is.skip(length-ofs);
+          skipFully(is, position);
         }
-        while (offset < bytes.length && (numRead = is.read(bytes, offset, bytes.length-offset)) >= 0)
-          offset += numRead;
-        if (offset < bytes.length) throw new IOException("File read incomplete!");
+        readFully(is, bytes);
         rsp = new GetFileRsp(req);
         rsp.setOffset(ofs);
         rsp.setContents(bytes);
         if (ofs != 0) {
-          if (!isCache.containsKey(key))
-            isCache.put(key, new InputStreamCacheEntry(is, ofs+bytes.length));
+          isCache.put(key, new InputStreamCacheEntry(is, position + bytes.length));
           is = null;
         }
       }
@@ -636,6 +628,30 @@ public class ShellAgent extends Agent {
     }
     if (rsp != null) send(rsp);
     else send(new Message(req, Performative.FAILURE));
+  }
+
+  static void skipFully(InputStream in, long count) throws IOException {
+    while (count > 0) {
+      long skipped = in.skip(count);
+      if (skipped > 0) count -= skipped;
+      else {
+        if (in.read() < 0) throw new EOFException("File seek incomplete!");
+        count--;
+      }
+    }
+  }
+
+  static void readFully(InputStream in, byte[] bytes) throws IOException {
+    int offset = 0;
+    while (offset < bytes.length) {
+      int count = in.read(bytes, offset, bytes.length - offset);
+      if (count < 0) throw new EOFException("File read incomplete!");
+      if (count == 0) {
+        int b = in.read();
+        if (b < 0) throw new EOFException("File read incomplete!");
+        bytes[offset++] = (byte)b;
+      } else offset += count;
+    }
   }
 
   private void handlePutFileReq(final PutFileReq req) {

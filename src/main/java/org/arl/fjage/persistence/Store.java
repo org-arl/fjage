@@ -5,7 +5,7 @@ import java.util.*;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.DigestOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.arl.fjage.Agent;
 import org.arl.fjage.FjageException;
@@ -23,16 +23,17 @@ public class Store implements Closeable {
   protected File root;
   protected String clazz;
   protected ClassLoader clazzLoader;
-  private final MessageDigest md;
+  private static final OutputStream DISCARD = new OutputStream() {
+    @Override
+    public void write(int b) {}
+
+    @Override
+    public void write(byte[] b, int ofs, int len) {}
+  };
 
   protected Store(String clazz) {
     this.clazz = clazz;
     clazzLoader = defaultClazzLoader;
-    try {
-      md = MessageDigest.getInstance("SHA-256");
-    } catch (NoSuchAlgorithmException ex) {
-      throw new FjageException("SHA-256 not available");
-    }
     root = new File(storeRoot, clazz);
   }
 
@@ -67,14 +68,6 @@ public class Store implements Closeable {
     }
   }
 
-  private String sha(byte[] input) {
-    synchronized (md) {
-      byte[] digest = md.digest(input);
-      BigInteger num = new BigInteger(1, digest);
-      return num.toString(16);
-    }
-  }
-
   /**
    * Gets the ID for an object. If a getter "getId()" exists, it is used to get
    * the ID of the object. Otherwise a SHA-256 hash of the serialized object
@@ -88,18 +81,15 @@ public class Store implements Closeable {
     } catch (Exception ex) {
       // ignore, and try next approach
     }
-    ByteArrayOutputStream baos = null;
-    ObjectOutputStream oos = null;
     try {
-      baos = new ByteArrayOutputStream();
-      oos = new ObjectOutputStream(baos);
-      oos.writeObject(obj);
-      return sha(baos.toByteArray());
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      try (ObjectOutputStream out = new ObjectOutputStream(new DigestOutputStream(DISCARD, digest))) {
+        out.writeObject(obj);
+        out.flush();
+        return new BigInteger(1, digest.digest()).toString(16);
+      }
     } catch (Exception ex) {
       return String.valueOf(obj.hashCode());
-    } finally {
-      closeQuietly(oos);
-      closeQuietly(baos);
     }
   }
 
@@ -142,9 +132,7 @@ public class Store implements Closeable {
             return Class.forName(objectStreamClass.getName(), false, clazzLoader);
         }
       };
-      @SuppressWarnings("unchecked")
-      T rv = (T) in.readObject();
-      return rv;
+      return type.cast(in.readObject());
     } catch (IOException ex) {
       return null;
     } catch (Exception ex) {

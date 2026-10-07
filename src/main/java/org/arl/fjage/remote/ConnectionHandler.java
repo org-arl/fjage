@@ -78,7 +78,7 @@ public class ConnectionHandler extends Thread {
   public void run() {
     Connector c = conn;
     if (c == null) return;
-    BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream()));
+    BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
     out = new DataOutputStream(c.getOutputStream());
     send(ALIVE);
     if (closeOnDead) {

@@ -12,6 +12,7 @@ package org.arl.fjage.connectors;
 
 import java.util.concurrent.*;
 import java.io.ByteArrayOutputStream;
+import java.util.Objects;
 
 /**
  * Byte queue that allows streaming of byte data.
@@ -87,28 +88,37 @@ public class BlockingByteQueue {
    * Writes a byte array to the queue.
    */
   public synchronized boolean write(byte[] buf) {
+    return write(buf, 0, buf.length);
+  }
+
+  /**
+   * Writes a slice of a byte array to the queue.
+   */
+  public synchronized boolean write(byte[] buf, int ofs, int len) {
+    checkRange(buf, ofs, len);
+    if (len == 0) return true;
     if (closed) return false;
-    bytes += buf.length;
-    if (wlen == 0 && buf.length > BLOCK_SIZE) {
+    bytes += len;
+    if (wlen == 0 && ofs == 0 && len == buf.length && len > BLOCK_SIZE) {
       queue.add(buf);
       notifyAll();
       return true;
     }
-    if (wlen+buf.length < BLOCK_SIZE) {
-      System.arraycopy(buf, 0, wbuf, wlen, buf.length);
-      wlen += buf.length;
+    if (len < BLOCK_SIZE - wlen) {
+      System.arraycopy(buf, ofs, wbuf, wlen, len);
+      wlen += len;
       if (rbuf == wbuf) rlen = wlen;
       notifyAll();
       return true;
     }
     int len1 = BLOCK_SIZE - wlen;
-    System.arraycopy(buf, 0, wbuf, wlen, len1);
+    System.arraycopy(buf, ofs, wbuf, wlen, len1);
     if (rbuf == wbuf) rlen = BLOCK_SIZE;
     else queue.add(wbuf);
-    int len2 = buf.length - len1;
+    int len2 = len - len1;
     if (len2 > BLOCK_SIZE) {
       wbuf = new byte[len2];
-      System.arraycopy(buf, len1, wbuf, 0, len2);
+      System.arraycopy(buf, ofs + len1, wbuf, 0, len2);
       queue.add(wbuf);
       wbuf = new byte[BLOCK_SIZE];
       wlen = 0;
@@ -116,7 +126,7 @@ public class BlockingByteQueue {
       return true;
     }
     wbuf = new byte[BLOCK_SIZE];
-    System.arraycopy(buf, len1, wbuf, 0, len2);
+    System.arraycopy(buf, ofs + len1, wbuf, 0, len2);
     wlen = len2;
     notifyAll();
     return true;
@@ -158,14 +168,47 @@ public class BlockingByteQueue {
    * @return the number of bytes read, or -1 if closed
    */
   public synchronized int read(byte[] buf) {
+    return read(buf, 0, buf.length);
+  }
+
+  /**
+   * Reads into a slice of a byte array, blocking until at least one byte is available.
+   *
+   * @return the number of bytes read, zero for an empty slice, or -1 if closed or interrupted
+   */
+  public synchronized int read(byte[] buf, int ofs, int len) {
+    checkRange(buf, ofs, len);
+    if (len == 0) return 0;
     if (closed) return -1;
-    for (int i = 0; i < buf.length; i++) {
-      if (i > 0 && bytes == 0) return i;
-      int c = read();
-      if (c < 0) return i > 0 ? i : -1;
-      buf[i] = (byte)c;
+    try {
+      while (bytes == 0 && !closed) wait();
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
     }
-    return buf.length;
+    if (bytes == 0) return -1;
+    int n = 0;
+    while (n < len && bytes > 0) {
+      if (rpos >= rlen) {
+        rbuf = queue.poll();
+        if (rbuf != null) rlen = rbuf.length;
+        else {
+          rbuf = wbuf;
+          rlen = wlen;
+        }
+        rpos = 0;
+      }
+      int count = Math.min(len - n, rlen - rpos);
+      System.arraycopy(rbuf, rpos, buf, ofs + n, count);
+      rpos += count;
+      bytes -= count;
+      n += count;
+    }
+    return n;
+  }
+
+  private static void checkRange(byte[] buf, int ofs, int len) {
+    Objects.requireNonNull(buf);
+    if (ofs < 0 || len < 0 || ofs > buf.length - len) throw new IndexOutOfBoundsException();
   }
 
   /**

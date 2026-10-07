@@ -47,11 +47,7 @@ public class PseudoInputStream extends InputStream {
 
   @Override
   public int read(byte[] buf, int ofs, int len) {
-    if (ofs == 0 && buf.length == len) return q.read(buf);
-    byte[] tmp = new byte[len];
-    int n = q.read(tmp);
-    System.arraycopy(tmp, 0, buf, ofs, n);
-    return n;
+    return q.read(buf, ofs, len);
   }
 
   @Override

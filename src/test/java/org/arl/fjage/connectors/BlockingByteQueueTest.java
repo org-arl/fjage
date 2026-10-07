@@ -11,18 +11,122 @@ for full license details.
 package org.arl.fjage.connectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 public class BlockingByteQueueTest {
+
+  @Test
+  public void slicesCrossQueueBlocksWithoutChangingSurroundingBytes() {
+    for (int prefix : new int[] {0, 1, 16383, 16384}) {
+      for (int length : new int[] {1, 16383, 16384, 16385, 49157}) {
+        BlockingByteQueue queue = new BlockingByteQueue();
+        byte[] source = new byte[length + 4];
+        for (int i = 0; i < source.length; i++) source[i] = (byte)i;
+        byte[] first = new byte[prefix];
+        Arrays.fill(first, (byte)77);
+        assertTrue(queue.write(first));
+        assertTrue(queue.write(source, 2, length));
+        byte[] actual = new byte[prefix + length + 6];
+        Arrays.fill(actual, (byte)99);
+        assertEquals(prefix + length, queue.read(actual, 3, prefix + length));
+        assertArrayEquals(first, Arrays.copyOfRange(actual, 3, 3 + prefix));
+        assertArrayEquals(Arrays.copyOfRange(source, 2, 2 + length),
+          Arrays.copyOfRange(actual, 3 + prefix, actual.length - 3));
+        assertEquals(99, actual[0]);
+        assertEquals(99, actual[actual.length - 1]);
+        assertEquals(0, queue.available());
+      }
+    }
+  }
+
+  @Test
+  public void invalidSlicesLeaveQueuedBytesUntouched() {
+    BlockingByteQueue queue = new BlockingByteQueue();
+    queue.write(new byte[] {10, 20, 30});
+    for (int[] range : new int[][] {{-1, 1}, {0, -1}, {3, 1}, {1, Integer.MAX_VALUE}}) {
+      try {
+        queue.read(new byte[3], range[0], range[1]);
+        fail("Invalid read should fail");
+      } catch (IndexOutOfBoundsException expected) {}
+      try {
+        queue.write(new byte[3], range[0], range[1]);
+        fail("Invalid write should fail");
+      } catch (IndexOutOfBoundsException expected) {}
+      assertEquals(3, queue.available());
+    }
+    try {
+      queue.read(null, 0, 0);
+      fail("Null read should fail");
+    } catch (NullPointerException expected) {}
+    try {
+      queue.write(null, 0, 0);
+      fail("Null write should fail");
+    } catch (NullPointerException expected) {}
+    assertEquals(10, queue.read());
+    assertEquals(20, queue.read());
+    assertEquals(30, queue.read());
+  }
+
+  @Test
+  public void emptyOperationsNeverBlockAndSlicesReturnEof() throws Exception {
+    PseudoInputStream in = new PseudoInputStream();
+    byte[] bytes = new byte[4];
+    assertEquals(0, in.read(bytes, 2, 0));
+    in.write(new byte[] {1, 2});
+    assertEquals(2, in.read(bytes, 1, 3));
+    assertArrayEquals(new byte[] {0, 1, 2, 0}, bytes);
+    in.close();
+    assertEquals(-1, in.read(bytes, 1, 2));
+    assertEquals(0, in.read(bytes, 4, 0));
+    assertEquals(0, in.read(new byte[0]));
+
+    PseudoOutputStream out = new PseudoOutputStream();
+    out.write(bytes, 1, 2);
+    assertArrayEquals(new byte[] {1, 2}, out.readAvailable());
+    out.close();
+    out.write(bytes, 4, 0);
+    out.write(new byte[0]);
+  }
+
+  @Test
+  public void clearAndCloseDiscardDataAndInterruptRestoresFlag() throws Exception {
+    BlockingByteQueue queue = new BlockingByteQueue();
+    queue.write(new byte[20000]);
+    queue.clear();
+    queue.write(new byte[] {42});
+    assertEquals(42, queue.read());
+    AtomicReference<Boolean> interrupted = new AtomicReference<>();
+    Thread reader = new Thread(() -> {
+      assertEquals(-1, queue.read(new byte[5], 1, 3));
+      interrupted.set(Thread.currentThread().isInterrupted());
+    });
+    reader.start();
+    try {
+      assertTrue("Reader did not block", waitForState(reader, Thread.State.WAITING));
+      reader.interrupt();
+      reader.join(1000);
+      assertFalse(reader.isAlive());
+      assertEquals(Boolean.TRUE, interrupted.get());
+    } finally {
+      queue.close();
+      reader.join(1000);
+    }
+    BlockingByteQueue discarded = new BlockingByteQueue();
+    discarded.write(new byte[20000]);
+    discarded.close();
+    assertEquals(-1, discarded.read(new byte[3], 1, 2));
+  }
 
   @Test
   public void closeUnblocksOutputStreamLineReader() throws Exception {
