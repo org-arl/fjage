@@ -10,7 +10,7 @@ fjåge containers are connected to each other over some form of networked transp
 
 Over the networked transport, the containers communicate using [line delimited JSON messages](https://en.wikipedia.org/wiki/JSON_streaming#Line_delimited_JSON). These JSON objects are framed by a newline characters (\n or \r or \r\n). Each such frame contain a single JSON object which adheres to the JSON as defined in [RFC7159](https://tools.ietf.org/html/rfc7159), and does not support unescaped new-line characters inside a JSON object. The prettified JSON objects with new-lines are shown in this sections as examples to understand and should be "JSONified" before being used.
 
-JSON text uses UTF-8 on TCP and WebSocket connections. A character may span several reads from the underlying byte stream, so decoders must retain incomplete characters between reads.
+JSON text uses UTF-8 on TCP and WebSocket connections. A character may span several reads from the underlying byte stream, so decoders must retain incomplete characters between reads. Shells attached to streams or connectors also use UTF-8 for text input and output.
 
 ### Keep-alive messages
 

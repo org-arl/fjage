@@ -167,7 +167,8 @@ tasks.register('encodingTest', Test) {
   dependsOn 'buildjs'
   testClassesDirs = sourceSets.test.output.classesDirs
   classpath = sourceSets.test.runtimeClasspath
-  include '**/UnicodeConnectionTest.class', '**/WebSocketEncodingTest.class'
+  include '**/UnicodeConnectionTest.class', '**/WebSocketEncodingTest.class', '**/ShellEncodingTest.class'
+  // Every test included in this task runs with a non-UTF-8 JVM default charset.
   defaultCharacterEncoding = 'ISO-8859-1'
 }
 
