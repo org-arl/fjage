@@ -1,4 +1,4 @@
-# Changelog
+# Release notes
 
 All notable changes to the fjåge C gateway (`fjage.h` / `fjage.c`) are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 

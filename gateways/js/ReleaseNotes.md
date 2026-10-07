@@ -1,4 +1,4 @@
-# Changelog
+# Release notes
 
 This file covers the fjage.js JavaScript gateway, published on npm as `fjage`. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 

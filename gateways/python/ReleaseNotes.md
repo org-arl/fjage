@@ -1,4 +1,4 @@
-# Changelog
+# Release notes
 
 This file covers the fjåge Python gateway, published on PyPI as `fjagepy`.
 
