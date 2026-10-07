@@ -78,27 +78,26 @@ class TCPConnector {
 
   _sockReconnect(){
     if (this._closed || this._reconnectTimer !== null || this._firstConn || !this._keepAlive || this.sock.readyState == SOCKET_OPENING || this.sock.readyState == SOCKET_OPEN) return;
-    if (this._firstReConn) this._sendConnEvent(false);
-    if (this._closed) return;
-    this._firstReConn = false;
     this._reconnectTimer = setTimeout(() => {
       this._reconnectTimer = null;
-      if (this._closed) return;
       this.pendingOnOpen = [];
       this._sockSetup(this.url.hostname, this.url.port);
     }, this._reconnectTime);
+    if (this._firstReConn) {
+      this._firstReConn = false;
+      this._sendConnEvent(false);
+    }
   }
 
   _onSockOpen() {
     if (this._closed) return;
-    this._sendConnEvent(true);
-    if (this._closed) return;
     this._firstConn = false;
     this.sock.on('close', this._sockReconnect.bind(this));
     this.sock.on('data', this._processSockData.bind(this));
+    this._buf = '';
+    this._sendConnEvent(true);
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
-    this._buf = '';
   }
 
   _processSockData(s){
