@@ -41,6 +41,7 @@ class TCPConnector {
 
   _sendConnEvent(val) {
     this.connListeners.forEach(l => {
+      if (val && this._closed) return;
       l && {}.toString.call(l) === '[object Function]' && l(val);
     });
   }
