@@ -1,6 +1,10 @@
 name: CI
 
-on: [push]
+# Tag pushes run these tests through release.yml
+on:
+  push:
+    branches: ['**']
+  workflow_call:
 
 jobs:
   build:

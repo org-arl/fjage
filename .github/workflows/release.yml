@@ -1,0 +1,43 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  test:
+    uses: ./.github/workflows/gradle.yml
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup JDK 1.8
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 8
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+      - name: Check tag matches VERSION
+        run: |
+          VERSION=$(cat VERSION)
+          [ "$GITHUB_REF_NAME" = "v$VERSION" ] || { echo "::error::Tag $GITHUB_REF_NAME does not match VERSION $VERSION"; exit 1; }
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+      - name: Build jars
+        run: ./gradlew jar sourcesJar javadocJar
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          JARS=(build/libs/fjage-$VERSION.jar build/libs/fjage-$VERSION-sources.jar build/libs/fjage-$VERSION-javadoc.jar)
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "${JARS[@]}" --clobber
+          else
+            FLAGS=()
+            [[ "$GITHUB_REF_NAME" == *-* ]] && FLAGS+=(--prerelease)
+            gh release create "$GITHUB_REF_NAME" "${JARS[@]}" --title "fjage $GITHUB_REF_NAME" --generate-notes "${FLAGS[@]}"
+          fi

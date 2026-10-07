@@ -11,5 +11,5 @@ The process for creating a new release for fjage is as follows:
 6. Build the documentation using `./gradlew docs`.
 7. Commit the changes and push to the `master` branch.
 8. Create a new git tag with the version number (e.g., `v2.0.1`).
-9. Push the changes and the tag to GitHub.
+9. Push the changes and the tag to GitHub. The `release` workflow runs the tests, then creates the GitHub release with generated notes and attaches the fjage jar, sources jar and javadoc jar. If the release was already created in the GitHub UI, the jars are attached to it instead. Tags with a `-` (e.g. `v2.7.0-rc1`) are marked as pre-releases.
 10. Publish the release on GitHub using `./gradlew publish` (requires credentials).
