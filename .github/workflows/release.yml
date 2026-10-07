@@ -36,6 +36,7 @@ jobs:
           JARS=(build/libs/fjage-$VERSION.jar build/libs/fjage-$VERSION-sources.jar build/libs/fjage-$VERSION-javadoc.jar)
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" "${JARS[@]}" --clobber
+            [[ "$GITHUB_REF_NAME" == *-* ]] && gh release edit "$GITHUB_REF_NAME" --prerelease
           else
             FLAGS=()
             [[ "$GITHUB_REF_NAME" == *-* ]] && FLAGS+=(--prerelease)
