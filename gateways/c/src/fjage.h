@@ -546,7 +546,7 @@ bool fjage_param_get_bool(fjage_gw_t gw, fjage_aid_t aid, const char* param, int
 /// @param len            Buffer capacity in bytes, or 0 if strval is NULL
 /// @return               Number of value bytes copied, excluding any NUL terminator; full value length if strval is NULL or len <= 0; or -1 on error.
 
-int fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, const char* strval, int len);
+int fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, char* strval, int len);
 
 /// Set an integer parameter on an agent. This is a utility function that sends a ParameterReq to an
 /// agent, and returns the value from the agent's response.

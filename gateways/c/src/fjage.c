@@ -1524,7 +1524,7 @@ bool fjage_param_get_bool(fjage_gw_t gw, fjage_aid_t aid, const char* param, int
   return v;
 }
 
-int fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, const char* strval, int len) {
+int fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, int ndx, char* strval, int len) {
   int rv = -1;
   fjage_msg_t msg = fjage_msg_create(PARAM_REQ, FJAGE_REQUEST);
   fjage_msg_set_recipient(msg, aid);
@@ -1536,7 +1536,7 @@ int fjage_param_get_string(fjage_gw_t gw, fjage_aid_t aid, const char* param, in
       const char* v = fjage_msg_get_string(msg, "value");
       if (v != NULL){
         if (strval != NULL && len > 0) {
-          strncpy((char*)strval, v, len);
+          strncpy(strval, v, len);
           rv = strlen(v) > len ? len : strlen(v);
         }
         else rv = strlen(v);
