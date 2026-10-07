@@ -27,6 +27,48 @@ import org.junit.Test;
 public class BlockingByteQueueTest {
 
   @Test
+  public void largeQueueWritesCopyTheSourceBuffer() {
+    byte[] expected = new byte[BlockingByteQueue.BLOCK_SIZE + 1];
+    Arrays.fill(expected, (byte)42);
+    for (boolean slice : new boolean[] {false, true}) {
+      BlockingByteQueue queue = new BlockingByteQueue();
+      byte[] source = expected.clone();
+      assertTrue(slice ? queue.write(source, 0, source.length) : queue.write(source));
+      Arrays.fill(source, (byte)0);
+      assertArrayEquals(expected, queue.readAvailable());
+    }
+  }
+
+  @Test
+  public void largeInputStreamWritesCopyTheSourceBuffer() throws IOException {
+    byte[] expected = new byte[BlockingByteQueue.BLOCK_SIZE + 1];
+    Arrays.fill(expected, (byte)42);
+    byte[] source = expected.clone();
+    try (PseudoInputStream stream = new PseudoInputStream()) {
+      stream.write(source);
+      Arrays.fill(source, (byte)0);
+      byte[] actual = new byte[expected.length];
+      assertEquals(actual.length, stream.read(actual));
+      assertArrayEquals(expected, actual);
+    }
+  }
+
+  @Test
+  public void largeOutputStreamWritesCopyTheSourceBuffer() throws IOException {
+    byte[] expected = new byte[BlockingByteQueue.BLOCK_SIZE + 1];
+    Arrays.fill(expected, (byte)42);
+    for (boolean slice : new boolean[] {false, true}) {
+      byte[] source = expected.clone();
+      try (PseudoOutputStream stream = new PseudoOutputStream()) {
+        if (slice) stream.write(source, 0, source.length);
+        else stream.write(source);
+        Arrays.fill(source, (byte)0);
+        assertArrayEquals(expected, stream.readAvailable());
+      }
+    }
+  }
+
+  @Test
   public void slicesCrossQueueBlocksWithoutChangingSurroundingBytes() {
     for (int prefix : new int[] {0, 1, 16383, 16384}) {
       for (int length : new int[] {1, 16383, 16384, 16385, 49157}) {

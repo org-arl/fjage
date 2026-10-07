@@ -85,14 +85,14 @@ public class BlockingByteQueue {
   }
 
   /**
-   * Writes a byte array to the queue.
+   * Copies a byte array into the queue. The caller may reuse the array after this call.
    */
   public synchronized boolean write(byte[] buf) {
     return write(buf, 0, buf.length);
   }
 
   /**
-   * Writes a slice of a byte array to the queue.
+   * Copies a slice of a byte array into the queue. The caller may reuse the array after this call.
    */
   public synchronized boolean write(byte[] buf, int ofs, int len) {
     checkRange(buf, ofs, len);
@@ -100,7 +100,7 @@ public class BlockingByteQueue {
     if (closed) return false;
     bytes += len;
     if (wlen == 0 && ofs == 0 && len == buf.length && len > BLOCK_SIZE) {
-      queue.add(buf);
+      queue.add(buf.clone());
       notifyAll();
       return true;
     }
