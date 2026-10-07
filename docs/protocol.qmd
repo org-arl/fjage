@@ -10,6 +10,10 @@ fjåge containers are connected to each other over some form of networked transp
 
 Over the networked transport, the containers communicate using [line delimited JSON messages](https://en.wikipedia.org/wiki/JSON_streaming#Line_delimited_JSON). These JSON objects are framed by a newline characters (\n or \r or \r\n). Each such frame contain a single JSON object which adheres to the JSON as defined in [RFC7159](https://tools.ietf.org/html/rfc7159), and does not support unescaped new-line characters inside a JSON object. The prettified JSON objects with new-lines are shown in this sections as examples to understand and should be "JSONified" before being used.
 
+JSON text uses UTF-8 on TCP and WebSocket connections. A character may span several reads from the underlying byte stream, so decoders must retain incomplete characters between reads.
+
+The Java implementation has explicit adapters for `Date`, `Instant`, and `Duration`, and uses Gson's built-in adapters for values such as `UUID` and `URI`. Existing representations and the `GenericValue` `clazz`/`data` envelope are preserved. Application-specific values can register adapters through `JsonMessage.addTypeHierarchyAdapter()` or `JsonMessage.addTypeAdapterFactory()`. Platform reflection filtering remains disabled because enabling it would break existing values such as `File` unless applications provide matching adapters.
+
 ### Keep-alive messages
 
 In addition to the JSON messages described in the rest of this section, two special single-line JSON objects are exchanged to track connection liveness:

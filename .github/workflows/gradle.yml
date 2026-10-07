@@ -42,4 +42,7 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v6
     - name: Test with Gradle
-      run: ./gradlew -i test
+      run: ./gradlew -i test encodingTest
+    - name: Test quickstart installer
+      if: runner.os == 'Linux'
+      run: python -m unittest discover -s src/test/python -p test_quickstart.py

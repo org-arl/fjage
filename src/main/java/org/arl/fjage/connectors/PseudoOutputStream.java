@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.connectors;
 
 import java.io.*;
+import java.nio.charset.Charset;
 
 /**
  * An output stream backed by a byte buffer that can be read from.
@@ -38,14 +39,7 @@ public class PseudoOutputStream extends OutputStream {
 
   @Override
   public void write(byte[] buf, int ofs, int len) throws IOException {
-    if (ofs == 0 && buf.length == len) {
-      write(buf);
-    }
-    else {
-      byte[] tmp = new byte[len];
-      System.arraycopy(buf, ofs, tmp, 0, len);
-      write(tmp);
-    }
+    if (!q.write(buf, ofs, len)) throw new IOException("Stream is closed");
   }
 
   /**
@@ -68,6 +62,15 @@ public class PseudoOutputStream extends OutputStream {
   }
 
   /**
+   * Reads into a slice of a byte buffer. Blocks if no data available.
+   *
+   * @return number of bytes read, zero for an empty slice, or -1 if closed or interrupted
+   */
+  public int read(byte[] buf, int ofs, int len) {
+    return q.read(buf, ofs, len);
+  }
+
+  /**
    * Reads all available data from the stream buffer. Blocks if no data available.
    *
    * @return bytes array on success, null on failure (if stream is closed or interrupt).
@@ -82,9 +85,16 @@ public class PseudoOutputStream extends OutputStream {
    * @return text string on success, null on failure (if stream is closed or interrupt).
    */
   public String readLine() {
+    return readLine(Charset.defaultCharset());
+  }
+
+  /**
+   * Reads a complete line using the given character encoding.
+   */
+  public String readLine(Charset charset) {
     byte[] buf = q.readDelimited((byte)10);
     if (buf == null) return null;
-    return new String(buf);
+    return new String(buf, charset);
   }
 
   /**

@@ -131,6 +131,7 @@ tasks.register('updatexterm') {
 }
 
 jar {
+  dependsOn 'dependencyManifest'
   manifest {
     attributes (
         "Build-Owner": System.getenv().USER ?: "fjage",
@@ -145,6 +146,21 @@ jar {
   }
 }
 
+tasks.register('dependencyManifest') {
+  description = 'Writes the Maven paths of the resolved release runtime dependencies'
+  inputs.files configurations.runtimeClasspath
+  outputs.file "$buildDir/libs/fjage-${project.version}-dependencies.txt"
+  doLast {
+    def paths = configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.collect { artifact ->
+      def id = artifact.moduleVersion.id
+      "${id.group.replace('.', '/')}/${id.name}/${id.version}/${artifact.file.name}"
+    }.sort()
+    def manifest = outputs.files.singleFile
+    manifest.parentFile.mkdirs()
+    manifest.text = paths.join('\n') + '\n'
+  }
+}
+
 processResources {
   exclude '**/readme.md'
 }
@@ -155,11 +171,24 @@ test {
   systemProperties project.properties.subMap(["manualJSTest"])
   systemProperties project.properties.subMap(["manualPyTest"])
   systemProperties project.properties.subMap(["manualCTest"])
+  systemProperty 'fjage.test.classpath', sourceSets.test.runtimeClasspath.asPath
   testLogging {
     events "passed", "skipped", "failed"
     exceptionFormat "full"
   }
 }
+
+tasks.register('encodingTest', Test) {
+  description = 'Checks TCP and WebSocket Unicode transport with a non-UTF-8 default charset'
+  group = 'verification'
+  dependsOn 'buildjs'
+  testClassesDirs = sourceSets.test.output.classesDirs
+  classpath = sourceSets.test.runtimeClasspath
+  include '**/UnicodeConnectionTest.class', '**/WebSocketEncodingTest.class'
+  defaultCharacterEncoding = 'ISO-8859-1'
+}
+
+check.dependsOn 'encodingTest'
 
 tasks.register('loadTest', Test) {
   description = 'Runs multi-container load & fault-injection tests (on demand only, see src/test/java/org/arl/fjage/loadtest/README.md)'
