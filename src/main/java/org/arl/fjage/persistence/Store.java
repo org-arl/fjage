@@ -5,6 +5,7 @@ import java.util.*;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.DigestOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.arl.fjage.Agent;
@@ -81,13 +82,16 @@ public class Store implements Closeable {
     } catch (Exception ex) {
       // ignore, and try next approach
     }
+    MessageDigest digest;
     try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      try (ObjectOutputStream out = new ObjectOutputStream(new DigestOutputStream(DISCARD, digest))) {
-        out.writeObject(obj);
-        out.flush();
-        return new BigInteger(1, digest.digest()).toString(16);
-      }
+      digest = MessageDigest.getInstance("SHA-256");
+    } catch (NoSuchAlgorithmException ex) {
+      throw new FjageException("SHA-256 not available");
+    }
+    try (ObjectOutputStream out = new ObjectOutputStream(new DigestOutputStream(DISCARD, digest))) {
+      out.writeObject(obj);
+      out.flush();
+      return new BigInteger(1, digest.digest()).toString(16);
     } catch (Exception ex) {
       return String.valueOf(obj.hashCode());
     }
