@@ -18,6 +18,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.arl.fjage.persistence.Store;
@@ -422,6 +423,17 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    */
   public RequestSender prepareRequest(Message request) {
     return new InternalRequestSender(request);
+  }
+
+  /**
+   * Prepares a request that may receive several responses, such as an AGREE
+   * followed by one or more INFORM messages.
+   *
+   * @param request Request message.
+   * @return Request sender.
+   */
+  public MultiResponseRequestSender prepareMultiResponseRequest(Message request) {
+    return new InternalMultiResponseRequestSender(request);
   }
 
   /**
@@ -842,139 +854,164 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
   private class InternalRequestSender
       implements RequestSender {
 
-    private final Message request;
-    private List<Consumer<Message>> onAgreeList;
-    private List<Consumer<Message>> onRefuseList;
-    private List<Consumer<Message>> onFailureList;
-    private List<Consumer<Message>> onInformList;
-    private List<Consumer<Message>> otherwiseList;
-    private List<TimeoutEntry> onTimeoutList;
-
-    private List<WakerBehavior> timeoutBehaviorList;
-    private StoppableMessageBehavior messageBehavior;
-
-    private volatile Message message;
-    private volatile boolean done = false;
-    private volatile boolean cancelled = false;
+    private final RequestExchange exchange;
 
     private InternalRequestSender(Message request) {
-      super();
-
-      this.request = request;
-    }
-
-    private <T> List<T> addHandler(List<T> handlerList, T handler) {
-      if (handlerList == null) {
-        handlerList = new ArrayList<>();
-      }
-      handlerList.add(handler);
-      return handlerList;
+      exchange = new RequestExchange(request, false);
     }
 
     @Override
     public RequestSender onAgree(Consumer<Message> consumer) {
-      onAgreeList = addHandler(onAgreeList, consumer);
+      exchange.agreeHandlers.add(ending(consumer));
       return this;
     }
 
     @Override
     public RequestSender onRefuse(Consumer<Message> consumer) {
-      onRefuseList = addHandler(onRefuseList, consumer);
+      exchange.refuseHandlers.add(ending(consumer));
       return this;
     }
 
     @Override
     public RequestSender onFailure(Consumer<Message> consumer) {
-      onFailureList = addHandler(onFailureList, consumer);
+      exchange.failureHandlers.add(ending(consumer));
       return this;
     }
 
     @Override
     public RequestSender onInform(Consumer<Message> consumer) {
-      onInformList = addHandler(onInformList, consumer);
+      exchange.informHandlers.add(ending(consumer));
       return this;
     }
 
     @Override
     public RequestSender otherwise(Consumer<Message> consumer) {
-      otherwiseList = addHandler(otherwiseList, consumer);
+      exchange.otherHandlers.add(ending(consumer));
       return this;
     }
 
     @Override
     public RequestSender onTimeout(long timeout, Runnable runnable) {
-      if (onTimeoutList == null) {
-        onTimeoutList = new ArrayList<>();
-      }
-      onTimeoutList.add(new TimeoutEntry(timeout, runnable));
+      exchange.addTimeout(timeout, runnable);
       return this;
     }
 
     @Override
     public Future<Message> send() {
-      if ((onTimeoutList != null) && !onTimeoutList.isEmpty()) {
-        timeoutBehaviorList = new ArrayList<>();
-        for (final TimeoutEntry timeoutEntry : onTimeoutList) {
-          final WakerBehavior timeoutBehavior = new WakerBehavior(timeoutEntry.getTimeout()) {
-
-            @Override
-            public void onWake() {
-              if (done) {
-                return;
-              }
-              done = true;
-              try {
-                timeoutEntry.getRunnable().run();
-              } catch (Throwable t) {
-                log.log(Level.WARNING, "Exception", t);
-              }
-              stopBehaviors();
-            }
-          };
-          timeoutBehaviorList.add(timeoutBehavior);
-          add(timeoutBehavior);
-        }
-      }
-
-      messageBehavior = new StoppableMessageBehavior(new ReplyMessageFilter(request)) {
-
-        @Override
-        public void onReceive(Message message) {
-          if (done) {
-            return;
-          }
-          if (done()) {
-            return;
-          }
-          switch (message.getPerformative()) {
-            case AGREE:
-              consumeMessageAndMarkAsDone(onAgreeList, message);
-              break;
-            case REFUSE:
-              consumeMessageAndMarkAsDone(onRefuseList, message);
-              break;
-            case FAILURE:
-              consumeMessageAndMarkAsDone(onFailureList, message);
-              break;
-            case INFORM:
-              consumeMessageAndMarkAsDone(onInformList, message);
-              break;
-            default:
-              consumeMessageAndMarkAsDone(otherwiseList, message);
-              break;
-          }
-        }
-      };
-
-      add(messageBehavior);
-
-      Agent.this.send(request);
-
-      return new MessageFuture();
+      return exchange.send();
     }
 
     @Override
     public Message sendAndWait() {
+      return exchange.sendAndWait();
+    }
+
+    private Predicate<Message> ending(Consumer<Message> consumer) {
+      return message -> {
+        if (consumer != null) {
+          consumer.accept(message);
+        }
+        return true;
+      };
+    }
+  }
+
+  private class InternalMultiResponseRequestSender
+      implements MultiResponseRequestSender {
+
+    private final RequestExchange exchange;
+
+    private InternalMultiResponseRequestSender(Message request) {
+      exchange = new RequestExchange(request, true);
+    }
+
+    @Override
+    public MultiResponseRequestSender onAgree(Predicate<Message> handler) {
+      exchange.agreeHandlers.add(handler);
+      return this;
+    }
+
+    @Override
+    public MultiResponseRequestSender onRefuse(Predicate<Message> handler) {
+      exchange.refuseHandlers.add(handler);
+      return this;
+    }
+
+    @Override
+    public MultiResponseRequestSender onFailure(Predicate<Message> handler) {
+      exchange.failureHandlers.add(handler);
+      return this;
+    }
+
+    @Override
+    public MultiResponseRequestSender onInform(Predicate<Message> handler) {
+      exchange.informHandlers.add(handler);
+      return this;
+    }
+
+    @Override
+    public MultiResponseRequestSender otherwise(Predicate<Message> handler) {
+      exchange.otherHandlers.add(handler);
+      return this;
+    }
+
+    @Override
+    public MultiResponseRequestSender onTimeout(long timeout, Runnable runnable) {
+      exchange.addTimeout(timeout, runnable);
+      return this;
+    }
+
+    @Override
+    public Future<Message> send() {
+      return exchange.send();
+    }
+
+    @Override
+    public Message sendAndWait() {
+      return exchange.sendAndWait();
+    }
+  }
+
+  private class RequestExchange {
+
+    private final Message request;
+    private final boolean multiResponse;
+    private final List<Predicate<Message>> agreeHandlers = new ArrayList<>();
+    private final List<Predicate<Message>> refuseHandlers = new ArrayList<>();
+    private final List<Predicate<Message>> failureHandlers = new ArrayList<>();
+    private final List<Predicate<Message>> informHandlers = new ArrayList<>();
+    private final List<Predicate<Message>> otherHandlers = new ArrayList<>();
+    private final List<TimeoutBehavior> timeoutBehaviors = new ArrayList<>();
+    private ResponseBehavior responseBehavior;
+
+    private volatile Message message;
+    private volatile boolean done = false;
+    private volatile boolean cancelled = false;
+
+    private RequestExchange(Message request, boolean multiResponse) {
+      this.request = request;
+      this.multiResponse = multiResponse;
+    }
+
+    private void addTimeout(long timeout, Runnable runnable) {
+      timeoutBehaviors.add(new TimeoutBehavior(timeout, runnable));
+    }
+
+    private Future<Message> send() {
+      final String requestId = request.getMessageID();
+      if (requestId == null) {
+        throw new IllegalArgumentException("Message does not have an ID");
+      }
+      responseBehavior = new ResponseBehavior(response -> requestId.equals(response.getInReplyTo()));
+      for (final TimeoutBehavior timeoutBehavior : timeoutBehaviors) {
+        add(timeoutBehavior);
+      }
+      add(responseBehavior);
+      Agent.this.send(request);
+      return new MessageFuture();
+    }
+
+    private Message sendAndWait() {
       final Future<Message> future = send();
       try {
         return future.get();
@@ -986,38 +1023,74 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       }
     }
 
-    private void stopBehaviors() {
-      if (timeoutBehaviorList != null) {
-        for (final WakerBehavior timeoutBehavior : timeoutBehaviorList) {
-          timeoutBehavior.stop();
+    private void onResponse(Message response) {
+      if (done) {
+        return;
+      }
+      if (multiResponse) {
+        for (final TimeoutBehavior timeoutBehavior : timeoutBehaviors) {
+          timeoutBehavior.extend();
         }
       }
-      if (messageBehavior != null) {
-        messageBehavior.stop();
+      if (endsRequest(response) && !done) {
+        message = response;
+        done = true;
+        stopBehaviors();
       }
     }
 
-    private void consumeMessageAndMarkAsDone(List<Consumer<Message>> consumers, Message message) {
-      if (done || (consumers == null) || consumers.isEmpty()) {
+    private boolean endsRequest(Message response) {
+      final Performative performative = response.getPerformative();
+      final List<Predicate<Message>> handlers = handlersFor(performative);
+      if (handlers.isEmpty()) {
+        return multiResponse && (performative == Performative.REFUSE || performative == Performative.FAILURE);
+      }
+      boolean ends = !multiResponse;
+      for (final Predicate<Message> handler : handlers) {
+        try {
+          ends |= handler.test(response);
+        } catch (Throwable t) {
+          log.log(Level.WARNING, "Exception", t);
+        }
+      }
+      return ends;
+    }
+
+    private List<Predicate<Message>> handlersFor(Performative performative) {
+      if (performative == Performative.AGREE) {
+        return agreeHandlers;
+      }
+      if (performative == Performative.REFUSE) {
+        return refuseHandlers;
+      }
+      if (performative == Performative.FAILURE) {
+        return failureHandlers;
+      }
+      if (performative == Performative.INFORM) {
+        return informHandlers;
+      }
+      return otherHandlers;
+    }
+
+    private void onTimeout(Runnable runnable) {
+      if (done) {
         return;
       }
-      InternalRequestSender.this.message = message;
       done = true;
-      consumeMessage(consumers, message);
+      try {
+        runnable.run();
+      } catch (Throwable t) {
+        log.log(Level.WARNING, "Exception", t);
+      }
+      stopBehaviors();
     }
 
-    private void consumeMessage(List<Consumer<Message>> consumers, Message message) {
-      if ((consumers == null) || consumers.isEmpty()) {
-        return;
+    private void stopBehaviors() {
+      for (final TimeoutBehavior timeoutBehavior : timeoutBehaviors) {
+        timeoutBehavior.stop();
       }
-      for (final Consumer<Message> consumer : consumers) {
-        if (consumer != null) {
-          try {
-            consumer.accept(message);
-          } catch (Throwable t) {
-            log.log(Level.WARNING, "Exception", t);
-          }
-        }
+      if (responseBehavior != null) {
+        responseBehavior.stop();
       }
     }
 
@@ -1088,110 +1161,95 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       }
     }
 
-    private class TimeoutEntry {
+    private class TimeoutBehavior
+        extends Behavior {
 
       private final long timeout;
       private final Runnable runnable;
+      private volatile long deadline;
+      private volatile boolean quit = false;
 
-      public TimeoutEntry(long timeout, Runnable runnable) {
-        super();
-
+      private TimeoutBehavior(long timeout, Runnable runnable) {
         this.timeout = timeout;
         this.runnable = runnable;
       }
 
-      public long getTimeout() {
-        return timeout;
+      private void extend() {
+        deadline = currentTimeMillis() + timeout;
       }
 
-      public Runnable getRunnable() {
-        return runnable;
-      }
-    }
-
-    private class ReplyMessageFilter
-        implements MessageFilter {
-
-      private final String messageId;
-
-      public ReplyMessageFilter(Message request) {
-        super();
-
-        messageId = request.getMessageID();
-        if (messageId == null) {
-          throw new IllegalArgumentException("Message does not have an ID");
-        }
-      }
-
-      @Override
-      public boolean matches(Message message) {
-        return ((message.getInReplyTo() != null) && message.getInReplyTo().equals(messageId));
-      }
-    }
-
-    private class StoppableMessageBehavior
-        extends Behavior {
-
-      private final MessageFilter filter;
-      private volatile boolean quit = false;
-
-      public StoppableMessageBehavior() {
-        this((MessageFilter) null);
-      }
-
-      public StoppableMessageBehavior(final Class<?> cls) {
-        this(cls::isInstance);
-      }
-
-      public StoppableMessageBehavior(final MessageFilter filter) {
-        super();
-
-        this.filter = filter;
-      }
-
-      public boolean accepts(Message msg) {
-        if (filter == null) {
-          return true;
-        }
-        return filter.matches(msg);
-      }
-
-      public void onReceive(Message msg) {
-        if (action != null) {
-          action.call(msg);
-        }
-      }
-
-      @Override
-      public final void action() {
-        final Message msg;
-        if (filter == null) {
-          msg = agent.receive();
-        } else {
-          msg = agent.receive(filter, 0);
-        }
-        if (msg == null) {
-          block();
-        } else {
-          onReceive(msg);
-        }
-      }
-
-      public final void stop() {
+      private void stop() {
         quit = true;
+        restart();
       }
 
       @Override
-      public final boolean done() {
+      public void onStart() {
+        extend();
+        block(timeout);
+      }
+
+      @Override
+      public void action() {
+        if (quit) {
+          return;
+        }
+        final long remaining = deadline - currentTimeMillis();
+        if (remaining > 0) {
+          block(remaining);
+          return;
+        }
+        quit = true;
+        onTimeout(runnable);
+      }
+
+      @Override
+      public boolean done() {
         return quit;
       }
 
       @Override
       public int getPriority() {
-        if (filter != null) {
-          return -100;
+        return Integer.MIN_VALUE;
+      }
+    }
+
+    private class ResponseBehavior
+        extends Behavior {
+
+      private final MessageFilter filter;
+      private volatile boolean quit = false;
+
+      private ResponseBehavior(MessageFilter filter) {
+        this.filter = filter;
+      }
+
+      private void stop() {
+        quit = true;
+        restart();
+      }
+
+      @Override
+      public void action() {
+        if (quit) {
+          return;
         }
-        return 0;
+        final Message response = receive(filter, NON_BLOCKING);
+        if (response == null) {
+          block();
+        } else {
+          onResponse(response);
+        }
+      }
+
+      @Override
+      public boolean done() {
+        return quit;
+      }
+
+      @Override
+      public int getPriority() {
+        return -100;
       }
     }
   }
