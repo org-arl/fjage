@@ -29,6 +29,17 @@ try {
   npmExists = npmproc.exitValue() == 0
 } catch (IOException ignored){}
 
+// check if python exists (used to create the venv for fjagepy tests)
+def pythoncmd = System.getenv('PYTHON') ?: (Os.isFamily(Os.FAMILY_WINDOWS) ? "python" : "python3")
+def pyvenv = file("$buildDir/pyvenv")
+def pyvenvPython = new File(pyvenv, Os.isFamily(Os.FAMILY_WINDOWS) ? "Scripts/python.exe" : "bin/python")
+boolean pythonExists = false
+try {
+  def pyproc = "$pythoncmd --version".execute()
+  pyproc.waitForOrKill(3000)
+  pythonExists = pyproc.exitValue() == 0
+} catch (IOException ignored){}
+
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
@@ -86,6 +97,25 @@ tasks.register('buildjs') {
       }
     } else {
       project.logger.lifecycle('npm not found. Skipping fjage.js build needed by JS gateway tests.')
+    }
+  }
+}
+
+tasks.register('setupPyVenv') {
+  inputs.file 'gateways/python/pyproject.toml'
+  outputs.dir pyvenv
+  onlyIf {
+    if (!pythonExists) project.logger.lifecycle("$pythoncmd not found. Skipping venv setup needed by fjagepy tests.")
+    pythonExists
+  }
+  doLast {
+    exec {
+      executable pythoncmd
+      args '-m', 'venv', pyvenv
+    }
+    exec {
+      executable pyvenvPython
+      args '-m', 'pip', 'install', '--quiet', '--disable-pip-version-check', '-e', 'gateways/python[dev]'
     }
   }
 }
@@ -150,8 +180,12 @@ processResources {
 }
 
 test {
-  dependsOn 'buildjs'
+  dependsOn 'buildjs', 'setupPyVenv'
   exclude '**/loadtest/**'     // multi-container load tests run on demand via the loadTest task
+  doFirst {
+    // run fjagepy tests with the venv python
+    if (pyvenvPython.exists()) environment 'PYTHON', pyvenvPython.path
+  }
   systemProperties project.properties.subMap(["manualJSTest"])
   systemProperties project.properties.subMap(["manualPyTest"])
   systemProperties project.properties.subMap(["manualCTest"])

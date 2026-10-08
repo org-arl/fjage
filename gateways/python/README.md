@@ -292,6 +292,8 @@ pytest test/test_gateway.py
 pytest --cov=fjagepy
 ```
 
+Running `./gradlew test` from the main fjåge directory creates a venv in `build/pyvenv`, installs the test dependencies into it and runs these tests with it. The venv is created with `python3` (`python` on Windows), or with the interpreter named by the `PYTHON` environment variable.
+
 ### Test Requirements
 
 Tests require a running fjåge container on `localhost:5081`. You can start one using:
