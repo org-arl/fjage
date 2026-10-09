@@ -82,6 +82,7 @@ Building:
 
 * `./gradlew` to build the jars including resources (webshell, fjage.js, etc.)
 * `./gradlew test` to run all regression tests (automated through Github actions CI)
+* `./gradlew jacocoTestReport` to run `test` and `encodingTest` and build a code coverage report in `build/reports/jacoco/test/html` (CI attaches it to each Linux run). Coverage is lower locally if npm or Python is missing, since the JS and Python gateway tests are skipped. The report merges whatever coverage data the last test runs produced, so a run filtered with `--tests` gives a partial report.
 * `./gradlew publish` to publish jars to the Github Maven repository (requires credentials)
 * `quarto render docs` to build developer's documentation (published via GitHub Actions to GitHub Pages)
 * `./gradlew javadoc` to build the Java API documentation
