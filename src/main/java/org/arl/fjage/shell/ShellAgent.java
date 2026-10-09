@@ -17,7 +17,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
@@ -51,6 +50,11 @@ public class ShellAgent extends Agent {
     }
     InitScript(Class<?> cls) {
       this.cls = cls;
+    }
+    void execute(ScriptEngine engine) {
+      if (file != null) engine.exec(file);
+      else if (reader != null) engine.exec(reader, name);
+      else if (cls != null) engine.exec(cls);
     }
   }
 
@@ -251,10 +255,10 @@ public class ShellAgent extends Agent {
     if (!ephemeral) add(new MessageBehavior() {
       @Override
       public void onReceive(Message msg) {
-        if (msg instanceof ShellExecReq) handleExecReq((ShellExecReq)msg);
-        else if (msg instanceof GetFileReq) handleGetFileReq((GetFileReq)msg);
-        else if (msg instanceof PutFileReq) handlePutFileReq((PutFileReq)msg);
-        else if (msg instanceof DeleteFileReq) handleDeleteFileReq((DeleteFileReq)msg);
+        if (msg instanceof ShellExecReq request) handleExecReq(request);
+        else if (msg instanceof GetFileReq request) handleGetFileReq(request);
+        else if (msg instanceof PutFileReq request) handlePutFileReq(request);
+        else if (msg instanceof DeleteFileReq request) handleDeleteFileReq(request);
         else if (msg.getPerformative() == Performative.REQUEST) send(new Message(msg, Performative.NOT_UNDERSTOOD));
         else {
           log.fine(msg.getSender()+" > "+msg.toString());
@@ -274,11 +278,7 @@ public class ShellAgent extends Agent {
       @Override
       public void action() {
         try {
-          for (InitScript script: initScripts) {
-            if (script.file != null) engine.exec(script.file);
-            else if (script.reader != null) engine.exec(script.reader, script.name);
-            else if (script.cls != null) engine.exec(script.cls);
-          }
+          for (InitScript script: initScripts) script.execute(engine);
         } catch (Throwable ex) {
           log.log(Level.WARNING, "Init script failure: "+ex.toString(), ex);
         }
@@ -635,13 +635,15 @@ public class ShellAgent extends Agent {
   }
 
   static void readFully(InputStream in, byte[] bytes) throws IOException {
-    int count = in.readNBytes(bytes, 0, bytes.length);
-    while (count < bytes.length) {
-      // Detect EOF or make progress when a cached stream's bulk read returns zero.
-      int b = in.read();
-      if (b < 0) throw new EOFException("File read incomplete!");
-      bytes[count++] = (byte)b;
-      count += in.readNBytes(bytes, count, bytes.length - count);
+    int offset = 0;
+    while (offset < bytes.length) {
+      int count = in.read(bytes, offset, bytes.length - offset);
+      if (count < 0) throw new EOFException("File read incomplete!");
+      if (count == 0) {
+        int b = in.read();
+        if (b < 0) throw new EOFException("File read incomplete!");
+        bytes[offset++] = (byte)b;
+      } else offset += count;
     }
   }
 
@@ -729,13 +731,13 @@ public class ShellAgent extends Agent {
       }
 
       // Remove cache entries for files in the directory
-      Path dirPath = Paths.get(filename).normalize();
+      Path dirPath = Path.of(filename).normalize();
       Iterator<Map.Entry<String, InputStreamCacheEntry>> it = isCache.entrySet().iterator();
       while (it.hasNext()) {
         Map.Entry<String, InputStreamCacheEntry> entry = it.next();
         Path entryPath;
         try {
-          entryPath = Paths.get(entry.getKey());
+          entryPath = Path.of(entry.getKey());
         } catch (InvalidPathException ex) {
           continue;
         }
@@ -751,7 +753,7 @@ public class ShellAgent extends Agent {
       }
 
       // Remove the directory and its files
-      Path pathToBeDeleted = Paths.get(filename);
+      Path pathToBeDeleted = Path.of(filename);
       try (Stream<Path> stream = Files.walk(pathToBeDeleted)) {
          Iterator<Path> paths = stream.sorted(Comparator.reverseOrder()).iterator();
          while (paths.hasNext()) Files.delete(paths.next());
@@ -781,7 +783,7 @@ public class ShellAgent extends Agent {
   // Canonical form of a filename for use as an isCache key.
   private String cacheKey(String filename) {
     try {
-      return Paths.get(filename).normalize().toString();
+      return Path.of(filename).normalize().toString();
     } catch (InvalidPathException ex) {
       return filename;
     }
