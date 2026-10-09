@@ -1,0 +1,54 @@
+---
+title: "Java 17 and Groovy 5 migration"
+---
+
+fjåge targets Java 17 and uses Groovy 5. Build with the included Gradle wrapper. Custom Jetty integrations also need the [Jetty migration](jetty.qmd).
+
+## Random sampling
+
+Java 17 makes `java.util.Random` implement `RandomGenerator`. Its `nextGaussian(mean, standardDeviation)` method uses a standard deviation. Older fjåge code used the same signature for a variance. Move variance-based calls to `nextGaussianVariance(mean, variance)` when migrating; that helper retains the previous sampling sequence. Bounded `nextDouble(origin, bound)` now follows the JDK contract, including validation and an exclusive upper bound.
+
+Existing `nextExp()` and `nextExp(rate)` keep their seeded sequences. Use the inherited `nextExponential()` for SDK sampling, or derive an independent named generator explicitly:
+
+```java
+var random = AgentLocalRandom.current().createGenerator("L64X128MixRandom");
+double interval = random.nextExponential();
+```
+
+Each `createGenerator()` call consumes a seed from the current generator. Keep the returned instance rather than creating one per sample. Within the same runtime, the same algorithm, seed, and call sequence produce repeatable results; stochastic generators such as `SecureRandom` are rejected before consuming a seed.
+
+## JSON and scripts
+
+File values retain the existing JSON representation, `{"path":"relative/path"}`. Paths remain relative when supplied that way. Readers also accept the string representation emitted by earlier revisions of this branch. Serialization does not require access to the working-directory property.
+
+Classpath Groovy scripts use UTF-8 and release their readers after execution. Completion checks inspect syntax error positions rather than Groovy 2 diagnostic text. Constructor failures report the underlying exception.
+
+Internal records and language simplifications preserve the mutable public message and parameter APIs. The indexed-parameter helper retains dynamic property access. The supplied parameter list remains live, and observer endpoint sets still allow null elements. Startup scripts retain the protected `InitScript` representation; execution now belongs to that descriptor. A sealed replacement would need compatibility machinery without simplifying the existing extension contract.
+
+## Buffer and line limits
+
+Pseudo streams bound queued bytes and delimited output records to 64 MiB by default. A write exceeding the remaining capacity fails atomically instead of blocking. WebSocket input overflow disconnects the offending peer; WebSocket output-record overflow closes the affected connector. Remote JSON input lines are limited to 64 Mi UTF-16 code units, including unterminated input. These limits bound memory used by a stalled consumer or missing newline.
+
+Set positive limits before starting the JVM or creating connections:
+
+```sh
+java -Dorg.arl.fjage.maxQueuedBytes=134217728 \
+     -Dorg.arl.fjage.maxLineChars=134217728 ...
+```
+
+Raise the limits for applications exchanging larger file contents or JSON payloads. The queue constructor also accepts an explicit byte limit. WebSocket frame/message limits and multipart upload limits are separate controls. CR, LF, and CRLF continue to terminate remote JSON records.
+
+## Optional persistence filtering
+
+Stores retain their default deserialization behavior. Applications can set a per-store filter to restrict graph sizes or classes:
+
+```java
+Store store = Store.getInstance(agent);
+store.setDeserializationFilter(ObjectInputFilter.Config.createFilter("maxdepth=32;maxarray=1000000;*"));
+```
+
+The filter combines with the stream's existing filter. Rejected files follow the existing unreadable-file behavior and return null. Set the filter to null to restore the default. Filters must account for the complete stored object graph, including nested types; fjåge does not install a JVM-wide filter factory.
+
+## Security APIs
+
+Java 17's retained access-control APIs remain intentional. Production code suppresses their removal diagnostics, while the security tests still verify restricted callers. The JVM itself emits its runtime warning when the tests install a SecurityManager.
