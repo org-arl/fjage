@@ -24,6 +24,7 @@ public class Store implements Closeable {
   protected File root;
   protected String clazz;
   protected ClassLoader clazzLoader;
+  private volatile ObjectInputFilter deserializationFilter;
 
   protected Store(String clazz) {
     this.clazz = clazz;
@@ -45,6 +46,14 @@ public class Store implements Closeable {
    */
   public static void setClassLoader(ClassLoader cl) {
     defaultClazzLoader = cl;
+  }
+
+  /**
+   * Sets an optional deserialization filter, combined with the stream's existing filter.
+   * A null filter retains the default behavior. Filters apply to the entire stored object graph.
+   */
+  public void setDeserializationFilter(ObjectInputFilter filter) {
+    deserializationFilter = filter;
   }
 
   /**
@@ -129,6 +138,11 @@ public class Store implements Closeable {
             return Class.forName(objectStreamClass.getName(), false, clazzLoader);
         }
       };
+      ObjectInputFilter filter = deserializationFilter;
+      if (filter != null) {
+        ObjectInputFilter existing = in.getObjectInputFilter();
+        in.setObjectInputFilter(existing == null ? filter : ObjectInputFilter.merge(existing, filter));
+      }
       @SuppressWarnings("unchecked")
       T rv = (T) in.readObject();
       return rv;

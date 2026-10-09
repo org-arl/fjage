@@ -83,4 +83,16 @@ public class StoreTest {
       executor.shutdownNow();
     }
   }
+  @Test
+  public void optionalFilterRejectsOversizedArraysAndCanBeReset() {
+    byte[] value = new byte[64];
+    store.put(value);
+    String id = store.getId(value);
+    assertArrayEquals(value, store.getById(byte[].class, id));
+    store.setDeserializationFilter(ObjectInputFilter.Config.createFilter("maxarray=16;*"));
+    assertNull(store.getById(byte[].class, id));
+    store.setDeserializationFilter(null);
+    assertArrayEquals(value, store.getById(byte[].class, id));
+  }
+
 }
