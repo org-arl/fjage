@@ -1,7 +1,10 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
+    directory: "/gateways/js"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-    target-branch: "dev"
