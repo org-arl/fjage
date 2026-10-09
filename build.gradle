@@ -5,6 +5,7 @@ plugins {
   id 'java-library'
   id 'groovy'
   id 'maven-publish'
+  id 'jacoco'
 }
 
 defaultTasks 'jar'
@@ -54,6 +55,11 @@ java {
 
 repositories {
   mavenCentral()
+}
+
+jacoco {
+  // not tracked by Dependabot; bump by hand (must support the JDK running tests)
+  toolVersion = '0.8.15'
 }
 
 def jettyVersion = '9.4.58.v20250814'
@@ -217,6 +223,18 @@ tasks.register('loadTest', Test) {
   classpath = sourceSets.test.runtimeClasspath
   include '**/loadtest/**'
   outputs.upToDateWhen { false }
+  jacoco { enabled = false }   // keep the coverage agent from skewing load & timing measurements
+}
+
+// coverage report merged from the test and encodingTest runs
+tasks.named('jacocoTestReport') {
+  dependsOn test, encodingTest
+  executionData test, encodingTest
+  reports {
+    html.required = true
+    csv.required = true
+    xml.required = false
+  }
 }
 
 javadoc {

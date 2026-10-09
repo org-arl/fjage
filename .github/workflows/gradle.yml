@@ -39,3 +39,30 @@ jobs:
       uses: gradle/actions/setup-gradle@v6
     - name: Test with Gradle
       run: ./gradlew -i test encodingTest
+    - name: Coverage report
+      if: runner.os == 'Linux'
+      run: ./gradlew jacocoTestReport
+    - name: Upload coverage report
+      if: runner.os == 'Linux'
+      uses: actions/upload-artifact@v7
+      with:
+        name: coverage-report
+        path: build/reports/jacoco/test/html
+    - name: Coverage summary
+      if: runner.os == 'Linux'
+      run: |
+        awk -F, '
+          function row(name, covered, missed) {
+            total = covered + missed
+            printf "| %s | %d | %d | %.1f%% |\n", name, covered, total, total ? 100 * covered / total : 0
+          }
+          NR > 1 { im += $4; ic += $5; bm += $6; bc += $7; lm += $8; lc += $9 }
+          END {
+            print "### Code coverage\n"
+            print "| Counter | Covered | Total | Coverage |"
+            print "|---|---:|---:|---:|"
+            row("Instructions", ic, im)
+            row("Branches", bc, bm)
+            row("Lines", lc, lm)
+          }
+        ' build/reports/jacoco/test/jacocoTestReport.csv >> "$GITHUB_STEP_SUMMARY"
