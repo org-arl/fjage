@@ -120,11 +120,12 @@ export class Gateway {
   * Sends an event to all registered listeners of the given type.
   * @private
   * @param {string} type - type of event
-  * @param {Object|Message|string} val - value to be sent to the listeners
+  * @param {Object|Message|string|boolean} val - value to be sent to the listeners
   */
   _sendEvent(type, val) {
     if (!Array.isArray(this._eventListeners[type])) return;
     this._eventListeners[type].forEach(l => {
+      if (type === 'conn' && !!val !== this.connected) return;
       if (l && {}.toString.call(l) === '[object Function]'){
         try {
           l(val);
@@ -136,21 +137,25 @@ export class Gateway {
   }
 
   /**
-  * Sends the message to all registered receivers.
+  * Sends a message to the first matching receiver, or null to all receivers.
   *
   * @private
-  * @param {Message} msg
+  * @param {Message|null} msg
   * @returns {boolean} - true if the message was consumed by any listener
   */
   _sendReceivers(msg) {
+    let consumed = false;
     for (var lid in this._pending_receives){
       try {
-        if (this._pending_receives[lid] && this._pending_receives[lid](msg)) return true;
+        if (this._pending_receives[lid] && this._pending_receives[lid](msg)) {
+          consumed = true;
+          if (msg !== null) break;
+        }
       } catch (error) {
         console.warn('Error in listener : ' + error);
       }
     }
-    return false;
+    return consumed;
   }
 
   /**
@@ -639,15 +644,12 @@ export class Gateway {
   }
 
   /**
-  * Closes the gateway. The gateway functionality may not longer be accessed after
-  * this method is called.
+  * Closes the gateway and stops reconnection. Queued writes are discarded if the
+  * connection is not yet open. The gateway may no longer be used after this call.
   * @returns {void}
   */
   close() {
-    if (this.connected) {
-      this.connector.write('{"alive": false}');
-      this.connector.close();
-    }
+    this.connector.close();
   }
 
 }

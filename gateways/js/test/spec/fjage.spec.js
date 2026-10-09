@@ -1,4 +1,4 @@
-/* global isBrowser isJsDom isNode Performative, AgentID, Message, MessageClass, Gateway, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach jasmine PutFileReq, GetFileReq, GetFileRsp, DeleteFileReq, ShellExecReq*/
+/* global isBrowser isJsDom isNode Performative, AgentID, Message, MessageClass, Gateway, JSONMessage it expect expectAsync describe spyOn beforeAll afterAll beforeEach afterEach jasmine PutFileReq, GetFileReq, GetFileRsp, DeleteFileReq, ShellExecReq*/
 
 const DIRNAME = '.';
 const FILENAME = 'fjage-test.txt';
@@ -121,6 +121,215 @@ function ShellExecReqChecker() {
       return '<ShellExecReqChecker>';
     }
   };
+}
+
+describe('Gateway lifecycle', function () {
+  const setup = isBrowser ? '_websockSetup' : '_sockSetup';
+  const onOpen = isBrowser ? '_onWebsockOpen' : '_onSockOpen';
+  const reconnect = isBrowser ? '_websockReconnect' : '_sockReconnect';
+  const opening = isBrowser ? 0 : 'opening';
+  const open = isBrowser ? 1 : 'open';
+  const closed = isBrowser ? 3 : 'closed';
+  let Connector, gw, socket;
+
+  beforeAll(async function () {
+    const gateway = new Gateway(gwOpts);
+    Connector = gateway.connector.constructor;
+    gateway.close();
+    await delay(0);
+  });
+
+  beforeEach(function () {
+    jasmine.clock().install();
+    socket = jasmine.createSpyObj('socket', ['send', 'close', 'destroy', 'end', 'on', 'removeAllListeners']);
+    Object.assign(socket, { CONNECTING: 0, OPEN: 1, CLOSED: 3, readyState: opening });
+    for (const method of ['close', 'destroy', 'end']) {
+      socket[method].and.callFake(() => { socket.readyState = closed; });
+    }
+    spyOn(Connector.prototype, isBrowser ? setup : '_sockInit').and.callFake(function () {
+      this.sock = socket;
+    });
+  });
+
+  afterEach(function () {
+    if (gw) gw.close();
+    gw = undefined;
+    jasmine.clock().uninstall();
+  });
+
+  function createGateway(opts = {}) {
+    gw = new Gateway({ ...gwOpts, ...opts });
+    gw.connector._reconnectTime = 100;
+    return gw.connector;
+  }
+
+  function openConnection() {
+    socket.readyState = open;
+    gw.connector[onOpen]();
+  }
+
+  function disconnect() {
+    socket.readyState = closed;
+    gw.connector[reconnect]();
+  }
+
+  it('should cancel every pending receive on disconnect when enabled', async function () {
+    const connector = createGateway({ cancelPendingOnDisconnect: true });
+    const filter = jasmine.createSpy('filter').and.returnValue(false);
+    const receives = [gw.receive(Message, 1000), gw.receive('request-id', -1), gw.receive(filter, -1)];
+    connector._sendConnEvent(false);
+    expect(await Promise.all(receives)).toEqual([null, null, null]);
+    expect(Object.keys(gw._pending_receives).length).toBe(0);
+    expect(filter).not.toHaveBeenCalled();
+    jasmine.clock().tick(1000);
+  });
+
+  it('should leave receives pending on disconnect by default', async function () {
+    const connector = createGateway();
+    const receives = [gw.receive(Message, -1), gw.receive(Message, -1)];
+    connector._sendConnEvent(false);
+    expect(Object.keys(gw._pending_receives).length).toBe(2);
+    expect(gw._sendReceivers(null)).toBeTrue();
+    await Promise.all(receives);
+    expect(gw._sendReceivers(null)).toBeFalse();
+  });
+
+  it('should deliver a normal message to only one matching receive', async function () {
+    createGateway();
+    const first = gw.receive(Message, -1);
+    const second = gw.receive(Message, -1);
+    const message = new Message();
+    expect(gw._sendReceivers(message)).toBeTrue();
+    expect(await first).toBe(message);
+    expect(Object.keys(gw._pending_receives).length).toBe(1);
+    expect(gw._sendReceivers(null)).toBeTrue();
+    expect(await second).toBeNull();
+  });
+
+  it('should abort an opening connection and discard queued writes on close', function () {
+    const connector = createGateway();
+    const listener = jasmine.createSpy('connection listener');
+    gw.addConnListener(listener);
+    const lateOpen = connector[onOpen].bind(connector);
+    expect(connector.write('queued')).toBeTrue();
+    gw.close();
+    lateOpen();
+    expect(isBrowser ? socket.close : socket.destroy).toHaveBeenCalledTimes(1);
+    expect(socket.send).not.toHaveBeenCalled();
+    expect(socket.end).not.toHaveBeenCalled();
+    expect(connector.pendingOnOpen.length).toBe(0);
+    expect(connector.write('after close')).toBeFalse();
+    expect(gw.connected).toBeFalse();
+    expect(listener.calls.allArgs()).toEqual([[false]]);
+  });
+
+  it('should send one goodbye and cancel receives when an open gateway is closed twice', async function () {
+    createGateway({ cancelPendingOnDisconnect: true });
+    const listener = jasmine.createSpy('connection listener');
+    gw.addConnListener(listener);
+    openConnection();
+    socket.send.calls.reset();
+    const receive = gw.receive(Message, -1);
+    gw.close();
+    gw.close();
+    expect(await receive).toBeNull();
+    expect((isBrowser ? socket.send : socket.end).calls.allArgs()).toEqual([['{"alive": false}\n']]);
+    expect(gw.connected).toBeFalse();
+    expect(listener.calls.allArgs()).toEqual([[true], [false]]);
+  });
+
+  it('should cancel a scheduled reconnect on close', function () {
+    const connector = createGateway();
+    openConnection();
+    const setupSpy = isBrowser ? Connector.prototype[setup] : spyOn(connector, setup);
+    setupSpy.calls.reset();
+    disconnect();
+    disconnect();
+    gw.close();
+    jasmine.clock().tick(200);
+    expect(setupSpy).not.toHaveBeenCalled();
+    expect(gw.connected).toBeFalse();
+  });
+
+  it('should abort a reconnect already in progress on close', function () {
+    const connector = createGateway();
+    openConnection();
+    const setupSpy = isBrowser ? Connector.prototype[setup] : spyOn(connector, setup);
+    setupSpy.and.callFake(() => { socket.readyState = opening; });
+    disconnect();
+    jasmine.clock().tick(100);
+    connector.write('queued');
+    gw.close();
+    connector[onOpen]();
+    jasmine.clock().tick(200);
+    expect(isBrowser ? socket.close : socket.destroy).toHaveBeenCalledTimes(1);
+    expect(connector.pendingOnOpen.length).toBe(0);
+    expect(gw.connected).toBeFalse();
+  });
+
+  it('should allow a disconnect listener to close and cancel reconnection', function () {
+    const connector = createGateway();
+    openConnection();
+    const setupSpy = isBrowser ? Connector.prototype[setup] : spyOn(connector, setup);
+    setupSpy.calls.reset();
+    gw.addConnListener(connected => { if (!connected) gw.close(); });
+    disconnect();
+    jasmine.clock().tick(200);
+    expect(setupSpy).not.toHaveBeenCalled();
+    expect(gw.connected).toBeFalse();
+  });
+
+  it('should allow a connection listener to close before queued writes run', function () {
+    const connector = createGateway();
+    connector.write('queued');
+    gw.addConnListener(connected => { if (connected) gw.close(); });
+    openConnection();
+    const goodbye = isBrowser ? socket.send : socket.end;
+    expect(gw.connected).toBeFalse();
+    expect(goodbye.calls.allArgs().filter(args => args[0] === '{"alive": false}\n').length).toBe(1);
+    expect(socket.send).not.toHaveBeenCalledWith('queued\n');
+    if (isBrowser) {
+      expect(socket.onclose).toBeNull();
+      expect(socket.onmessage).toBeNull();
+    } else {
+      expect(socket.removeAllListeners).toHaveBeenCalledWith('close');
+      expect(socket.removeAllListeners).toHaveBeenCalledWith('data');
+    }
+    expect(connector.pendingOnOpen.length).toBe(0);
+  });
+
+  it('should stop a connected event when a listener closes the gateway', function () {
+    const connector = createGateway();
+    const closingListener = jasmine.createSpy('closing listener').and.callFake(connected => {
+      if (connected) gw.close();
+    });
+    const gatewayListener = jasmine.createSpy('later gateway listener');
+    const connectorListener = jasmine.createSpy('later connector listener');
+    gw.addConnListener(closingListener);
+    gw.addConnListener(gatewayListener);
+    connector.addConnectionListener(connectorListener);
+    openConnection();
+    expect(closingListener.calls.allArgs()).toEqual([[true], [false]]);
+    expect(gatewayListener.calls.allArgs()).toEqual([[false]]);
+    expect(connectorListener.calls.allArgs()).toEqual([[false]]);
+    expect(gw.connected).toBeFalse();
+  });
+});
+
+if (isNode) {
+  it('should prevent TCP socket creation when closed before the deferred import completes', async function () {
+    // The ESM bundle has a fresh TCP connector alongside the CJS suite.
+    const { Gateway: FreshGateway } = await import('../../dist/esm/fjage.js');
+    const gw = new FreshGateway(gwOpts);
+    const setup = spyOn(gw.connector, '_sockSetup').and.callThrough();
+    expect(gw.connector.sock).toBeUndefined();
+    gw.close();
+    await import('net');
+    await delay(0);
+    expect(setup).toHaveBeenCalled();
+    expect(gw.connector.sock).toBeUndefined();
+    expect(gw.connector.write('queued')).toBeFalse();
+  });
 }
 
 describe('A Gateway', function () {
@@ -1119,6 +1328,9 @@ describe('Shell GetFile/PutFile', function () {
 
 async function sendTestStatus(status, trace, type) {
   var gw = new Gateway(gwOpts);
+  await new Promise(resolve => gw.addConnListener(connected => {
+    if (connected) resolve();
+  }));
   let msg = new TestCompleteNtf();
   msg.recipient = gw.agent('test');
   msg.perf = Performative.INFORM;
