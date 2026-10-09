@@ -97,16 +97,18 @@ public class JsonMessageSecurityTest {
 
   @Test
   public void fromJsonFromUntrustedCaller() {
-    String json = "{\"action\":\"send\",\"message\":{\"clazz\":\"" + InMsg.class.getName()
-      + "\",\"data\":{\"msgID\":\"1\",\"perf\":\"INFORM\",\"secret\":\"in\"}}}";
+    String json = """
+      {"action":"send","message":{"clazz":"%s","data":{"msgID":"1","perf":"INFORM","secret":"in"}}}
+      """.formatted(InMsg.class.getName());
     JsonMessage jmsg = untrusted(() -> JsonMessage.fromJson(json));
     assertEquals("in", ((InMsg) jmsg.message).secret);
   }
 
   @Test
   public void fromJsonGrantsNoOtherPermissions() {
-    String json = "{\"action\":\"send\",\"message\":{\"clazz\":\"" + CheckedMsg.class.getName()
-      + "\",\"data\":{\"msgID\":\"2\",\"perf\":\"INFORM\"}}}";
+    String json = """
+      {"action":"send","message":{"clazz":"%s","data":{"msgID":"2","perf":"INFORM"}}}
+      """.formatted(CheckedMsg.class.getName());
     try {
       untrusted(() -> JsonMessage.fromJson(json));
       fail("constructor ran with fjage's permissions");
@@ -115,6 +117,18 @@ public class JsonMessageSecurityTest {
       while (t != null && !(t instanceof AccessControlException)) t = t.getCause();
       assertTrue("expected AccessControlException, got " + ex, t != null);
     }
+  }
+
+  public static class FileMsg extends Message {
+    private static final long serialVersionUID = 1L;
+    private java.io.File file = new java.io.File("relative");
+  }
+
+  @Test
+  public void relativeFileNeedsNoWorkingDirectoryPermission() {
+    JsonMessage message = new JsonMessage();
+    message.message = new FileMsg();
+    assertTrue(untrusted(message::toJson).contains("\"path\":\"relative\""));
   }
 
 }

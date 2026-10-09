@@ -30,6 +30,7 @@ import org.arl.fjage.param.Parameter;
 /**
  * Class representing a JSON request/response message.
  */
+@SuppressWarnings("removal")
 public class JsonMessage {
 
   public String id;
