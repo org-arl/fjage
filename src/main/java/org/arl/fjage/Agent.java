@@ -915,7 +915,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       if ((onTimeoutList != null) && !onTimeoutList.isEmpty()) {
         timeoutBehaviorList = new ArrayList<>();
         for (final TimeoutEntry timeoutEntry : onTimeoutList) {
-          final WakerBehavior timeoutBehavior = new WakerBehavior(timeoutEntry.getTimeout()) {
+          final WakerBehavior timeoutBehavior = new WakerBehavior(timeoutEntry.timeout()) {
 
             @Override
             public void onWake() {
@@ -924,7 +924,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
               }
               done = true;
               try {
-                timeoutEntry.getRunnable().run();
+                timeoutEntry.runnable().run();
               } catch (Throwable t) {
                 log.log(Level.WARNING, "Exception", t);
               }
@@ -946,23 +946,14 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
           if (done()) {
             return;
           }
-          switch (message.getPerformative()) {
-            case AGREE:
-              consumeMessageAndMarkAsDone(onAgreeList, message);
-              break;
-            case REFUSE:
-              consumeMessageAndMarkAsDone(onRefuseList, message);
-              break;
-            case FAILURE:
-              consumeMessageAndMarkAsDone(onFailureList, message);
-              break;
-            case INFORM:
-              consumeMessageAndMarkAsDone(onInformList, message);
-              break;
-            default:
-              consumeMessageAndMarkAsDone(otherwiseList, message);
-              break;
-          }
+          var handlers = switch (message.getPerformative()) {
+            case AGREE -> onAgreeList;
+            case REFUSE -> onRefuseList;
+            case FAILURE -> onFailureList;
+            case INFORM -> onInformList;
+            default -> otherwiseList;
+          };
+          consumeMessageAndMarkAsDone(handlers, message);
         }
       };
 
@@ -1088,26 +1079,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       }
     }
 
-    private class TimeoutEntry {
-
-      private final long timeout;
-      private final Runnable runnable;
-
-      public TimeoutEntry(long timeout, Runnable runnable) {
-        super();
-
-        this.timeout = timeout;
-        this.runnable = runnable;
-      }
-
-      public long getTimeout() {
-        return timeout;
-      }
-
-      public Runnable getRunnable() {
-        return runnable;
-      }
-    }
+    private record TimeoutEntry(long timeout, Runnable runnable) {}
 
     private class ReplyMessageFilter
         implements MessageFilter {

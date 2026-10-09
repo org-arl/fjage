@@ -283,7 +283,7 @@ public class Container {
    * @return an array of agent ids.
    */
   public AgentID[] getAgents() {
-    return agents.keySet().toArray(new AgentID[0]);
+    return agents.keySet().toArray(AgentID[]::new);
   }
 
   /**
@@ -455,7 +455,7 @@ public class Container {
    */
   public synchronized String[] getServices() {
     Set<String> svc = services.keySet();
-    return svc.toArray(new String[0]);
+    return svc.toArray(String[]::new);
   }
 
   /**
@@ -479,7 +479,7 @@ public class Container {
   public synchronized AgentID[] agentsForService(String service) {
     Set<AgentID> providers = services.get(service);
     if (providers == null || providers.isEmpty()) return null;
-    return providers.toArray(new AgentID[0]);
+    return providers.toArray(AgentID[]::new);
   }
 
   /**

@@ -15,7 +15,7 @@ if (devname != null) {
   container = new SlaveContainer(platform, devname, baud, null)
 } else {
   String hostname =  System.properties.getProperty('hostname')
-  if (hostname == null || hostname.length() == 0) hostname = 'localhost'
+  hostname ?= 'localhost'
   int port
   try {
     port =  Integer.parseInt(System.properties.getProperty('port'))

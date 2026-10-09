@@ -1,5 +1,7 @@
 package org.arl.fjage.remote;
 
+import java.io.Serial;
+
 import org.arl.fjage.*;
 
 /**
@@ -10,6 +12,7 @@ import org.arl.fjage.*;
  */
 public class TunnelConnectionNtf extends Message {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private TunnelStatus event;

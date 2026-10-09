@@ -248,8 +248,8 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
    * end of the connection.
    */
   public Map<Integer, String> getConnIDs() {
-    return Collections.unmodifiableMap(connIDs.entrySet().stream()
-      .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getName())));
+    return connIDs.entrySet().stream()
+      .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, e -> e.getValue().getName()));
   }
 
   /**

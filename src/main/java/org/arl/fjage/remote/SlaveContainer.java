@@ -388,7 +388,7 @@ public class SlaveContainer extends RemoteContainer {
       if (!topics.get(aid).isEmpty())
         watchList.add(aid);
     JsonMessage rq = JsonMessage.createActionRequest(Action.WANTS_MESSAGES_FOR);
-    rq.agentIDs = watchList.toArray(new AgentID[watchList.size()]);
+    rq.agentIDs = watchList.toArray(AgentID[]::new);
     String json = rq.toJson();
     if (watchListCache == null || !watchListCache.equals(json)) {
       master.send(json);

@@ -2,7 +2,6 @@ package org.arl.fjage.test;
 
 import net.jodah.concurrentunit.Waiter;
 import org.apache.commons.lang3.Strings;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.arl.fjage.Container;
 import org.arl.fjage.DiscreteEventSimulator;
 import org.arl.fjage.LogHandlerProxy;
@@ -19,7 +18,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -143,7 +141,7 @@ public abstract class AbstractSimulatorTest {
    * @param id Test event ID.
    */
   protected void emitTestEvent(String id) {
-    //log.info(String.format("emitTestEvent(%s)", id));
+    //log.info("emitTestEvent(%s)".formatted(id));
     final TestEvent testEvent = new DefaultTestEvent(platform.currentTimeMillis(), id);
     testEvents.add(testEvent);
     waiter.resume();
@@ -266,7 +264,7 @@ public abstract class AbstractSimulatorTest {
       final long count = findEventById(testEvents, getId())
           .count();
       if ((max != null) && (count > max)) {
-        Assert.fail(String.format("Expected: at most %,d '%s' test events, actual: %,d", min, getId(), count));
+        Assert.fail("Expected: at most %,d '%s' test events, actual: %,d".formatted(min, getId(), count));
       }
     }
 
@@ -275,10 +273,10 @@ public abstract class AbstractSimulatorTest {
       final long count = findEventById(testEvents, getId())
           .count();
       if ((min != null) && (count < min)) {
-        Assert.fail(String.format("Expected: at least %,d '%s' test events, actual: %,d", min, getId(), count));
+        Assert.fail("Expected: at least %,d '%s' test events, actual: %,d".formatted(min, getId(), count));
       }
       if ((max != null) && (count > max)) {
-        Assert.fail(String.format("Expected: at most %,d '%s' test events, actual: %,d", min, getId(), count));
+        Assert.fail("Expected: at most %,d '%s' test events, actual: %,d".formatted(min, getId(), count));
       }
     }
   }
@@ -311,7 +309,7 @@ public abstract class AbstractSimulatorTest {
         final TestEvent event2 = event2Optional.get();
         final long elapsedTime = event2.getTimestamp() - event1.getTimestamp();
         if (elapsedTime < 0) {
-          Assert.fail(String.format("Test event '%s' should not occur after test event '%s'", id1, id2));
+          Assert.fail("Test event '%s' should not occur after test event '%s'".formatted(id1, id2));
           return;
         }
       }
@@ -324,30 +322,28 @@ public abstract class AbstractSimulatorTest {
       final Optional<TestEvent> event2Optional = findEventById(testEvents, id2)
           .findFirst();
       if (!event1Optional.isPresent()) {
-        Assert.fail(String.format("Test event '%s' not present", id1));
+        Assert.fail("Test event '%s' not present".formatted(id1));
         return;
       }
       if (!event2Optional.isPresent()) {
-        Assert.fail(String.format("Test event '%s' not present", id2));
+        Assert.fail("Test event '%s' not present".formatted(id2));
         return;
       }
       final TestEvent event1 = event1Optional.get();
       final TestEvent event2 = event2Optional.get();
       final long elapsedTime = event2.getTimestamp() - event1.getTimestamp();
       if (elapsedTime < 0) {
-        Assert.fail(String.format("Test event '%s' should not occur after test event '%s'", id1, id2));
+        Assert.fail("Test event '%s' should not occur after test event '%s'".formatted(id1, id2));
         return;
       }
       if (elapsedTime < minElapsedTime) {
-        Assert.fail(String.format(
-            "Minimum elapsed time between tests events '%s' and '%s' should be at least %,dms, actual: %,dms",
-            id1, id2, minElapsedTime, elapsedTime));
+        Assert.fail(
+            "Minimum elapsed time between tests events '%s' and '%s' should be at least %,dms, actual: %,dms".formatted(id1, id2, minElapsedTime, elapsedTime));
         return;
       }
       if (elapsedTime > maxElapsedTime) {
-        Assert.fail(String.format(
-            "Maximum elapsed time between tests events '%s' and '%s' should be at most %,dms, actual: %,dms",
-            id1, id2, maxElapsedTime, elapsedTime));
+        Assert.fail(
+            "Maximum elapsed time between tests events '%s' and '%s' should be at most %,dms, actual: %,dms".formatted(id1, id2, maxElapsedTime, elapsedTime));
       }
     }
   }
@@ -367,7 +363,7 @@ public abstract class AbstractSimulatorTest {
 
     @Override
     public void check(List<TestEvent> testEvents) {
-      final List<TestEvent> collectedTestEvents = findEventById(testEvents, getId()).collect(Collectors.toList());
+      final List<TestEvent> collectedTestEvents = findEventById(testEvents, getId()).toList();
       if (collectedTestEvents.size() > 1) {
         doCheck(collectedTestEvents);
       }
@@ -375,13 +371,13 @@ public abstract class AbstractSimulatorTest {
 
     @Override
     public void checkAtEnd(List<TestEvent> testEvents) {
-      final List<TestEvent> collectedTestEvents = findEventById(testEvents, getId()).collect(Collectors.toList());
+      final List<TestEvent> collectedTestEvents = findEventById(testEvents, getId()).toList();
       if (collectedTestEvents.isEmpty()) {
-        Assert.fail(String.format("Test event '%s' not present", getId()));
+        Assert.fail("Test event '%s' not present".formatted(getId()));
         return;
       }
       if (collectedTestEvents.size() == 1) {
-        Assert.fail(String.format("More than one '%s' test event is expected", getId()));
+        Assert.fail("More than one '%s' test event is expected".formatted(getId()));
         return;
       }
       doCheck(collectedTestEvents);
@@ -393,15 +389,13 @@ public abstract class AbstractSimulatorTest {
         final TestEvent event2 = collectedTestEvents.get(i + 1);
         final long elapsedTime = event2.getTimestamp() - event1.getTimestamp();
         if (elapsedTime < minElapsedTime) {
-          Assert.fail(String.format(
-              "Minimum elapsed time between '%s' tests events should be at least %,dms, actual: %,dms",
-              getId(), minElapsedTime, elapsedTime));
+          Assert.fail(
+              "Minimum elapsed time between '%s' tests events should be at least %,dms, actual: %,dms".formatted(getId(), minElapsedTime, elapsedTime));
           return;
         }
         if (elapsedTime > maxElapsedTime) {
-          Assert.fail(String.format(
-              "Maximum elapsed time between '%s' tests events should be at most %,dms, actual: %,dms",
-              getId(), maxElapsedTime, elapsedTime));
+          Assert.fail(
+              "Maximum elapsed time between '%s' tests events should be at most %,dms, actual: %,dms".formatted(getId(), maxElapsedTime, elapsedTime));
         }
       }
     }
@@ -427,13 +421,13 @@ public abstract class AbstractSimulatorTest {
 
     @Override
     public void checkAtEnd(List<TestEvent> testEvents) {
-      final List<TestEvent> collectedTestEvents = findEventById(testEvents, getId()).collect(Collectors.toList());
+      final List<TestEvent> collectedTestEvents = findEventById(testEvents, getId()).toList();
       if (collectedTestEvents.isEmpty()) {
-        Assert.fail(String.format("Test event '%s' not present", getId()));
+        Assert.fail("Test event '%s' not present".formatted(getId()));
         return;
       }
       if (collectedTestEvents.size() == 1) {
-        Assert.fail(String.format("More than one '%s' test event is expected", getId()));
+        Assert.fail("More than one '%s' test event is expected".formatted(getId()));
         return;
       }
       long totalElapsedTime = 0;
@@ -447,15 +441,13 @@ public abstract class AbstractSimulatorTest {
       }
       final double averageElapsedTime = (double) totalElapsedTime / (double) count;
       if (averageElapsedTime < minAverageElapsedTime) {
-        Assert.fail(String.format(
-            "Minimum average elapsed time between '%s' tests events should be at least %,dms, actual: %,fms",
-            getId(), minAverageElapsedTime, averageElapsedTime));
+        Assert.fail(
+            "Minimum average elapsed time between '%s' tests events should be at least %,dms, actual: %,fms".formatted(getId(), minAverageElapsedTime, averageElapsedTime));
         return;
       }
       if (averageElapsedTime > maxAverageElapsedTime) {
-        Assert.fail(String.format(
-            "Maximum average elapsed time between '%s' tests events should be at most %,dms, actual: %,fms",
-            getId(), maxAverageElapsedTime, averageElapsedTime));
+        Assert.fail(
+            "Maximum average elapsed time between '%s' tests events should be at most %,dms, actual: %,fms".formatted(getId(), maxAverageElapsedTime, averageElapsedTime));
       }
     }
   }
@@ -467,35 +459,8 @@ public abstract class AbstractSimulatorTest {
     String getId();
   }
 
-  private static class DefaultTestEvent
-      implements TestEvent {
-
-    private final long timestamp;
-    private final String id;
-
-    public DefaultTestEvent(long timestamp, String id) {
-      super();
-
-      this.timestamp = timestamp;
-      this.id = id;
-    }
-
-    @Override
-    public long getTimestamp() {
-      return timestamp;
-    }
-
-    @Override
-    public String getId() {
-      return id;
-    }
-
-    @Override
-    public String toString() {
-      return new ToStringBuilder(this)
-          .append("timestamp", timestamp)
-          .append("id", id)
-          .toString();
-    }
+  private record DefaultTestEvent(long timestamp, String id) implements TestEvent {
+    @Override public long getTimestamp() { return timestamp; }
+    @Override public String getId() { return id; }
   }
 }

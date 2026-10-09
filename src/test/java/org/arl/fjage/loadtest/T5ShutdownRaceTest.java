@@ -40,7 +40,7 @@ public class T5ShutdownRaceTest {
         LoadAgents.ContinuousSender pubM = new LoadAgents.ContinuousSender(null, 5);
         fx.master.add("pub_m", pubM);
         LoadAgents.ContinuousSender uniM = new LoadAgents.ContinuousSender(
-            Collections.singletonList(new AgentID("rx_s0")), 5);
+            List.of(new AgentID("rx_s0")), 5);
         fx.master.add("uni_m", uniM);
         fx.startSlaves();
 

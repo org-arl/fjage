@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage
 
 import groovy.transform.PackageScope
+import groovy.transform.CompileDynamic
 import org.arl.fjage.param.*
 
 /**
@@ -142,11 +143,9 @@ class GroovyExtensions {
 }
 
 @PackageScope
-class IndexedParameterHelper {
+record IndexedParameterHelper(AgentID parent, int index) {
 
-  def parent
-  int index
-
+  @CompileDynamic
   def propertyMissing(String name, value) {
     Parameter p = new NamedParameter(name)
     ParameterReq req = new ParameterReq().set(p, value)
@@ -167,6 +166,7 @@ class IndexedParameterHelper {
     }
   }
 
+  @CompileDynamic
   def propertyMissing(String name) {
     Parameter p = new NamedParameter(name)
     ParameterReq req = new ParameterReq().get(p)
@@ -182,6 +182,7 @@ class IndexedParameterHelper {
     }
   }
 
+  @CompileDynamic
   String toString() {
     String s = parent.getAllParameters(index)
     return s ?: "${parent as String}[${index}]"

@@ -144,10 +144,10 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
     try {
       DiscreteEvent e = events.peek();
       while (running) {
-        while (e != null && e.time <= time) {
+        while (e != null && e.time() <= time) {
           log.fine("Fire "+e);
           synchronized (events) {
-            if (!events.isEmpty()) events.poll().task.run();
+            if (!events.isEmpty()) events.poll().task().run();
           }
           e = events.peek();
         }
@@ -164,8 +164,8 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
         }
         e = events.peek();
         if (e != null) {
-          long dt = e.time - time;
-          time = e.time;
+          long dt = e.time() - time;
+          time = e.time();
           if (dt > 0 && !Float.isNaN(speed)) {
             long t = Math.round(dt/speed);
             try {

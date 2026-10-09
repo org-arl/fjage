@@ -17,59 +17,31 @@ import java.util.TimerTask;
  *
  * @author  Mandar Chitre
  */
-class DiscreteEvent implements Comparable<DiscreteEvent> {
+record DiscreteEvent(long id, long tid, long created, long time, TimerTask task, boolean passive)
+    implements Comparable<DiscreteEvent> {
 
-  /////////// Attributes
+  private static long count;
 
-  static volatile long count = 0;
-
-  long id;               // event count, for resolving ordering ties
-  long tid;              // thread id of creator
-  long created;          // time when the event was created
-  long time;             // time of the event
-  TimerTask task;        // task to be executed when time is reached
-  boolean passive;       // passive tasks are ones which do not wake up any agent
-
-  /////////// Constructors for convenience
+  private static synchronized long nextId() { return count++; }
 
   DiscreteEvent(long created, long time, TimerTask task) {
-    synchronized (DiscreteEvent.class) {
-      this.id = count++;
-    }
-    this.tid = Thread.currentThread().getId();
-    this.created = created;
-    this.time = time;
-    this.task = task;
-    passive = false;
+    this(created, time, task, false);
   }
 
   DiscreteEvent(long created, long time, TimerTask task, boolean passive) {
-    synchronized (DiscreteEvent.class) {
-      this.id = count++;
-    }
-    this.tid = Thread.currentThread().getId();
-    this.created = created;
-    this.time = time;
-    this.task = task;
-    this.passive = passive;
+    this(nextId(), Thread.currentThread().getId(), created, time, task, passive);
   }
-  
-  //////////// For display
-  
+
+  @Override
   public String toString() {
-    return (passive?"PEvent #":"Event #")+hashCode()+" @"+time+" created:"+created+" id:"+tid+"/"+id;
+    return (passive ? "PEvent #" : "Event #")+System.identityHashCode(this)+" @"+time+" created:"+created+" id:"+tid+"/"+id;
   }
 
-  /////////// Comparison operator
-
-  public int compareTo(DiscreteEvent e) {
-    if (time < e.time) return -1;
-    if (time > e.time) return 1;
-    if (created < e.created) return -1;
-    if (created > e.created) return 1;
-    if (tid < e.tid) return -1;
-    if (tid > e.tid) return 1;
-    return Long.compare(id, e.id);
+  @Override
+  public int compareTo(DiscreteEvent event) {
+    int order = Long.compare(time, event.time);
+    if (order == 0) order = Long.compare(created, event.created);
+    if (order == 0) order = Long.compare(tid, event.tid);
+    return order == 0 ? Long.compare(id, event.id) : order;
   }
-
 }

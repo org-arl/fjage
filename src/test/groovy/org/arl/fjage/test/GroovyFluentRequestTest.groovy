@@ -3,7 +3,6 @@ package org.arl.fjage.test
 import org.arl.fjage.*
 import org.junit.Test
 
-import java.time.Duration
 
 import static org.arl.fjage.test.AbstractFluentRequestTest.TestDeliverySucceededNtf
 import static org.arl.fjage.test.AbstractFluentRequestTest.TestRequest

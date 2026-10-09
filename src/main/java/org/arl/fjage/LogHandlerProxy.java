@@ -107,7 +107,7 @@ public class LogHandlerProxy extends Handler {
     } else {
       // handler installed, remove it and replace with proxy
       for (Handler h1: h)
-        if (h1 instanceof LogHandlerProxy) ((LogHandlerProxy)h1).setTimestampProvider(timesrc);
+        if (h1 instanceof LogHandlerProxy proxy) proxy.setTimestampProvider(timesrc);
         else {
           LogHandlerProxy h2 = new LogHandlerProxy(h1, timesrc);
           log.removeHandler(h1);

@@ -40,7 +40,7 @@ public class T4ReconnectTest {
       final LoadAgents.ContinuousSender pubM = new LoadAgents.ContinuousSender(null, 20, go);
       fx.master.add("pub_m", pubM);
       final LoadAgents.ContinuousSender uniM = new LoadAgents.ContinuousSender(
-          Collections.singletonList(new AgentID("rx_s1")), 20, go);
+          List.of(new AgentID("rx_s1")), 20, go);
       fx.master.add("uni_m", uniM);
 
       fx.startSlaves();

@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.io.Serial;
+
 import java.io.Serializable;
 import org.arl.fjage.param.*;
 
@@ -20,6 +22,7 @@ import org.arl.fjage.param.*;
  */
 public class AgentID implements Serializable, Comparable<AgentID> {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /////////////// Private attributes
@@ -223,8 +226,8 @@ public class AgentID implements Serializable, Comparable<AgentID> {
     if (ndx >= 0) req.setIndex(ndx);
     Message rsp = request(req);
     if (rsp == null) return null;
-    if (!(rsp instanceof ParameterRsp)) return null;
-    return ((ParameterRsp)rsp).get(param);
+    if (!(rsp instanceof ParameterRsp response)) return null;
+    return response.get(param);
   }
 
   /**
@@ -254,8 +257,8 @@ public class AgentID implements Serializable, Comparable<AgentID> {
     if (ndx >= 0) req.setIndex(ndx);
     Message rsp = request(req);
     if (rsp == null) return null;
-    if (!(rsp instanceof ParameterRsp)) return null;
-    return ((ParameterRsp)rsp).get(param);
+    if (!(rsp instanceof ParameterRsp response)) return null;
+    return response.get(param);
   }
 
   /////////////// Standard Java methods to customize
@@ -296,8 +299,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
   @Override
   public boolean equals(Object obj) {
     if (obj instanceof String) return name.equals(obj);
-    if (!(obj instanceof AgentID)) return false;
-    AgentID a = (AgentID)obj;
+    if (!(obj instanceof AgentID a)) return false;
     if (!name.equals(a.name)) return false;
     return isTopic == a.isTopic;
   }

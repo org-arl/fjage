@@ -44,10 +44,10 @@ public class T2SlowSlaveTest {
       LoadAgents.ContinuousSender pubM = new LoadAgents.ContinuousSender(null, 5, go);
       fx.master.add("pub_m", pubM);
       LoadAgents.ContinuousSender probeM = new LoadAgents.ContinuousSender(
-          Collections.singletonList(new AgentID("rx_s0")), 10, go);
+          List.of(new AgentID("rx_s0")), 10, go);
       fx.master.add("probe_m", probeM);
       LoadAgents.ContinuousSender bulkM = new LoadAgents.ContinuousSender(
-          Collections.singletonList(new AgentID("rx_s2")), 2, go);
+          List.of(new AgentID("rx_s2")), 2, go);
       fx.master.add("bulk_m", bulkM);
 
       fx.startSlaves();

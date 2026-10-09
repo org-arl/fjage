@@ -29,7 +29,7 @@ public class ShellEncodingTest {
     try {
       shell.init(null);
       shell.println(TEXT);
-      assertTrue(new String(out.toByteArray(), StandardCharsets.UTF_8).contains(TEXT));
+      assertTrue(out.toString(StandardCharsets.UTF_8).contains(TEXT));
       in.write((TEXT + "\n").getBytes(StandardCharsets.UTF_8));
       assertEquals(TEXT, shell.readLine("", "", null));
     } finally {

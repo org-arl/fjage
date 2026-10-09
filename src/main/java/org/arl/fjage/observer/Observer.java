@@ -550,7 +550,7 @@ public class Observer extends Agent implements MessageListener {
    * @return endpoint names, topics prefixed with {@code #}.
    */
   public String[] getEndpoints() {
-    return endpoints.keySet().toArray(new String[0]);
+    return endpoints.keySet().toArray(String[]::new);
   }
 
   /**

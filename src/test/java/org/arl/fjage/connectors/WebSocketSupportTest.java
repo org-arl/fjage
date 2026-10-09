@@ -20,18 +20,20 @@ public class WebSocketSupportTest {
 
   private Session session(Consumer<Callback> complete) {
     return (Session)Proxy.newProxyInstance(Session.class.getClassLoader(), new Class<?>[] {Session.class},
-        (proxy, method, args) -> {
-          switch (method.getName()) {
-            case "isOpen": return !disconnected.get();
-            case "getRemoteSocketAddress": return new InetSocketAddress("127.0.0.1", 12345);
-            case "disconnect": disconnected.set(true); return null;
-            case "sendText":
-              assertEquals("text", args[0]);
-              sending.countDown();
-              complete.accept((Callback)args[1]);
-              return null;
-            default: throw new UnsupportedOperationException(method.getName());
+        (proxy, method, args) -> switch (method.getName()) {
+          case "isOpen" -> !disconnected.get();
+          case "getRemoteSocketAddress" -> new InetSocketAddress("127.0.0.1", 12345);
+          case "disconnect" -> {
+            disconnected.set(true);
+            yield null;
           }
+          case "sendText" -> {
+            assertEquals("text", args[0]);
+            sending.countDown();
+            complete.accept((Callback)args[1]);
+            yield null;
+          }
+          default -> throw new UnsupportedOperationException(method.getName());
         });
   }
 

@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage.auth;
 
+import java.io.Serial;
+
 /**
  * Authentication or authorization failure unchecked exception.
  *
@@ -17,6 +19,7 @@ package org.arl.fjage.auth;
  */
 public class AuthFailureException extends RuntimeException {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   public AuthFailureException() {

@@ -84,7 +84,9 @@ public class GroovyBoot {
             // execute script from resource file
             InputStream inp = GroovyBoot.class.getResourceAsStream(a.substring(5));
             if (inp == null) throw new FileNotFoundException(a+" not found");
-            engine.exec(new InputStreamReader(inp), a, arglist);
+            try (var reader = new InputStreamReader(inp, java.nio.charset.StandardCharsets.UTF_8)) {
+              engine.exec(reader, a, arglist);
+            }
             if (!arglist.isEmpty()) arglist = new ArrayList<>();
           } else if (a.startsWith("cls://")) {
             // execute pre-compiled script from class file

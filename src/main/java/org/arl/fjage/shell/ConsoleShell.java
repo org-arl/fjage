@@ -32,6 +32,7 @@ import org.jline.widget.AutosuggestionWidgets;
  * Shell input/output driver for console devices with line editing and
  * color support.
  */
+@SuppressWarnings("removal")
 public class ConsoleShell implements Shell, ConnectionListener {
 
   private static final String FORCE_BRACKETED_PASTE_ON = "FORCE_BRACKETED_PASTE_ON";

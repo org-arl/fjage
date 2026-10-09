@@ -149,7 +149,7 @@ public class FSMBehavior extends Behavior {
    * @param name initial state object or name.
    */
   public void setInitialState(Object name) {
-    State state = (name instanceof State) ? (State)name : states.get(name);
+    State state = (name instanceof State supplied) ? supplied : states.get(name);
     if (state == null) throw new FjageException("Unknown state: "+name);
     initial = state;
   }
@@ -160,7 +160,7 @@ public class FSMBehavior extends Behavior {
    * @param name name of the state.
    */
   public void setNextState(Object name) {
-    State state = (name instanceof State) ? (State)name : states.get(name);
+    State state = (name instanceof State supplied) ? supplied : states.get(name);
     if (state == null) throw new FjageException("Unknown state: "+name);
     if (next == FINAL) return;
     next = state;

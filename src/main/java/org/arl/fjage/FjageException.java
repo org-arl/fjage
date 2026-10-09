@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.io.Serial;
+
 /**
  * Java agent framework unchecked exception.
  *
@@ -17,6 +19,7 @@ package org.arl.fjage;
  */
 public class FjageException extends RuntimeException {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   public FjageException(String message) {

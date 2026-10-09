@@ -90,4 +90,12 @@ public class ObserverFilterTest {
     assertTrue(f.matches(msg("a", "b", false)));
   }
 
+  @Test
+  public void unicodeWhitespacePatternsAreBlank() {
+    ObserverFilter filter = new ObserverFilter();
+    filter.clazz = "\u2003";
+    filter.excludeClazz = "\u2003";
+    assertTrue(filter.matches(new org.arl.fjage.Message()));
+  }
+
 }

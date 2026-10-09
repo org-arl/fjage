@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.io.Serial;
+
 import java.util.*;
 
 /**
@@ -19,6 +21,7 @@ import java.util.*;
  */
 public class GenericMessage extends Message implements Map<Object,Object> {
 
+  @Serial
   private static final long serialVersionUID = -1L;
 
   //////////// Private attributes
@@ -133,7 +136,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
     if (key.equals("sender")) return getSender();
     if (key.equals("messageID")) return getMessageID();
     if (key.equals("inReplyTo")) return getInReplyTo();
-    if (value instanceof GenericValue) return map.put(key, (GenericValue)value);
+    if (value instanceof GenericValue wrapped) return map.put(key, wrapped);
     return map.put(key, new GenericValue(value));
   }
 
@@ -154,7 +157,7 @@ public class GenericMessage extends Message implements Map<Object,Object> {
     for (Map.Entry<?, ?> entry: map.entrySet()) {
       Object k = entry.getKey();
       Object v = entry.getValue();
-      if (v instanceof GenericValue) this.map.put(k, (GenericValue)v);
+      if (v instanceof GenericValue wrapped) this.map.put(k, wrapped);
       else this.map.put(k, new GenericValue(v));
     }
   }
