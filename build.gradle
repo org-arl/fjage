@@ -9,13 +9,9 @@ plugins {
 
 defaultTasks 'jar'
 
-base {
-  archivesName = 'fjage'
-}
 group = 'com.github.org-arl'
-version = new File(projectDir, 'VERSION').text.trim()
+version = file('VERSION').text.trim()
 
-// get git commit
 def commit = providers.exec {
   commandLine 'git', 'describe', '--always', '--abbrev=8', '--match', 'NOT A TAG', '--dirty=*'
 }.standardOutput.asText.get().trim()
@@ -26,36 +22,40 @@ interface InjectedExecOps {
 }
 def execOps = objects.newInstance(InjectedExecOps).execOps
 
-// check if npm exists
-def npmcmd = Os.isFamily(Os.FAMILY_WINDOWS) ? "npm.cmd" : "npm"
-boolean npmExists = false
-try {
-  def npmproc = "$npmcmd -v".execute()
-  npmproc.waitForOrKill(3000)
-  npmExists = npmproc.exitValue() == 0
-} catch (IOException ignored){}
+// true if the command runs and exits with 0
+def canRun = { String... cmd ->
+  try {
+    execOps.exec {
+      commandLine cmd
+      ignoreExitValue = true
+      standardOutput = new ByteArrayOutputStream()
+      errorOutput = new ByteArrayOutputStream()
+    }.exitValue == 0
+  } catch (ignored) {
+    false
+  }
+}
 
-// check if python exists (used to create the venv for fjagepy tests)
-def pythoncmd = System.getenv('PYTHON') ?: (Os.isFamily(Os.FAMILY_WINDOWS) ? "python" : "python3")
+def windows = Os.isFamily(Os.FAMILY_WINDOWS)
+def npmcmd = windows ? "npm.cmd" : "npm"
+def pythoncmd = System.getenv('PYTHON') ?: (windows ? "python" : "python3")
 def pyvenv = layout.buildDirectory.dir('pyvenv').get().asFile
-def pyvenvPython = new File(pyvenv, Os.isFamily(Os.FAMILY_WINDOWS) ? "Scripts/python.exe" : "bin/python")
-boolean pythonExists = false
-try {
-  def pyproc = "$pythoncmd --version".execute()
-  pyproc.waitForOrKill(3000)
-  pythonExists = pyproc.exitValue() == 0
-} catch (IOException ignored){}
+def pyvenvPython = new File(pyvenv, windows ? "Scripts/python.exe" : "bin/python")
 
-// compile, test and javadoc with JDK 8, whichever JVM runs Gradle
 java {
+  // compile, test and javadoc with JDK 8, whichever JVM runs Gradle
   toolchain {
     languageVersion = JavaLanguageVersion.of(8)
   }
+  withJavadocJar()
+  withSourcesJar()
 }
 
 repositories {
   mavenCentral()
 }
+
+def jettyVersion = '9.4.58.v20250814'
 
 dependencies {
   api 'org.codehaus.groovy:groovy:2.5.23'
@@ -63,50 +63,40 @@ dependencies {
   api 'org.apache.commons:commons-lang3:3.21.0'
   api 'commons-io:commons-io:2.22.0'
   api 'uk.com.robust-it:cloning:1.9.12'
-  api 'org.eclipse.jetty:jetty-server:9.4.58.v20250814'
-  api 'org.eclipse.jetty:jetty-servlet:9.4.58.v20250814'
-  api 'org.eclipse.jetty:jetty-rewrite:9.4.58.v20250814'
-  api 'org.eclipse.jetty.websocket:websocket-server:9.4.58.v20250814'
+  api "org.eclipse.jetty:jetty-server:$jettyVersion"
+  api "org.eclipse.jetty:jetty-servlet:$jettyVersion"
+  api "org.eclipse.jetty:jetty-rewrite:$jettyVersion"
+  api "org.eclipse.jetty.websocket:websocket-server:$jettyVersion"
   api 'com.google.code.gson:gson:2.14.0'
   api 'com.fazecast:jSerialComm:2.10.4'
   testImplementation 'junit:junit:4.13.2'
   testImplementation 'net.jodah:concurrentunit:0.4.6'
 }
 
-compileJava {
-  options.compilerArgs << "-Xlint:all"
-  options.compilerArgs << "-Xlint:-options"
-}
-
-compileTestJava {
-  options.compilerArgs << "-Xlint:all"
-  options.compilerArgs << "-Xlint:-options"
-}
-
-compileGroovy {
-  options.compilerArgs << "-Xlint:all"
-  options.compilerArgs << "-Xlint:-options"
+[JavaCompile, GroovyCompile].each { type ->
+  tasks.withType(type).configureEach { options.compilerArgs << '-Xlint:all' }
 }
 
 tasks.register('buildjs') {
   inputs.files fileTree('gateways/js/src').include('**/*.js'), "gateways/js/package.json"
   outputs.dir "gateways/js/dist"
+  onlyIf {
+    def ok = canRun(npmcmd, '-v')
+    if (!ok) logger.lifecycle('npm not found. Skipping fjage.js build needed by JS gateway tests.')
+    ok
+  }
   doLast {
-    if (npmExists) {
-      execOps.exec {
-        workingDir 'gateways/js'
-        executable npmcmd
-        args System.getenv('CI') != null ? 'ci' : "install"
-        errorOutput = new ByteArrayOutputStream()
-        standardOutput = new ByteArrayOutputStream()
-      }
-      execOps.exec {
-        workingDir 'gateways/js'
-        executable npmcmd
-        args 'run', 'build'
-      }
-    } else {
-      project.logger.lifecycle('npm not found. Skipping fjage.js build needed by JS gateway tests.')
+    execOps.exec {
+      workingDir 'gateways/js'
+      executable npmcmd
+      args System.getenv('CI') != null ? 'ci' : "install"
+      errorOutput = new ByteArrayOutputStream()
+      standardOutput = new ByteArrayOutputStream()
+    }
+    execOps.exec {
+      workingDir 'gateways/js'
+      executable npmcmd
+      args 'run', 'build'
     }
   }
 }
@@ -115,8 +105,9 @@ tasks.register('setupPyVenv') {
   inputs.file 'gateways/python/pyproject.toml'
   outputs.dir pyvenv
   onlyIf {
-    if (!pythonExists) project.logger.lifecycle("$pythoncmd not found. Skipping venv setup needed by fjagepy tests.")
-    pythonExists
+    def ok = canRun(pythoncmd, '--version')
+    if (!ok) logger.lifecycle("$pythoncmd not found. Skipping venv setup needed by fjagepy tests.")
+    ok
   }
   doLast {
     execOps.exec {
@@ -131,21 +122,16 @@ tasks.register('setupPyVenv') {
 }
 
 tasks.register('jsdoc', Exec) {
-  doFirst{
-    if (!npmExists) {
-      throw new GradleException("npm not found. Cannot generate JSDoc.")
-    }
+  doFirst {
+    if (!canRun(npmcmd, '-v')) throw new GradleException("npm not found. Cannot generate JSDoc.")
   }
   workingDir 'gateways/js'
-  executable npmcmd
-  args = ['run', 'docs']
+  commandLine npmcmd, 'run', 'docs'
 }
 
 tasks.register('updatexterm') {
-  doFirst{
-    if (!npmExists) {
-      throw new GradleException("npm not found. Cannot update xterm.")
-    }
+  doFirst {
+    if (!canRun(npmcmd, '-v')) throw new GradleException("npm not found. Cannot update xterm.")
   }
   doLast {
     // create package.json with `{}` if it does not exist
@@ -173,7 +159,7 @@ tasks.register('updatexterm') {
 jar {
   manifest {
     attributes (
-        "Build-Owner": System.getenv().USER ?: "fjage",
+        "Build-Owner": System.getenv('USER') ?: "fjage",
         "Build-Timestamp": new Date().format('d-MM-yyyy_HH:mm:ss'),
         "Build-Version": "${project.version}/${commit}")
   }
@@ -189,6 +175,13 @@ processResources {
   exclude '**/readme.md'
 }
 
+tasks.withType(Test).configureEach {
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat = "full"
+  }
+}
+
 test {
   dependsOn 'buildjs', 'setupPyVenv'
   exclude '**/loadtest/**'     // multi-container load tests run on demand via the loadTest task
@@ -196,13 +189,7 @@ test {
     // run fjagepy tests with the venv python
     if (pyvenvPython.exists()) environment 'PYTHON', pyvenvPython.path
   }
-  systemProperties project.properties.subMap(["manualJSTest"])
-  systemProperties project.properties.subMap(["manualPyTest"])
-  systemProperties project.properties.subMap(["manualCTest"])
-  testLogging {
-    events "passed", "skipped", "failed"
-    exceptionFormat = "full"
-  }
+  systemProperties project.properties.subMap(["manualJSTest", "manualPyTest", "manualCTest"])
 }
 
 tasks.register('encodingTest', Test) {
@@ -225,28 +212,18 @@ tasks.register('loadTest', Test) {
   classpath = sourceSets.test.runtimeClasspath
   include '**/loadtest/**'
   outputs.upToDateWhen { false }
-  testLogging {
-    events "passed", "skipped", "failed"
-    exceptionFormat = "full"
-  }
 }
 
 javadoc {
-  options.addStringOption('Xdoclint:none', '-quiet')
+  options.addBooleanOption('Xdoclint:none', true)
+  options.quiet()
 }
 
 ////// publishing to GitHub Packages
 
-java {
-  withJavadocJar()
-  withSourcesJar()
-}
-
 publishing {
   publications {
     maven(MavenPublication) {
-      groupId = 'com.github.org-arl'
-      artifactId = 'fjage'
       from components.java
     }
   }
