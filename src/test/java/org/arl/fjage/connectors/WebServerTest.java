@@ -17,11 +17,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.io.File;
 import java.io.UncheckedIOException;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.net.URL;
 import java.net.URI;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +50,7 @@ import org.junit.Test;
 
 public class WebServerTest {
 
+  private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
   private WebServer svr = null;
 
   @Rule
@@ -86,15 +86,13 @@ public class WebServerTest {
   }
 
   private static int statusOf(WebServer svr, String path) throws IOException {
-    URL url = new URL("http://127.0.0.1:"+svr.getPort()+path);
-    HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-    conn.setInstanceFollowRedirects(false);
-    conn.setConnectTimeout(5000);
-    conn.setReadTimeout(5000);
+    HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+svr.getPort()+path))
+        .timeout(Duration.ofSeconds(5)).build();
     try {
-      return conn.getResponseCode();
-    } finally {
-      conn.disconnect();
+      return HTTP.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      throw new IOException(ex);
     }
   }
 
@@ -188,8 +186,7 @@ public class WebServerTest {
     HttpRequest.Builder request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+svr.getPort()+path))
         .timeout(Duration.ofSeconds(5)).method(method, HttpRequest.BodyPublishers.ofByteArray(body));
     for (int i = 0; i < headers.length; i += 2) request.header(headers[i], headers[i+1]);
-    return HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
-        .send(request.build(), HttpResponse.BodyHandlers.ofByteArray());
+    return HTTP.send(request.build(), HttpResponse.BodyHandlers.ofByteArray());
   }
 
   private HttpResponse<byte[]> get(String path, String... headers) throws Exception {
@@ -250,9 +247,10 @@ public class WebServerTest {
   public void directoryListingsEscapeNamesAndHideDotFiles() throws Exception {
     newServer();
     Path dir = files.newFolder().toPath();
-    String name = "quoted\"name.txt";
+    String name = File.separatorChar == '\\' ? "escaped'name.txt" : "quoted\"name.txt";
     Files.writeString(dir.resolve(name), "data");
-    Files.writeString(dir.resolve(".hidden"), "secret");
+    Path hidden = Files.writeString(dir.resolve(".hidden"), "secret");
+    if (File.separatorChar == '\\') Files.setAttribute(hidden, "dos:hidden", true);
     svr.addStatic("/files", dir.toFile(), new WebServer.WebServerOptions().directoryListed(true));
     HttpResponse<byte[]> response = get("/files/", "Content-Type", "application/json");
     assertEquals(200, response.statusCode());
@@ -437,6 +435,140 @@ public class WebServerTest {
     assertEquals(200, get("/interrupted").statusCode());
     svr.stop();
     assertTrue(context.isStopped());
+  }
+
+  @Test(timeout = 10000)
+  public void removingHandlerCanCloseDependentEndpoint() throws Exception {
+    newServer();
+    WebSocketServer child = new WebSocketServer(svr.getPort(), "/child", connector -> {});
+    Handler parent = new Handler.Abstract() {
+      @Override public boolean handle(Request request, Response response, Callback callback) { return false; }
+      @Override protected void doStop() throws Exception {
+        child.close();
+        super.doStop();
+      }
+    };
+    ContextHandler context = svr.addHandler("/parent", parent);
+    assertTrue(svr.removeHandler(context));
+    assertFalse(svr.hasHandler("/child"));
+    assertNotNull(svr.addHandler("/next", okHandler()));
+  }
+
+  @Test
+  public void zeroUploadLimitsRemainUnlimited() throws Exception {
+    newServer();
+    assertTrue(svr.addUpload("/upload", files.newFolder(), 0, 0, 1));
+    assertEquals(200, upload(multipart("file.txt", "content")).statusCode());
+  }
+
+  @Test
+  public void shutdownStopsMultipleServers() throws Exception {
+    WebServer first = newServer();
+    WebServer second = WebServer.getInstance(freePort());
+    int firstPort = first.getPort();
+    int secondPort = second.getPort();
+    try {
+      WebServer.shutdown();
+      assertFalse(WebServer.hasInstance(firstPort));
+      assertFalse(WebServer.hasInstance(secondPort));
+    } finally { second.stop(); }
+  }
+
+  @Test(timeout = 10000)
+  public void lifecycleCleanupCanWaitForRegistrationFromAnotherThread() throws Exception {
+    newServer();
+    Handler parent = new Handler.Abstract() {
+      @Override public boolean handle(Request request, Response response, Callback callback) { return false; }
+      @Override protected void doStop() throws Exception {
+        CompletableFuture.supplyAsync(() -> svr.addHandler("/child", okHandler())).get(5, TimeUnit.SECONDS);
+        super.doStop();
+      }
+    };
+    ContextHandler context = svr.addHandler("/parent", parent);
+    assertTrue(svr.removeHandler(context));
+    assertTrue(svr.hasHandler("/child"));
+  }
+
+  @Test
+  public void failedStopStillDestroysDetachedHandler() throws Exception {
+    newServer();
+    java.util.concurrent.atomic.AtomicBoolean destroyed = new java.util.concurrent.atomic.AtomicBoolean();
+    Handler parent = new Handler.Abstract() {
+      @Override public boolean handle(Request request, Response response, Callback callback) { return false; }
+      @Override protected void doStop() throws Exception { throw new IOException("stop failed"); }
+      @Override public void destroy() { destroyed.set(true); super.destroy(); }
+    };
+    ContextHandler context = svr.addHandler("/parent", parent);
+    assertFalse(svr.removeHandler(context));
+    assertTrue(destroyed.get());
+    assertFalse(svr.hasHandler("/parent"));
+  }
+
+  @Test(timeout = 10000)
+  public void shutdownAllowsLifecycleCleanupToReadTheRegistry() throws Exception {
+    newServer();
+    int port = svr.getPort();
+    java.util.concurrent.atomic.AtomicBoolean queried = new java.util.concurrent.atomic.AtomicBoolean();
+    svr.addHandler("/parent", new Handler.Abstract() {
+      @Override public boolean handle(Request request, Response response, Callback callback) { return false; }
+      @Override protected void doStop() throws Exception {
+        CompletableFuture.supplyAsync(() -> WebServer.hasInstance(port)).get(5, TimeUnit.SECONDS);
+        queried.set(true);
+        super.doStop();
+      }
+    });
+    WebServer.shutdown();
+    assertTrue(queried.get());
+    assertFalse(WebServer.hasInstance(port));
+  }
+
+  @Test(timeout = 15000)
+  public void registrationDuringShutdownCleansUpTheUnpublishedHandler() throws Exception {
+    newServer();
+    var owner = svr.server;
+    var starting = new java.util.concurrent.CountDownLatch(1);
+    var release = new java.util.concurrent.CountDownLatch(1);
+    var destroyed = new java.util.concurrent.atomic.AtomicBoolean();
+    Handler handler = new Handler.Abstract() {
+      @Override public boolean handle(Request request, Response response, Callback callback) { return false; }
+      @Override protected void doStart() throws Exception {
+        starting.countDown();
+        if (!release.await(5, TimeUnit.SECONDS)) throw new IOException("Start was not released");
+        super.doStart();
+      }
+      @Override public void destroy() { destroyed.set(true); super.destroy(); }
+    };
+    var adding = CompletableFuture.supplyAsync(() -> svr.addHandler("/late", handler));
+    assertTrue(starting.await(5, TimeUnit.SECONDS));
+    var stopping = CompletableFuture.runAsync(svr::stop);
+    try {
+      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+      while (!owner.isStopping() && System.nanoTime() < deadline) Thread.sleep(10);
+      assertTrue(owner.isStopping());
+    } finally { release.countDown(); }
+    assertEquals(null, adding.get(5, TimeUnit.SECONDS));
+    stopping.get(5, TimeUnit.SECONDS);
+    assertTrue(destroyed.get());
+  }
+
+  @Test
+  public void rejectedJarRegistrationClosesItsFilesystem() throws Exception {
+    newServer();
+    svr.stop();
+    var factory = org.eclipse.jetty.util.resource.ResourceFactory.unregisterResourceFactory("jar");
+    var filesystems = new java.util.ArrayList<java.nio.file.FileSystem>();
+    org.eclipse.jetty.util.resource.ResourceFactory.registerResourceFactory("jar", uri -> {
+      var resource = factory.newResource(uri);
+      filesystems.add(resource.getPath().getFileSystem());
+      return resource;
+    });
+    try {
+      assertTrue(svr.addStatic("/jar", "org/junit").isEmpty());
+      assertFalse(filesystems.isEmpty());
+      for (var filesystem : filesystems) assertFalse(filesystem.isOpen());
+    } finally {
+      org.eclipse.jetty.util.resource.ResourceFactory.registerResourceFactory("jar", factory);
+    }
   }
 
 }

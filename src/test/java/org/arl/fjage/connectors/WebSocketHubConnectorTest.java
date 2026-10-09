@@ -44,6 +44,8 @@ public class WebSocketHubConnectorTest {
     assertTrue(server.hasHandler("/a"));
     assertTrue(server.hasHandler("/b"));
     a.close();
+    a.close();
+    b.close();
     b.close();
   }
 
@@ -61,6 +63,20 @@ public class WebSocketHubConnectorTest {
     assertTrue(server.hasHandler("/ws"));
     first.close();
     assertFalse(server.hasHandler("/ws"));
+  }
+
+  @Test(timeout = 10000)
+  public void concurrentHubAndServerCloseAreIdempotent() throws Exception {
+    port = freePort();
+    WebSocketHubConnector hub = new WebSocketHubConnector(port, "/hub");
+    WebSocketServer server = new WebSocketServer(port, "/server", connector -> {});
+    java.util.concurrent.CompletableFuture.allOf(
+        java.util.concurrent.CompletableFuture.runAsync(hub::close),
+        java.util.concurrent.CompletableFuture.runAsync(hub::close),
+        java.util.concurrent.CompletableFuture.runAsync(server::close),
+        java.util.concurrent.CompletableFuture.runAsync(server::close)).get(5, java.util.concurrent.TimeUnit.SECONDS);
+    assertFalse(WebServer.getInstance(port).hasHandler("/hub"));
+    assertFalse(WebServer.getInstance(port).hasHandler("/server"));
   }
 
 }

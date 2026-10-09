@@ -66,8 +66,14 @@ public class WebSocketServer implements WebSocketCreator {
     }
 
     public void close() {
-        server.removeHandler(handler);
-        handler = null;
-        server = null;
+        WebServer current;
+        ContextHandler contextHandler;
+        synchronized (this) {
+            current = server;
+            contextHandler = handler;
+            server = null;
+            handler = null;
+        }
+        if (current != null) current.removeHandler(contextHandler);
     }
 }

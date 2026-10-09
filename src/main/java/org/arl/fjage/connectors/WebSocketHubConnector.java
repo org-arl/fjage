@@ -37,6 +37,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
   protected final PseudoInputStream pin = new PseudoInputStream();
   protected PseudoOutputStream pout = new PseudoOutputStream();
   protected ConnectionListener listener = null;
+  private volatile boolean closed;
   protected Logger log = Logger.getLogger(getClass().getName());
 
   /**
@@ -104,7 +105,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
   @Override
   public Object createWebSocket(ServerUpgradeRequest req, ServerUpgradeResponse resp, org.eclipse.jetty.util.Callback callback) {
-    return new WSHandler(this);
+    return closed ? null : new WSHandler(this);
   }
 
   @Override
@@ -145,17 +146,27 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
   @Override
   public void close() {
-    for (WSHandler endpoint : wsHandlers) {
-      Session current = endpoint.session;
-      if (current != null) current.disconnect();
+    OutputThread writer;
+    WebServer current;
+    ContextHandler context;
+    synchronized (this) {
+      if (closed) return;
+      closed = true;
+      writer = outThread;
+      current = server;
+      context = handler;
+      outThread = null;
+      server = null;
+      handler = null;
     }
-    outThread.close();
-    outThread = null;
-    server.removeHandler(handler);
-    server = null;
-    handler = null;
     pin.close();
     pout.close();
+    for (WSHandler endpoint : wsHandlers) {
+      Session session = endpoint.session;
+      if (session != null) session.disconnect();
+    }
+    if (writer != null) writer.close();
+    if (current != null) current.removeHandler(context);
   }
 
   @Override
@@ -204,6 +215,8 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
         }
       } catch (IOException ex) {
         log.log(Level.WARNING, "WebSocket output read failure", ex);
+      } finally {
+        WebSocketHubConnector.this.close();
       }
     }
 
@@ -211,7 +224,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
       try {
         if (pout != null) {
           pout.close();
-          join();
+          if (Thread.currentThread() != this) join();
         }
       } catch (InterruptedException ex) {
         Thread.currentThread().interrupt();
@@ -236,15 +249,20 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
       log.fine("New connection from "+session.getRemoteSocketAddress());
       this.session = session;
       wsHandlers.add(this);
+      if (closed) {
+        session.disconnect();
+        return;
+      }
       if (listener != null) listener.connected(conn);
       session.demand();
     }
 
     @Override
-    public void onWebSocketClose(int statusCode, String reason) {
+    public void onWebSocketClose(int statusCode, String reason, Callback callback) {
       log.fine("WebSocket connection closed: "+statusCode+" "+reason);
       session = null;
       wsHandlers.remove(this);
+      callback.succeed();
     }
 
     @Override
@@ -259,16 +277,14 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     @Override
     public void onWebSocketText(String message) {
       byte[] buf = message.getBytes(StandardCharsets.UTF_8);
-      synchronized (conn.pin) {
-        for (int c : buf) {
-          if (c < 0) c += 256;
-          if (c == 4) continue;     // ignore ^D
-          try {
-            conn.pin.write(c);
-          } catch (IOException ex) {
-            // do nothing
-          }
-        }
+      int length = 0;
+      for (byte c : buf) if (c != 4) buf[length++] = c; // Ignore ^D.
+      try {
+        conn.pin.write(buf, 0, length);
+      } catch (IOException ex) {
+        Session current = session;
+        if (current != null) current.disconnect();
+        return;
       }
       Session current = session;
       if (current != null && current.isOpen()) current.demand();

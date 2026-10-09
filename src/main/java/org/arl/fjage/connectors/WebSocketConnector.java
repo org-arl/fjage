@@ -27,12 +27,13 @@ public class WebSocketConnector implements Connector, Session.Listener {
     }
 
     @Override
-    public void onWebSocketClose(int statusCode, String reason)  {
+    public void onWebSocketClose(int statusCode, String reason, Callback callback) {
         this.session = null;
         pin.close();
         pout.close();
         log.finer("WebSocket Connector closed: " + statusCode + " " + reason);
         name = "websocket://[closed]";
+        callback.succeed();
     }
 
     @Override
@@ -63,8 +64,11 @@ public class WebSocketConnector implements Connector, Session.Listener {
             // The WebSocketHubConnector filters for the likes of ^D
             try {
                 pin.write(buf);
-            } catch (IOException ignored){
-                // ignore exception
+            } catch (IOException ex) {
+                Session current = session;
+                if (current != null) current.disconnect();
+                close();
+                return;
             }
         }
         Session current = session;
@@ -135,7 +139,10 @@ public class WebSocketConnector implements Connector, Session.Listener {
             while (true) {
                 String s;
                 s = pout.readLine(StandardCharsets.UTF_8);
-                if (s == null) break;
+                if (s == null) {
+                    WebSocketConnector.this.close();
+                    break;
+                }
                 write(s);
             }
         }

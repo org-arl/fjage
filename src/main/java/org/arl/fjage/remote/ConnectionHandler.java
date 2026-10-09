@@ -98,7 +98,7 @@ public class ConnectionHandler extends Thread {
     while (conn != null) {
       String s = null;
       try {
-        s = in.readLine();
+        s = readLine(in);
       } catch(IOException ex) {
         // do nothing
       }
@@ -338,7 +338,7 @@ public class ConnectionHandler extends Thread {
       gatewayAgent = aid;
       classified = true;
       log.fine("Connection "+getName()+" classified as gateway ("+aid.getName()+"), directory queries suppressed");
-      if (container instanceof MasterContainer) ((MasterContainer)container).gatewayClassified(this);
+      if (container instanceof MasterContainer master) master.gatewayClassified(this);
     } else {
       classified = true;
     }
@@ -390,39 +390,49 @@ public class ConnectionHandler extends Thread {
     @Override
     public void run() {
       switch (rq.action) {
-        case AGENTS:
-          respond(rq, container.getLocalAgents());
-          break;
-        case CONTAINS_AGENT:
-          respond(rq, rq.agentID != null && container.containsAgent(rq.agentID));
-          break;
-        case SERVICES:
-          respond(rq, container.getLocalServices());
-          break;
-        case AGENT_FOR_SERVICE:
-          respond(rq, rq.service != null ? container.localAgentForService(rq.service) : null);
-          break;
-        case AGENTS_FOR_SERVICE:
-          respond(rq, rq.service != null ? container.localAgentsForService(rq.service) : null);
-          break;
-        case SEND:
+        case AGENTS -> respond(rq, container.getLocalAgents());
+        case CONTAINS_AGENT -> respond(rq, rq.agentID != null && container.containsAgent(rq.agentID));
+        case SERVICES -> respond(rq, container.getLocalServices());
+        case AGENT_FOR_SERVICE -> respond(rq, rq.service != null ? container.localAgentForService(rq.service) : null);
+        case AGENTS_FOR_SERVICE -> respond(rq, rq.service != null ? container.localAgentsForService(rq.service) : null);
+        case SEND -> {
           if (rq.relay != null) container.send(rq.message, rq.relay);
           else container.send(rq.message);
-          break;
-        case SHUTDOWN:
-          container.shutdown();
-          break;
-        case WANTS_MESSAGES_FOR:
-          synchronized(watchList) {
+        }
+        case SHUTDOWN -> container.shutdown();
+        case WANTS_MESSAGES_FOR -> {
+          synchronized (watchList) {
             watchList.clear();
             Collections.addAll(watchList, rq.agentIDs);
           }
-          break;
-        default:
-          log.fine("Unknown action: "+rq.action);
+        }
+        default -> log.fine("Unknown action: "+rq.action);
       }
     }
 
   } // inner class
+
+  private boolean skipLineFeed;
+
+  String readLine(BufferedReader in) throws IOException {
+    int limit = Integer.getInteger("org.arl.fjage.maxLineChars", 64*1024*1024);
+    if (limit <= 0) throw new IOException("Line limit must be positive");
+    StringBuilder line = new StringBuilder();
+    int c;
+    while ((c = in.read()) >= 0) {
+      if (skipLineFeed) {
+        skipLineFeed = false;
+        if (c == '\n') continue;
+      }
+      if (c == '\n') return line.toString();
+      if (c == '\r') {
+        skipLineFeed = true;
+        return line.toString();
+      }
+      if (line.length() == limit) throw new IOException("JSON line exceeds character limit");
+      line.append((char)c);
+    }
+    return line.isEmpty() ? null : line.toString();
+  }
 
 }
