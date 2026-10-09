@@ -4,16 +4,15 @@ fjåge Build Instructions
 Prerequisites
 -------------
 
-* [Gradle](https://www.gradle.org/)
+* JDK 8 - the build compiles and tests with a JDK 8 toolchain. Gradle is fetched by `./gradlew` and can run on JDK 8 to 24.
 * [Quarto](https://quarto.org/) - required for building documentation
-* [GnuPG](https://www.gnupg.org/) - required for signing artifacts for MavenCentral
 
 Generating JARs
 ---------------
 
 To generate project JARs:
 
-    gradle jars
+    ./gradlew jar
 
 The project and dependency JARs are located in `build/libs/`.
 
@@ -22,34 +21,35 @@ Testing the build
 
 To test the build:
 
-    gradle test
+    ./gradlew test
 
-Test report is available at `build/reports/tests/index.html`.
+Test report is available at `build/reports/tests/test/index.html`.
 
-Uploading JARs to Maven Central
--------------------------------
-**To be done by project administator only**
+Publishing JARs to GitHub Packages
+----------------------------------
+**To be done by project administrator only**
 
-Create `~/.gradle/gradle.properties` with the following keys:
+From version 2.1.0 onwards, fjåge is published to the [GitHub Maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry) (`https://maven.pkg.github.com/org-arl/fjage`) only. Older versions are still available in Maven Central.
 
-  * signing.keyId
-  * signing.password
-  * signing.secretKeyRingFile
-  * sonatypeUsername
-  * sonatypePassword
+Publishing needs a GitHub personal access token (classic) with the `write:packages` scope. Add your credentials to `~/.gradle/gradle.properties`, or to the git-ignored `gradle.properties` in the project root:
 
-To generate and upload the archives to Sonatype repository:
+    gpr.user=<github-username>
+    gpr.token=<personal-access-token>
 
-    gradle uploadArchives
+If these are not set, the `GITHUB_ACTOR` and `GITHUB_TOKEN` environment variables are used instead.
 
-Finally, go to [Sonatype](http://oss.sonatype.org/) and close, check and publish the archives.  Once published, the archive is synchronized with Maven Central in about 2 hours.
+To build and upload the jar, sources jar and javadoc jar:
+
+    ./gradlew publish
+
+GitHub Packages does not allow a released version to be overwritten, so bump `VERSION` before publishing again.
 
 Generating Javadoc
 ------------------
 
 To generate API documentation:
 
-    gradle javadoc
+    ./gradlew javadoc
 
 The javadoc is available at `build/docs/javadoc/index.html`.
 

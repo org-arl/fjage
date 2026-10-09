@@ -1,4 +1,5 @@
 import org.apache.tools.ant.taskdefs.condition.Os
+import javax.inject.Inject
 
 plugins {
   id 'java-library'
@@ -8,17 +9,22 @@ plugins {
 
 defaultTasks 'jar'
 
-archivesBaseName = 'fjage'
+base {
+  archivesName = 'fjage'
+}
 group = 'com.github.org-arl'
 version = new File(projectDir, 'VERSION').text.trim()
 
 // get git commit
-def stdout = new ByteArrayOutputStream()
-exec {
+def commit = providers.exec {
   commandLine 'git', 'describe', '--always', '--abbrev=8', '--match', 'NOT A TAG', '--dirty=*'
-  standardOutput = stdout;
+}.standardOutput.asText.get().trim()
+
+// ExecOperations for running external commands from task actions
+interface InjectedExecOps {
+  @Inject ExecOperations getExecOps()
 }
-def commit = "$stdout".replace('\n','')
+def execOps = objects.newInstance(InjectedExecOps).execOps
 
 // check if npm exists
 def npmcmd = Os.isFamily(Os.FAMILY_WINDOWS) ? "npm.cmd" : "npm"
@@ -31,7 +37,7 @@ try {
 
 // check if python exists (used to create the venv for fjagepy tests)
 def pythoncmd = System.getenv('PYTHON') ?: (Os.isFamily(Os.FAMILY_WINDOWS) ? "python" : "python3")
-def pyvenv = file("$buildDir/pyvenv")
+def pyvenv = layout.buildDirectory.dir('pyvenv').get().asFile
 def pyvenvPython = new File(pyvenv, Os.isFamily(Os.FAMILY_WINDOWS) ? "Scripts/python.exe" : "bin/python")
 boolean pythonExists = false
 try {
@@ -40,8 +46,12 @@ try {
   pythonExists = pyproc.exitValue() == 0
 } catch (IOException ignored){}
 
-targetCompatibility = 1.8
-sourceCompatibility = 1.8
+// compile, test and javadoc with JDK 8, whichever JVM runs Gradle
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(8)
+  }
+}
 
 repositories {
   mavenCentral()
@@ -83,14 +93,14 @@ tasks.register('buildjs') {
   outputs.dir "gateways/js/dist"
   doLast {
     if (npmExists) {
-      exec {
+      execOps.exec {
         workingDir 'gateways/js'
         executable npmcmd
         args System.getenv('CI') != null ? 'ci' : "install"
         errorOutput = new ByteArrayOutputStream()
         standardOutput = new ByteArrayOutputStream()
       }
-      exec {
+      execOps.exec {
         workingDir 'gateways/js'
         executable npmcmd
         args 'run', 'build'
@@ -109,11 +119,11 @@ tasks.register('setupPyVenv') {
     pythonExists
   }
   doLast {
-    exec {
+    execOps.exec {
       executable pythoncmd
       args '-m', 'venv', pyvenv
     }
-    exec {
+    execOps.exec {
       executable pyvenvPython
       args '-m', 'pip', 'install', '--quiet', '--disable-pip-version-check', '-e', 'gateways/python[dev]'
     }
@@ -142,7 +152,7 @@ tasks.register('updatexterm') {
     if (!file('package.json').exists()) {
       file('package.json').text = '{}'
     }
-    exec {
+    execOps.exec {
       workingDir '.'
       executable npmcmd
       args 'install', '@xterm/xterm@6.0.0', '@xterm/addon-attach@0.12.0', '@xterm/addon-fit@0.11.0', '@xterm/addon-web-links@0.12.0'
@@ -169,7 +179,7 @@ jar {
   }
   doLast {
     copy {
-      into "$buildDir/libs"
+      into layout.buildDirectory.dir('libs')
       from configurations.runtimeClasspath
     }
   }
@@ -191,7 +201,7 @@ test {
   systemProperties project.properties.subMap(["manualCTest"])
   testLogging {
     events "passed", "skipped", "failed"
-    exceptionFormat "full"
+    exceptionFormat = "full"
   }
 }
 
@@ -217,7 +227,7 @@ tasks.register('loadTest', Test) {
   outputs.upToDateWhen { false }
   testLogging {
     events "passed", "skipped", "failed"
-    exceptionFormat "full"
+    exceptionFormat = "full"
   }
 }
 
@@ -225,7 +235,7 @@ javadoc {
   options.addStringOption('Xdoclint:none', '-quiet')
 }
 
-////// tasks for MavenCentral deployment
+////// publishing to GitHub Packages
 
 java {
   withJavadocJar()
