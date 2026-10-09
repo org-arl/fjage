@@ -12,15 +12,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.arl.fjage.AgentID;
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.Callback;
-import org.eclipse.jetty.websocket.client.WebSocketClient;
+import java.net.http.WebSocket;
+import org.arl.fjage.connectors.TestWebSocketClient;
 import org.junit.Test;
 
 /**
  * T6 — WebSocket path under load.
  *
- * Opens the master's WebSocket server and drives it with a Jetty WS client acting as
+ * Opens the master's WebSocket server and drives it with a JDK WebSocket client acting as
  * a gateway-style peer. Verifies bidirectional bulk transfer with no lost or garbled
  * frames, measures master→client throughput (the PR removed a 10 ms/line sleep that
  * capped it at ~100 msg/s), and checks that an abrupt WS disconnect mid-stream does
@@ -34,20 +33,19 @@ public class T6WebSocketTest {
   private static final int M2C = 3000;   // master -> client messages
 
   /** Gateway-style WS endpoint: collects lines, auto-answers keep-alive. */
-  public static class WsEndpoint implements Session.Listener.AutoDemanding {
-    private volatile Session session;
+  public static class WsEndpoint extends TestWebSocketClient {
     final Queue<String> lines = new ConcurrentLinkedQueue<>();
     final CountDownLatch connected = new CountDownLatch(1);
     final AtomicInteger malformed = new AtomicInteger();
 
     @Override
-    public void onWebSocketOpen(Session sess) {
-      session = sess;
+    public void onOpen(WebSocket socket) {
+      super.onOpen(socket);
       connected.countDown();
     }
 
     @Override
-    public void onWebSocketText(String message) {
+    protected void onMessage(String message) {
       for (String line : message.split("\n")) {
         if (line.isEmpty()) continue;
         lines.add(line);
@@ -56,13 +54,13 @@ public class T6WebSocketTest {
         } catch (Exception ex) {
           malformed.incrementAndGet();
         }
-        if (line.trim().equals(ALIVE)) sendLine(ALIVE);
+        if (line.trim().equals(ALIVE)) sendAsync(ALIVE + "\n");
       }
     }
 
     synchronized void sendLine(String s) {
       try {
-        Callback.Completable.with(callback -> session.sendText(s + "\n", callback)).get(5, TimeUnit.SECONDS);
+        send(s + "\n");
       } catch (Exception ex) {
         // connection closed
       }
@@ -83,18 +81,18 @@ public class T6WebSocketTest {
   public void webSocketGatewayLoad() throws Exception {
     LogCapture logs = new LogCapture();
     final MultiContainerFixture fx = MultiContainerFixture.create(0);   // master only
-    WebSocketClient client = new WebSocketClient();
+    WsEndpoint ep = new WsEndpoint();
     try {
       LoadAgents.ReceiverAgent rxM = new LoadAgents.ReceiverAgent();
       fx.master.add("rx_m", rxM);
 
       AtomicBoolean go1 = new AtomicBoolean(false);
       LoadAgents.SenderAgent txWs = new LoadAgents.SenderAgent(
-          Collections.singletonList(new AgentID("wsrx")), M2C, go1, 0);
+          List.of(new AgentID("wsrx")), M2C, go1, 0);
       fx.master.add("tx_ws", txWs);
       AtomicBoolean go2 = new AtomicBoolean(false);
       LoadAgents.SenderAgent txWs2 = new LoadAgents.SenderAgent(
-          Collections.singletonList(new AgentID("wsrx")), M2C, go2, 0);
+          List.of(new AgentID("wsrx")), M2C, go2, 0);
       fx.master.add("tx_ws2", txWs2);
 
       int wsPort;
@@ -103,9 +101,7 @@ public class T6WebSocketTest {
       ss.close();
       assertTrue("failed to open WS server", fx.master.openWebSocketServer(wsPort, "/ws"));
 
-      client.start();
-      WsEndpoint ep = new WsEndpoint();
-      Session session = client.connect(ep, URI.create("ws://127.0.0.1:" + wsPort + "/ws")).get(10, TimeUnit.SECONDS);
+      WebSocket session = ep.connect(URI.create("ws://127.0.0.1:" + wsPort + "/ws"));
       assertTrue(ep.connected.await(5, TimeUnit.SECONDS));
 
       // register interest in "wsrx" so the master relays to us
@@ -115,11 +111,12 @@ public class T6WebSocketTest {
       // ---- client -> master storm ----
       long t0 = System.currentTimeMillis();
       for (int i = 0; i < C2M; i++) {
-        String json = "{\"action\": \"send\", \"relay\": true, \"message\": {"
-            + "\"clazz\": \"org.arl.fjage.loadtest.LoadAgents$SeqMsg\", \"data\": {"
-            + "\"src\": \"wsc\", \"seq\": " + i + ", \"tns\": " + System.nanoTime()
-            + ", \"msgID\": \"ws-" + i + "\", \"perf\": \"INFORM\","
-            + " \"recipient\": \"rx_m\", \"sender\": \"wsc\"}}}";
+        String json = """
+            {"action":"send","relay":true,"message":{\
+              "clazz":"org.arl.fjage.loadtest.LoadAgents$SeqMsg","data":{\
+              "src":"wsc","seq":%d,"tns":%d,"msgID":"ws-%d","perf":"INFORM",\
+              "recipient":"rx_m","sender":"wsc"}}}
+            """.formatted(i, System.nanoTime(), i).strip();
         ep.sendLine(json);
       }
       TestUtil.waitUntil("master received all WS messages", () -> rxM.stats.countFrom("wsc") >= C2M, 60000);
@@ -149,7 +146,7 @@ public class T6WebSocketTest {
       // ---- abrupt disconnect mid-stream ----
       go2.set(true);          // second burst starts flowing
       TestUtil.sleep(200);
-      session.disconnect();   // harsh close, no goodbye
+      session.abort();   // harsh close, no goodbye
       TestUtil.sleep(2000);
 
       assertNotNull("master directory wedged after WS disconnect", fx.master.getAgents());
@@ -161,7 +158,7 @@ public class T6WebSocketTest {
       System.out.println("abrupt disconnect mid-stream: clean, severes=0");
     } finally {
       try {
-        client.stop();
+        ep.close();
       } catch (Exception ex) {
         // best effort
       }

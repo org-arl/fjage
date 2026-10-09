@@ -213,8 +213,10 @@ public class ObserverTest {
 
   @Test
   public void testFilterStateIsEchoed() throws Exception {
-    client.send("{\"action\":\"filter\",\"filter\":{\"excludeClazz\":\"Parameter\","
-                +"\"excludeEndpoints\":[\"ponger\"]}}");
+    client.send("""
+        {"action":"filter","filter":{"excludeClazz":"Parameter",\
+          "excludeEndpoints":["ponger"]}}
+        """.strip());
     // the observer echoes the applied filter to every client, so that all open
     // UIs agree about what is being dropped
     JsonObject f = null;

@@ -6,9 +6,7 @@ import java.net.*;
 import java.util.concurrent.*;
 import org.arl.fjage.*;
 import org.arl.fjage.connectors.WebServer;
-import org.eclipse.jetty.websocket.api.*;
-import org.eclipse.jetty.websocket.api.Callback;
-import org.eclipse.jetty.websocket.client.WebSocketClient;
+import org.arl.fjage.connectors.TestWebSocketClient;
 import org.junit.Test;
 
 public class UnicodeConnectionTest {
@@ -47,11 +45,9 @@ public class UnicodeConnectionTest {
     }
   }
 
-  public static class Endpoint implements Session.Listener.AutoDemanding {
-    volatile Session session;
+  public static class Endpoint extends TestWebSocketClient {
     final BlockingQueue<Message> messages = new LinkedBlockingQueue<>();
-    @Override public void onWebSocketOpen(Session session) { this.session = session; }
-    @Override public void onWebSocketText(String text) {
+    @Override protected void onMessage(String text) {
       for (String line : text.split("\n")) {
         JsonMessage message = JsonMessage.fromJson(line);
         if (message.message != null) messages.add(message.message);
@@ -60,7 +56,7 @@ public class UnicodeConnectionTest {
           response.id = message.id;
           response.inResponseTo = Action.AGENTS;
           response.agentIDs = new AgentID[] {new AgentID("gateway-unicode")};
-          session.sendText(response.toJson() + "\n", Callback.NOOP);
+          sendAsync(response.toJson() + "\n");
         }
       }
     }
@@ -72,25 +68,22 @@ public class UnicodeConnectionTest {
     try (ServerSocket socket = new ServerSocket(0)) { port = socket.getLocalPort(); }
     Platform platform = new RealTimePlatform();
     MasterContainer master = echoServer(platform);
-    WebSocketClient client = new WebSocketClient();
+    Endpoint endpoint = new Endpoint();
     try {
       assertTrue(master.openWebSocketServer(port, "/json"));
-      client.start();
-      Endpoint endpoint = new Endpoint();
-      Session session = client.connect(endpoint, URI.create("ws://localhost:" + port + "/json")).get(5, TimeUnit.SECONDS);
+      endpoint.connect(URI.create("ws://localhost:" + port + "/json"));
       GenericMessage request = new GenericMessage(new AgentID("echo"), Performative.REQUEST);
       request.setSender(new AgentID("gateway-unicode"));
       request.put("text", TEXT);
       JsonMessage envelope = new JsonMessage();
       envelope.action = Action.SEND;
       envelope.message = request;
-      Callback.Completable.with(callback -> session.sendText(envelope.toJson() + "\n", callback))
-        .get(5, TimeUnit.SECONDS);
+      endpoint.send(envelope.toJson() + "\n");
       Message response = endpoint.messages.poll(5, TimeUnit.SECONDS);
       assertTrue(response instanceof GenericMessage);
       assertEquals(TEXT, ((GenericMessage)response).get("text"));
     } finally {
-      client.stop();
+      endpoint.close();
       platform.shutdown();
       if (WebServer.hasInstance(port)) WebServer.getInstance(port).stop();
     }

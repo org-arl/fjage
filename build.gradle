@@ -71,7 +71,6 @@ dependencies {
   implementation "org.eclipse.jetty.compression:jetty-compression-server:$jettyVersion"
   runtimeOnly "org.eclipse.jetty.compression:jetty-compression-gzip:$jettyVersion"
   runtimeOnly 'org.slf4j:slf4j-jdk14:2.0.17'
-  testImplementation "org.eclipse.jetty.websocket:jetty-websocket-jetty-client:$jettyVersion"
   api 'com.google.code.gson:gson:2.14.0'
   api 'com.fazecast:jSerialComm:2.10.4'
   testImplementation 'junit:junit:4.13.2'
