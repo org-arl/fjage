@@ -14,7 +14,8 @@ version = file('VERSION').text.trim()
 
 def commit = providers.exec {
   commandLine 'git', 'describe', '--always', '--abbrev=8', '--match', 'NOT A TAG', '--dirty=*'
-}.standardOutput.asText.get().trim()
+  ignoreExitValue = true
+}.standardOutput.asText.get().trim() ?: 'unknown'
 
 // ExecOperations for running external commands from task actions
 interface InjectedExecOps {
@@ -78,7 +79,9 @@ dependencies {
 }
 
 tasks.register('buildjs') {
-  inputs.files fileTree('gateways/js/src').include('**/*.js'), "gateways/js/package.json"
+  inputs.files fileTree('gateways/js') {
+    include 'src/**', '*.json', '*.yaml', 'rollup.config.js', 'eslint.config.js'
+  }
   outputs.dir "gateways/js/dist"
   onlyIf {
     def ok = canRun(npmcmd, '-v')
@@ -90,7 +93,6 @@ tasks.register('buildjs') {
       workingDir 'gateways/js'
       executable npmcmd
       args System.getenv('CI') != null ? 'ci' : "install"
-      errorOutput = new ByteArrayOutputStream()
       standardOutput = new ByteArrayOutputStream()
     }
     execOps.exec {
@@ -164,9 +166,12 @@ jar {
         "Build-Version": "${project.version}/${commit}")
   }
   doLast {
-    copy {
-      into layout.buildDirectory.dir('libs')
-      from configurations.runtimeClasspath
+    // dependency jars next to the fjage jars, with stale versions removed
+    def current = "${archiveBaseName.get()}-${archiveVersion.get()}*.jar"
+    sync { spec ->
+      spec.from configurations.runtimeClasspath
+      spec.into destinationDirectory
+      spec.preserve { it.include current }
     }
   }
 }
