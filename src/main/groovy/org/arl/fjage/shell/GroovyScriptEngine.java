@@ -43,7 +43,7 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   private final int MAX_RESULT_LEN = 8192;
   private final int RESULT_SNIPPET_LEN = 32;
-  private static final Pattern IMPORT_STMT = Pattern.compile("import\\s+((?:static\\s+)?[\\w.$*]+(?:\\s+as\\s+\\w+)?)[\\s;]*");
+  private static final Pattern IMPORT_STMT = Pattern.compile("import\\s+((?:static\\s+)?[\\w.$*]+(?:\\s+as\\s+\\w+)?)\\h*(?:;|\\R|$)\\s*");
 
   ////// inner classes
 
