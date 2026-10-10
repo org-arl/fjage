@@ -2,6 +2,15 @@ const SOCKET_OPEN = 'open';
 const SOCKET_OPENING = 'opening';
 const DEFAULT_RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
 
+/** @typedef {import('node:net').Socket & {send: (data: string) => void}} TCPConnectorSocket */
+
+/**
+ * @callback TCPConnectorReadCallback
+ * @param {string} data - incoming message string
+ * @returns {void}
+ */
+
+/** @type {typeof import('node:net').createConnection|undefined} */
 var createConnection;
 
 /**
@@ -9,6 +18,39 @@ var createConnection;
 * @ignore
 */
 class TCPConnector {
+
+  /** @type {URL} */
+  url;
+
+  /** @type {boolean|undefined} */
+  _keepAlive;
+
+  /** @type {number} */
+  _reconnectTime;
+
+  /** @type {string} */
+  _buf;
+
+  /** @type {boolean} */
+  _firstConn;
+
+  /** @type {boolean} */
+  _firstReConn;
+
+  /** @type {Array<() => void>} */
+  pendingOnOpen;
+
+  /** @type {Array<(connected: boolean) => void>} */
+  connListeners;
+
+  /** @type {boolean} */
+  debug;
+
+  /** @type {TCPConnectorSocket|undefined} */
+  sock;
+
+  /** @type {TCPConnectorReadCallback|undefined} */
+  _onSockRx;
 
   /**
   * Create an TCPConnector to connect to a fjage master over TCP
@@ -30,19 +72,23 @@ class TCPConnector {
     this._buf = '';
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
     this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
-    this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
+    this.pendingOnOpen = [];              // list of callbacks invoked as soon as the gateway is open
     this.connListeners = [];              // external listeners wanting to listen connection events
     this.debug = false;
     this._sockInit(host, port);
   }
 
-
+  /** @param {boolean} val */
   _sendConnEvent(val) {
     this.connListeners.forEach(l => {
       l && {}.toString.call(l) === '[object Function]' && l(val);
     });
   }
 
+  /**
+   * @param {string} host
+   * @param {number} port
+   */
   _sockInit(host, port){
     if (!createConnection){
       try {
@@ -59,17 +105,21 @@ class TCPConnector {
     }
   }
 
+  /**
+   * @param {string} host
+   * @param {number} port
+   */
   _sockSetup(host, port){
     if(!createConnection) return;
     try{
-      this.sock = createConnection({ 'host': host, 'port': port });
+      this.sock = /** @type {TCPConnectorSocket} */ (createConnection({ 'host': host, 'port': port }));
       this.sock.setEncoding('utf8');
       this.sock.on('connect', this._onSockOpen.bind(this));
       this.sock.on('error', this._sockReconnect.bind(this));
       this.sock.on('close', () => {this._sendConnEvent(false);});
       this.sock.send = data => {this.sock.write(data);};
     } catch (error) {
-      if(this.debug) console.log('Connection failed to ', this.sock.host + ':' + this.sock.port);
+      if(this.debug) console.log('Connection failed to ', host + ':' + port);
       return;
     }
   }
@@ -80,7 +130,7 @@ class TCPConnector {
     this._firstReConn = false;
     setTimeout(() => {
       this.pendingOnOpen = [];
-      this._sockSetup(this.url.hostname, this.url.port);
+      this._sockSetup(this.url.hostname, parseInt(this.url.port));
     }, this._reconnectTime);
   }
 
@@ -94,6 +144,7 @@ class TCPConnector {
     this._buf = '';
   }
 
+  /** @param {string} s */
   _processSockData(s){
     this._buf += s;
     var lines = this._buf.split('\n');
@@ -106,6 +157,7 @@ class TCPConnector {
     });
   }
 
+  /** @returns {string} */
   toString(){
     let s = '';
     s += 'TCPConnector [' + this.sock ? this.sock.remoteAddress.toString() + ':' + this.sock.remotePort.toString() : '' + ']';
@@ -131,14 +183,9 @@ class TCPConnector {
   }
 
   /**
-  * @callback TCPConnectorReadCallback
-  * @ignore
-  * @param {string} s - incoming message string
-  */
-
-  /**
   * Set a callback for receiving incoming strings from the connector
   * @param {TCPConnectorReadCallback} cb - callback that is called when the connector gets a string
+  * @returns {void}
   */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onSockRx = cb;
@@ -146,7 +193,8 @@ class TCPConnector {
 
   /**
   * Add listener for connection events
-  * @param {function} listener - a listener callback that is called when the connection is opened/closed
+  * @param {(connected: boolean) => void} listener - a listener callback that is called when the connection is opened/closed
+  * @returns {void}
   */
   addConnectionListener(listener){
     this.connListeners.push(listener);
@@ -154,7 +202,7 @@ class TCPConnector {
 
   /**
   * Remove listener for connection events
-  * @param {function} listener - remove the listener for connection
+  * @param {(connected: boolean) => void} listener - remove the listener for connection
   * @return {boolean} - true if the listner was removed successfully
   */
   removeConnectionListener(listener) {
@@ -168,6 +216,7 @@ class TCPConnector {
 
   /**
   * Close the connector
+  * @returns {void}
   */
   close(){
     if (!this.sock) return;
