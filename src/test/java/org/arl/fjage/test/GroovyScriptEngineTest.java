@@ -89,6 +89,14 @@ public class GroovyScriptEngineTest {
   }
 
   @Test
+  public void testImportWithoutSeparator() {
+    exec("import java.util.concurrent.ConcurrentSkipListSet x = 1");
+    assertNotNull("missing separator not reported", shell.lastError);
+    exec("new ConcurrentSkipListSet()");
+    assertNotNull("import persisted despite syntax error", shell.lastError);
+  }
+
+  @Test
   public void testImportAlias() {
     exec("import java.util.concurrent.ConcurrentSkipListSet as CSS");
     assertNull(shell.lastError);
