@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Groovy scripting engine.
@@ -41,6 +43,7 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   private final int MAX_RESULT_LEN = 8192;
   private final int RESULT_SNIPPET_LEN = 32;
+  private static final Pattern IMPORT_STMT = Pattern.compile("import\\s+((?:static\\s+)?[\\w.$*]+(?:\\s+as\\s+\\w+)?)\\h*(?:;|\\R|$)\\s*");
 
   ////// inner classes
 
@@ -158,10 +161,15 @@ public class GroovyScriptEngine implements ScriptEngine {
         busy = Thread.currentThread();
         String cmd = cmd1.trim();
         if (cmd.startsWith("help ")) cmd = "help '"+cmd.substring(5)+"'";
-        else if (cmd.startsWith("import ")) cmd = "export '"+cmd.substring(7)+"'";
         log.fine("EVAL: "+cmd);
         Object rv = null;
         try {
+          // move leading imports into the default imports
+          Matcher m;
+          while ((m = IMPORT_STMT.matcher(cmd)).lookingAt()) {
+            importClasses(m.group(1));
+            cmd = cmd.substring(m.end());
+          }
           if (binding.hasVariable(cmd)) {
             rv = binding.getVariable(cmd);
             if (rv instanceof Closure) {
@@ -345,16 +353,22 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   @Override
   public void importClasses(String clazz) {
+    groovy.parse("import "+clazz);      // throws if unresolvable, so a bad import can't break later commands
+    String[] parts = clazz.split("\\s+as\\s+");
+    clazz = parts[0];
+    String alias = parts.length > 1 ? parts[1] : null;
     if (clazz.startsWith("static ")) {
       clazz = clazz.substring(7).trim();
       if (clazz.endsWith(".*")) imports.addStaticStars(clazz.substring(0,clazz.length()-2));
       else {
         int n = clazz.lastIndexOf('.');
         if (n < 0) return;
-        imports.addStaticImport(clazz.substring(0, n), clazz.substring(n+1));
+        String member = clazz.substring(n+1);
+        imports.addStaticImport(alias != null ? alias : member, clazz.substring(0, n), member);
       }
     } else {
       if (clazz.endsWith(".*")) imports.addStarImports(clazz.substring(0,clazz.length()-2));
+      else if (alias != null) imports.addImport(alias, clazz);
       else imports.addImports(clazz);
     }
   }

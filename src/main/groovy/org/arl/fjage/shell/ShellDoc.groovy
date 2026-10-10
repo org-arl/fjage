@@ -96,10 +96,12 @@ Examples:
 Examples:
   export 'org.arl.fjage.*'            // import package org.arl.fjage
   export 'mypackage.MyClass'          // import class mypackage.MyClass
+  export 'mypackage.MyClass as MC'    // import class mypackage.MyClass as MC
 
 At the shell prompt (but not in a script), export can be abbreviated
-to import. For example:
+to import. Leading imports may be followed by code. For example:
   import org.arl.fjage.*             // import package org.arl.fjage
+  import mypackage.MyClass; x = new MyClass()
 
 ## agent - return an agent id for the named agent
 
