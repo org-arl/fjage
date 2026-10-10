@@ -53,7 +53,7 @@ jobs:
           sphinx-build -q gateways/python/docs build/docs/pydocs
       - name: Assemble site
         run: cp -r build/docs/javadoc build/docs/jsdoc build/docs/pydocs docs/_site/
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: docs/_site
   deploy:
