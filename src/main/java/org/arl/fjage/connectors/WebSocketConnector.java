@@ -15,33 +15,46 @@ public class WebSocketConnector extends Session.Listener.AbstractAutoDemanding i
     private volatile String name = "ws://[closed]";
     private final String context;
     private volatile ConnectionListener listener;
+    private volatile boolean closed;
     protected Logger log = Logger.getLogger(getClass().getName());
 
     private final PseudoInputStream pin = new PseudoInputStream();
-    private final PseudoOutputStream pout = new PseudoOutputStream();
-    private OutputThread outThread = null;
+    private final WebSocketOutput pout;
 
     public WebSocketConnector(String context) {
         this.context = context;
+        pout = new WebSocketOutput(context, true,
+            text -> WebSocketSupport.sendText(getSession(), text, log), this::close, log);
     }
 
     @Override
     public void onWebSocketClose(int statusCode, String reason, Callback callback) {
-        pin.close();
-        pout.close();
+        close();
         log.finer("WebSocket Connector closed: " + statusCode + " " + reason);
-        name = "websocket://[closed]";
         callback.succeed();
     }
 
     @Override
     public void onWebSocketOpen(Session session) {
-        super.onWebSocketOpen(session);
-        log.finer("WebSocket Connector connected: " + session.getRemoteSocketAddress());
-        name = "ws://" + WebSocketSupport.address(session) + context;
-        outThread = new OutputThread();
-        outThread.start();
-        if (listener != null) listener.connected(this);
+        synchronized (this) {
+            if (!closed) {
+                super.onWebSocketOpen(session);
+                name = "ws://" + WebSocketSupport.address(session) + context;
+                pout.start();
+            }
+        }
+        if (closed) {
+            session.disconnect();
+            return;
+        }
+        ConnectionListener current = listener;
+        try {
+            if (current != null) current.connected(this);
+        } catch (RuntimeException ex) {
+            log.log(Level.WARNING, "WebSocket connection listener failed", ex);
+            session.disconnect();
+            close();
+        }
     }
 
     @Override
@@ -55,18 +68,12 @@ public class WebSocketConnector extends Session.Listener.AbstractAutoDemanding i
 
     @Override
     public void onWebSocketText(String message) {
-        byte[] buf = message.getBytes(StandardCharsets.UTF_8);
-        synchronized (pin) {
-            // TODO: Check if we need any filters here.
-            // The WebSocketHubConnector filters for the likes of ^D
-            try {
-                pin.write(buf);
-            } catch (IOException ex) {
-                Session current = getSession();
-                if (current != null) current.disconnect();
-                close();
-                return;
-            }
+        try {
+            pin.write(message.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException ex) {
+            Session current = getSession();
+            if (current != null) current.disconnect();
+            close();
         }
     }
 
@@ -92,7 +99,7 @@ public class WebSocketConnector extends Session.Listener.AbstractAutoDemanding i
 
     @Override
     public boolean waitOutputCompletion(long timeout) {
-        return true;
+        return pout.awaitCompletion(timeout);
     }
 
     @Override
@@ -108,10 +115,16 @@ public class WebSocketConnector extends Session.Listener.AbstractAutoDemanding i
 
     @Override
     public void close() {
-        Session current = getSession();
-        if (current != null && current.isOpen()) current.close(1000, null, Callback.NOOP);
+        Session current;
+        synchronized (this) {
+            if (closed) return;
+            closed = true;
+            current = getSession();
+            name = "ws://[closed]";
+        }
         pin.close();
         pout.close();
+        if (current != null && current.isOpen()) current.close(1000, null, Callback.NOOP);
     }
 
     @Override
@@ -119,32 +132,4 @@ public class WebSocketConnector extends Session.Listener.AbstractAutoDemanding i
         return name;
     }
 
-    /// internal classes and helpers
-
-    private class OutputThread extends Thread {
-
-        OutputThread() {
-            setName(getClass().getSimpleName()+":"+name);
-            setDaemon(true);
-            setPriority(MIN_PRIORITY);
-        }
-
-        @Override
-        public void run() {
-            while (true) {
-                String s;
-                s = pout.readLine(StandardCharsets.UTF_8);
-                if (s == null) {
-                    WebSocketConnector.this.close();
-                    break;
-                }
-                write(s);
-            }
-        }
-
-    }
-
-    private void write(String s) {
-        WebSocketSupport.sendText(getSession(), s, log);
-    }
 }

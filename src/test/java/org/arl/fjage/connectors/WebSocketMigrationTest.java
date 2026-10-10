@@ -80,6 +80,7 @@ public class WebSocketMigrationTest {
           catch (Exception ex) { throw new CompletionException(ex); }
         }).get(5, TimeUnit.SECONDS));
         hub.getOutputStream().write(bytes);
+        assertTrue(hub.waitOutputCompletion(5000));
         assertEquals(text, first.messages.poll(5, TimeUnit.SECONDS));
         assertEquals(text, second.messages.poll(5, TimeUnit.SECONDS));
       }
@@ -106,8 +107,10 @@ public class WebSocketMigrationTest {
       byte[] bytes = "\u4e16".getBytes(StandardCharsets.UTF_8);
       hub.getOutputStream().write(bytes, 0, 1);
       assertNull("incomplete UTF-8 character must not be emitted", peer.messages.poll(100, TimeUnit.MILLISECONDS));
+      assertFalse(hub.waitOutputCompletion(20));
       hub.getOutputStream().write(bytes, 1, bytes.length-1);
       assertEquals("\u4e16", peer.messages.poll(5, TimeUnit.SECONDS));
+      assertTrue(hub.waitOutputCompletion(5000));
     } finally {
       socket.abort();
       hub.close();

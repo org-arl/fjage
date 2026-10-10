@@ -551,6 +551,24 @@ public class WebServerTest {
     assertTrue(destroyed.get());
   }
 
+  @Test(timeout = 10000)
+  public void concurrentRegistrationsPublishOnlyOneExclusiveContext() throws Exception {
+    newServer();
+    var starting = new java.util.concurrent.CountDownLatch(2);
+    java.util.function.Supplier<ContextHandler> register = () -> svr.addHandler("/same", new Handler.Abstract() {
+      @Override public boolean handle(Request request, Response response, Callback callback) { return false; }
+      @Override protected void doStart() throws Exception {
+        starting.countDown();
+        if (!starting.await(5, TimeUnit.SECONDS)) throw new IOException("Start was not released");
+        super.doStart();
+      }
+    });
+    var first = CompletableFuture.supplyAsync(register);
+    var second = CompletableFuture.supplyAsync(register);
+    assertTrue((first.get(5, TimeUnit.SECONDS) != null) ^ (second.get(5, TimeUnit.SECONDS) != null));
+    assertTrue(svr.hasHandler("/same"));
+  }
+
   @Test
   public void rejectedJarRegistrationClosesItsFilesystem() throws Exception {
     newServer();

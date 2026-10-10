@@ -20,10 +20,11 @@ final class WebSocketSupport {
   }
 
   /** Waits on the connector's writer thread to preserve ordering and bound send time. */
-  static void sendText(Session session, String text, Logger log) {
-    if (session == null || !session.isOpen()) return;
+  static boolean sendText(Session session, String text, Logger log) {
+    if (session == null || !session.isOpen()) return false;
     try {
       Callback.Completable.with(callback -> session.sendText(text, callback)).get(2, TimeUnit.SECONDS);
+      return true;
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
       session.disconnect();
@@ -38,5 +39,6 @@ final class WebSocketSupport {
       log.log(Level.WARNING, "Error sending websocket message", ex);
       session.disconnect();
     }
+    return false;
   }
 }

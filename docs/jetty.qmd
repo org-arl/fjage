@@ -72,7 +72,11 @@ Built-in rewrite rules such as `RewritePatternRule` remain supported through `We
 
 Endpoints implement `org.eclipse.jetty.websocket.api.Session.Listener`. Store the session in `onWebSocketOpen()` and call `session.demand()` to receive an event. After processing a text message, demand the next event. Simple endpoints can implement `Session.Listener.AutoDemanding` instead. Send text with `session.sendText(text, websocketCallback)` and handle completion or failure through the WebSocket callback. The HTTP callback type and WebSocket callback type are different. Applications using Jetty's WebSocket client must declare `org.eclipse.jetty.websocket:jetty-websocket-jetty-client` themselves; fjåge tests use the JDK HTTP and WebSocket clients.
 
-The [buffer and line limits](java17.qmd#buffer-and-line-limits) also bound accumulated stream data. WebSocket connector closure is idempotent. The fjåge connectors preserve message order by waiting for send completion on their writer threads, with a two-second timeout. A timeout or failed send disconnects the affected session. WebSocket text uses UTF-8, including characters split across separate stream writes. The configured maximum text-message size and long idle timeout remain in effect.
+The fjåge endpoints extend Jetty's `Session.Listener.AbstractAutoDemanding`, which stores the session and automatically demands the next event after synchronous processing. A shared writer bridges the byte streams to ordered WebSocket text messages. The JDK UTF-8 decoder preserves characters split across writes and replaces malformed input.
+
+The [buffer and line limits](java17.qmd#buffer-and-line-limits) bound accumulated stream data. Closing a connector is idempotent, and a late connection cannot reopen it. Each send has a two-second timeout; a timeout or failure disconnects the affected session. The configured maximum text-message size and long idle timeout remain in effect.
+
+`waitOutputCompletion(timeout)` waits for output accepted before the call to finish sending. An unfinished line or UTF-8 character remains pending. The method returns `false` on timeout, interruption, or closure with unfinished output. Hub completion waits for each attempted send, including disconnection of failed peers. Completion does not acknowledge processing by the remote application.
 
 ## File uploads and directory listings
 

@@ -22,6 +22,7 @@ public class WebSocketServer implements WebSocketCreator, AutoCloseable {
     protected int port;
     protected String context;
     protected volatile ConnectionListener listener;
+    private volatile boolean closed;
     protected WebServer server;
     protected ContextHandler handler;
     protected Logger log = Logger.getLogger(getClass().getName());
@@ -50,8 +51,15 @@ public class WebSocketServer implements WebSocketCreator, AutoCloseable {
 
     @Override
     public Object createWebSocket(ServerUpgradeRequest request, ServerUpgradeResponse response, Callback callback) {
+        if (closed) return null;
         WebSocketConnector ws = new WebSocketConnector(context);
-        ws.setConnectionListener(listener);
+        ws.setConnectionListener(connector -> {
+            if (closed) connector.close();
+            else {
+                ConnectionListener current = listener;
+                if (current != null) current.connected(connector);
+            }
+        });
         return ws;
     }
 
@@ -68,6 +76,8 @@ public class WebSocketServer implements WebSocketCreator, AutoCloseable {
         WebServer current;
         ContextHandler contextHandler;
         synchronized (this) {
+            if (closed) return;
+            closed = true;
             current = server;
             contextHandler = handler;
             server = null;

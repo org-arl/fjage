@@ -33,9 +33,8 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
   protected WebServer server;
   protected ContextHandler handler;
   protected List<WSHandler> wsHandlers = new CopyOnWriteArrayList<>();
-  protected OutputThread outThread = null;
   protected final PseudoInputStream pin = new PseudoInputStream();
-  protected PseudoOutputStream pout = new PseudoOutputStream();
+  protected PseudoOutputStream pout;
   protected volatile ConnectionListener listener = null;
   private volatile boolean closed;
   protected Logger log = Logger.getLogger(getClass().getName());
@@ -94,13 +93,22 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     }
     server = WebServer.getInstance(port);
     log.info ("Adding WebSocket handler at :"+port + context);
+    var output = new WebSocketOutput(name, linemode, text -> {
+      for (WSHandler endpoint : wsHandlers) endpoint.write(text);
+      return !Thread.currentThread().isInterrupted();
+    }, this::close, log);
+    pout = output;
     handler = server.addWebSocket(context, this, maxMsgSize);
     if (handler == null) {
+      pin.close();
+      output.close();
       String msg = "Unable to add WebSocket handler at :"+port+context;
       throw new UncheckedIOException(msg, new IOException(msg));
     }
-    outThread = new OutputThread();
-    outThread.start();
+    synchronized (this) {
+      if (closed) output.close();
+      else output.start();
+    }
   }
 
   @Override
@@ -141,21 +149,18 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
   @Override
   public boolean waitOutputCompletion(long timeout) {
-    return true;
+    return ((WebSocketOutput)pout).awaitCompletion(timeout);
   }
 
   @Override
   public void close() {
-    OutputThread writer;
     WebServer current;
     ContextHandler context;
     synchronized (this) {
       if (closed) return;
       closed = true;
-      writer = outThread;
       current = server;
       context = handler;
-      outThread = null;
       server = null;
       handler = null;
     }
@@ -165,7 +170,6 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
       Session session = endpoint.getSession();
       if (session != null) session.disconnect();
     }
-    if (writer != null) writer.close();
     if (current != null) current.removeHandler(context);
   }
 
@@ -173,67 +177,6 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
   public String toString() {
     return name;
   }
-
-  // thread to monitor incoming data on output stream and write to TCP clients
-
-  private class OutputThread extends Thread {
-
-    OutputThread() {
-      setName(getClass().getSimpleName()+":"+name);
-      setDaemon(true);
-      setPriority(MIN_PRIORITY);
-    }
-
-    @Override
-    public void run() {
-      // Keep decoder state when a UTF-8 character spans queue reads.
-      Reader reader = new InputStreamReader(new InputStream() {
-        @Override
-        public int read() {
-          return pout.read();
-        }
-
-        @Override
-        public int read(byte[] buf, int ofs, int len) {
-          return pout.read(buf, ofs, len);
-        }
-      }, StandardCharsets.UTF_8);
-      char[] buf = new char[4096];
-      try {
-        while (true) {
-          String s;
-          if (linemode) {
-            s = pout.readLine(StandardCharsets.UTF_8);
-            if (s == null) break;
-          } else {
-            int n = reader.read(buf);
-            if (n < 0) break;
-            s = new String(buf, 0, n);
-          }
-          for (WSHandler t: wsHandlers)
-            t.write(s);
-        }
-      } catch (IOException ex) {
-        log.log(Level.WARNING, "WebSocket output read failure", ex);
-      } finally {
-        WebSocketHubConnector.this.close();
-      }
-    }
-
-    void close() {
-      try {
-        if (pout != null) {
-          pout.close();
-          if (Thread.currentThread() != this) join();
-        }
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-      }
-    }
-
-  }
-
-  // POJO for each web socket connection
 
   public class WSHandler extends Session.Listener.AbstractAutoDemanding {
 
@@ -249,10 +192,18 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
       super.onWebSocketOpen(session);
       wsHandlers.add(this);
       if (closed) {
+        wsHandlers.remove(this);
         session.disconnect();
         return;
       }
-      if (listener != null) listener.connected(conn);
+      ConnectionListener current = listener;
+      try {
+        if (current != null) current.connected(conn);
+      } catch (RuntimeException ex) {
+        log.log(Level.WARNING, "WebSocket connection listener failed", ex);
+        wsHandlers.remove(this);
+        session.disconnect();
+      }
     }
 
     @Override

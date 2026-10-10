@@ -436,7 +436,7 @@ public class WebServer {
     // WebSocket upgrades cannot follow redirects.
     c.setAllowNullPathInContext(true);
     c.setHandler(handler);
-    if (add(c)) return c;
+    if (add(c, true)) return c;
     return null;
   }
 
@@ -459,7 +459,7 @@ public class WebServer {
       if (maxMsgSize > 0) container.setMaxTextMessageSize(maxMsgSize);
       container.addMapping("/*", creator);
     }));
-    return add(handler) ? handler : null;
+    return add(handler, true) ? handler : null;
   }
 
   /**
@@ -598,6 +598,10 @@ public class WebServer {
   }
 
   private boolean add(ContextHandler handler) {
+    return add(handler, false);
+  }
+
+  private boolean add(ContextHandler handler, boolean exclusive) {
     ContextHandlerCollection collection = contexts;
     Server owner = server;
     if (!owner.isStarted()) return false;
@@ -607,6 +611,8 @@ public class WebServer {
       collection.addManaged(handler);
       synchronized (collection) {
         if (!owner.isStarted()) throw new IllegalStateException("Server is stopping");
+        if (exclusive && hasHandler(handler.getContextPath()))
+          throw new IllegalStateException("Context already in use: "+handler.getContextPath());
         collection.addHandler(handler);
       }
       return true;

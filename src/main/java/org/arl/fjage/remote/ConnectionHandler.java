@@ -229,7 +229,7 @@ public class ConnectionHandler extends Thread {
     try {
       out.write((s+"\n").getBytes(StandardCharsets.UTF_8));
       log.fine(this.getName() +" >>> "+s);
-      conn.waitOutputCompletion(1000);
+      if (!conn.waitOutputCompletion(1000)) throw new IOException("Output did not complete");
     } catch(IOException ex) {
       if (!s.equals(SIGN_OFF)) {
         log.log(Level.WARNING, "Failed to send message: "+s, ex);
