@@ -36,10 +36,13 @@ public class Documentation {
    */
   public void add(String s) {
     if (doc.size() > staticSize) doc.subList(staticSize, doc.size()).clear();
-    String[] lines = s.split(crlf);
-    for (String line: lines)
-      doc.add(line);
+    addLines(s);
     staticSize = doc.size();
+  }
+
+  private void addLines(String text) {
+    if (text.isEmpty()) doc.add("");
+    else text.lines().forEach(doc::add);
   }
 
   /**
@@ -190,9 +193,7 @@ public class Documentation {
       if (cache.containsKey(key)) {
         String s = cache.get(key);
         if (s != null) {
-          String[] lines = s.split(crlf);
-          for (String line: lines)
-            doc.add(line);
+          addLines(s);
         }
         continue;
       }
@@ -200,15 +201,13 @@ public class Documentation {
       req.setRecipient(a);
       req.get(new NamedParameter("__doc__"));
       Message rsp = agent.request(req, 1000);
-      if (rsp != null && rsp instanceof ParameterRsp) {
-        Object docstr = ((ParameterRsp)rsp).get(new NamedParameter("__doc__"));
+      if (rsp instanceof ParameterRsp response) {
+        Object docstr = response.get(new NamedParameter("__doc__"));
         if (docstr != null) {
           String s = docstr.toString().replaceAll(placeholder, a.getName());
           if (s.startsWith("[no-cache]")) s = s.substring(10);
           else cache.put(key, s);
-          String[] lines = s.split(crlf);
-          for (String line: lines)
-            doc.add(line);
+          addLines(s);
         }
       } else {
         // no documentation available for agent

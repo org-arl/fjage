@@ -86,7 +86,7 @@ public class ObserverFilter implements MessageFilter {
   }
 
   private Pattern compile(String re) {
-    if (re == null || re.trim().isEmpty()) return null;
+    if (re == null || re.isBlank()) return null;
     try {
       return Pattern.compile(re);
     } catch (PatternSyntaxException ex) {

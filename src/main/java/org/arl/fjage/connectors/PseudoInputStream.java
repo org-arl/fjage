@@ -30,14 +30,19 @@ public class PseudoInputStream extends InputStream {
    * Write a byte to the stream buffer.
    */
   public void write(int c) throws IOException {
-    if (!q.write(c)) throw new IOException("Stream is closed");
+    if (!q.write(c)) throw new IOException("Stream is closed or buffer limit exceeded");
   }
 
   /**
    * Write a byte buffer to the stream buffer.
    */
   public void write(byte[] buf) throws IOException {
-    if (!q.write(buf)) throw new IOException("Stream is closed");
+    if (!q.write(buf)) throw new IOException("Stream is closed or buffer limit exceeded");
+  }
+
+  /** Writes a slice atomically, failing if the stream is closed or its buffer is full. */
+  public void write(byte[] buf, int offset, int length) throws IOException {
+    if (!q.write(buf, offset, length)) throw new IOException("Stream is closed or buffer limit exceeded");
   }
 
   @Override

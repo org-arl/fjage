@@ -1,5 +1,7 @@
 package org.arl.fjage;
 
+import java.io.Serial;
+
 import java.io.Serializable;
 import java.security.SecureRandom;
 import java.util.Objects;
@@ -37,6 +39,7 @@ import java.util.UUID;
  */
 public final class UUID7 implements Comparable<UUID7>, Serializable {
 
+  @Serial
   private static final long serialVersionUID = -1234567890123456789L;
   private final long mostSigBits;
   private final long leastSigBits;

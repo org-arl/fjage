@@ -16,6 +16,8 @@ import org.arl.fjage.Message;
 import org.arl.fjage.Performative;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
@@ -25,6 +27,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,17 +138,31 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   @Override
   public boolean isComplete(String cmd) {
-    if (cmd == null || cmd.trim().length() == 0) return true;
+    if (cmd == null || cmd.isBlank()) return true;
+    SourceUnit source = SourceUnit.create("completion", cmd);
     try {
-      groovy.parse(cmd);
+      source.parse();
+      source.completePhase();
+      source.nextPhase();
+      source.convert();
       return true;
     } catch (MultipleCompilationErrorsException ex) {
-      String s = ex.getMessage();
-      if (s == null) return true;
-      if (s.contains("unexpected token")) return false;
-      if (s.contains("expecting")) return false;
-      return true;
-    } catch (Throwable ex) {
+      String[] lines = cmd.split("\\r?\\n", -1);
+      for (Object error : ex.getErrorCollector().getErrors()) {
+        if (error instanceof SyntaxErrorMessage syntax) {
+          var cause = syntax.getCause();
+          if (cause.getStartLine() == lines.length && cause.getStartColumn() > lines[lines.length-1].length())
+            return false;
+          if (cause.getStartLine() > 0 && cause.getStartLine() <= lines.length) {
+            String line = lines[cause.getStartLine()-1];
+            int column = Math.min(line.length(), Math.max(0, cause.getStartColumn()-1));
+            String token = line.substring(column);
+            String quote = line.substring(Math.max(0, column-2));
+            if (quote.startsWith("\"\"\"") || quote.startsWith("'''")) return false;
+            if (token.startsWith("/*") || token.startsWith("\"${")) return false;
+          }
+        }
+      }
       return true;
     }
   }
@@ -164,8 +181,7 @@ public class GroovyScriptEngine implements ScriptEngine {
         try {
           if (binding.hasVariable(cmd)) {
             rv = binding.getVariable(cmd);
-            if (rv instanceof Closure) {
-              Closure<?> cl = (Closure<?>)rv;
+            if (rv instanceof Closure<?> cl) {
               try {
                 binding.setVariable("out", out);
                 rv = cl.call();
@@ -262,7 +278,7 @@ public class GroovyScriptEngine implements ScriptEngine {
           binding.setVariable("out", out);
           binding.setVariable("script", script.getName());
           binding.setVariable("args", args);
-          Script gs = (Script)script.newInstance();
+          Script gs = (Script)script.getDeclaredConstructor().newInstance();
           gs.setBinding(binding);
           gs.run();
         } catch (Throwable ex) {
@@ -395,6 +411,7 @@ public class GroovyScriptEngine implements ScriptEngine {
   }
 
   private void error(Throwable ex) {
+    if (ex instanceof InvocationTargetException invocation && invocation.getCause() != null) ex = invocation.getCause();
     if (ex instanceof GroovyBugError) ex = resolveGroovyBug(ex);
     if (out != null) out.error(ex);
     else log.log(Level.WARNING, "Groovy execution failed", ex);
@@ -411,7 +428,9 @@ public class GroovyScriptEngine implements ScriptEngine {
         try {
           InputStream in = groovy.getClassLoader().getResourceAsStream(offendingGroovyScript);
           if (in != null) {
-            groovy.parse(new InputStreamReader(in), offendingGroovyScript);
+            try (var reader = new InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)) {
+              groovy.parse(reader, offendingGroovyScript);
+            }
           }
         } catch (Throwable ex1) {
           ex = ex1;

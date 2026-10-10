@@ -10,8 +10,12 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.io.Serial;
+
 import java.util.Map;
 import java.util.Random;
+import java.util.random.RandomGenerator;
+import java.util.random.RandomGeneratorFactory;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -23,6 +27,7 @@ import java.util.logging.Logger;
  */
 public class AgentLocalRandom extends Random {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   //// static stuff
@@ -83,14 +88,16 @@ public class AgentLocalRandom extends Random {
   //// instance methods
 
   /**
-   * Generates a random double.
+   * Creates an independent, named generator seeded from this generator.
+   * Each call advances this generator. Keep the returned instance for repeatable SDK sampling.
    *
-   * @param min minimum value to generate.
-   * @param max maximum value to generate.
-   * @return random number.
+   * @param algorithm a Java RandomGeneratorFactory algorithm name
+   * @return seeded generator, supporting SDK methods such as nextExponential()
    */
-  public double nextDouble(double min, double max) {
-    return nextDouble()*(max-min) + min;
+  public RandomGenerator createGenerator(String algorithm) {
+    RandomGeneratorFactory<RandomGenerator> factory = RandomGeneratorFactory.of(algorithm);
+    if (factory.isStochastic()) throw new IllegalArgumentException("Simulation generator must be deterministic");
+    return factory.create(nextLong());
   }
 
   /**
@@ -113,13 +120,14 @@ public class AgentLocalRandom extends Random {
   }
 
   /**
-   * Generates a Gaussian distributed random number.
+   * Generates a Gaussian distributed random number using a variance.
+   * The inherited nextGaussian(mean, stddev) method uses a standard deviation.
    *
    * @param mu mean of the distribution.
    * @param sigma2 variance of the distribution.
    * @return random number.
    */
-  public double nextGaussian(double mu, double sigma2) {
+  public double nextGaussianVariance(double mu, double sigma2) {
     return nextGaussian()*Math.sqrt(sigma2) + mu;
   }
 

@@ -74,7 +74,7 @@ public class SimpleFirewallSupplier
    */
   public SimpleFirewallSupplier addPolicy(String policyId, Consumer<Policy> policyConsumer) {
     if (Strings.CS.equals(policyId, POLICY_ID_ALLOW_ALL)) {
-      throw new IllegalArgumentException(String.format("%s is a reserved policy ID", policyId));
+      throw new IllegalArgumentException("%s is a reserved policy ID".formatted(policyId));
     }
 
     final Policy policy = new Policy();
@@ -99,7 +99,7 @@ public class SimpleFirewallSupplier
    */
   public void removePolicy(String policyId) {
     if (Strings.CS.equals(policyId, POLICY_ID_ALLOW_ALL)) {
-      throw new IllegalArgumentException(String.format("%s is a reserved policy ID", policyId));
+      throw new IllegalArgumentException("%s is a reserved policy ID".formatted(policyId));
     }
     policyMap.remove(policyId);
   }
@@ -192,9 +192,9 @@ public class SimpleFirewallSupplier
     @Override
     public String toString() {
       if (user != null) {
-        return String.format("@%x/%s", hashCode(), user.getUsername());
+        return "@%x/%s".formatted(hashCode(), user.getUsername());
       } else {
-        return String.format("@%x", hashCode());
+        return "@%x".formatted(hashCode());
       }
     }
   }

@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import java.io.Serial;
+
 import org.arl.fjage.Message;
 import org.arl.fjage.Performative;
 
@@ -18,6 +20,7 @@ import org.arl.fjage.Performative;
  */
 public class GetFileRsp extends Message {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private String filename;

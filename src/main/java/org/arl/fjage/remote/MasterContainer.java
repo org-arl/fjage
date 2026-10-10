@@ -190,7 +190,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     List<String> urls = new ArrayList<>();
     if (tcpListener != null) urls.add(tcpListener.toString());
     slaves.forEach(slave -> urls.add(slave.toString()));
-    return urls.toArray(new String[0]);
+    return urls.toArray(String[]::new);
   }
 
   /**
@@ -199,7 +199,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
    * @return array of connection handlers.
    */
   public ConnectionHandler[] getConnectionHandlers(){
-    return slaves.toArray(new ConnectionHandler[0]);
+    return slaves.toArray(ConnectionHandler[]::new);
   }
 
   /////////////// Container interface methods to override
@@ -262,7 +262,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       AgentID gw = slave.getGatewayAgent();
       if (gw != null) allAgents.add(gw);
     }
-    return allAgents.toArray(new AgentID[0]);
+    return allAgents.toArray(AgentID[]::new);
   }
 
   @Override
@@ -273,7 +273,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       if (rsp.services != null) allServices.addAll(Arrays.asList(rsp.services));
       return false;
     });
-    return allServices.toArray(new String[0]);
+    return allServices.toArray(String[]::new);
   }
 
   @Override
@@ -311,7 +311,7 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
       if (rsp.agentIDs != null) allAgents.addAll(Arrays.asList(rsp.agentIDs));
       return false;
     });
-    return allAgents.toArray(new AgentID[0]);
+    return allAgents.toArray(AgentID[]::new);
   }
 
   /**

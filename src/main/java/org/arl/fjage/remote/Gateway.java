@@ -200,8 +200,7 @@ public class Gateway implements Messenger, Closeable {
    * @return true if authenticated, false otherwise.
    */
   public boolean authenticate(String creds) {
-    if (container != null && container instanceof SlaveContainer)
-      return ((SlaveContainer)container).authenticate(creds);
+    if (container instanceof SlaveContainer slave) return slave.authenticate(creds);
     return false;
   }
 
@@ -279,13 +278,11 @@ public class Gateway implements Messenger, Closeable {
 
   @Override
   public Message receive(final Message m, long timeout) {
-    if (container instanceof SlaveContainer)
-      ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
+    if (container instanceof SlaveContainer slave) slave.checkAuthFailure(m.getMessageID());
     final String mid = m.getMessageID();
     Message rsp = receive(m1 -> Objects.equals(m1.getInReplyTo(), mid), timeout);
     if (rsp != null) return rsp;
-    if (container instanceof SlaveContainer)
-      ((SlaveContainer)container).checkAuthFailure(m.getMessageID());
+    if (container instanceof SlaveContainer slave) slave.checkAuthFailure(m.getMessageID());
     return null;
   }
 
@@ -461,12 +458,4 @@ public class Gateway implements Messenger, Closeable {
       t[i] = new AgentID(t[i], this);
     return t;
   }
-
-  ////////////// Private methods
-
-  @Override
-  public void finalize() {
-    close();
-  }
-
 }

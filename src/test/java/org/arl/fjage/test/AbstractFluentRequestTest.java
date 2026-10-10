@@ -29,42 +29,15 @@ public class AbstractFluentRequestTest
     }
   }
 
-  private static class TestReplyEntry {
-
-    private final Duration duration;
-    private final TestReplyType type;
-    private final Performative performative;
-
-    private TestReplyEntry(Duration duration, TestReplyType type, Performative performative) {
-      super();
-
-      this.duration = duration;
-      this.type = type;
-      this.performative = performative;
-    }
-
-    public static TestReplyEntry generic(Duration duration, Performative performative) {
+  private record TestReplyEntry(Duration duration, TestReplyType type, Performative performative) {
+    static TestReplyEntry generic(Duration duration, Performative performative) {
       return new TestReplyEntry(duration, TestReplyType.GENERIC, performative);
     }
-
-    public static TestReplyEntry delivered(Duration duration) {
+    static TestReplyEntry delivered(Duration duration) {
       return new TestReplyEntry(duration, TestReplyType.DELIVERED, null);
     }
-
-    public static TestReplyEntry deliveryFailed(Duration duration) {
+    static TestReplyEntry deliveryFailed(Duration duration) {
       return new TestReplyEntry(duration, TestReplyType.DELIVERY_FAILED, null);
-    }
-
-    public Duration getDuration() {
-      return duration;
-    }
-
-    public TestReplyType getType() {
-      return type;
-    }
-
-    public Performative getPerformative() {
-      return performative;
     }
   }
 
@@ -90,7 +63,7 @@ public class AbstractFluentRequestTest
       super();
 
       setRecipient(recipient);
-      this.testReplyEntryList = testReplyEntryList;
+      this.testReplyEntryList = testReplyEntryList == null ? null : List.copyOf(testReplyEntryList);
     }
 
     public List<TestReplyEntry> getTestReplyEntryList() {
@@ -163,7 +136,7 @@ public class AbstractFluentRequestTest
         return;
       }
       final TestReplyEntry entry = testReplyEntryList.get(0);
-      add(new CustomWakerBehavior(entry.getDuration().toMillis(), request, testReplyEntryList));
+      add(new CustomWakerBehavior(entry.duration().toMillis(), request, testReplyEntryList));
     }
 
     private class CustomWakerBehavior
@@ -176,35 +149,19 @@ public class AbstractFluentRequestTest
         super(millis);
 
         this.request = request;
-        this.testReplyEntryList = testReplyEntryList;
+        this.testReplyEntryList = testReplyEntryList == null ? null : List.copyOf(testReplyEntryList);
       }
 
       @Override
       public void onWake() {
         final TestReplyEntry entry = testReplyEntryList.get(0);
-        switch (entry.getType()) {
-          case GENERIC:
-            send(new Message(request, entry.getPerformative()));
-            break;
-          case DELIVERED: {
-            final TestDeliverySucceededNtf reply = new TestDeliverySucceededNtf(request);
-            if (entry.getPerformative() != null) {
-              reply.setPerformative(entry.getPerformative());
-            }
-            send(reply);
-            break;
-          }
-          case DELIVERY_FAILED: {
-            final TestDeliveryFailedNtf reply = new TestDeliveryFailedNtf(request);
-            if (entry.getPerformative() != null) {
-              reply.setPerformative(entry.getPerformative());
-            }
-            send(reply);
-            break;
-          }
-          default:
-            break;
-        }
+        Message reply = switch (entry.type()) {
+          case GENERIC -> new Message(request, entry.performative());
+          case DELIVERED -> new TestDeliverySucceededNtf(request);
+          case DELIVERY_FAILED -> new TestDeliveryFailedNtf(request);
+        };
+        if (entry.performative() != null) reply.setPerformative(entry.performative());
+        send(reply);
         handle(request, testReplyEntryList.subList(1, testReplyEntryList.size()));
       }
     }

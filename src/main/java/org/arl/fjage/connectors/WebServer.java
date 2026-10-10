@@ -10,26 +10,32 @@
 
 package org.arl.fjage.connectors;
 
-import org.eclipse.jetty.http.MimeTypes;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import org.eclipse.jetty.compression.server.CompressionConfig;
+import org.eclipse.jetty.compression.server.CompressionHandler;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.MultiPartConfig;
+import org.eclipse.jetty.http.MultiPartFormData;
+import org.eclipse.jetty.io.Content;
 import org.eclipse.jetty.rewrite.handler.RewriteHandler;
 import org.eclipse.jetty.rewrite.handler.Rule;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.*;
-import org.eclipse.jetty.server.handler.gzip.GzipHandler;
-import org.eclipse.jetty.util.IO;
+import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.util.component.LifeCycle;
+import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.StringUtil;
-import org.eclipse.jetty.util.log.Log;
-import org.eclipse.jetty.util.log.Logger;
+import org.eclipse.jetty.util.resource.ResourceFactory;
+import org.eclipse.jetty.util.thread.Invocable.InvocationType;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ThreadPool;
+import org.eclipse.jetty.websocket.server.WebSocketCreator;
+import org.eclipse.jetty.websocket.server.WebSocketUpgradeHandler;
 
-import javax.servlet.MultipartConfigElement;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
 import java.io.*;
 import java.net.BindException;
 import java.net.InetSocketAddress;
@@ -38,6 +44,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -56,29 +63,10 @@ public class WebServer {
   private static final Map<Integer,WebServer> servers = new HashMap<>();
   private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(WebServer.class.getName());
 
+  private static final java.util.logging.Logger jettyLog = java.util.logging.Logger.getLogger("org.eclipse.jetty");
+
   static {
-    // disable Jetty logging (except warnings)
-    System.setProperty("org.eclipse.jetty.LEVEL", "WARN");
-    Log.setLog(new Logger() {
-      @Override public String getName()                         { return "[jetty]"; }
-      @Override public Logger getLogger(String name)            { return this;      }
-      @Override public boolean isDebugEnabled()                 { return false;     }
-      @Override public void warn(String msg, Object... args)    {
-        if (msg.contains("{}")) for (Object a: args) msg = msg.replaceFirst("\\{}", a.toString());
-        log.warning(msg);
-      }
-      @Override public void warn(Throwable t)                   { log.log(Level.WARNING, "", t); }
-      @Override public void warn(String msg, Throwable thrown)  { log.log(Level.WARNING, msg, thrown); }
-      @Override public void info(String msg, Object... args)    { }
-      @Override public void info(Throwable thrown)              { }
-      @Override public void info(String msg, Throwable thrown)  { }
-      @Override public void setDebugEnabled(boolean enabled)    { }
-      @Override public void debug(String msg, Object... args)   { }
-      @Override public void debug(String msg, long x)           { }
-      @Override public void debug(Throwable thrown)             { }
-      @Override public void debug(String msg, Throwable thrown) { }
-      @Override public void ignore(Throwable ignored)           { }
-    });
+    jettyLog.setLevel(Level.WARNING);
   }
 
   /**
@@ -89,11 +77,7 @@ public class WebServer {
    * @throws UncheckedIOException if a new web server cannot be started (e.g. port already in use).
    */
   public static WebServer getInstance(int port) {
-    synchronized (servers) {
-      WebServer svr = servers.get(port);
-      if (svr == null || svr.server == null) svr = new WebServer(port);
-      return svr;
-    }
+    return getInstance(port, "127.0.0.1");
   }
 
   /**
@@ -107,7 +91,7 @@ public class WebServer {
   public static WebServer getInstance(int port, String ip) {
     synchronized (servers) {
       WebServer svr = servers.get(port);
-      if (svr == null || svr.server == null) svr = new WebServer(port, ip);
+      if (svr == null || svr.server.isStopped()) svr = new WebServer(port, ip);
       return svr;
     }
   }
@@ -132,7 +116,7 @@ public class WebServer {
    */
   public static WebServer[] getInstances() {
     synchronized (servers) {
-      return servers.values().toArray(new WebServer[0]);
+      return servers.values().toArray(WebServer[]::new);
     }
   }
 
@@ -140,19 +124,15 @@ public class WebServer {
    * Shutdown all web servers.
    */
   public static void shutdown() {
-    synchronized (servers) {
-      for (WebServer svr: servers.values())
-        svr.stop();
-    }
+    for (WebServer svr : getInstances()) svr.stop();
   }
 
   //////// instance attributes and methods
 
-  protected Server server;
-  protected ContextHandlerCollection contexts;
-  protected RewriteHandler rewrite;
-  protected ErrorHandler defaultErrorHandler;
-  protected boolean started;
+  protected final Server server;
+  protected final ContextHandlerCollection contexts;
+  protected final RewriteHandler rewrite;
+  protected volatile ErrorHandler defaultErrorHandler;
   protected int port;
 
   protected WebServer(int port) {
@@ -166,7 +146,7 @@ public class WebServer {
    * The Jetty based WebServer has a set of handlers that are initialized
    * and more handlers can be added to it. The handler stack setup is
    * <p>
-   * <code> GzipHandler -> RewriteHandler -> ContextHandlerCollection[ contexts[] , DefaultHandler] </code>
+   * <code> CompressionHandler -> RewriteHandler -> Sequence[ ContextHandlerCollection, DefaultHandler ] </code>
    * </p>
    * Any new handlers added to the server will be added to the list of ContextHandlers (contexts).
    * The server is started right away, and handlers and rules may be added to it while it runs.
@@ -180,18 +160,17 @@ public class WebServer {
     server = new Server(InetSocketAddress.createUnresolved(ip, port));
     server.setStopAtShutdown(true);
     rewrite = new RewriteHandler();
-    rewrite.setRewriteRequestURI(true);
-    rewrite.setRewritePathInfo(true);
     contexts = new ContextHandlerCollection();
-    GzipHandler gzipHandler = new GzipHandler();
-    gzipHandler.setIncludedMimeTypes("text/html", "text/plain", "text/xml", "text/css", "application/javascript", "text/javascript");
-    HandlerCollection handlerCollection = new HandlerCollection();
-    handlerCollection.setHandlers(new Handler[] { contexts, new DefaultHandler() });
-    gzipHandler.setHandler(rewrite);
-    rewrite.setHandler(handlerCollection);
-    server.setHandler(gzipHandler);
+    CompressionHandler compression = new CompressionHandler();
+    CompressionConfig.Builder config = CompressionConfig.builder().compressIncludeEncoding("gzip");
+    for (String mimeType : List.of("text/html", "text/plain", "text/xml", "text/css", "application/javascript", "text/javascript"))
+      config.compressIncludeMimeType(mimeType);
+    compression.putConfiguration("/*", config.build());
+    compression.setHandler(rewrite);
+    rewrite.setHandler(new Handler.Sequence(contexts, new DefaultHandler()));
+    server.setHandler(compression);
     ThreadPool pool = server.getThreadPool();
-    if (pool instanceof QueuedThreadPool) ((QueuedThreadPool)pool).setDaemon(true);
+    if (pool instanceof QueuedThreadPool threadPool) threadPool.setDaemon(true);
     try {
       server.start();
     } catch (Exception ex) {
@@ -202,11 +181,12 @@ public class WebServer {
       }
       // name the most common cause explicitly
       String msg = isPortInUse(ex) ? "Unable to start web server: port "+port+" is already in use" : "Unable to start web server on port "+port;
-      throw new UncheckedIOException(msg, ex instanceof IOException ? (IOException)ex : new IOException(msg, ex));
+      throw new UncheckedIOException(msg, ex instanceof IOException io ? io : new IOException(msg, ex));
     }
-    started = true;
     log.info("Started web server on port "+port);
-    if (port > 0) servers.put(port, this);
+    if (port > 0) {
+      synchronized (servers) { servers.put(port, this); }
+    }
   }
 
   /**
@@ -247,17 +227,15 @@ public class WebServer {
    * Stops the web server. Once this method is called, the server cannot be restarted.
    */
   public void stop() {
-    if (server == null) return;
     try {
-      log.info("Stopping web server");
       server.stop();
-      started = false;
+      if (port > 0) {
+        synchronized (servers) { servers.remove(port, this); }
+      }
     } catch (Exception ex) {
+      if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
       log.log(Level.WARNING, "Unable to stop web server", ex);
     }
-    server = null;
-    contexts = null;
-    if (port > 0) servers.remove(port);
   }
 
   /**
@@ -269,8 +247,7 @@ public class WebServer {
    * @return a List of ContextHandler objects if added.
    */
   public List<ContextHandler> addStatic(String context, String resource, WebServerOptions options) {
-    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+    checkContext(context);
     if (resource == null || resource.isEmpty()) throw new IllegalArgumentException("Resource cannot be null or empty");
     if(resource.startsWith("/")) resource = resource.substring(1);
     ArrayList<URL> res = new ArrayList<>();
@@ -280,26 +257,10 @@ public class WebServer {
       // do nothing
     }
     List<ContextHandler> handlers = new ArrayList<>();
-    for (URL r : res){
-      String staticWebResDir = r.toExternalForm();
-      ContextHandler handler = new ContextHandler(context);
-      if (options.directoryListed) log.warning("Directory listing is not supported for resources in jars");
-      ResourceHandler resHandler = new ResourceHandler();
-      resHandler.setResourceBase(staticWebResDir);
-      resHandler.setWelcomeFiles(new String[]{ "index.html" });
-      resHandler.setDirectoriesListed(false);
-      resHandler.setCacheControl(options.cacheControl);
-      resHandler.setEtags(true);
-      // add .mjs mapping for jetty versions < 10
-      // https://github.com/jetty/jetty.project/blob/jetty-10.0.26/jetty-http/src/main/resources/org/eclipse/jetty/http/mime.properties#L76
-      MimeTypes mimeTypes = resHandler.getMimeTypes();
-      if (mimeTypes == null) {
-        mimeTypes = new MimeTypes();
-        resHandler.setMimeTypes(mimeTypes);
-      }
-      mimeTypes.addMimeMapping("mjs", "application/javascript");
-      handler.setHandler(resHandler);
-      if (add(handler)) handlers.add(handler);
+    if (options.directoryListed) log.warning("Directory listing is not supported for resources in jars");
+    for (URL r : res) {
+      ContextHandler handler = addStatic(context, r.toExternalForm(), options.cacheControl, false);
+      if (handler != null) handlers.add(handler);
     }
     if(!handlers.isEmpty()) log.info("Adding static handler at "+context+" -> :"+resource);
     return handlers;
@@ -337,33 +298,18 @@ public class WebServer {
    * @return a List of ContextHandler objects if added.
    */
   public List<ContextHandler> addStatic(String context, File dir, WebServerOptions options) {
-    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+    checkContext(context);
     if (dir == null || !dir.exists()) throw new IllegalArgumentException("Directory cannot be null and must exist");
     try {
-      ContextHandler handler = new ContextHandler(context);
-      ResourceHandler resHandler = options.directoryListed ? new DirectoryHandler() : new ResourceHandler();
-      resHandler.setResourceBase(dir.getCanonicalPath());
-      resHandler.setWelcomeFiles(new String[]{ "index.html" });
-      resHandler.setCacheControl(options.cacheControl);
-      resHandler.setEtags(true);
-      // add .mjs mapping for jetty versions < 10
-      // https://github.com/jetty/jetty.project/blob/jetty-10.0.26/jetty-http/src/main/resources/org/eclipse/jetty/http/mime.properties#L76
-      MimeTypes mimeTypes = resHandler.getMimeTypes();
-      if (mimeTypes == null) {
-        mimeTypes = new MimeTypes();
-        resHandler.setMimeTypes(mimeTypes);
-      }
-      mimeTypes.addMimeMapping("mjs", "application/javascript");
-      handler.setHandler(resHandler);
-      if (add(handler)) {
+      ContextHandler handler = addStatic(context, dir.getCanonicalPath(), options.cacheControl, options.directoryListed);
+      if (handler != null) {
         log.info("Adding static handler at "+context+" -> "+dir);
-        return Collections.singletonList(handler);
+        return List.of(handler);
       }
     }catch (IOException ex){
       log.log(Level.WARNING, "Unable to add context : " + context, ex);
     }
-    return Collections.emptyList();
+    return List.of();
   }
 
   /**
@@ -436,9 +382,9 @@ public class WebServer {
    *
    * @param context context path.
    * @param dir filesystem path of directory to upload files to.
-   * @param maxFileSize maximum size of a file. @see javax.servlet.MultipartConfigElement
-   * @param maxRequestSize maximum size of a request. @see javax.servlet.MultipartConfigElement
-   * @param fileSizeThreshold size threshold after which files will be written to disk. @see javax.servlet.MultipartConfigElement
+   * @param maxFileSize maximum size of a file.
+   * @param maxRequestSize maximum size of a request.
+   * @param fileSizeThreshold size threshold after which files will be written to disk.
    * @return true if added, false otherwise.
    */
   public boolean addUpload(String context, File dir, long maxFileSize, long maxRequestSize, int fileSizeThreshold) {
@@ -451,19 +397,19 @@ public class WebServer {
    *
    * @param context context path.
    * @param dir filesystem path of directory to upload files to.
-   * @param tmpLocation filesystem path of directory where temporary files will be stored. @see javax.servlet.MultipartConfigElement#getLocation()
-   * @param maxFileSize maximum size of a file. @see javax.servlet.MultipartConfigElement
-   * @param maxRequestSize maximum size of a request. @see javax.servlet.MultipartConfigElement
-   * @param fileSizeThreshold size threshold after which files will be written to disk. @see javax.servlet.MultipartConfigElement
+   * @param tmpLocation filesystem path of directory where temporary files will be stored.
+   * @param maxFileSize maximum size of a file.
+   * @param maxRequestSize maximum size of a request.
+   * @param fileSizeThreshold size threshold after which files will be written to disk.
    * @return true if added, false otherwise.
    */
   public boolean addUpload(String context, File dir, String tmpLocation, long maxFileSize, long maxRequestSize, int fileSizeThreshold) {
-    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
-    if (tmpLocation == null) tmpLocation = "";  // In MultipartConfigElement, empty string means the default tmp directory will be used
-    MultipartConfigElement multipartConfig = new MultipartConfigElement(tmpLocation, maxFileSize, maxRequestSize, fileSizeThreshold);
+    checkContext(context);
+    Path tmpDir = tmpLocation == null || tmpLocation.isEmpty() ? Path.of(System.getProperty("java.io.tmpdir")) : Path.of(tmpLocation);
+    MultiPartConfig multipartConfig = new MultiPartConfig.Builder().location(tmpDir)
+        .maxPartSize(maxFileSize == 0 ? -1 : maxFileSize).maxSize(maxRequestSize == 0 ? -1 : maxRequestSize).maxMemoryPartSize(fileSizeThreshold).build();
     ContextHandler handler = new ContextHandler(context);
-    handler.setAllowNullPathInfo(true);
+    handler.setAllowNullPathInContext(true);
     handler.setHandler(new UploadHandler(multipartConfig, dir.toPath()));
     if (add(handler)) {
       log.info("Adding upload handler at " + context + " -> " + dir.getPath());
@@ -479,21 +425,41 @@ public class WebServer {
    * @param handler handler to add.
    * @return ContextHandler object if added, null otherwise (e.g. context already in use).
    */
-  public ContextHandler addHandler(String context, AbstractHandler handler) {
-    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+  public ContextHandler addHandler(String context, Handler handler) {
+    checkContext(context);
     if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
     if (hasHandler(context)) {
       log.warning("Context "+context+" already in use on port "+port);
       return null;
     }
     ContextHandler c = new ContextHandler(context);
-    // serve the bare context path directly, rather than redirecting it to the path with a
-    // trailing slash; web socket clients cannot follow a redirect on an upgrade request
-    c.setAllowNullPathInfo(true);
+    // WebSocket upgrades cannot follow redirects.
+    c.setAllowNullPathInContext(true);
     c.setHandler(handler);
-    if (add(c)) return c;
+    if (add(c, true)) return c;
     return null;
+  }
+
+  /**
+   * Adds a native WebSocket endpoint at the specified context.
+   *
+   * @param context context path.
+   * @param creator WebSocket endpoint creator.
+   * @param maxMsgSize maximum text message size, or a nonpositive value for Jetty's default.
+   * @return context handler if added, null otherwise.
+   */
+  public ContextHandler addWebSocket(String context, WebSocketCreator creator, int maxMsgSize) {
+    if (creator == null) throw new IllegalArgumentException("Creator cannot be null");
+    checkContext(context);
+    if (!server.isStarted() || hasHandler(context)) return null;
+    ContextHandler handler = new ContextHandler(context);
+    handler.setAllowNullPathInContext(true);
+    handler.setHandler(WebSocketUpgradeHandler.from(server, handler, container -> {
+      container.setIdleTimeout(Duration.ofMillis(Integer.MAX_VALUE));
+      if (maxMsgSize > 0) container.setMaxTextMessageSize(maxMsgSize);
+      container.addMapping("/*", creator);
+    }));
+    return add(handler, true) ? handler : null;
   }
 
   /**
@@ -503,25 +469,14 @@ public class WebServer {
    * @return true if a handler is already registered, false otherwise.
    */
   public boolean hasHandler(String context) {
-    // find any handler in handlers() that has getContextPath() == context
-    return Arrays.stream(handlers())
-        .filter(h -> h instanceof ContextHandler)
-        .map(h -> (ContextHandler) h)
-        .anyMatch(h -> h.getContextPath().equals(context));
+    return handlers().stream().anyMatch(h -> h instanceof ContextHandler c && c.getContextPath().equals(context));
   }
 
   /**
-   * Gets the context handlers currently registered on the server. Jetty returns a null
-   * handler array (rather than an empty one) when no handlers are registered, so this
-   * method normalizes that to an empty array. It also returns an empty array if the
-   * server has been stopped.
-   *
-   * @return context handlers, empty array if none.
+   * Gets the registered context handlers, or an empty list after shutdown.
    */
-  private Handler[] handlers() {
-    if (contexts == null) return new Handler[0];
-    Handler[] h = contexts.getHandlers();
-    return h == null ? new Handler[0] : h;
+  private List<Handler> handlers() {
+    return server.isStopped() ? List.of() : contexts.getHandlers();
   }
 
   /**
@@ -550,10 +505,9 @@ public class WebServer {
   public void setErrorHandler(ErrorHandler errorHandler) {
     if (errorHandler == null) throw new IllegalArgumentException("Error handler cannot be null");
     this.defaultErrorHandler = errorHandler;
-    this.defaultErrorHandler.setServer(server);
     for (Handler h : handlers()) {
-      if (h instanceof ContextHandler) {
-        ((ContextHandler) h).setErrorHandler(errorHandler);
+      if (h instanceof ContextHandler contextHandler) {
+        contextHandler.setErrorHandler(errorHandler);
       }
     }
   }
@@ -568,14 +522,12 @@ public class WebServer {
    * @return true if applied to at least one matching context handler, false otherwise.
    */
   public boolean setErrorHandler(String context, ErrorHandler errorHandler) {
-    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+    checkContext(context);
     if (errorHandler == null) throw new IllegalArgumentException("Error handler cannot be null");
-    errorHandler.setServer(server);
     boolean updated = false;
     for (Handler h : handlers()) {
-      if (h instanceof ContextHandler && ((ContextHandler) h).getContextPath().equals(context)) {
-        ((ContextHandler) h).setErrorHandler(errorHandler);
+      if (h instanceof ContextHandler contextHandler && contextHandler.getContextPath().equals(context)) {
+        contextHandler.setErrorHandler(errorHandler);
         updated = true;
       }
     }
@@ -621,26 +573,69 @@ public class WebServer {
 
   //////// private methods
 
-  /**
-   * Adds a context handler to the running server, and starts it.
-   *
-   * @param handler context handler
-   * @return true if added, false otherwise.
-   */
-  private boolean add(ContextHandler handler) {
-    contexts.addHandler(handler);
+  private static void checkContext(String context) {
+    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
+    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+  }
 
-    if (defaultErrorHandler != null) {
-      handler.setErrorHandler(defaultErrorHandler);
-    }
-
+  private ContextHandler addStatic(String context, String resource, String cacheControl, boolean directoryListed) {
+    ContextHandler handler = new StaticContextHandler(context);
+    ResourceHandler content = directoryListed ? new DirectoryHandler() : new ResourceHandler();
+    var resources = ResourceFactory.of(content);
+    boolean published = false;
     try {
-      handler.start();
+      content.setBaseResource(resources.newResource(resource));
+      content.setWelcomeFiles(new String[] {"index.html"});
+      content.setDirAllowed(directoryListed);
+      content.setCacheControl(cacheControl);
+      content.setEtags(true);
+      handler.setHandler(content);
+      published = add(handler);
+      return published ? handler : null;
+    } finally {
+      if (!published) LifeCycle.stop(resources);
+    }
+  }
+
+  private boolean add(ContextHandler handler) {
+    return add(handler, false);
+  }
+
+  private boolean add(ContextHandler handler, boolean exclusive) {
+    ContextHandlerCollection collection = contexts;
+    Server owner = server;
+    if (!owner.isStarted()) return false;
+    if (defaultErrorHandler != null) handler.setErrorHandler(defaultErrorHandler);
+    try {
+      handler.setServer(owner);
+      collection.addManaged(handler);
+      synchronized (collection) {
+        if (!owner.isStarted()) throw new IllegalStateException("Server is stopping");
+        if (exclusive && hasHandler(handler.getContextPath()))
+          throw new IllegalStateException("Context already in use: "+handler.getContextPath());
+        collection.addHandler(handler);
+      }
+      return true;
     } catch (Exception ex) {
+      synchronized (collection) {
+        if (collection.contains(handler)) collection.unmanage(handler);
+        collection.removeHandler(handler);
+        collection.removeBean(handler);
+      }
+      try {
+        handler.stop();
+      } catch (Exception cleanup) {
+        ex.addSuppressed(cleanup);
+      }
+      try {
+        handler.destroy();
+      } catch (Exception cleanup) {
+        ex.addSuppressed(cleanup);
+      }
+      if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
       log.log(Level.WARNING, "Unable to start context "+handler.getContextPath(), ex);
       return false;
     }
-    return true;
   }
 
   /**
@@ -649,122 +644,139 @@ public class WebServer {
    * @param handler context handler to remove.
    */
   private boolean remove(ContextHandler handler) {
+    ContextHandlerCollection collection = contexts;
     try {
-      handler.stop();
+      synchronized (collection) {
+        if (!collection.getHandlers().contains(handler)) return false;
+        collection.unmanage(handler);
+        collection.removeHandler(handler);
+      }
+      // Cleanup may manage other contexts.
+      try {
+        handler.stop();
+      } finally {
+        handler.destroy();
+      }
+      return true;
     } catch (Exception ex) {
-      log.log(Level.WARNING, "Unable to stop context "+handler.getContextPath(), ex);
+      if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
+      log.log(Level.WARNING, "Unable to remove context "+handler.getContextPath(), ex);
       return false;
     }
-    contexts.removeHandler(handler);
-    return true;
   }
 
+  /** Keeps static directory redirects temporary, as in the previous server. */
+  private static class StaticContextHandler extends ContextHandler {
+    StaticContextHandler(String context) { super(context); }
 
+    @Override
+    protected void handleMovedPermanently(Request request, Response response, Callback callback) {
+      String location = getContextPath()+"/";
+      if (request.getHttpURI().getParam() != null) location += ";"+request.getHttpURI().getParam();
+      if (request.getHttpURI().getQuery() != null) location += "?"+request.getHttpURI().getQuery();
+      response.setStatus(302);
+      response.getHeaders().put(HttpHeader.LOCATION, location);
+      callback.succeeded();
+    }
+  }
 
-  /**
-   * Handler for uploading files to the server.
-   */
-  private static class UploadHandler extends AbstractHandler {
-    private final MultipartConfigElement multipartConfig;
+  /** Handler for multipart file uploads. Disk work is dispatched as blocking work. */
+  private static class UploadHandler extends Handler.Abstract {
+    private final MultiPartConfig multipartConfig;
     private final Path outputDir;
 
-    public UploadHandler(MultipartConfigElement multipartConfig, Path outputDir) {
-      super();
+    UploadHandler(MultiPartConfig multipartConfig, Path outputDir) {
       this.multipartConfig = multipartConfig;
-      if (!Files.exists(outputDir)){
-        try {
-          Files.createDirectories(outputDir);
-        }catch (IOException ex){
-          log.log(Level.WARNING, "Unable to create output directory : " + outputDir, ex);
-        }
-      }
       this.outputDir = outputDir;
     }
 
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException{
-      if (!request.getMethod().equalsIgnoreCase("POST")){
-        response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-        return;
+    protected void doStart() throws Exception {
+      Files.createDirectories(outputDir);
+      Files.createDirectories(multipartConfig.getLocation());
+      super.doStart();
+    }
+
+    @Override
+    public boolean handle(Request request, Response response, Callback callback) {
+      if (!"POST".equalsIgnoreCase(request.getMethod())) {
+        Response.writeError(request, response, callback, 405);
+        return true;
       }
-      request.setAttribute(Request.MULTIPART_CONFIG_ELEMENT, multipartConfig);
-      response.setContentType("text/plain");
-      response.setCharacterEncoding("utf-8");
-      PrintWriter out = response.getWriter();
-      for (Part part : request.getParts()) {
-        String filename = part.getSubmittedFileName();
-        if (StringUtil.isNotBlank(filename)){
-          filename = URLEncoder.encode(filename, String.valueOf(StandardCharsets.UTF_8));
-          Path outputFile = outputDir.resolve(filename);
-          try (InputStream inputStream = part.getInputStream();
-               FileOutputStream outputStream = new FileOutputStream(outputFile.toFile())) {
-            IO.copy(inputStream, outputStream);
-            // Force data and metadata to disk
-            outputStream.getChannel().force(true);
-            // Ensure lowest-level disk synchronization
-            outputStream.getFD().sync();
-            out.printf("%s%n", outputFile);
-          }catch (Throwable ex){
-            log.log(Level.WARNING, "Unable to save file : " + filename, ex);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            baseRequest.setHandled(true);
+      String contentType = request.getHeaders().get(HttpHeader.CONTENT_TYPE);
+      MultiPartFormData.onParts(request, request, contentType, multipartConfig, new Promise.Invocable<>() {
+        @Override
+        public InvocationType getInvocationType() {
+          return InvocationType.BLOCKING;
+        }
+
+        @Override
+        public void succeeded(MultiPartFormData.Parts parts) {
+          StringBuilder result = new StringBuilder();
+          try (parts) {
+            Files.createDirectories(outputDir);
+            for (var part : parts) {
+              String filename = part.getFileName();
+              if (StringUtil.isBlank(filename)) continue;
+              Path outputFile = outputDir.resolve(URLEncoder.encode(filename, StandardCharsets.UTF_8));
+              try (InputStream input = Content.Source.asInputStream(part.getContentSource());
+                   FileOutputStream output = new FileOutputStream(outputFile.toFile())) {
+                input.transferTo(output);
+                output.getChannel().force(true);
+              }
+              result.append(outputFile).append('\n');
+            }
+          } catch (Exception ex) {
+            log.log(Level.WARNING, "Unable to save uploaded file", ex);
+            Response.writeError(request, response, callback, 500);
             return;
           }
+          response.getHeaders().put(HttpHeader.CONTENT_TYPE, "text/plain;charset=utf-8");
+          Content.Sink.write(response, true, result.toString(), callback);
         }
-      }
-      baseRequest.setHandled(true);
+
+        @Override
+        public void failed(Throwable failure) {
+          Response.writeError(request, response, callback, 400, "Invalid multipart upload", failure);
+        }
+      });
+      return true;
     }
   }
 
-  /**
-   * Context handler for serving Directory listing as plain text
-   * instead of HTML. If the request is for a directory, and the content-type
-   * is text/plain, the directory listing is returned as plain text, else the default
-   * ResourceHandler is used.
-   */
+  /** Serves plain text or JSON directory listings, with ResourceHandler as the fallback. */
   private static class DirectoryHandler extends ResourceHandler {
-
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-      if (baseRequest.isHandled()) return;
-      File base = getBaseResource().getFile();
-      if (base != null && target.endsWith("/")) {
-        if (request.getContentType() != null && request.getContentType().equals("text/plain")) {
-          String path = request.getPathInfo();
-          if (path == null) path = "/";
-          File dir = new File(base, path);
-          if (dir.isDirectory()) {
-            response.setContentType("text/plain");
-            response.setStatus(HttpServletResponse.SC_OK);
-            for (File f: dir.listFiles()) {
-              if (f.isHidden()) continue;
-              response.getWriter().println(f.getName()+" "+f.length()+" "+f.lastModified());
+    public boolean handle(Request request, Response response, Callback callback) throws Exception {
+      String path = Request.getPathInContext(request);
+      String type = request.getHeaders().get(HttpHeader.CONTENT_TYPE);
+      if (path != null && path.endsWith("/") && ("text/plain".equals(type) || "application/json".equals(type))) {
+        var resource = getBaseResource().resolve(path);
+        ContextHandler context = ContextHandler.getContextHandler(request);
+        if (resource.isDirectory() && context.checkAlias(path, resource)) {
+          StringBuilder text = new StringBuilder();
+          JsonArray json = new JsonArray();
+          for (var child : resource.list()) {
+            Path file = child.getPath();
+            if (file == null || Files.isHidden(file)) continue;
+            String name = child.getFileName();
+            long size = child.length();
+            long date = child.lastModified().toEpochMilli();
+            if ("text/plain".equals(type)) text.append(name).append(' ').append(size).append(' ').append(date).append('\n');
+            else {
+              JsonObject entry = new JsonObject();
+              entry.addProperty("name", name);
+              entry.addProperty("size", size);
+              entry.addProperty("date", date);
+              json.add(entry);
             }
-            baseRequest.setHandled(true);
-            return;
           }
-        } else if (request.getContentType() != null && request.getContentType().equals("application/json")) {
-          String path = request.getPathInfo();
-          if (path == null) path = "/";
-          File dir = new File(getBaseResource().getFile(), path);
-          if (dir.isDirectory()) {
-            response.setContentType("application/json");
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.getWriter().print("[");
-            boolean first = true;
-            for (File f: dir.listFiles()) {
-              if (f.isHidden()) continue;
-              if (!first) response.getWriter().print(",");
-              response.getWriter().print("{\"name\":\""+f.getName()+"\",\"size\":"+f.length()+",\"date\":"+f.lastModified()+"}");
-              first = false;
-            }
-            response.getWriter().print("]");
-            baseRequest.setHandled(true);
-            return;
-          }
+          response.getHeaders().put(HttpHeader.CONTENT_TYPE, type+";charset=utf-8");
+          Content.Sink.write(response, true, "text/plain".equals(type) ? text.toString() : json.toString(), callback);
+          return true;
         }
       }
-      super.handle(target, baseRequest, request, response);
+      return super.handle(request, response, callback);
     }
   }
 }

@@ -24,13 +24,7 @@ public class Store implements Closeable {
   protected File root;
   protected String clazz;
   protected ClassLoader clazzLoader;
-  private static final OutputStream DISCARD = new OutputStream() {
-    @Override
-    public void write(int b) {}
-
-    @Override
-    public void write(byte[] b, int ofs, int len) {}
-  };
+  private volatile ObjectInputFilter deserializationFilter;
 
   protected Store(String clazz) {
     this.clazz = clazz;
@@ -52,6 +46,14 @@ public class Store implements Closeable {
    */
   public static void setClassLoader(ClassLoader cl) {
     defaultClazzLoader = cl;
+  }
+
+  /**
+   * Sets an optional deserialization filter, combined with the stream's existing filter.
+   * A null filter retains the default behavior. Filters apply to the entire stored object graph.
+   */
+  public void setDeserializationFilter(ObjectInputFilter filter) {
+    deserializationFilter = filter;
   }
 
   /**
@@ -88,7 +90,7 @@ public class Store implements Closeable {
     } catch (NoSuchAlgorithmException ex) {
       throw new FjageException("SHA-256 not available");
     }
-    try (ObjectOutputStream out = new ObjectOutputStream(new DigestOutputStream(DISCARD, digest))) {
+    try (ObjectOutputStream out = new ObjectOutputStream(new DigestOutputStream(OutputStream.nullOutputStream(), digest))) {
       out.writeObject(obj);
       out.flush();
       return new BigInteger(1, digest.digest()).toString(16);
@@ -136,6 +138,11 @@ public class Store implements Closeable {
             return Class.forName(objectStreamClass.getName(), false, clazzLoader);
         }
       };
+      ObjectInputFilter filter = deserializationFilter;
+      if (filter != null) {
+        ObjectInputFilter existing = in.getObjectInputFilter();
+        in.setObjectInputFilter(existing == null ? filter : ObjectInputFilter.merge(existing, filter));
+      }
       @SuppressWarnings("unchecked")
       T rv = (T) in.readObject();
       return rv;

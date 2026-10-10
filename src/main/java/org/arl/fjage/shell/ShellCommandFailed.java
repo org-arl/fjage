@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import java.io.Serial;
+
 import org.arl.fjage.FjageException;
 
 /**
@@ -20,6 +22,7 @@ import org.arl.fjage.FjageException;
  */
 public class ShellCommandFailed extends FjageException {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   public ShellCommandFailed(String message) {

@@ -20,6 +20,9 @@ import java.util.Objects;
 public class BlockingByteQueue {
 
   protected final static int BLOCK_SIZE = 16384;
+  /** Default queued-byte and delimited-record limit; override before creating streams. */
+  public static final int DEFAULT_MAX_BYTES = Integer.getInteger("org.arl.fjage.maxQueuedBytes", 64*1024*1024);
+  private final int maxBytes;
 
   protected BlockingQueue<byte[]> queue;
   protected byte[] wbuf, rbuf;
@@ -27,6 +30,13 @@ public class BlockingByteQueue {
   protected boolean closed;
 
   public BlockingByteQueue() {
+    this(DEFAULT_MAX_BYTES);
+  }
+
+  /** Creates a queue with a positive byte limit. Writes exceeding it fail without consuming data. */
+  public BlockingByteQueue(int maxBytes) {
+    if (maxBytes <= 0) throw new IllegalArgumentException("Byte limit must be positive");
+    this.maxBytes = maxBytes;
     queue = new LinkedBlockingQueue<>();
     wbuf = new byte[BLOCK_SIZE];
     wlen = 0;
@@ -69,7 +79,7 @@ public class BlockingByteQueue {
    * Writes a byte to the queue.
    */
   public synchronized boolean write(int c) {
-    if (closed) return false;
+    if (closed || bytes == maxBytes) return false;
     if (wlen == BLOCK_SIZE) {
       if (bytes > 0) {
         if (rbuf != wbuf) queue.add(wbuf);
@@ -97,7 +107,7 @@ public class BlockingByteQueue {
   public synchronized boolean write(byte[] buf, int ofs, int len) {
     checkRange(buf, ofs, len);
     if (len == 0) return true;
-    if (closed) return false;
+    if (closed || len > maxBytes - bytes) return false;
     bytes += len;
     if (wlen == 0 && ofs == 0 && len == buf.length && len > BLOCK_SIZE) {
       queue.add(buf.clone());
@@ -208,7 +218,7 @@ public class BlockingByteQueue {
 
   private static void checkRange(byte[] buf, int ofs, int len) {
     Objects.requireNonNull(buf);
-    if (ofs < 0 || len < 0 || ofs > buf.length - len) throw new IndexOutOfBoundsException();
+    Objects.checkFromIndexSize(ofs, len, buf.length);
   }
 
   /**
@@ -245,6 +255,10 @@ public class BlockingByteQueue {
       if (c < 0) {
         if (baos.size() == 0) return null;
         break;
+      }
+      if (baos.size() == maxBytes) {
+        close();
+        return null;
       }
       baos.write(c);
     }

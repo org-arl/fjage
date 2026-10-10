@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage.shell;
 
+import java.io.Serial;
+
 import org.arl.fjage.AgentID;
 import org.arl.fjage.Message;
 import org.arl.fjage.Performative;
@@ -22,6 +24,7 @@ import java.util.List;
  */
 public class ShellExecReq extends Message {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private String command = null;

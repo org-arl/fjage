@@ -321,8 +321,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
     } catch (NoSuchMethodException ex) {
       nsme = ex;
     }
-    if (value instanceof Number) {
-      Number nvalue = (Number) value;
+    if (value instanceof Number nvalue) {
       try {
         return MethodUtils.invokeMethod(agent, name, nvalue.doubleValue());
       } catch (NoSuchMethodException ex) {
@@ -344,8 +343,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
         // do nothing
       }
     }
-    if (value instanceof List) {
-      List<?> lvalue = (List<?>) value;
+    if (value instanceof List<?> lvalue) {
       try {
         return MethodUtils.invokeMethod(agent, name, (Object)asDoubleArray(lvalue));
       } catch (NoSuchMethodException | ArrayStoreException ex) {
@@ -367,7 +365,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
         // do nothing
       }
       try {
-        return MethodUtils.invokeMethod(agent, name, (Object)lvalue.toArray(new String[0]));
+        return MethodUtils.invokeMethod(agent, name, (Object)lvalue.toArray(String[]::new));
       } catch (NoSuchMethodException | ArrayStoreException ex) {
         // do nothing
       }
@@ -392,8 +390,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
         nsme = ex;
       }
     }
-    if (value instanceof Number) {
-      Number nvalue = (Number) value;
+    if (value instanceof Number nvalue) {
       try {
         return MethodUtils.invokeMethod(agent, name, ndx, nvalue.doubleValue());
       } catch (NoSuchMethodException ex) {
@@ -415,8 +412,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
         // do nothing
       }
     }
-    if (value instanceof List) {
-      List<?> lvalue = (List<?>) value;
+    if (value instanceof List<?> lvalue) {
       try {
         return MethodUtils.invokeMethod(agent, name, ndx, asDoubleArray(lvalue));
       } catch (NoSuchMethodException | ArrayStoreException ex) {
@@ -438,7 +434,7 @@ public class ParameterMessageBehavior extends MessageBehavior {
         // do nothing
       }
       try {
-        return MethodUtils.invokeMethod(agent, name, ndx, lvalue.toArray(new String[0]));
+        return MethodUtils.invokeMethod(agent, name, ndx, lvalue.toArray(String[]::new));
       } catch (NoSuchMethodException | ArrayStoreException ex) {
         // do nothing
       }

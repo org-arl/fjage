@@ -20,6 +20,7 @@ import com.fazecast.jSerialComm.SerialPortInvalidPortException;
 /**
  * Serial port connector.
  */
+@SuppressWarnings("removal")
 public class SerialPortConnector implements Connector {
 
   protected SerialPort com;

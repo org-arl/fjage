@@ -111,20 +111,15 @@ abstract class BaseGroovyScript extends Script {
       Agent a = binding.getVariable('__agent__')
       Container c = a.getContainer()
       AgentID[] agentIDs = c.getAgents()
-      StringBuffer s = new StringBuffer()
-      boolean first = true
-      for (AgentID aid: agentIDs) {
-        if (!all && aid.name.contains('-')) continue  // hide gateways and other special agents
-        if (!first) s.append('\n')
-        s.append(aid)
-        if (aid.type == null) s.append(': REMOTE')
+      return agentIDs.iterator().findingAll { all || !it.name.contains('-') }.collecting { aid ->
+        String label = String.valueOf(aid)
+        if (aid.type == null) label += ': REMOTE'
         else {
-          s.append(": ${aid.type}")
-          if (c.getAgent(aid) == null) s.append(' [REMOTE]')
+          label += ": ${aid.type}"
+          if (c.getAgent(aid) == null) label += ' [REMOTE]'
         }
-        first = false
-      }
-      return s.toString()
+        label
+      }.join('\n')
     }
     return null
   }
@@ -204,23 +199,10 @@ abstract class BaseGroovyScript extends Script {
     if (binding.hasVariable('__agent__')) {
       Agent a = binding.getVariable('__agent__')
       Container c = a.getContainer()
-      String[] svc = c.getServices()
-      StringBuffer s = new StringBuffer()
-      boolean first = true
-      for (String s1: svc) {
-        if (!first) s.append('\n')
-        s.append(s1)
-        AgentID[] aids = agentsForService(s1)
-        if (aids) {
-          s.append(':')
-          aids.each {
-            s.append(' ')
-            s.append(it)
-          }
-        }
-        first = false
-      }
-      return s.toString()
+      return c.getServices().iterator().collecting { service ->
+        AgentID[] providers = agentsForService(service)
+        providers ? "${service}: ${providers.join(' ')}" : service
+      }.join('\n')
     }
     return null
   }
@@ -333,14 +315,7 @@ abstract class BaseGroovyScript extends Script {
    */
   String who() {
     Binding binding = getBinding()
-    StringBuffer s = new StringBuffer()
-    binding.getVariables().each {
-      if (!it.key.contains('__')) {
-        if (s.length() > 0) s << ', '
-        s << it.key
-      }
-    }
-    return s.toString()
+    return binding.variables.keySet().iterator().findingAll { !it.contains('__') }.join(', ')
   }
 
   String getWho() {
@@ -409,7 +384,9 @@ abstract class BaseGroovyScript extends Script {
           InputStream inp = groovy.class.getResourceAsStream(name.substring(5))
           if (inp == null) throw new FileNotFoundException(name+' not found')
           binding.setVariable('script', name)
-          groovy.run(new InputStreamReader(inp), name, args)
+          try (Reader reader = new InputStreamReader(inp, java.nio.charset.StandardCharsets.UTF_8)) {
+            groovy.run(reader, name, args)
+          }
         } else if (name.startsWith('cls://')) {
           Class<?> cls = (Class<?>)Class.forName(name.substring(6))
           if (ShellExtension.class.isAssignableFrom(cls) && binding.hasVariable('__script_engine__')) {

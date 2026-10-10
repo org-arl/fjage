@@ -10,10 +10,13 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.io.Serial;
+
 import java.io.Serializable;
 
 final public class GenericValue implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
   final private Object data;
 
@@ -38,9 +41,9 @@ final public class GenericValue implements Serializable {
   public boolean equals(Object value) {
     if (data == null) {
       if (value == null) return true;
-      return value instanceof GenericValue && ((GenericValue) value).data == null;
+      return value instanceof GenericValue wrapped && wrapped.data == null;
     }
-    if (value instanceof GenericValue) return data.equals(((GenericValue)value).data);
+    if (value instanceof GenericValue wrapped) return data.equals(wrapped.data);
     return data.equals(value);
   }
 

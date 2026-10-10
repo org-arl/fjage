@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.time.Instant;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -57,7 +58,7 @@ public class LogHandlerProxy extends Handler {
    */
   @Override
   public void publish(LogRecord rec) {
-    if (timesrc != null) rec.setMillis(timesrc.currentTimeMillis());
+    if (timesrc != null) rec.setInstant(Instant.ofEpochMilli(timesrc.currentTimeMillis()));
     delegate.publish(rec);
   }
 
@@ -106,7 +107,7 @@ public class LogHandlerProxy extends Handler {
     } else {
       // handler installed, remove it and replace with proxy
       for (Handler h1: h)
-        if (h1 instanceof LogHandlerProxy) ((LogHandlerProxy)h1).setTimestampProvider(timesrc);
+        if (h1 instanceof LogHandlerProxy proxy) proxy.setTimestampProvider(timesrc);
         else {
           LogHandlerProxy h2 = new LogHandlerProxy(h1, timesrc);
           log.removeHandler(h1);

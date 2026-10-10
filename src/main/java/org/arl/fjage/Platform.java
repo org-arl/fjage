@@ -99,7 +99,7 @@ public abstract class Platform implements TimestampProvider {
    * @return an array of containers.
    */
   public Container[] getContainers() {
-    return containers.toArray(new Container[0]);
+    return containers.toArray(Container[]::new);
   }
 
   /**

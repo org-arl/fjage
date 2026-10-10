@@ -2,7 +2,7 @@ import org.arl.fjage.*
 import org.arl.fjage.remote.*
 import org.arl.fjage.shell.*
 import org.arl.fjage.connectors.*
-import java.nio.file.Paths
+import java.nio.file.Path
 
 boolean web = System.properties.getProperty('fjage.web') == 'true'
 int port = 5081
@@ -24,7 +24,7 @@ if (devname != null) {
 platform = new RealTimePlatform()
 container = new MasterContainer(platform, port)
 if (devname != null)  container.addConnector(new SerialPortConnector(devname, baud, 'N81'))
-def history = Paths.get(".fjage-shell-history")
+def history = Path.of(".fjage-shell-history")
 Connector conn = null
 if (web) {
   try {

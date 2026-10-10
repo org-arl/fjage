@@ -194,7 +194,7 @@ public class LoadAgents {
           String me = getName();
           int s = seq.getAndIncrement();
           List<AgentID> dst = targets;
-          if (dst == null) dst = Collections.singletonList(topic(TOPIC));
+          if (dst == null) dst = List.of(topic(TOPIC));
           for (AgentID t : dst) {
             long t0 = System.nanoTime();
             send(new SeqMsg(t, me, s));

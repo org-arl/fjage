@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 class MessageAdapterFactory implements TypeAdapterFactory {
 
   private static ClassLoader classloader = null;
+  private static final Logger log = Logger.getLogger(MessageAdapterFactory.class.getName());
 
   static {
     try {
@@ -65,8 +66,7 @@ class MessageAdapterFactory implements TypeAdapterFactory {
             out.beginObject();
             out.name("clazz").value(value.getClass().getName());
             out.name("data");
-            if (value instanceof GenericMessage) {
-              GenericMessage msg = (GenericMessage)value;
+            if (value instanceof GenericMessage msg) {
               out.beginObject();
               out.name("msgID").value(msg.getMessageID());
               out.name("inReplyTo").value(msg.getInReplyTo());
@@ -122,25 +122,15 @@ class MessageAdapterFactory implements TypeAdapterFactory {
                   continue;
                 }
                 switch (fname) {
-                  case "msgID":
-                    msg.setMessageID(in.nextString());
-                    break;
-                  case "inReplyTo":
-                    msg.setInReplyTo(in.nextString());
-                    break;
-                  case "perf":
-                    msg.setPerformative(perfDelegate.read(in));
-                    break;
-                  case "recipient":
-                    msg.setRecipient(aidDelegate.read(in));
-                    break;
-                  case "sender":
-                    msg.setSender(aidDelegate.read(in));
-                    break;
-                  default:
+                  case "msgID" -> msg.setMessageID(in.nextString());
+                  case "inReplyTo" -> msg.setInReplyTo(in.nextString());
+                  case "perf" -> msg.setPerformative(perfDelegate.read(in));
+                  case "recipient" -> msg.setRecipient(aidDelegate.read(in));
+                  case "sender" -> msg.setSender(aidDelegate.read(in));
+                  default -> {
                     GenericValue v = gvDelegate.read(in);
                     msg.put(fname, v.getValue());
-                    break;
+                  }
                 }
               }
               in.endObject();

@@ -113,4 +113,14 @@ public class FileReadTest {
       fail("Seeking past EOF should fail");
     } catch (EOFException expected) {}
   }
+  @Test(timeout = 1000)
+  public void exactReadHandlesZeroProgressWithInheritedReadNBytes() throws Exception {
+    InputStream in = new FilterInputStream(new ByteArrayInputStream(contents)) {
+      @Override public int read(byte[] bytes, int offset, int length) { return 0; }
+    };
+    byte[] actual = new byte[contents.length];
+    ShellAgent.readFully(in, actual);
+    assertArrayEquals(contents, actual);
+  }
+
 }

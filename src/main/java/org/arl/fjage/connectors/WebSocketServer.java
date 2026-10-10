@@ -1,15 +1,13 @@
 package org.arl.fjage.connectors;
 
 import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
-import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
-import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
-import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.websocket.server.ServerUpgradeRequest;
+import org.eclipse.jetty.websocket.server.ServerUpgradeResponse;
+import org.eclipse.jetty.websocket.server.WebSocketCreator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.ServerSocket;
 import java.util.logging.Logger;
 
 /**
@@ -19,12 +17,12 @@ import java.util.logging.Logger;
  *
  */
 
-public class WebSocketServer implements WebSocketCreator {
+public class WebSocketServer implements WebSocketCreator, AutoCloseable {
 
     protected int port;
     protected String context;
-    protected ServerSocket sock = null;
-    protected ConnectionListener listener;
+    protected volatile ConnectionListener listener;
+    private volatile boolean closed;
     protected WebServer server;
     protected ContextHandler handler;
     protected Logger log = Logger.getLogger(getClass().getName());
@@ -40,13 +38,7 @@ public class WebSocketServer implements WebSocketCreator {
         this.port = port;
         this.listener = listener;
         server = WebServer.getInstance(port);
-        handler = server.addHandler(context, new WebSocketHandler() {
-            @Override
-            public void configure(WebSocketServletFactory factory) {
-                if (maxMsgSize > 0) factory.getPolicy().setMaxTextMessageSize(maxMsgSize);
-                factory.setCreator(WebSocketServer.this);
-            }
-        });
+        handler = server.addWebSocket(context, this, maxMsgSize);
         if (handler == null) {
             String msg = "Unable to add WebSocket handler at :"+port+context;
             throw new UncheckedIOException(msg, new IOException(msg));
@@ -58,9 +50,16 @@ public class WebSocketServer implements WebSocketCreator {
     }
 
     @Override
-    public Object createWebSocket(ServletUpgradeRequest servletUpgradeRequest, ServletUpgradeResponse servletUpgradeResponse) {
+    public Object createWebSocket(ServerUpgradeRequest request, ServerUpgradeResponse response, Callback callback) {
+        if (closed) return null;
         WebSocketConnector ws = new WebSocketConnector(context);
-        ws.setConnectionListener(listener);
+        ws.setConnectionListener(connector -> {
+            if (closed) connector.close();
+            else {
+                ConnectionListener current = listener;
+                if (current != null) current.connected(connector);
+            }
+        });
         return ws;
     }
 
@@ -72,9 +71,18 @@ public class WebSocketServer implements WebSocketCreator {
         return context;
     }
 
+    @Override
     public void close() {
-        server.removeHandler(handler);
-        handler = null;
-        server = null;
+        WebServer current;
+        ContextHandler contextHandler;
+        synchronized (this) {
+            if (closed) return;
+            closed = true;
+            current = server;
+            contextHandler = handler;
+            server = null;
+            handler = null;
+        }
+        if (current != null) current.removeHandler(contextHandler);
     }
 }
