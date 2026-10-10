@@ -20,6 +20,8 @@ import com.google.gson.stream.JsonWriter;
 import org.arl.fjage.*;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -54,6 +56,8 @@ class MessageAdapterFactory implements TypeAdapterFactory {
     final TypeAdapter<AgentID> aidDelegate = gson.getAdapter(TypeToken.get(AgentID.class));
     final TypeAdapter<GenericValue> gvDelegate = gson.getAdapter(TypeToken.get(GenericValue.class));
     final MessageAdapterFactory parent = this;
+    // Gson does not cache delegate adapters
+    final Map<Class<?>, TypeAdapter<?>> delegates = new ConcurrentHashMap<>();
     return new TypeAdapter<T>() {
 
       @Override
@@ -146,7 +150,7 @@ class MessageAdapterFactory implements TypeAdapterFactory {
               in.endObject();
               rv = (T) msg;
             } else {
-              TypeAdapter<?> delegate1 = gson.getDelegateAdapter(parent, TypeToken.get(cls));
+              TypeAdapter<?> delegate1 = delegates.computeIfAbsent(cls, c -> gson.getDelegateAdapter(parent, TypeToken.get(c)));
               rv = (T)delegate1.read(in);
             }
           } else in.skipValue();

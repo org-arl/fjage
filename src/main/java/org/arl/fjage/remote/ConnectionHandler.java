@@ -103,7 +103,7 @@ public class ConnectionHandler extends Thread {
         // do nothing
       }
       if (s == null) break;
-      log.fine(this.getName() +" <<< "+s);
+      if (log.isLoggable(Level.FINE)) log.fine(this.getName() +" <<< "+s);
       lastRxTime = System.currentTimeMillis();
       if (s.equals(SIGN_OFF)) {
         alive = false;
@@ -226,7 +226,7 @@ public class ConnectionHandler extends Thread {
     if (out == null) return;
     try {
       out.write((s+"\n").getBytes(StandardCharsets.UTF_8));
-      log.fine(this.getName() +" >>> "+s);
+      if (log.isLoggable(Level.FINE)) log.fine(this.getName() +" >>> "+s);
       conn.waitOutputCompletion(1000);
     } catch(IOException ex) {
       if (!s.equals(SIGN_OFF)) {
