@@ -77,11 +77,7 @@ public class WebServer {
    * @throws UncheckedIOException if a new web server cannot be started (e.g. port already in use).
    */
   public static WebServer getInstance(int port) {
-    synchronized (servers) {
-      WebServer svr = servers.get(port);
-      if (svr == null || svr.server == null) svr = new WebServer(port);
-      return svr;
-    }
+    return getInstance(port, "127.0.0.1");
   }
 
   /**
@@ -95,7 +91,7 @@ public class WebServer {
   public static WebServer getInstance(int port, String ip) {
     synchronized (servers) {
       WebServer svr = servers.get(port);
-      if (svr == null || svr.server == null) svr = new WebServer(port, ip);
+      if (svr == null || svr.server.isStopped()) svr = new WebServer(port, ip);
       return svr;
     }
   }
@@ -133,11 +129,10 @@ public class WebServer {
 
   //////// instance attributes and methods
 
-  protected volatile Server server;
-  protected volatile ContextHandlerCollection contexts;
-  protected RewriteHandler rewrite;
-  protected ErrorHandler defaultErrorHandler;
-  protected volatile boolean started;
+  protected final Server server;
+  protected final ContextHandlerCollection contexts;
+  protected final RewriteHandler rewrite;
+  protected volatile ErrorHandler defaultErrorHandler;
   protected int port;
 
   protected WebServer(int port) {
@@ -188,9 +183,10 @@ public class WebServer {
       String msg = isPortInUse(ex) ? "Unable to start web server: port "+port+" is already in use" : "Unable to start web server on port "+port;
       throw new UncheckedIOException(msg, ex instanceof IOException io ? io : new IOException(msg, ex));
     }
-    started = true;
     log.info("Started web server on port "+port);
-    if (port > 0) servers.put(port, this);
+    if (port > 0) {
+      synchronized (servers) { servers.put(port, this); }
+    }
   }
 
   /**
@@ -231,19 +227,14 @@ public class WebServer {
    * Stops the web server. Once this method is called, the server cannot be restarted.
    */
   public void stop() {
-    Server owner = server;
-    if (owner == null) return;
     try {
-      log.info("Stopping web server");
-      owner.stop();
-      started = false;
+      server.stop();
+      if (port > 0) {
+        synchronized (servers) { servers.remove(port, this); }
+      }
     } catch (Exception ex) {
+      if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
       log.log(Level.WARNING, "Unable to stop web server", ex);
-    }
-    server = null;
-    contexts = null;
-    if (port > 0) {
-      synchronized (servers) { servers.remove(port, this); }
     }
   }
 
@@ -256,8 +247,7 @@ public class WebServer {
    * @return a List of ContextHandler objects if added.
    */
   public List<ContextHandler> addStatic(String context, String resource, WebServerOptions options) {
-    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+    checkContext(context);
     if (resource == null || resource.isEmpty()) throw new IllegalArgumentException("Resource cannot be null or empty");
     if(resource.startsWith("/")) resource = resource.substring(1);
     ArrayList<URL> res = new ArrayList<>();
@@ -267,25 +257,10 @@ public class WebServer {
       // do nothing
     }
     List<ContextHandler> handlers = new ArrayList<>();
-    for (URL r : res){
-      String staticWebResDir = r.toExternalForm();
-      ContextHandler handler = new StaticContextHandler(context);
-      if (options.directoryListed) log.warning("Directory listing is not supported for resources in jars");
-      ResourceHandler resHandler = new ResourceHandler();
-      var resources = ResourceFactory.of(resHandler);
-      boolean published = false;
-      try {
-        resHandler.setBaseResource(resources.newResource(staticWebResDir));
-        resHandler.setWelcomeFiles(new String[]{ "index.html" });
-        resHandler.setDirAllowed(false);
-        resHandler.setCacheControl(options.cacheControl);
-        resHandler.setEtags(true);
-        handler.setHandler(resHandler);
-        published = add(handler);
-        if (published) handlers.add(handler);
-      } finally {
-        if (!published) LifeCycle.stop(resources);
-      }
+    if (options.directoryListed) log.warning("Directory listing is not supported for resources in jars");
+    for (URL r : res) {
+      ContextHandler handler = addStatic(context, r.toExternalForm(), options.cacheControl, false);
+      if (handler != null) handlers.add(handler);
     }
     if(!handlers.isEmpty()) log.info("Adding static handler at "+context+" -> :"+resource);
     return handlers;
@@ -323,28 +298,13 @@ public class WebServer {
    * @return a List of ContextHandler objects if added.
    */
   public List<ContextHandler> addStatic(String context, File dir, WebServerOptions options) {
-    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+    checkContext(context);
     if (dir == null || !dir.exists()) throw new IllegalArgumentException("Directory cannot be null and must exist");
     try {
-      ContextHandler handler = new StaticContextHandler(context);
-      ResourceHandler resHandler = options.directoryListed ? new DirectoryHandler() : new ResourceHandler();
-      var resources = ResourceFactory.of(resHandler);
-      boolean published = false;
-      try {
-        resHandler.setBaseResource(resources.newResource(dir.getCanonicalPath()));
-        resHandler.setDirAllowed(options.directoryListed);
-        resHandler.setWelcomeFiles(new String[]{ "index.html" });
-        resHandler.setCacheControl(options.cacheControl);
-        resHandler.setEtags(true);
-        handler.setHandler(resHandler);
-        published = add(handler);
-        if (published) {
-          log.info("Adding static handler at "+context+" -> "+dir);
-          return List.of(handler);
-        }
-      } finally {
-        if (!published) LifeCycle.stop(resources);
+      ContextHandler handler = addStatic(context, dir.getCanonicalPath(), options.cacheControl, options.directoryListed);
+      if (handler != null) {
+        log.info("Adding static handler at "+context+" -> "+dir);
+        return List.of(handler);
       }
     }catch (IOException ex){
       log.log(Level.WARNING, "Unable to add context : " + context, ex);
@@ -444,8 +404,7 @@ public class WebServer {
    * @return true if added, false otherwise.
    */
   public boolean addUpload(String context, File dir, String tmpLocation, long maxFileSize, long maxRequestSize, int fileSizeThreshold) {
-    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+    checkContext(context);
     Path tmpDir = tmpLocation == null || tmpLocation.isEmpty() ? Path.of(System.getProperty("java.io.tmpdir")) : Path.of(tmpLocation);
     MultiPartConfig multipartConfig = new MultiPartConfig.Builder().location(tmpDir)
         .maxPartSize(maxFileSize == 0 ? -1 : maxFileSize).maxSize(maxRequestSize == 0 ? -1 : maxRequestSize).maxMemoryPartSize(fileSizeThreshold).build();
@@ -467,16 +426,14 @@ public class WebServer {
    * @return ContextHandler object if added, null otherwise (e.g. context already in use).
    */
   public ContextHandler addHandler(String context, Handler handler) {
-    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+    checkContext(context);
     if (handler == null) throw new IllegalArgumentException("Handler cannot be null");
     if (hasHandler(context)) {
       log.warning("Context "+context+" already in use on port "+port);
       return null;
     }
     ContextHandler c = new ContextHandler(context);
-    // serve the bare context path directly, rather than redirecting it to the path with a
-    // trailing slash; web socket clients cannot follow a redirect on an upgrade request
+    // WebSocket upgrades cannot follow redirects.
     c.setAllowNullPathInContext(true);
     c.setHandler(handler);
     if (add(c)) return c;
@@ -493,8 +450,8 @@ public class WebServer {
    */
   public ContextHandler addWebSocket(String context, WebSocketCreator creator, int maxMsgSize) {
     if (creator == null) throw new IllegalArgumentException("Creator cannot be null");
-    if (context == null || !context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
-    if (hasHandler(context)) return null;
+    checkContext(context);
+    if (!server.isStarted() || hasHandler(context)) return null;
     ContextHandler handler = new ContextHandler(context);
     handler.setAllowNullPathInContext(true);
     handler.setHandler(WebSocketUpgradeHandler.from(server, handler, container -> {
@@ -512,19 +469,14 @@ public class WebServer {
    * @return true if a handler is already registered, false otherwise.
    */
   public boolean hasHandler(String context) {
-    // find any handler in handlers() that has getContextPath() == context
-    return handlers().stream()
-        .filter(ContextHandler.class::isInstance)
-        .map(ContextHandler.class::cast)
-        .anyMatch(h -> h.getContextPath().equals(context));
+    return handlers().stream().anyMatch(h -> h instanceof ContextHandler c && c.getContextPath().equals(context));
   }
 
   /**
    * Gets the registered context handlers, or an empty list after shutdown.
    */
   private List<Handler> handlers() {
-    ContextHandlerCollection collection = contexts;
-    return collection == null ? List.of() : collection.getHandlers();
+    return server.isStopped() ? List.of() : contexts.getHandlers();
   }
 
   /**
@@ -570,8 +522,7 @@ public class WebServer {
    * @return true if applied to at least one matching context handler, false otherwise.
    */
   public boolean setErrorHandler(String context, ErrorHandler errorHandler) {
-    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
-    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+    checkContext(context);
     if (errorHandler == null) throw new IllegalArgumentException("Error handler cannot be null");
     boolean updated = false;
     for (Handler h : handlers()) {
@@ -622,16 +573,34 @@ public class WebServer {
 
   //////// private methods
 
-  /**
-   * Adds a context handler to the running server, and starts it.
-   *
-   * @param handler context handler
-   * @return true if added, false otherwise.
-   */
+  private static void checkContext(String context) {
+    if (context == null || context.isEmpty()) throw new IllegalArgumentException("Context cannot be null or empty");
+    if (!context.startsWith("/")) throw new IllegalArgumentException("Context must start with '/'");
+  }
+
+  private ContextHandler addStatic(String context, String resource, String cacheControl, boolean directoryListed) {
+    ContextHandler handler = new StaticContextHandler(context);
+    ResourceHandler content = directoryListed ? new DirectoryHandler() : new ResourceHandler();
+    var resources = ResourceFactory.of(content);
+    boolean published = false;
+    try {
+      content.setBaseResource(resources.newResource(resource));
+      content.setWelcomeFiles(new String[] {"index.html"});
+      content.setDirAllowed(directoryListed);
+      content.setCacheControl(cacheControl);
+      content.setEtags(true);
+      handler.setHandler(content);
+      published = add(handler);
+      return published ? handler : null;
+    } finally {
+      if (!published) LifeCycle.stop(resources);
+    }
+  }
+
   private boolean add(ContextHandler handler) {
     ContextHandlerCollection collection = contexts;
     Server owner = server;
-    if (collection == null || owner == null || !owner.isStarted()) return false;
+    if (!owner.isStarted()) return false;
     if (defaultErrorHandler != null) handler.setErrorHandler(defaultErrorHandler);
     try {
       handler.setServer(owner);
@@ -670,14 +639,13 @@ public class WebServer {
    */
   private boolean remove(ContextHandler handler) {
     ContextHandlerCollection collection = contexts;
-    if (collection == null) return false;
     try {
       synchronized (collection) {
         if (!collection.getHandlers().contains(handler)) return false;
         collection.unmanage(handler);
         collection.removeHandler(handler);
       }
-      // Lifecycle cleanup may register or remove other contexts, including from another thread.
+      // Cleanup may manage other contexts.
       try {
         handler.stop();
       } finally {
@@ -749,7 +717,6 @@ public class WebServer {
                    FileOutputStream output = new FileOutputStream(outputFile.toFile())) {
                 input.transferTo(output);
                 output.getChannel().force(true);
-                output.getFD().sync();
               }
               result.append(outputFile).append('\n');
             }

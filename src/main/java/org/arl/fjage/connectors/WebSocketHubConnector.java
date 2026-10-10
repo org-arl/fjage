@@ -36,7 +36,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
   protected OutputThread outThread = null;
   protected final PseudoInputStream pin = new PseudoInputStream();
   protected PseudoOutputStream pout = new PseudoOutputStream();
-  protected ConnectionListener listener = null;
+  protected volatile ConnectionListener listener = null;
   private volatile boolean closed;
   protected Logger log = Logger.getLogger(getClass().getName());
 
@@ -130,7 +130,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
   @Override
   public String[] connections() {
-    return wsHandlers.stream().map(h -> h.session).filter(s -> s != null && s.isOpen())
+    return wsHandlers.stream().map(WSHandler::getSession).filter(s -> s != null && s.isOpen())
         .map(WebSocketSupport::address).toArray(String[]::new);
   }
 
@@ -162,7 +162,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     pin.close();
     pout.close();
     for (WSHandler endpoint : wsHandlers) {
-      Session session = endpoint.session;
+      Session session = endpoint.getSession();
       if (session != null) session.disconnect();
     }
     if (writer != null) writer.close();
@@ -235,9 +235,8 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
   // POJO for each web socket connection
 
-  public class WSHandler implements Session.Listener {
+  public class WSHandler extends Session.Listener.AbstractAutoDemanding {
 
-    volatile Session session = null;
     WebSocketHubConnector conn;
 
     public WSHandler(WebSocketHubConnector conn) {
@@ -247,20 +246,18 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
     @Override
     public void onWebSocketOpen(Session session) {
       log.fine("New connection from "+session.getRemoteSocketAddress());
-      this.session = session;
+      super.onWebSocketOpen(session);
       wsHandlers.add(this);
       if (closed) {
         session.disconnect();
         return;
       }
       if (listener != null) listener.connected(conn);
-      session.demand();
     }
 
     @Override
     public void onWebSocketClose(int statusCode, String reason, Callback callback) {
       log.fine("WebSocket connection closed: "+statusCode+" "+reason);
-      session = null;
       wsHandlers.remove(this);
       callback.succeed();
     }
@@ -282,16 +279,14 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
       try {
         conn.pin.write(buf, 0, length);
       } catch (IOException ex) {
-        Session current = session;
+        Session current = getSession();
         if (current != null) current.disconnect();
         return;
       }
-      Session current = session;
-      if (current != null && current.isOpen()) current.demand();
     }
 
     void write(String s) {
-      WebSocketSupport.sendText(session, s, log);
+      WebSocketSupport.sendText(getSession(), s, log);
     }
   }
 }

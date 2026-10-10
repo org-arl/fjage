@@ -8,7 +8,6 @@ import org.eclipse.jetty.websocket.server.WebSocketCreator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.ServerSocket;
 import java.util.logging.Logger;
 
 /**
@@ -18,12 +17,11 @@ import java.util.logging.Logger;
  *
  */
 
-public class WebSocketServer implements WebSocketCreator {
+public class WebSocketServer implements WebSocketCreator, AutoCloseable {
 
     protected int port;
     protected String context;
-    protected ServerSocket sock = null;
-    protected ConnectionListener listener;
+    protected volatile ConnectionListener listener;
     protected WebServer server;
     protected ContextHandler handler;
     protected Logger log = Logger.getLogger(getClass().getName());
@@ -65,6 +63,7 @@ public class WebSocketServer implements WebSocketCreator {
         return context;
     }
 
+    @Override
     public void close() {
         WebServer current;
         ContextHandler contextHandler;

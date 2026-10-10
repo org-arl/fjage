@@ -10,12 +10,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class WebSocketConnector implements Connector, Session.Listener {
+public class WebSocketConnector extends Session.Listener.AbstractAutoDemanding implements Connector {
 
     private volatile String name = "ws://[closed]";
     private final String context;
-    private volatile Session session;
-    private ConnectionListener listener;
+    private volatile ConnectionListener listener;
     protected Logger log = Logger.getLogger(getClass().getName());
 
     private final PseudoInputStream pin = new PseudoInputStream();
@@ -28,7 +27,6 @@ public class WebSocketConnector implements Connector, Session.Listener {
 
     @Override
     public void onWebSocketClose(int statusCode, String reason, Callback callback) {
-        this.session = null;
         pin.close();
         pout.close();
         log.finer("WebSocket Connector closed: " + statusCode + " " + reason);
@@ -38,13 +36,12 @@ public class WebSocketConnector implements Connector, Session.Listener {
 
     @Override
     public void onWebSocketOpen(Session session) {
-        this.session = session;
+        super.onWebSocketOpen(session);
         log.finer("WebSocket Connector connected: " + session.getRemoteSocketAddress());
         name = "ws://" + WebSocketSupport.address(session) + context;
         outThread = new OutputThread();
         outThread.start();
         if (listener != null) listener.connected(this);
-        session.demand();
     }
 
     @Override
@@ -65,14 +62,12 @@ public class WebSocketConnector implements Connector, Session.Listener {
             try {
                 pin.write(buf);
             } catch (IOException ex) {
-                Session current = session;
+                Session current = getSession();
                 if (current != null) current.disconnect();
                 close();
                 return;
             }
         }
-        Session current = session;
-        if (current != null && current.isOpen()) current.demand();
     }
 
     @Override
@@ -107,13 +102,13 @@ public class WebSocketConnector implements Connector, Session.Listener {
 
     @Override
     public String[] connections() {
-        Session current = session;
+        Session current = getSession();
         return current == null || !current.isOpen() ? new String[0] : new String[] { WebSocketSupport.address(current) };
     }
 
     @Override
     public void close() {
-        Session current = session;
+        Session current = getSession();
         if (current != null && current.isOpen()) current.close(1000, null, Callback.NOOP);
         pin.close();
         pout.close();
@@ -150,6 +145,6 @@ public class WebSocketConnector implements Connector, Session.Listener {
     }
 
     private void write(String s) {
-        WebSocketSupport.sendText(session, s, log);
+        WebSocketSupport.sendText(getSession(), s, log);
     }
 }
