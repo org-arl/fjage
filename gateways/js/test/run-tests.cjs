@@ -71,7 +71,8 @@ if (serveBrowserTest) {
       if (msg.type() === 'warning') console.log(`PAGE WARN: ${msg.text()}`);
     });
     await page.goto(`http://${ip}:${port}/test`, {waitUntil: 'networkidle'});
-    await page.waitForSelector('.jasmine-overall-result', {timeout: 60000});
+    // the status bar exists while running, wait until it is no longer in progress
+    await page.waitForSelector('.jasmine-overall-result:not(.jasmine-in-progress)', {timeout: 60000});
     await page.waitForTimeout(1000);
     await browser.close();
     console.log(`Browser test Complete [${new Date() - startTime} ms]`);
