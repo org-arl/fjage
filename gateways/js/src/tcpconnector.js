@@ -29,7 +29,7 @@ class TCPConnector {
     this.url.port = port.toString();
     this._buf = '';
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
-    this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
+    this._connectionState = undefined;    // last reported connection state
     this._closed = false;
     this._reconnectTimer = null;
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
@@ -40,9 +40,21 @@ class TCPConnector {
 
 
   _sendConnEvent(val) {
+    if (val && this._closed) return;
+    const changed = this._connectionState !== val;
+    this._connectionState = val;
+    // Internal cleanup also runs when the public state has not changed.
+    if (this._onConnection) this._onConnection(val);
+    if (!changed) return;
     this.connListeners.forEach(l => {
-      if (val && this._closed) return;
-      l && {}.toString.call(l) === '[object Function]' && l(val);
+      if (this._connectionState !== val) return;
+      if (l && {}.toString.call(l) === '[object Function]') {
+        try {
+          l(val);
+        } catch (error) {
+          console.warn('Error in connection listener : ' + error);
+        }
+      }
     });
   }
 
@@ -68,8 +80,8 @@ class TCPConnector {
       this.sock = createConnection({ 'host': host, 'port': port });
       this.sock.setEncoding('utf8');
       this.sock.on('connect', this._onSockOpen.bind(this));
-      this.sock.on('error', this._sockReconnect.bind(this));
-      this.sock.on('close', () => {this._sendConnEvent(false);});
+      this.sock.on('error', error => { if (this.debug) console.log('Connection failed:', error); });
+      this.sock.on('close', this._onSockClose.bind(this));
       this.sock.send = data => {this.sock.write(data);};
     } catch (error) {
       if(this.debug) console.log('Connection failed to ', this.sock.host + ':' + this.sock.port);
@@ -84,16 +96,17 @@ class TCPConnector {
       this.pendingOnOpen = [];
       this._sockSetup(this.url.hostname, this.url.port);
     }, this._reconnectTime);
-    if (this._firstReConn) {
-      this._firstReConn = false;
-      this._sendConnEvent(false);
-    }
+  }
+
+  _onSockClose() {
+    if (this._closed) return;
+    this._sendConnEvent(false);
+    this._sockReconnect();
   }
 
   _onSockOpen() {
     if (this._closed) return;
     this._firstConn = false;
-    this.sock.on('close', this._sockReconnect.bind(this));
     this.sock.on('data', this._processSockData.bind(this));
     this._buf = '';
     this._sendConnEvent(true);
@@ -153,6 +166,15 @@ class TCPConnector {
   }
 
   /**
+  * Set the internal callback for connection state and disconnect cleanup.
+  * @param {function} cb - callback invoked before public connection listeners
+  * @ignore
+  */
+  setConnectionCallback(cb){
+    this._onConnection = cb;
+  }
+
+  /**
   * Add listener for connection events
   * @param {function} listener - a listener callback that is called when the connection is opened/closed
   */
@@ -188,8 +210,10 @@ class TCPConnector {
       this.sock.removeAllListeners('close');
       this.sock.removeAllListeners('data');
       // Keep the error listener to handle errors from an aborted connection.
-      if (this.sock.readyState == SOCKET_OPEN) this.sock.end('{"alive": false}\n');
-      else this.sock.destroy();
+      if (this.sock.readyState == SOCKET_OPEN) {
+        this.sock.end('{"alive": false}\n');
+        this.sock.destroySoon();
+      } else this.sock.destroy();
     }
     this._sendConnEvent(false);
   }

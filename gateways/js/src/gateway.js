@@ -294,7 +294,7 @@ export class Gateway {
       });
     } else return null;
     conn.setReadCallback(this._onMsgRx.bind(this));
-    conn.addConnectionListener(state => {
+    conn.setConnectionCallback(state => {
       this.connected = !!state;
       if (state == true){
         this.flush();
@@ -305,8 +305,8 @@ export class Gateway {
           this.flush();
         }
       }
-      this._sendEvent('conn', state);
     });
+    conn.addConnectionListener(state => this._sendEvent('conn', state));
     return conn;
   }
 

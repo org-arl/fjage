@@ -27,7 +27,7 @@ class WSConnector {
     this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
     this.debug = opts.debug || false;      // debug info to be logged to console?
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
-    this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
+    this._connectionState = undefined;    // last reported connection state
     this._closed = false;
     this._reconnectTimer = null;
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
@@ -36,9 +36,21 @@ class WSConnector {
   }
 
   _sendConnEvent(val) {
+    if (val && this._closed) return;
+    const changed = this._connectionState !== val;
+    this._connectionState = val;
+    // Internal cleanup also runs when the public state has not changed.
+    if (this._onConnection) this._onConnection(val);
+    if (!changed) return;
     this.connListeners.forEach(l => {
-      if (val && this._closed) return;
-      l && {}.toString.call(l) === '[object Function]' && l(val);
+      if (this._connectionState !== val) return;
+      if (l && {}.toString.call(l) === '[object Function]') {
+        try {
+          l(val);
+        } catch (error) {
+          console.warn('Error in connection listener : ' + error);
+        }
+      }
     });
   }
 
@@ -46,9 +58,9 @@ class WSConnector {
     if (this._closed) return;
     try {
       this.sock = new WebSocket(url);
-      this.sock.onerror = this._websockReconnect.bind(this);
+      this.sock.onerror = error => { if (this.debug) console.log('Connection failed:', error); };
       this.sock.onopen = this._onWebsockOpen.bind(this);
-      this.sock.onclose = () => {this._sendConnEvent(false);};
+      this.sock.onclose = this._onWebsockClose.bind(this);
     } catch (error) {
       if(this.debug) console.log('Connection failed to ', url);
       return;
@@ -63,19 +75,19 @@ class WSConnector {
       this.pendingOnOpen = [];
       this._websockSetup(this.sock.url);
     }, this._reconnectTime);
-    if (this._firstReConn) {
-      this._firstReConn = false;
-      this._sendConnEvent(false);
-    }
+  }
+
+  _onWebsockClose() {
+    if (this._closed) return;
+    this._sendConnEvent(false);
+    this._websockReconnect();
   }
 
   _onWebsockOpen() {
     if (this._closed) return;
     if(this.debug) console.log('Connected to ', this.sock.url);
-    this.sock.onclose = this._websockReconnect.bind(this);
     this.sock.onmessage = event => { if (this._onWebsockRx) this._onWebsockRx.call(this,event.data); };
     this._firstConn = false;
-    this._firstReConn = true;
     this._sendConnEvent(true);
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
@@ -118,6 +130,15 @@ class WSConnector {
   */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onWebsockRx = cb;
+  }
+
+  /**
+  * Set the internal callback for connection state and disconnect cleanup.
+  * @param {function} cb - callback invoked before public connection listeners
+  * @ignore
+  */
+  setConnectionCallback(cb){
+    this._onConnection = cb;
   }
 
   /**
