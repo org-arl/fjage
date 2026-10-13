@@ -42,7 +42,7 @@
     "documentation": "^14.0.3",
     "eslint": "^9.39.4",
     "eslint-plugin-jsdoc": "^52.0.4",
-    "globals": "^16.5.0",
+    "globals": "^17.13.0",
     "jasmine": "^7.0.0",
     "jasmine-core": "^7.0.2",
     "node-static": "^0.7.11",
