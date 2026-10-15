@@ -1,5 +1,9 @@
 # Release Notes
 
+### 2.7.1
+
+* Fix `WebServer` uploads to save files under their submitted names instead of URL-encoded names; names that would resolve outside the upload directory are rejected with HTTP 400
+
 ### 2.7.0
 
 * Add `prepareMultiResponseRequest()` fluent API for requests with several responses, such as an `AGREE` followed by `INFORM` messages
