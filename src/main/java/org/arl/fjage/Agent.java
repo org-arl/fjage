@@ -18,7 +18,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.arl.fjage.persistence.Store;
@@ -906,7 +906,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       return exchange.sendAndWait();
     }
 
-    private Predicate<Message> ending(Consumer<Message> consumer) {
+    private Function<Message, Boolean> ending(Consumer<Message> consumer) {
       return message -> {
         if (consumer != null) {
           consumer.accept(message);
@@ -926,31 +926,31 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
     }
 
     @Override
-    public MultiResponseRequestSender onAgree(Predicate<Message> handler) {
+    public MultiResponseRequestSender onAgree(Function<Message, Boolean> handler) {
       exchange.agreeHandlers.add(handler);
       return this;
     }
 
     @Override
-    public MultiResponseRequestSender onRefuse(Predicate<Message> handler) {
+    public MultiResponseRequestSender onRefuse(Function<Message, Boolean> handler) {
       exchange.refuseHandlers.add(handler);
       return this;
     }
 
     @Override
-    public MultiResponseRequestSender onFailure(Predicate<Message> handler) {
+    public MultiResponseRequestSender onFailure(Function<Message, Boolean> handler) {
       exchange.failureHandlers.add(handler);
       return this;
     }
 
     @Override
-    public MultiResponseRequestSender onInform(Predicate<Message> handler) {
+    public MultiResponseRequestSender onInform(Function<Message, Boolean> handler) {
       exchange.informHandlers.add(handler);
       return this;
     }
 
     @Override
-    public MultiResponseRequestSender otherwise(Predicate<Message> handler) {
+    public MultiResponseRequestSender otherwise(Function<Message, Boolean> handler) {
       exchange.otherHandlers.add(handler);
       return this;
     }
@@ -976,11 +976,11 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
 
     private final Message request;
     private final boolean multiResponse;
-    private final List<Predicate<Message>> agreeHandlers = new ArrayList<>();
-    private final List<Predicate<Message>> refuseHandlers = new ArrayList<>();
-    private final List<Predicate<Message>> failureHandlers = new ArrayList<>();
-    private final List<Predicate<Message>> informHandlers = new ArrayList<>();
-    private final List<Predicate<Message>> otherHandlers = new ArrayList<>();
+    private final List<Function<Message, Boolean>> agreeHandlers = new ArrayList<>();
+    private final List<Function<Message, Boolean>> refuseHandlers = new ArrayList<>();
+    private final List<Function<Message, Boolean>> failureHandlers = new ArrayList<>();
+    private final List<Function<Message, Boolean>> informHandlers = new ArrayList<>();
+    private final List<Function<Message, Boolean>> otherHandlers = new ArrayList<>();
     private final List<TimeoutBehavior> timeoutBehaviors = new ArrayList<>();
     private ResponseBehavior responseBehavior;
 
@@ -1032,7 +1032,12 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
           timeoutBehavior.extend();
         }
       }
-      if (endsRequest(response) && !done) {
+      if (!multiResponse && !handlersFor(response.getPerformative()).isEmpty()) {
+        message = response;
+        done = true;
+        stopBehaviors();
+        endsRequest(response);
+      } else if (endsRequest(response) && !done) {
         message = response;
         done = true;
         stopBehaviors();
@@ -1041,14 +1046,14 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
 
     private boolean endsRequest(Message response) {
       final Performative performative = response.getPerformative();
-      final List<Predicate<Message>> handlers = handlersFor(performative);
+      final List<Function<Message, Boolean>> handlers = handlersFor(performative);
       if (handlers.isEmpty()) {
         return multiResponse && (performative == Performative.REFUSE || performative == Performative.FAILURE);
       }
       boolean ends = !multiResponse;
-      for (final Predicate<Message> handler : handlers) {
+      for (final Function<Message, Boolean> handler : handlers) {
         try {
-          ends |= handler.test(response);
+          ends |= Boolean.TRUE.equals(handler.apply(response));
         } catch (Throwable t) {
           log.log(Level.WARNING, "Exception", t);
         }
@@ -1056,7 +1061,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       return ends;
     }
 
-    private List<Predicate<Message>> handlersFor(Performative performative) {
+    private List<Function<Message, Boolean>> handlersFor(Performative performative) {
       if (performative == Performative.AGREE) {
         return agreeHandlers;
       }

@@ -1,7 +1,7 @@
 package org.arl.fjage;
 
 import java.util.concurrent.Future;
-import java.util.function.Predicate;
+import java.util.function.Function;
 
 /**
  * Fluent request sender interface for requests that may receive several responses.
@@ -20,42 +20,42 @@ public interface MultiResponseRequestSender {
   /**
    * Adds a handler to be invoked when an AGREE response is received.
    *
-   * @param handler Message handler, returning true to end the request.
+   * @param handler Message handler, returning true to end the request, or false or null to keep listening.
    * @return This request sender.
    */
-  MultiResponseRequestSender onAgree(Predicate<Message> handler);
+  MultiResponseRequestSender onAgree(Function<Message, Boolean> handler);
 
   /**
    * Adds a handler to be invoked when a REFUSE response is received.
    *
-   * @param handler Message handler, returning true to end the request.
+   * @param handler Message handler, returning true to end the request, or false or null to keep listening.
    * @return This request sender.
    */
-  MultiResponseRequestSender onRefuse(Predicate<Message> handler);
+  MultiResponseRequestSender onRefuse(Function<Message, Boolean> handler);
 
   /**
    * Adds a handler to be invoked when a FAILURE response is received.
    *
-   * @param handler Message handler, returning true to end the request.
+   * @param handler Message handler, returning true to end the request, or false or null to keep listening.
    * @return This request sender.
    */
-  MultiResponseRequestSender onFailure(Predicate<Message> handler);
+  MultiResponseRequestSender onFailure(Function<Message, Boolean> handler);
 
   /**
    * Adds a handler to be invoked when an INFORM message is received.
    *
-   * @param handler Message handler, returning true to end the request.
+   * @param handler Message handler, returning true to end the request, or false or null to keep listening.
    * @return This request sender.
    */
-  MultiResponseRequestSender onInform(Predicate<Message> handler);
+  MultiResponseRequestSender onInform(Function<Message, Boolean> handler);
 
   /**
    * Adds a handler to be invoked when a message that is not one of AGREE, REFUSE, FAILURE, INFORM is received.
    *
-   * @param handler Message handler, returning true to end the request.
+   * @param handler Message handler, returning true to end the request, or false or null to keep listening.
    * @return This request sender.
    */
-  MultiResponseRequestSender otherwise(Predicate<Message> handler);
+  MultiResponseRequestSender otherwise(Function<Message, Boolean> handler);
 
   /**
    * Adds a Runnable to be invoked when no response is received for the specified time.

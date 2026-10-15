@@ -316,4 +316,49 @@ public class FluentRequestTest
     // ---- run ----
     run(Duration.ofMinutes(5));
   }
+
+  @Test
+  public void testNestedWaitInHandlerDoesNotLoseResponse() {
+    // ---- given ----
+    final AgentID testService = getContainer().add(new TestServiceAgent());
+    final TestRequestFactory testRequestFactory = new TestRequestFactory(testService);
+    getContainer().add(new Agent() {
+
+      @Override
+      protected void init() {
+        super.init();
+
+        add(new WakerBehavior(5000, () -> {
+          final TestRequest outerRequest = testRequestFactory.newBuilder()
+              .replyAfter(Duration.ofSeconds(1), Performative.AGREE)
+              .build();
+
+          final Message response = prepareRequest(outerRequest)
+              .onAgree(message -> {
+                emitTestEvent("OUTER");
+                final TestRequest innerRequest = testRequestFactory.newBuilder()
+                    .replyAfter(Duration.ofSeconds(5), Performative.AGREE)
+                    .build();
+                final Message innerResponse = prepareRequest(innerRequest)
+                    .onAgree(innerMessage -> emitTestEvent("INNER"))
+                    .onTimeout(Duration.ofSeconds(10).toMillis(), () -> getWaiter().fail("inner timeout not expected"))
+                    .sendAndWait();
+                getWaiter().assertNotNull(innerResponse);
+              })
+              .onTimeout(Duration.ofSeconds(3).toMillis(), () -> getWaiter().fail("outer timeout not expected"))
+              .sendAndWait();
+
+          getWaiter().assertNotNull(response);
+          getWaiter().assertEquals(Performative.AGREE, response.getPerformative());
+        }));
+      }
+    });
+
+    // ---- expect ----
+    expectOneAndOnlyOneEvent("OUTER");
+    expectOneAndOnlyOneEvent("INNER");
+
+    // ---- run ----
+    run(Duration.ofMinutes(5));
+  }
 }
