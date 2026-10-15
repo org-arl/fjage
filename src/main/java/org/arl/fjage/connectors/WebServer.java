@@ -34,9 +34,8 @@ import java.io.*;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.logging.Level;
@@ -417,6 +416,10 @@ public class WebServer {
    * temporarily instead of kept in memory during processing. The directory to
    * which the file is written temporarily is the same as the upload directory.
    *
+   * Files are saved under their submitted names. A name that does not resolve
+   * to a file directly inside the upload directory (e.g. one with a path
+   * component) is rejected with HTTP 400.
+   *
    * @param context context path.
    * @param dir filesystem path of directory to upload files to.
    * @return true if added, false otherwise.
@@ -434,6 +437,10 @@ public class WebServer {
    * For files exceeding the file size threshold, the directory to which the
    * file is written temporarily is the same as the upload directory.
    *
+   * Files are saved under their submitted names. A name that does not resolve
+   * to a file directly inside the upload directory (e.g. one with a path
+   * component) is rejected with HTTP 400.
+   *
    * @param context context path.
    * @param dir filesystem path of directory to upload files to.
    * @param maxFileSize maximum size of a file. @see javax.servlet.MultipartConfigElement
@@ -448,6 +455,10 @@ public class WebServer {
 
   /**
    * Adds a context to upload files to.
+   *
+   * Files are saved under their submitted names. A name that does not resolve
+   * to a file directly inside the upload directory (e.g. one with a path
+   * component) is rejected with HTTP 400.
    *
    * @param context context path.
    * @param dir filesystem path of directory to upload files to.
@@ -678,7 +689,22 @@ public class WebServer {
           log.log(Level.WARNING, "Unable to create output directory : " + outputDir, ex);
         }
       }
-      this.outputDir = outputDir;
+      this.outputDir = outputDir.toAbsolutePath().normalize();
+    }
+
+    /**
+     * Resolves a submitted file name to a file directly inside the output directory.
+     *
+     * @param filename submitted file name.
+     * @return path to save the file to, or null if the name would resolve elsewhere or is invalid.
+     */
+    private Path resolveUpload(String filename) {
+      try {
+        Path p = outputDir.resolve(filename).normalize();
+        return outputDir.equals(p.getParent()) ? p : null;
+      } catch (InvalidPathException ex) {
+        return null;
+      }
     }
 
     @Override
@@ -694,8 +720,13 @@ public class WebServer {
       for (Part part : request.getParts()) {
         String filename = part.getSubmittedFileName();
         if (StringUtil.isNotBlank(filename)){
-          filename = URLEncoder.encode(filename, String.valueOf(StandardCharsets.UTF_8));
-          Path outputFile = outputDir.resolve(filename);
+          Path outputFile = resolveUpload(filename);
+          if (outputFile == null) {
+            log.warning("Rejected upload outside " + outputDir + " : " + filename);
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            baseRequest.setHandled(true);
+            return;
+          }
           try (InputStream inputStream = part.getInputStream();
                FileOutputStream outputStream = new FileOutputStream(outputFile.toFile())) {
             IO.copy(inputStream, outputStream);

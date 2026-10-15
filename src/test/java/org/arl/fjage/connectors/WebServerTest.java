@@ -10,18 +10,23 @@ for full license details.
 
 package org.arl.fjage.connectors;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.rewrite.handler.RewritePatternRule;
@@ -30,11 +35,16 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 public class WebServerTest {
 
   private WebServer svr = null;
+
+  @Rule
+  public TemporaryFolder tmp = new TemporaryFolder();
 
   @After
   public void teardown() {
@@ -73,6 +83,31 @@ public class WebServerTest {
     conn.setInstanceFollowRedirects(false);
     conn.setConnectTimeout(5000);
     conn.setReadTimeout(5000);
+    try {
+      return conn.getResponseCode();
+    } finally {
+      conn.disconnect();
+    }
+  }
+
+  // POSTs a single multipart file part, and returns the response status
+  private static int upload(WebServer svr, String path, String filename, String content) throws IOException {
+    String boundary = "fjage-test-boundary";
+    URL url = new URL("http://127.0.0.1:"+svr.getPort()+path);
+    HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+    conn.setConnectTimeout(5000);
+    conn.setReadTimeout(5000);
+    conn.setDoOutput(true);
+    conn.setRequestMethod("POST");
+    conn.setRequestProperty("Content-Type", "multipart/form-data; boundary="+boundary);
+    String body = "--"+boundary+"\r\n"
+      + "Content-Disposition: form-data; name=\"file\"; filename=\""+filename+"\"\r\n"
+      + "Content-Type: text/plain\r\n\r\n"
+      + content+"\r\n"
+      + "--"+boundary+"--\r\n";
+    try (OutputStream os = conn.getOutputStream()) {
+      os.write(body.getBytes(StandardCharsets.UTF_8));
+    }
     try {
       return conn.getResponseCode();
     } finally {
@@ -164,6 +199,33 @@ public class WebServerTest {
     // any resource directory on the test classpath will do
     assertFalse(svr.addStatic("/static", "org/arl/fjage/shell").isEmpty());
     assertEquals(302, statusOf(svr, "/static"));
+  }
+
+  //////////// uploaded files keep their submitted names, but stay inside the upload directory
+
+  @Test
+  public void uploadKeepsSubmittedFileName() throws IOException {
+    WebServer svr = newServer();
+    File dir = tmp.newFolder("up");
+    assertTrue(svr.addUpload("/up", dir));
+    for (String name : new String[] { "it's-$x.txt", "my file (1).txt", "ü.txt" }) {
+      assertEquals(name, 200, upload(svr, "/up/x", name, name));
+      File f = new File(dir, name);
+      assertTrue(name, f.isFile());
+      assertEquals(name, new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+    }
+  }
+
+  @Test
+  public void uploadRejectsNamesOutsideDirectory() throws IOException {
+    WebServer svr = newServer();
+    File dir = tmp.newFolder("up");
+    assertTrue(svr.addUpload("/up", dir));
+    for (String name : new String[] { "../escape.txt", "sub/x.txt", "..", "." }) {
+      assertEquals(name, 400, upload(svr, "/up/x", name, "x"));
+    }
+    assertArrayEquals(new String[0], dir.list());
+    assertArrayEquals(new String[] { "up" }, tmp.getRoot().list());
   }
 
 }

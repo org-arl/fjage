@@ -1,5 +1,9 @@
 # Release Notes
 
+### 2.7.1
+
+* Fix `WebServer` uploads to save files under their submitted names instead of URL-encoded names; names that would resolve outside the upload directory are rejected with HTTP 400
+
 ### 2.7.0
 
 * Add an `Observer` agent with a web interface for viewing, filtering and rate-limiting message traffic in a container
