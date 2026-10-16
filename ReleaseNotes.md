@@ -2,6 +2,7 @@
 
 ### 2.7.0
 
+* Add `prepareMultiResponseRequest()` fluent API for requests with several responses, such as an `AGREE` followed by `INFORM` messages
 * Add an `Observer` agent with a web interface for viewing, filtering and rate-limiting message traffic in a container
 * Add `DeleteFileReq` for deleting files and directories through a shell agent, and normalize paths used for cached file reads
 * Change `AgentID.send(Message)` to return the message delivery result; code compiled against an earlier fjåge release must be recompiled if it uses this method
@@ -14,6 +15,7 @@
 * Allow WebSocket upgrades on bare context paths and handle empty web servers safely
 * Use UTF-8 for TCP and WebSocket transport and for console and connector shells, regardless of the JVM default charset
 * Prevent `MessageListener` exceptions and lock-ordering hazards from disrupting container message delivery
+* Bugfix: Fluent requests no longer leave a behavior behind that discards later responses to the request
 * Bugfix: Allow sandboxed scripts running under a `SecurityManager` to send messages to remote containers
 * Bugfix: Log exceptions thrown by scheduled tasks in `RealTimePlatform`, and keep running later tasks
 * Bugfix: Copy caller buffers in `BlockingByteQueue` writes, and fix slice validation and end-of-stream handling in `BlockingByteQueue` and pseudo streams
