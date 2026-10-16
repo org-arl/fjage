@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage.param;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 import org.arl.fjage.*;
@@ -19,6 +20,7 @@ import org.arl.fjage.*;
  */
 public class ParameterReq extends Message {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   protected int index = -1;
@@ -157,6 +159,7 @@ public class ParameterReq extends Message {
    */
   public static class Entry implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

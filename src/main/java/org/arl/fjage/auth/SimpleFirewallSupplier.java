@@ -295,11 +295,9 @@ public class SimpleFirewallSupplier
      * Allow <code>subscribe</code> to the specified topic names.
      *
      * @param topicNames Topic names.
-     * @return This <code>Policy</code> instance.
      */
-    public Policy allowedTopicNames(String... topicNames) {
+    public void allowedTopicNames(String... topicNames) {
       allowedTopicNames.addAll(Arrays.asList(topicNames));
-      return this;
     }
 
     /**

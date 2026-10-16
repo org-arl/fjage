@@ -13,7 +13,6 @@ package org.arl.fjage.shell;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
-import org.arl.fjage.connectors.ConnectionListener;
 import org.arl.fjage.connectors.Connector;
 
 /**
@@ -23,11 +22,10 @@ import org.arl.fjage.connectors.Connector;
  */
 public class DumbShell implements Shell {
 
-  private PrintStream out = null;
-  private BufferedReader in = null;
+  private PrintStream out;
+  private BufferedReader in;
   private Connector connector = null;
-  private ScriptEngine scriptEngine = null;
-  private Logger log = Logger.getLogger(getClass().getName());
+    private final Logger log = Logger.getLogger(getClass().getName());
 
   /**
    * Create a dumb console shell attached to the system terminal.
@@ -45,11 +43,7 @@ public class DumbShell implements Shell {
    */
   public DumbShell(InputStream in, OutputStream out) {
     this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-    try {
-      this.out = new PrintStream(out, false, StandardCharsets.UTF_8.name());
-    } catch (UnsupportedEncodingException ex) {
-      throw new AssertionError(ex);
-    }
+    this.out = new PrintStream(out, false, StandardCharsets.UTF_8);
   }
 
   /**
@@ -64,7 +58,6 @@ public class DumbShell implements Shell {
 
   @Override
   public void init(ScriptEngine engine) {
-    scriptEngine = engine;
   }
 
   @Override
@@ -94,7 +87,7 @@ public class DumbShell implements Shell {
 
   @Override
   public String readLine(String prompt1, String prompt2, String line) {
-    if (line != null && line.length() > 0) return line;
+    if (line != null && !line.isEmpty()) return line;
     if (in == null) return null;
     try {
       return in.readLine();

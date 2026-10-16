@@ -47,7 +47,7 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   ////// inner classes
 
-  class BlockingInput {
+  static class BlockingInput {
 
     private int waiting = 0;
     private String input = null;
@@ -380,7 +380,7 @@ public class GroovyScriptEngine implements ScriptEngine {
   public void deliver(Message msg) {
     if (msg.getPerformative() == Performative.INFORM || msg.getInReplyTo() == null) binding.setVariable("ntf", msg);
     else binding.setVariable("rsp", msg);
-    if (out != null) out.notify(msg.getSender().getName() + " >> " + msg.toString());
+    if (out != null) out.notify(msg.getSender().getName() + " >> " + msg);
   }
 
   @Override

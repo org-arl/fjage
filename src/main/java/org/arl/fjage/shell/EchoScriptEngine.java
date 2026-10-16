@@ -93,7 +93,7 @@ public class EchoScriptEngine implements ScriptEngine {
 
   @Override
   public void deliver(Message msg) {
-    if (shell != null) shell.notify(msg.getSender().getName() + " >> " + msg.toString());
+    if (shell != null) shell.notify(msg.getSender().getName() + " >> " + msg);
   }
 
   @Override

@@ -62,15 +62,23 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
   //// documentation
 
   public final static String __doc__ =
-    "# @@ - tunnel\n\n" +
-    "Tunnels messages between two fjage platforms over a TCP/IP link.\n\n" +
-    "## Parameters:\n\n" +
-    "### @@.agents - list of remote agents/topics visible through the tunnel\n\n" +
-    "Example:\n  @@.agents = [agent('remoteAgent'), topic('remoteTopic')]\n\n" +
-    "### @@.ip - IP address of the server to connect to (null for servers)\n" +
-    "### @@.port - TCP port number\n" +
-    "### @@.connIDs - map of currently connected connection IDs (read-only)\n" +
-    "Keys are integer connIDs; values are connector names (typically remote IP:port).\n";
+          """
+                  # @@ - tunnel
+                  
+                  Tunnels messages between two fjage platforms over a TCP/IP link.
+                  
+                  ## Parameters:
+                  
+                  ### @@.agents - list of remote agents/topics visible through the tunnel
+                  
+                  Example:
+                    @@.agents = [agent('remoteAgent'), topic('remoteTopic')]
+                  
+                  ### @@.ip - IP address of the server to connect to (null for servers)
+                  ### @@.port - TCP port number
+                  ### @@.connIDs - map of currently connected connection IDs (read-only)
+                  Keys are integer connIDs; values are connector names (typically remote IP:port).
+                  """;
 
   //// agent methods
 

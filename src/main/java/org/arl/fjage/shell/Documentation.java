@@ -37,8 +37,7 @@ public class Documentation {
   public void add(String s) {
     if (doc.size() > staticSize) doc.subList(staticSize, doc.size()).clear();
     String[] lines = s.split(crlf);
-    for (String line: lines)
-      doc.add(line);
+    Collections.addAll(doc, lines);
     staticSize = doc.size();
   }
 
@@ -80,7 +79,6 @@ public class Documentation {
       if (m.matches() && m.group(1).equals(keyword)) {
         extract(sb, i);
         count++;
-        continue;
       }
     }
     if (count == 0) search(sb, keyword);
@@ -191,8 +189,7 @@ public class Documentation {
         String s = cache.get(key);
         if (s != null) {
           String[] lines = s.split(crlf);
-          for (String line: lines)
-            doc.add(line);
+          Collections.addAll(doc, lines);
         }
         continue;
       }
@@ -200,15 +197,14 @@ public class Documentation {
       req.setRecipient(a);
       req.get(new NamedParameter("__doc__"));
       Message rsp = agent.request(req, 1000);
-      if (rsp != null && rsp instanceof ParameterRsp) {
+      if (rsp instanceof ParameterRsp) {
         Object docstr = ((ParameterRsp)rsp).get(new NamedParameter("__doc__"));
         if (docstr != null) {
           String s = docstr.toString().replaceAll(placeholder, a.getName());
           if (s.startsWith("[no-cache]")) s = s.substring(10);
           else cache.put(key, s);
           String[] lines = s.split(crlf);
-          for (String line: lines)
-            doc.add(line);
+          Collections.addAll(doc, lines);
         }
       } else {
         // no documentation available for agent

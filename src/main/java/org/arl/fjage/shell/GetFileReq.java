@@ -14,6 +14,8 @@ import org.arl.fjage.AgentID;
 import org.arl.fjage.Message;
 import org.arl.fjage.Performative;
 
+import java.io.Serial;
+
 /**
  * Request to read a file or a directory.
  *
@@ -25,6 +27,7 @@ import org.arl.fjage.Performative;
  */
 public class GetFileReq extends Message {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private String filename = null;

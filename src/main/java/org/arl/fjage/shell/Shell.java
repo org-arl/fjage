@@ -18,7 +18,7 @@ public interface Shell {
   /**
    * Abort string returned when user presses ^C.
    */
-  public static final String ABORT = "\003";
+  String ABORT = "\003";
 
   /**
    * Initialize the shell.
@@ -26,32 +26,32 @@ public interface Shell {
    * @param engine script engine to use for sentence completion check,
    *               or null to disable.
    */
-  public void init(ScriptEngine engine);
+  void init(ScriptEngine engine);
 
   /**
    * Prompt user for input.
    */
-  public void prompt(Object obj);
+  void prompt(Object obj);
 
   /**
    * Display input line.
    */
-  public void input(Object obj);
+  void input(Object obj);
 
   /**
    * Display script output.
    */
-  public void println(Object obj);
+  void println(Object obj);
 
   /**
    * Display unsolicited notification.
    */
-  public void notify(Object obj);
+  void notify(Object obj);
 
   /**
    * Display error.
    */
-  public void error(Object obj);
+  void error(Object obj);
 
   /**
    * Read a line from the shell.
@@ -61,18 +61,18 @@ public interface Shell {
    * @param line input text to edit, null if blank.
    * @return input string, null on EOF, or ABORT on ^C.
    */
-  public String readLine(String prompt1, String prompt2, String line);
+  String readLine(String prompt1, String prompt2, String line);
 
   /**
    * Check if terminal supports ANSI control sequences.
    *
    * @return true if it does not support control sequences, false if it supports.
    */
-  public boolean isDumb();
+  boolean isDumb();
 
   /**
    * Shutdown the shell.
    */
-  public void shutdown();
+  void shutdown();
 
 }

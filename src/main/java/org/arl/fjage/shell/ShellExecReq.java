@@ -15,6 +15,7 @@ import org.arl.fjage.Message;
 import org.arl.fjage.Performative;
 
 import java.io.File;
+import java.io.Serial;
 import java.util.List;
 
 /**
@@ -22,6 +23,7 @@ import java.util.List;
  */
 public class ShellExecReq extends Message {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private String command = null;

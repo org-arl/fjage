@@ -10,10 +10,12 @@ for full license details.
 
 package org.arl.fjage.shell
 
+import groovy.transform.CompileStatic
+
 /**
  * Basic help for shell commands.
  */
-@groovy.transform.CompileStatic
+@CompileStatic
 class ShellDoc implements ShellExtension {
 
 static final public String __doc__ = '''\

@@ -60,12 +60,7 @@ public class Store implements Closeable {
   public static Store getInstance(Agent agent) {
     String clazz = agent.getClass().getName();
     synchronized (instances) {
-      Store store = instances.get(clazz);
-      if (store == null) {
-        store = new Store(clazz);
-        instances.put(clazz, store);
-      }
-      return store;
+      return instances.computeIfAbsent(clazz, Store::new);
     }
   }
 
@@ -132,15 +127,13 @@ public class Store implements Closeable {
       if (clazzLoader == null) in = new ObjectInputStream(fin);
       else in = new ObjectInputStream(fin) {
         @Override
-        protected Class<?> resolveClass(ObjectStreamClass objectStreamClass) throws IOException, ClassNotFoundException {
+        protected Class<?> resolveClass(ObjectStreamClass objectStreamClass) throws ClassNotFoundException {
             return Class.forName(objectStreamClass.getName(), false, clazzLoader);
         }
       };
       @SuppressWarnings("unchecked")
       T rv = (T) in.readObject();
       return rv;
-    } catch (IOException ex) {
-      return null;
     } catch (Exception ex) {
       throw new FjageException(ex.toString());
     } finally {

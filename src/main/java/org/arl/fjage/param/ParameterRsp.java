@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage.param;
 
+import java.io.Serial;
 import java.util.*;
 import java.util.Map.Entry;
 import org.arl.fjage.*;
@@ -21,6 +22,7 @@ import org.arl.fjage.*;
  */
 public class ParameterRsp extends Message {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   protected int index = -1;

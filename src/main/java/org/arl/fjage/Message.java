@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -22,6 +23,7 @@ import java.io.Serializable;
  */
 public class Message implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
   private transient String _jsoncache = null;
 
@@ -80,6 +82,7 @@ public class Message implements Serializable {
    *
    * @param inReplyTo message to which this response corresponds to.
    */
+  @SuppressWarnings("CopyConstructorMissesField")
   public Message(Message inReplyTo) {
     perf = null;
     this.recipient = inReplyTo.sender;

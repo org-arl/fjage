@@ -58,106 +58,104 @@ class MessageAdapterFactory implements TypeAdapterFactory {
     final MessageAdapterFactory parent = this;
     // Gson does not cache delegate adapters
     final Map<Class<?>, TypeAdapter<?>> delegates = new ConcurrentHashMap<>();
-    return new TypeAdapter<T>() {
+    return new TypeAdapter<>() {
 
-      @Override
-      public void write(JsonWriter out, T value) throws IOException {
-        try {
-          out.setSerializeNulls(true);
-          if (value == null) out.nullValue();
-          else {
-            out.beginObject();
-            out.name("clazz").value(value.getClass().getName());
-            out.name("data");
-            if (value instanceof GenericMessage) {
-              GenericMessage msg = (GenericMessage)value;
-              out.beginObject();
-              out.name("msgID").value(msg.getMessageID());
-              out.name("inReplyTo").value(msg.getInReplyTo());
-              out.name("perf");
-              perfDelegate.write(out, msg.getPerformative());
-              out.name("recipient");
-              aidDelegate.write(out, msg.getRecipient());
-              out.name("sender");
-              aidDelegate.write(out, msg.getSender());
-              for (Object k: msg.keySet()) {
-                out.name(k.toString());
-                Object v = msg.get(k);
-                TypeAdapter delegate = gson.getAdapter(TypeToken.get(v.getClass()));
-                delegate.write(out, v);
-              }
-              out.endObject();
-            }
-            else delegate.write(out, value);
-            out.endObject();
-          }
-        } finally {
-          out.setSerializeNulls(false);
-        }
-      }
-
-      @Override
-      public T read(JsonReader in) throws IOException {
-        if (in.peek() == JsonToken.NULL) {
-          in.nextNull();
-          return null;
-        }
-        T rv = null;
-        Class<?> cls = null;
-        in.beginObject();
-        while (in.hasNext()) {
-          String name = in.nextName();
-          if (name.equals("clazz")) {
-            String className = in.nextString();
+        @Override
+        public void write(JsonWriter out, T value) throws IOException {
             try {
-              cls = classloader != null ? Class.forName(className, true, classloader) : Class.forName(className);
-            } catch (Exception ex) {
-              // do nothing
-            }
-          } else if (name.equals("data")) {
-            if (cls == null) rv = delegate.read(in);
-            else if (cls.equals(GenericMessage.class)) {
-              GenericMessage msg = new GenericMessage();
-              in.beginObject();
-              while (in.hasNext()) {
-                String fname = in.nextName();
-                if (in.peek() == JsonToken.NULL) {
-                  in.nextNull();
-                  continue;
+                out.setSerializeNulls(true);
+                if (value == null) out.nullValue();
+                else {
+                    out.beginObject();
+                    out.name("clazz").value(value.getClass().getName());
+                    out.name("data");
+                    if (value instanceof GenericMessage msg) {
+                        out.beginObject();
+                        out.name("msgID").value(msg.getMessageID());
+                        out.name("inReplyTo").value(msg.getInReplyTo());
+                        out.name("perf");
+                        perfDelegate.write(out, msg.getPerformative());
+                        out.name("recipient");
+                        aidDelegate.write(out, msg.getRecipient());
+                        out.name("sender");
+                        aidDelegate.write(out, msg.getSender());
+                        for (Object k : msg.keySet()) {
+                            out.name(k.toString());
+                            Object v = msg.get(k);
+                            TypeAdapter delegate = gson.getAdapter(TypeToken.get(v.getClass()));
+                            delegate.write(out, v);
+                        }
+                        out.endObject();
+                    } else delegate.write(out, value);
+                    out.endObject();
                 }
-                switch (fname) {
-                  case "msgID":
-                    msg.setMessageID(in.nextString());
-                    break;
-                  case "inReplyTo":
-                    msg.setInReplyTo(in.nextString());
-                    break;
-                  case "perf":
-                    msg.setPerformative(perfDelegate.read(in));
-                    break;
-                  case "recipient":
-                    msg.setRecipient(aidDelegate.read(in));
-                    break;
-                  case "sender":
-                    msg.setSender(aidDelegate.read(in));
-                    break;
-                  default:
-                    GenericValue v = gvDelegate.read(in);
-                    msg.put(fname, v.getValue());
-                    break;
-                }
-              }
-              in.endObject();
-              rv = (T) msg;
-            } else {
-              TypeAdapter<?> delegate1 = delegates.computeIfAbsent(cls, c -> gson.getDelegateAdapter(parent, TypeToken.get(c)));
-              rv = (T)delegate1.read(in);
+            } finally {
+                out.setSerializeNulls(false);
             }
-          } else in.skipValue();
         }
-        in.endObject();
-        return rv;
-      }
+
+        @Override
+        public T read(JsonReader in) throws IOException {
+            if (in.peek() == JsonToken.NULL) {
+                in.nextNull();
+                return null;
+            }
+            T rv = null;
+            Class<?> cls = null;
+            in.beginObject();
+            while (in.hasNext()) {
+                String name = in.nextName();
+                if (name.equals("clazz")) {
+                    String className = in.nextString();
+                    try {
+                        cls = classloader != null ? Class.forName(className, true, classloader) : Class.forName(className);
+                    } catch (Exception ex) {
+                        // do nothing
+                    }
+                } else if (name.equals("data")) {
+                    if (cls == null) rv = delegate.read(in);
+                    else if (cls.equals(GenericMessage.class)) {
+                        GenericMessage msg = new GenericMessage();
+                        in.beginObject();
+                        while (in.hasNext()) {
+                            String fname = in.nextName();
+                            if (in.peek() == JsonToken.NULL) {
+                                in.nextNull();
+                                continue;
+                            }
+                            switch (fname) {
+                                case "msgID":
+                                    msg.setMessageID(in.nextString());
+                                    break;
+                                case "inReplyTo":
+                                    msg.setInReplyTo(in.nextString());
+                                    break;
+                                case "perf":
+                                    msg.setPerformative(perfDelegate.read(in));
+                                    break;
+                                case "recipient":
+                                    msg.setRecipient(aidDelegate.read(in));
+                                    break;
+                                case "sender":
+                                    msg.setSender(aidDelegate.read(in));
+                                    break;
+                                default:
+                                    GenericValue v = gvDelegate.read(in);
+                                    msg.put(fname, v.getValue());
+                                    break;
+                            }
+                        }
+                        in.endObject();
+                        rv = (T) msg;
+                    } else {
+                        TypeAdapter<?> delegate1 = delegates.computeIfAbsent(cls, c -> gson.getDelegateAdapter(parent, TypeToken.get(c)));
+                        rv = (T) delegate1.read(in);
+                    }
+                } else in.skipValue();
+            }
+            in.endObject();
+            return rv;
+        }
 
     };
   }

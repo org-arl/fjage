@@ -13,11 +13,14 @@ package org.arl.fjage.shell;
 import org.arl.fjage.Message;
 import org.arl.fjage.Performative;
 
+import java.io.Serial;
+
 /**
  * Response to a GetFileReq, with the contents of the file or the directory.
  */
 public class GetFileRsp extends Message {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private String filename;

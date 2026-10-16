@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.io.Serial;
 import java.util.*;
 
 /**
@@ -19,6 +20,7 @@ import java.util.*;
  */
 public class GenericMessage extends Message implements Map<Object,Object> {
 
+  @Serial
   private static final long serialVersionUID = -1L;
 
   //////////// Private attributes

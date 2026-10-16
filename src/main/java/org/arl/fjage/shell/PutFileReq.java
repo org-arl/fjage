@@ -14,11 +14,14 @@ import org.arl.fjage.AgentID;
 import org.arl.fjage.Message;
 import org.arl.fjage.Performative;
 
+import java.io.Serial;
+
 /**
  * Request to write contents to a file, or delete a file.
  */
 public class PutFileReq extends Message {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private String filename = null;

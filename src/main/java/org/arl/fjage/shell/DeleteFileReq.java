@@ -14,11 +14,14 @@ import org.arl.fjage.AgentID;
 import org.arl.fjage.Message;
 import org.arl.fjage.Performative;
 
+import java.io.Serial;
+
 /**
  * Request to delete a file, or a directory (if the file name ends with a path separator).
  */
 public class DeleteFileReq extends Message {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private String filename = null;

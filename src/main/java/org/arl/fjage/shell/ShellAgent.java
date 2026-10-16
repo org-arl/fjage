@@ -34,7 +34,7 @@ public class ShellAgent extends Agent {
 
   ////// private classes
 
-  protected class InitScript {
+  protected static class InitScript {
     String name;
     File file;
     Reader reader;
@@ -154,7 +154,7 @@ public class ShellAgent extends Agent {
           try {
             exec.call();
           } catch (Throwable ex) {
-            log.log(Level.WARNING, "Exec failure: "+ex.toString(), ex);
+            log.log(Level.WARNING, "Exec failure: "+ ex, ex);
           }
           exec = null;
         }
@@ -204,17 +204,13 @@ public class ShellAgent extends Agent {
               boolean aborted = true;
               if (engine != null && engine.isBusy()) {
                 engine.abort();
-                aborted = true;
               }
               synchronized(executor) {
                 if (exec != null) {
                   exec = null;
-                  aborted = true;
                 }
               }
-              if (aborted) {
-                log.fine("ABORT");
-              }
+              log.fine("ABORT");
               s = null;
             } else {
               if (engine == null) s = null;
@@ -224,7 +220,7 @@ public class ShellAgent extends Agent {
                 final String p1 = prompt1==null ? "" : prompt1;
                 final String p2 = prompt2==null ? "\n" : "\n"+prompt2;
                 s = null;
-                if (cmd.length() > 0) {
+                if (!cmd.isEmpty()) {
                   synchronized(executor) {
                     exec = () -> {
                       log.fine("> "+cmd);
@@ -232,7 +228,7 @@ public class ShellAgent extends Agent {
                       try {
                         engine.exec(cmd);
                       } catch (Throwable ex) {
-                        log.log(Level.WARNING, "Command exec failure: "+ex.toString(), ex);
+                        log.log(Level.WARNING, "Command exec failure: "+ ex, ex);
                       }
                       return null;
                     };
@@ -257,12 +253,12 @@ public class ShellAgent extends Agent {
         else if (msg instanceof DeleteFileReq) handleDeleteFileReq((DeleteFileReq)msg);
         else if (msg.getPerformative() == Performative.REQUEST) send(new Message(msg, Performative.NOT_UNDERSTOOD));
         else {
-          log.fine(msg.getSender()+" > "+msg.toString());
+          log.fine(msg.getSender()+" > "+ msg);
           for (MessageListener ml: listeners)
             try {
               if (ml.onReceive(msg)) return;
             } catch (Throwable ex) {
-              log.log(Level.WARNING, "MessageListener: "+ex.toString(), ex);
+              log.log(Level.WARNING, "MessageListener: "+ ex, ex);
             }
           if (engine != null) engine.deliver(msg);
         }
@@ -280,7 +276,7 @@ public class ShellAgent extends Agent {
             else if (script.cls != null) engine.exec(script.cls);
           }
         } catch (Throwable ex) {
-          log.log(Level.WARNING, "Init script failure: "+ex.toString(), ex);
+          log.log(Level.WARNING, "Init script failure: "+ ex, ex);
         }
         if (ephemeral) stop();
         else if (consoleThread != null) consoleThread.start();
@@ -484,7 +480,7 @@ public class ShellAgent extends Agent {
     else if (ephemeral) sb.append("Ephemeral ");
     else sb.append("Non-interactive ");
     String lang = getLanguage();
-    if (lang != null) sb.append(lang+" ");
+    if (lang != null) sb.append(lang).append(" ");
     sb.append("shell");
     if (!enabled) sb.append(" (disabled)");
     return sb.toString();
@@ -514,13 +510,10 @@ public class ShellAgent extends Agent {
         synchronized(executor) {
           if (exec == null && file != null && file.exists()) {
             ok = true;
-            exec = new Callable<Void>() {
-              @Override
-              public Void call() {
-                log.fine("run "+file.getName());
-                engine.exec(file, req.getScriptArgs());
-                return null;
-              }
+            exec = () -> {
+              log.fine("run "+file.getName());
+              engine.exec(file, req.getScriptArgs());
+              return null;
             };
             executor.restart();
           }
@@ -615,7 +608,7 @@ public class ShellAgent extends Agent {
         }
       }
     } catch (IOException ex) {
-      log.log(Level.WARNING, "File read failure: "+ex.toString(), ex);
+      log.log(Level.WARNING, "File read failure: "+ ex, ex);
     } finally {
       if (is != null) {
         try {
@@ -693,7 +686,7 @@ public class ShellAgent extends Agent {
         rsp = new Message(req, Performative.AGREE);
       }
     } catch (IOException ex) {
-      log.log(Level.WARNING, "File write failure: "+ex.toString(), ex);
+      log.log(Level.WARNING, "File write failure: "+ ex, ex);
     } finally {
       if (os != null) {
         try {
@@ -718,7 +711,7 @@ public class ShellAgent extends Agent {
     try {
       if (deletePath(filename)) rsp = new Message(req, Performative.AGREE);
     } catch (IOException ex) {
-      log.log(Level.WARNING, "File delete failure: "+ex.toString(), ex);
+      log.log(Level.WARNING, "File delete failure: "+ ex, ex);
     }
     if (rsp == null) rsp = new Message(req, Performative.FAILURE);
     send(rsp);
@@ -753,7 +746,7 @@ public class ShellAgent extends Agent {
           try {
             entry.getValue().is.close();
           } catch (IOException ex) {
-            log.log(Level.WARNING, "Input stream close failure: "+ex.toString(), ex);
+            log.log(Level.WARNING, "Input stream close failure: "+ ex, ex);
           }
           it.remove();
         }
@@ -780,7 +773,7 @@ public class ShellAgent extends Agent {
       try {
         isCache.get(key).is.close();
       } catch (IOException ex) {
-        log.log(Level.WARNING, "Input stream close failure: "+ex.toString(), ex);
+        log.log(Level.WARNING, "Input stream close failure: "+ ex, ex);
       }
       isCache.remove(key);
     }

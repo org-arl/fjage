@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage.param;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -18,10 +19,11 @@ import java.io.Serializable;
  */
 public class NamedParameter implements Parameter, Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
-  private String name;
-  private int ord;
+  private final String name;
+  private final int ord;
 
   /**
    * Constructs named parameter with specified name.
@@ -80,15 +82,13 @@ public class NamedParameter implements Parameter, Serializable {
    */
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof NamedParameter)) return false;
-    NamedParameter p = (NamedParameter)obj;
+    if (!(obj instanceof NamedParameter p)) return false;
     String name1 = name;
     if (name1.contains(".")) name1 = name1.substring(name1.indexOf('.')+1);
     String name2 = p.name;
     if (name2.contains(".")) name2 = name2.substring(name2.indexOf('.')+1);
     if (!name1.equals(name2)) return false;
-    if (ord >= 0 && p.ord >= 0 && p.ord != ord) return false;
-    return true;
+    return ord < 0 || p.ord < 0 || p.ord == ord;
   }
 
   /**

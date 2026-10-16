@@ -20,13 +20,13 @@ public interface Parameter {
    *
    * @return ordinal value
    */
-  public int ordinal();
+  int ordinal();
 
   /**
    * Gets the parameter name.
    *
    * @return unqualified parameter name
    */
-  public String name();
+  String name();
 
 }
