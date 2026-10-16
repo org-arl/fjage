@@ -18,12 +18,16 @@ import org.arl.fjage.GenericMessage;
 import org.arl.fjage.Message;
 import org.junit.Test;
 
+import java.io.Serial;
+
 /**
  * Tests JSON encoding of primitive arrays and messages carrying them.
  */
 public class ArrayAdapterFactoryTest {
 
   public static class ArrayMsg extends Message {
+    @Serial
+    private static final long serialVersionUID = 1L;
     public byte[] b;
     public short[] s;
     public int[] i;
@@ -33,6 +37,8 @@ public class ArrayAdapterFactoryTest {
   }
 
   public static class TagMsg extends Message {
+    @Serial
+    private static final long serialVersionUID = 1L;
     public String tag;
   }
 
