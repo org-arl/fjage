@@ -416,9 +416,9 @@ public class WebServer {
    * temporarily instead of kept in memory during processing. The directory to
    * which the file is written temporarily is the same as the upload directory.
    *
-   * Files are saved under their submitted names. A name that does not resolve
-   * to a file directly inside the upload directory (e.g. one with a path
-   * component) is rejected with HTTP 400.
+   * Files are saved under their submitted names. A name that is not a plain
+   * file name (e.g. an absolute path, one with a path component, "." or "..")
+   * is rejected with HTTP 400.
    *
    * @param context context path.
    * @param dir filesystem path of directory to upload files to.
@@ -437,9 +437,9 @@ public class WebServer {
    * For files exceeding the file size threshold, the directory to which the
    * file is written temporarily is the same as the upload directory.
    *
-   * Files are saved under their submitted names. A name that does not resolve
-   * to a file directly inside the upload directory (e.g. one with a path
-   * component) is rejected with HTTP 400.
+   * Files are saved under their submitted names. A name that is not a plain
+   * file name (e.g. an absolute path, one with a path component, "." or "..")
+   * is rejected with HTTP 400.
    *
    * @param context context path.
    * @param dir filesystem path of directory to upload files to.
@@ -456,9 +456,9 @@ public class WebServer {
   /**
    * Adds a context to upload files to.
    *
-   * Files are saved under their submitted names. A name that does not resolve
-   * to a file directly inside the upload directory (e.g. one with a path
-   * component) is rejected with HTTP 400.
+   * Files are saved under their submitted names. A name that is not a plain
+   * file name (e.g. an absolute path, one with a path component, "." or "..")
+   * is rejected with HTTP 400.
    *
    * @param context context path.
    * @param dir filesystem path of directory to upload files to.
@@ -689,19 +689,21 @@ public class WebServer {
           log.log(Level.WARNING, "Unable to create output directory : " + outputDir, ex);
         }
       }
-      this.outputDir = outputDir.toAbsolutePath().normalize();
+      this.outputDir = outputDir;
     }
 
     /**
      * Resolves a submitted file name to a file directly inside the output directory.
      *
      * @param filename submitted file name.
-     * @return path to save the file to, or null if the name would resolve elsewhere or is invalid.
+     * @return path to save the file to, or null if the name is not a plain file name or is invalid.
      */
     private Path resolveUpload(String filename) {
       try {
-        Path p = outputDir.resolve(filename).normalize();
-        return outputDir.equals(p.getParent()) ? p : null;
+        Path name = outputDir.getFileSystem().getPath(filename);
+        if (name.getRoot() != null || name.getNameCount() != 1) return null;
+        String s = name.toString();
+        return s.equals(".") || s.equals("..") ? null : outputDir.resolve(name);
       } catch (InvalidPathException ex) {
         return null;
       }
@@ -722,7 +724,7 @@ public class WebServer {
         if (StringUtil.isNotBlank(filename)){
           Path outputFile = resolveUpload(filename);
           if (outputFile == null) {
-            log.warning("Rejected upload outside " + outputDir + " : " + filename);
+            log.warning("Rejected upload with invalid file name : " + filename);
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             baseRequest.setHandled(true);
             return;

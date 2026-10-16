@@ -221,7 +221,8 @@ public class WebServerTest {
     WebServer svr = newServer();
     File dir = tmp.newFolder("up");
     assertTrue(svr.addUpload("/up", dir));
-    for (String name : new String[] { "../escape.txt", "sub/x.txt", "..", "." }) {
+    String abs = new File(dir, "x.txt").getAbsolutePath();
+    for (String name : new String[] { "../escape.txt", "sub/x.txt", "sub/../x.txt", "./x.txt", abs, "..", "." }) {
       assertEquals(name, 400, upload(svr, "/up/x", name, "x"));
     }
     assertArrayEquals(new String[0], dir.list());
