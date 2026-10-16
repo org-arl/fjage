@@ -46,8 +46,13 @@ public class SerialPortConnector implements Connector {
       return p;
     });
     if (c == null) throw new IOException("Unable to open serial port " + devname);
-    // the OS error code distinguishes e.g. a busy port from missing permissions
-    if (!c.isOpen()) throw new IOException("Unable to open serial port " + devname + " (error " + c.getLastErrorCode() + ")");
+    if (!c.isOpen()) {
+      // usually an OS error code, but jSerialComm also returns 2 when the port is already open in this process
+      int err = c.getLastErrorCode();
+      if (err == 2 && new File(c.getSystemPortPath()).exists())
+        throw new IOException("Serial port " + devname + " is already open in this process");
+      throw new IOException("Unable to open serial port " + devname + " (error " + err + ")");
+    }
     com = c;
   }
 
