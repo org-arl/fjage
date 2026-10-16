@@ -584,7 +584,7 @@ public class WebServer {
     boolean published = false;
     try {
       content.setBaseResource(resources.newResource(resource));
-      content.setWelcomeFiles(new String[] {"index.html"});
+      content.setWelcomeFiles("index.html");
       content.setDirAllowed(directoryListed);
       content.setCacheControl(cacheControl);
       content.setEtags(true);

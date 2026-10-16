@@ -232,7 +232,6 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
       } catch (IOException ex) {
         Session current = getSession();
         if (current != null) current.disconnect();
-        return;
       }
     }
 

@@ -26,7 +26,7 @@ public class TcpHubConnector extends Thread implements Connector {
 
   protected int port;
   protected boolean telnet;
-  protected ServerSocket sock = null;
+  protected ServerSocket sock;
   protected OutputThread outThread = null;
   protected final List<ClientThread> clientThreads = Collections.synchronizedList(new ArrayList<>());
   protected Logger log = Logger.getLogger(getClass().getName());

@@ -20,6 +20,8 @@ import com.google.gson.stream.JsonWriter;
 import org.arl.fjage.*;
 
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -38,8 +40,11 @@ class MessageAdapterFactory implements TypeAdapterFactory {
 
   static {
     try {
-      Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
-      classloader = (ClassLoader)cls.getDeclaredConstructor().newInstance();
+      // Initialize Groovy with fjage's permissions, even for a restricted first caller.
+      classloader = AccessController.doPrivileged((PrivilegedExceptionAction<ClassLoader>) () -> {
+        Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
+        return (ClassLoader)cls.getDeclaredConstructor().newInstance();
+      });
       Logger log = Logger.getLogger(MessageAdapterFactory.class.getName());
       log.info("Groovy detected, using GroovyClassLoader");
     } catch (Exception ex) {

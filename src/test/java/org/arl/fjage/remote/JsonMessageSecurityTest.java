@@ -10,10 +10,7 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
+import java.io.Serial;
 import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -27,6 +24,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.*;
+
 /**
  * Tests that JSON conversion works when called from code that lacks
  * suppressAccessChecks, such as a sandboxed script running under a
@@ -36,17 +35,20 @@ public class JsonMessageSecurityTest {
 
   // message types used only here, so Gson builds their adapters during the test
   public static class OutMsg extends Message {
+    @Serial
     private static final long serialVersionUID = 1L;
-    private String secret = "out";
+    private final String secret = "out";
   }
 
   public static class InMsg extends Message {
+    @Serial
     private static final long serialVersionUID = 1L;
     private String secret;
   }
 
   // message type whose constructor needs a permission other than suppressAccessChecks
   public static class CheckedMsg extends Message {
+    @Serial
     private static final long serialVersionUID = 1L;
     public CheckedMsg() {
       System.getProperty("user.home");
@@ -109,7 +111,7 @@ public class JsonMessageSecurityTest {
     } catch (RuntimeException ex) {
       Throwable t = ex;
       while (t != null && !(t instanceof AccessControlException)) t = t.getCause();
-      assertTrue("expected AccessControlException, got " + ex, t != null);
+      assertNotNull("expected AccessControlException, got " + ex, t);
     }
   }
 

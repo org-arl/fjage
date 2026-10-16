@@ -11,6 +11,8 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 import java.util.logging.Logger;
 import org.arl.fjage.param.NamedParameter;
 import com.google.gson.*;
@@ -27,8 +29,11 @@ public class EnumTypeAdapter extends TypeAdapter<Object> {
   static {
     log = Logger.getLogger(EnumTypeAdapter.class.getName());
     try {
-      Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
-      classloader = (ClassLoader)cls.getDeclaredConstructor().newInstance();
+      // Initialize Groovy with fjage's permissions, even for a restricted first caller.
+      classloader = AccessController.doPrivileged((PrivilegedExceptionAction<ClassLoader>) () -> {
+        Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
+        return (ClassLoader)cls.getDeclaredConstructor().newInstance();
+      });
       log.info("Groovy detected, using GroovyClassLoader");
     } catch (Exception ex) {
       // do nothing

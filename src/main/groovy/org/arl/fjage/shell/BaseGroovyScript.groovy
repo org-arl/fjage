@@ -7,6 +7,7 @@ See file LICENSE.txt or go to http://www.opensource.org/licenses/BSD-3-Clause
 for full license details.
 
 ******************************************************************************/
+//file:noinspection unused
 
 package org.arl.fjage.shell
 
@@ -416,7 +417,7 @@ abstract class BaseGroovyScript extends Script {
             GroovyScriptEngine engine = binding.getVariable('__script_engine__')
             engine.exec(cls)
           } else {
-            Script script = ((Class<Script>)cls).newInstance()
+            Script script = ((Class<Script>)cls).getDeclaredConstructor().newInstance()
             binding.setVariable('script', cls.getName())
             binding.setVariable('args', args)
             script.setBinding(binding)
@@ -507,7 +508,7 @@ abstract class BaseGroovyScript extends Script {
    *
    * @return help text, or null if none available.
    */
-  String getHelp() {
+  String MogetHelp() {
     Binding binding = getBinding()
     if (binding.hasVariable('__doc__')) {
       def doc = binding.getVariable('__doc__')

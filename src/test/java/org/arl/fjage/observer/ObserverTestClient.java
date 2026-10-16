@@ -18,33 +18,25 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import org.eclipse.jetty.websocket.client.WebSocketClient;
+import org.arl.fjage.connectors.TestWebSocketClient;
 
 /**
  * A minimal web socket client for the observer, used by the tests. It collects
  * the events published by an observer, reassembling them on newline, since the
  * hub connector coalesces writes and frames do not align with events.
  */
-@WebSocket
-public class ObserverTestClient {
+public class ObserverTestClient extends TestWebSocketClient {
 
   private final List<JsonObject> events = new CopyOnWriteArrayList<JsonObject>();
-  private final WebSocketClient client = new WebSocketClient();
   private final StringBuilder buf = new StringBuilder();
-  private Session session = null;
 
   /** Connects to an observer. The trailing slash on the context path matters. */
   public ObserverTestClient(int port, String context) throws Exception {
-    client.start();
-    session = client.connect(this, new URI("ws://localhost:"+port+context+"/ws/"))
-                    .get();
+    connect(new URI("ws://localhost:"+port+context+"/ws/"));
   }
 
-  @OnWebSocketMessage
-  public void onMessage(String s) {
+  @Override
+  protected void onMessage(String s) {
     synchronized (buf) {
       buf.append(s);
       int i;
@@ -63,7 +55,7 @@ public class ObserverTestClient {
 
   /** Sends a control command. */
   public void send(String json) throws Exception {
-    session.getRemote().sendString(json+"\n");
+    super.send(json+"\n");
   }
 
   /** Discards everything collected so far. */
@@ -93,15 +85,6 @@ public class ObserverTestClient {
       Thread.sleep(20);
     }
     return events(action);
-  }
-
-  public void close() {
-    try {
-      if (session != null) session.close();
-      client.stop();
-    } catch (Exception ex) {
-      // nothing useful to do in a test teardown
-    }
   }
 
 }

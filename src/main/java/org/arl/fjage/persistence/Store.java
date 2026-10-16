@@ -134,6 +134,8 @@ public class Store implements Closeable {
       @SuppressWarnings("unchecked")
       T rv = (T) in.readObject();
       return rv;
+    } catch (IOException ex) {
+      return null;
     } catch (Exception ex) {
       throw new FjageException(ex.toString());
     } finally {

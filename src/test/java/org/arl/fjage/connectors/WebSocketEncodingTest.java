@@ -6,15 +6,13 @@ import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
-import org.eclipse.jetty.websocket.api.*;
-import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.junit.Test;
 
 public class WebSocketEncodingTest {
 
-  public static class Endpoint extends WebSocketAdapter {
+  public static class Endpoint extends TestWebSocketClient {
     final BlockingQueue<String> messages = new LinkedBlockingQueue<>();
-    @Override public void onWebSocketText(String text) { messages.add(text); }
+    @Override protected void onMessage(String text) { messages.add(text); }
   }
 
   @Test(timeout = 30000)
@@ -23,13 +21,11 @@ public class WebSocketEncodingTest {
       int port;
       try (ServerSocket socket = new ServerSocket(0)) { port = socket.getLocalPort(); }
       WebSocketHubConnector hub = new WebSocketHubConnector(port, "/utf8", lineMode);
-      WebSocketClient client = new WebSocketClient();
+      Endpoint endpoint = new Endpoint();
       try {
-        client.start();
-        Endpoint endpoint = new Endpoint();
-        Session session = client.connect(endpoint, URI.create("ws://localhost:" + port + "/utf8")).get(5, TimeUnit.SECONDS);
+        endpoint.connect(URI.create("ws://localhost:" + port + "/utf8"));
         byte[] bytes = "caf\u00e9 \u4e2d\u6587 \ud83d\ude42\n".getBytes(StandardCharsets.UTF_8);
-        session.getRemote().sendString(new String(bytes, StandardCharsets.UTF_8));
+        endpoint.send(new String(bytes, StandardCharsets.UTF_8));
         byte[] incoming = new byte[bytes.length];
         int offset = 0;
         while (offset < incoming.length) {
@@ -55,7 +51,7 @@ public class WebSocketEncodingTest {
         }
         assertEquals(new String(bytes, StandardCharsets.UTF_8), output.toString());
       } finally {
-        client.stop();
+        endpoint.close();
         hub.close();
         if (WebServer.hasInstance(port)) WebServer.getInstance(port).stop();
       }

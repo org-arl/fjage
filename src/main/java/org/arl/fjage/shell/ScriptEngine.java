@@ -165,6 +165,6 @@ public interface ScriptEngine {
   /**
    * Terminate the scripting engine.
    */
-  public void shutdown();
+  void shutdown();
 
 }

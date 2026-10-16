@@ -220,4 +220,37 @@ public class BlockingByteQueueTest {
     }
     return false;
   }
+  @Test
+  public void boundedWritesRejectAtomicallyAndResumeAfterConsumption() {
+    BlockingByteQueue queue = new BlockingByteQueue(4);
+    assertTrue(queue.write(new byte[] {1, 2, 3}));
+    assertFalse(queue.write(new byte[] {4, 5}));
+    assertEquals(3, queue.available());
+    assertTrue(queue.write(4));
+    assertFalse(queue.write(5));
+    assertEquals(1, queue.read());
+    assertTrue(queue.write(5));
+    assertArrayEquals(new byte[] {2, 3, 4, 5}, queue.readAvailable());
+  }
+
+  @Test(timeout = 3000)
+  public void delimitedRecordsCannotGrowBeyondTheByteLimit() throws Exception {
+    BlockingByteQueue queue = new BlockingByteQueue(4);
+    queue.write(new byte[] {1, 2, 3, 4});
+    AtomicReference<byte[]> result = new AtomicReference<>();
+    Thread reader = new Thread(() -> result.set(queue.readDelimited((byte)'\n')));
+    reader.start();
+    try {
+      assertTrue(waitForState(reader, Thread.State.WAITING));
+      assertTrue(queue.write(5));
+      reader.join(1000);
+      assertFalse(reader.isAlive());
+      assertNull(result.get());
+      assertEquals(-1, queue.available());
+    } finally {
+      queue.close();
+      reader.join(1000);
+    }
+  }
+
 }
