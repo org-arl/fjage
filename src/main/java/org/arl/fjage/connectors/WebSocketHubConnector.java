@@ -12,6 +12,7 @@ package org.arl.fjage.connectors;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
@@ -60,8 +61,8 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
    * @throws UncheckedIOException if the web server cannot be started, or the context is already in use.
    */
   public WebSocketHubConnector(int port, String context, boolean linemode) {
-    init(port, context, -1);
     this.linemode = linemode;
+    init(port, context, -1);
   }
 
   /**
@@ -83,8 +84,8 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
    * @throws UncheckedIOException if the web server cannot be started, or the context is already in use.
    */
   public WebSocketHubConnector(int port, String context, boolean linemode, int maxMsgSize) {
-    init(port, context, maxMsgSize);
     this.linemode = linemode;
+    init(port, context, maxMsgSize);
   }
 
   protected void init(int port, String context, int maxMsgSize) {
@@ -181,18 +182,35 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
     @Override
     public void run() {
-      while (true) {
-        String s;
-        if (linemode) {
-          s = pout.readLine();
-          if (s == null) break;
-        } else {
-          byte[] buf = pout.readAvailable();
-          if (buf == null) break;
-          s = new String(buf);
+      // Keep decoder state when a UTF-8 character spans queue reads.
+      Reader reader = new InputStreamReader(new InputStream() {
+        @Override
+        public int read() {
+          return pout.read();
         }
-        for (WSHandler t: wsHandlers)
-          t.write(s);
+
+        @Override
+        public int read(byte[] buf, int ofs, int len) {
+          return pout.read(buf, ofs, len);
+        }
+      }, StandardCharsets.UTF_8);
+      char[] buf = new char[4096];
+      try {
+        while (true) {
+          String s;
+          if (linemode) {
+            s = pout.readLine(StandardCharsets.UTF_8);
+            if (s == null) break;
+          } else {
+            int n = reader.read(buf);
+            if (n < 0) break;
+            s = new String(buf, 0, n);
+          }
+          for (WSHandler t: wsHandlers)
+            t.write(s);
+        }
+      } catch (IOException ex) {
+        log.log(Level.WARNING, "WebSocket output read failure", ex);
       }
     }
 
@@ -247,7 +265,7 @@ public class WebSocketHubConnector implements Connector, WebSocketCreator {
 
     @OnWebSocketMessage
     public void onMessage(String message) {
-      byte[] buf = message.getBytes();
+      byte[] buf = message.getBytes(StandardCharsets.UTF_8);
       synchronized (conn.pin) {
         for (int c : buf) {
           if (c < 0) c += 256;

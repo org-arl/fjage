@@ -27,24 +27,40 @@ class WSConnector {
     this._reconnectTime = opts.reconnectTime || DEFAULT_RECONNECT_TIME;
     this.debug = opts.debug || false;      // debug info to be logged to console?
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
-    this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
+    this._connectionState = undefined;    // last reported connection state
+    this._closed = false;
+    this._reconnectTimer = null;
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.connListeners = [];              // external listeners wanting to listen connection events
     this._websockSetup(this.url);
   }
 
   _sendConnEvent(val) {
+    if (val && this._closed) return;
+    const changed = this._connectionState !== val;
+    this._connectionState = val;
+    // Internal cleanup also runs when the public state has not changed.
+    if (this._onConnection) this._onConnection(val);
+    if (!changed) return;
     this.connListeners.forEach(l => {
-      l && {}.toString.call(l) === '[object Function]' && l(val);
+      if (this._connectionState !== val) return;
+      if (l && {}.toString.call(l) === '[object Function]') {
+        try {
+          l(val);
+        } catch (error) {
+          console.warn('Error in connection listener : ' + error);
+        }
+      }
     });
   }
 
   _websockSetup(url){
+    if (this._closed) return;
     try {
       this.sock = new WebSocket(url);
-      this.sock.onerror = this._websockReconnect.bind(this);
+      this.sock.onerror = error => { if (this.debug) console.log('Connection failed:', error); };
       this.sock.onopen = this._onWebsockOpen.bind(this);
-      this.sock.onclose = () => {this._sendConnEvent(false);};
+      this.sock.onclose = this._onWebsockClose.bind(this);
     } catch (error) {
       if(this.debug) console.log('Connection failed to ', url);
       return;
@@ -52,23 +68,27 @@ class WSConnector {
   }
 
   _websockReconnect(){
-    if (this._firstConn || !this._keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
-    if (this._firstReConn) this._sendConnEvent(false);
-    this._firstReConn = false;
+    if (this._closed || this._reconnectTimer !== null || this._firstConn || !this._keepAlive || this.sock.readyState == this.sock.CONNECTING || this.sock.readyState == this.sock.OPEN) return;
     if(this.debug) console.log('Reconnecting to ', this.sock.url);
-    setTimeout(() => {
+    this._reconnectTimer = setTimeout(() => {
+      this._reconnectTimer = null;
       this.pendingOnOpen = [];
       this._websockSetup(this.sock.url);
     }, this._reconnectTime);
   }
 
+  _onWebsockClose() {
+    if (this._closed) return;
+    this._sendConnEvent(false);
+    this._websockReconnect();
+  }
+
   _onWebsockOpen() {
+    if (this._closed) return;
     if(this.debug) console.log('Connected to ', this.sock.url);
-    this._sendConnEvent(true);
-    this.sock.onclose = this._websockReconnect.bind(this);
     this.sock.onmessage = event => { if (this._onWebsockRx) this._onWebsockRx.call(this,event.data); };
     this._firstConn = false;
-    this._firstReConn = true;
+    this._sendConnEvent(true);
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
   }
@@ -84,6 +104,7 @@ class WSConnector {
   * @param {string} s - string to be written out of the connector to the master
   */
   write(s){
+    if (this._closed) return false;
     if (!this.sock || this.sock.readyState == this.sock.CONNECTING){
       this.pendingOnOpen.push(() => {
         this.sock.send(s+'\n');
@@ -112,6 +133,15 @@ class WSConnector {
   }
 
   /**
+  * Set the internal callback for connection state and disconnect cleanup.
+  * @param {function} cb - callback invoked before public connection listeners
+  * @ignore
+  */
+  setConnectionCallback(cb){
+    this._onConnection = cb;
+  }
+
+  /**
   * Add listener for connection events
   * @param {function} listener - a listener callback that is called when the connection is opened/closed
   */
@@ -137,18 +167,20 @@ class WSConnector {
   * Close the connector
   */
   close(){
-    if (!this.sock) return;
-    if (this.sock.readyState == this.sock.CONNECTING) {
-      this.pendingOnOpen.push(() => {
-        this.sock.send('{"alive": false}\n');
-        this.sock.onclose = null;
-        this.sock.close();
-      });
-    } else if (this.sock.readyState == this.sock.OPEN) {
-      this.sock.send('{"alive": false}\n');
+    if (this._closed) return;
+    this._closed = true;
+    clearTimeout(this._reconnectTimer);
+    this._reconnectTimer = null;
+    this.pendingOnOpen.length = 0;
+    if (this.sock) {
+      this.sock.onopen = null;
+      this.sock.onerror = null;
       this.sock.onclose = null;
+      this.sock.onmessage = null;
+      if (this.sock.readyState == this.sock.OPEN) this.sock.send('{"alive": false}\n');
       this.sock.close();
     }
+    this._sendConnEvent(false);
   }
 }
 

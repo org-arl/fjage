@@ -6,6 +6,10 @@
 
 `fjagepy` is a Python gateway for the [fjåge](https://github.com/org-arl/fjage) multi-agent system framework. It enables Python applications to seamlessly communicate with fjåge agents over TCP connections, providing a Pythonic interface to the fjåge ecosystem.
 
+## Releases and release notes
+
+See the [release notes](ReleaseNotes.md) for release history and unreleased changes. Python gateway [release tags](https://github.com/org-arl/fjage/tags) use the `fjagepy-v<version>` prefix. Published packages are available on [PyPI](https://pypi.org/project/fjagepy/#history).
+
 ## Features
 
 - **Agent Communication**: Send and receive messages to/from fjåge agents
@@ -287,6 +291,8 @@ pytest test/test_gateway.py
 # Run with coverage
 pytest --cov=fjagepy
 ```
+
+Running `./gradlew test` from the main fjåge directory creates a venv in `build/pyvenv`, installs the test dependencies into it and runs these tests with it. The venv is created with `python3` (`python` on Windows), or with the interpreter named by the `PYTHON` environment variable.
 
 ### Test Requirements
 

@@ -4,16 +4,18 @@ fjåge Build Instructions
 Prerequisites
 -------------
 
-* [Gradle](https://www.gradle.org/)
+* JDK 8 - the build compiles and tests with a JDK 8 toolchain. Gradle is fetched by `./gradlew` and can run on JDK 8 to 24.
 * [Quarto](https://quarto.org/) - required for building documentation
-* [GnuPG](https://www.gnupg.org/) - required for signing artifacts for MavenCentral
+* Python 3 - required for building and testing the fjagepy gateway
+* Node.js and pnpm/npm - required for building and testing the fjage.js gateway
+* Make/C-compiler - required for building fjage.c gateway
 
 Generating JARs
 ---------------
 
 To generate project JARs:
 
-    gradle jars
+    ./gradlew jar
 
 The project and dependency JARs are located in `build/libs/`.
 
@@ -22,34 +24,16 @@ Testing the build
 
 To test the build:
 
-    gradle test
+    ./gradlew test
 
-Test report is available at `build/reports/tests/index.html`.
-
-Uploading JARs to Maven Central
--------------------------------
-**To be done by project administator only**
-
-Create `~/.gradle/gradle.properties` with the following keys:
-
-  * signing.keyId
-  * signing.password
-  * signing.secretKeyRingFile
-  * sonatypeUsername
-  * sonatypePassword
-
-To generate and upload the archives to Sonatype repository:
-
-    gradle uploadArchives
-
-Finally, go to [Sonatype](http://oss.sonatype.org/) and close, check and publish the archives.  Once published, the archive is synchronized with Maven Central in about 2 hours.
+Test report is available at `build/reports/tests/test/index.html`.
 
 Generating Javadoc
 ------------------
 
 To generate API documentation:
 
-    gradle javadoc
+    ./gradlew javadoc
 
 The javadoc is available at `build/docs/javadoc/index.html`.
 
@@ -61,30 +45,3 @@ To generate the developer's guide in HTML format:
     quarto render docs
 
 The guide is available at `docs/_site/index.html`. The guide, together with the Java, JavaScript and Python API documentation, is automatically published to [GitHub Pages](https://org-arl.github.io/fjage/) by the `docs` GitHub Actions workflow on every push to `master` that touches the documentation or sources.
-
-Publishing fjagepy package to PyPI
-----------------------------------
-
-Follow the steps below to publish the fjagepy python package to [PyPI](https://pypi.python.org/pypi)
-
-1. Install "twine":
-
-    `pip install twine`
-
-2. Install "wheel":
-
-    `pip install wheel`
-
-3. Create a source distribution:
-
-    `python gateways/python/setup.py sdist`
-
-4. Create a wheel for the project:
-
-    `python gateways/python/setup.py bdist_wheel`
-
-5. Create an account on [PyPI](https://pypi.python.org/pypi)
-
-6. Once you have an account, you can upload your distribution to PyPI using twine:
-
-    `twine upload gateways/python/dist/*`

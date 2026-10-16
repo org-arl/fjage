@@ -11,6 +11,7 @@ for full license details.
 package org.arl.fjage.shell;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 import org.arl.fjage.connectors.ConnectionListener;
 import org.arl.fjage.connectors.Connector;
@@ -43,8 +44,12 @@ public class DumbShell implements Shell {
    * @param out output stream.
    */
   public DumbShell(InputStream in, OutputStream out) {
-    this.in = new BufferedReader(new InputStreamReader(in));
-    this.out = new PrintStream(out);
+    this.in = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+    try {
+      this.out = new PrintStream(out, false, StandardCharsets.UTF_8.name());
+    } catch (UnsupportedEncodingException ex) {
+      throw new AssertionError(ex);
+    }
   }
 
   /**
@@ -53,8 +58,7 @@ public class DumbShell implements Shell {
    * @param connector input/output streams.
    */
   public DumbShell(Connector connector) {
-    this.in = new BufferedReader(new InputStreamReader(connector.getInputStream()));
-    this.out = new PrintStream(connector.getOutputStream());
+    this(connector.getInputStream(), connector.getOutputStream());
     this.connector = connector;
   }
 

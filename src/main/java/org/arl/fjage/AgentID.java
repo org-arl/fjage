@@ -152,6 +152,7 @@ public class AgentID implements Serializable, Comparable<AgentID> {
    * Sends a message to the agent represented by this id.
    *
    * @param msg message to send.
+   * @return true if the message was delivered, false otherwise.
    */
   public boolean send(Message msg) {
     if (owner == null) return false;
@@ -317,4 +318,3 @@ public class AgentID implements Serializable, Comparable<AgentID> {
   }
 
 }
-

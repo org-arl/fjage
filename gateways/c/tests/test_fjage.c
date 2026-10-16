@@ -22,6 +22,10 @@ for full license details.
 //
 ////////////////////////////////////////////////////////////////////
 
+#ifndef _WIN32
+#define _XOPEN_SOURCE 600
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -50,6 +54,29 @@ static void test_assert(const char* name, int pass) {
     failed++;
   }
 }
+
+static bool valid_gateway_id(fjage_aid_t aid) {
+  return aid != NULL && strlen(aid) == 16 && !strncmp(aid, "gateway-", 8) &&
+    strspn(aid + 8, "0123456789abcdef") == 8;
+}
+
+#ifndef _WIN32
+static void test_rs232_agent_id(void) {
+  int fd = posix_openpt(O_RDWR | O_NOCTTY);
+  bool ready = fd >= 0 && grantpt(fd) == 0 && unlockpt(fd) == 0;
+  test_assert("rs232 pseudo-terminal", ready);
+  if (ready) {
+    const char* devname = ptsname(fd);
+    fjage_gw_t gw = devname == NULL ? NULL : fjage_rs232_open(devname, 9600, "N81");
+    test_assert("rs232_open", gw != NULL);
+    if (gw != NULL) {
+      test_assert("rs232 agent ID", valid_gateway_id(fjage_get_agent_id(gw)));
+      fjage_close(gw);
+    }
+  }
+  if (fd >= 0) close(fd);
+}
+#endif
 
 static void test_summary(void) {
   printf("\n*** %d test(s) PASSED, %d test(s) FAILED ***\n\n", passed, failed);
@@ -87,6 +114,9 @@ static void* intr_thread(void* p) {
 
 int main(int argc, char* argv[]) {
   printf("\n");
+#ifndef _WIN32
+  test_rs232_agent_id();
+#endif
   fjage_gw_t gw;
   char buf[256];
   if (argc > 1) {
@@ -103,6 +133,7 @@ int main(int argc, char* argv[]) {
   fjage_aid_t myaid = fjage_get_agent_id(gw);
   if (myaid != NULL) printf("get_agent_id> %s\n", myaid);
   test_assert("get_agent_id", myaid != NULL);
+  test_assert("gateway agent ID", valid_gateway_id(myaid));
   fjage_aid_t topic = fjage_aid_topic("mytopic");
   test_assert("aid_topic", topic != NULL && !strcmp(topic, "#mytopic"));
   test_assert("is_subscribed (-)", !fjage_is_subscribed(gw, topic));
@@ -255,6 +286,15 @@ int main(int argc, char* argv[]) {
   rv = fjage_param_get_string(gw, aid, "org.arl.fjage.shell.ShellParam.language", -1, NULL, 0);
   test_assert("get param (+string/bufsize)", rv == 6);
   test_assert("get param (+string)", !strcmp(buf, "Groovy"));
+  memset(buf, '?', sizeof(buf));
+  rv = fjage_param_get_string(gw, aid, "org.arl.fjage.shell.ShellParam.language", -1, buf, 7);
+  test_assert("get param (+string/terminated)", rv == 6 && !memcmp(buf, "Groovy", 7) && buf[7] == '?');
+  memset(buf, '?', sizeof(buf));
+  rv = fjage_param_get_string(gw, aid, "org.arl.fjage.shell.ShellParam.language", -1, buf, 6);
+  test_assert("get param (+string/exact capacity)", rv == 6 && !memcmp(buf, "Groovy", 6) && buf[6] == '?');
+  memset(buf, '?', sizeof(buf));
+  rv = fjage_param_get_string(gw, aid, "org.arl.fjage.shell.ShellParam.language", -1, buf, 3);
+  test_assert("get param (+string/truncated)", rv == 3 && !memcmp(buf, "Gro", 3) && buf[3] == '?');
   test_assert("get param (+int)", fjage_param_get_int(gw, aid, "BLOCKING", -1, 0) == -1);
   test_assert("get param (+long)", fjage_param_get_long(gw, aid, "BLOCKING", -1, 0) == -1);
   test_assert("get param (+float)", fjage_param_get_float(gw, aid, "BLOCKING", -1, 0) == -1.0);

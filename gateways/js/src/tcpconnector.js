@@ -29,7 +29,9 @@ class TCPConnector {
     this.url.port = port.toString();
     this._buf = '';
     this._firstConn = true;               // if the Gateway has managed to connect to a server before
-    this._firstReConn = true;             // if the Gateway has attempted to reconnect to a server before
+    this._connectionState = undefined;    // last reported connection state
+    this._closed = false;
+    this._reconnectTimer = null;
     this.pendingOnOpen = [];              // list of callbacks make as soon as gateway is open
     this.connListeners = [];              // external listeners wanting to listen connection events
     this.debug = false;
@@ -38,8 +40,21 @@ class TCPConnector {
 
 
   _sendConnEvent(val) {
+    if (val && this._closed) return;
+    const changed = this._connectionState !== val;
+    this._connectionState = val;
+    // Internal cleanup also runs when the public state has not changed.
+    if (this._onConnection) this._onConnection(val);
+    if (!changed) return;
     this.connListeners.forEach(l => {
-      l && {}.toString.call(l) === '[object Function]' && l(val);
+      if (this._connectionState !== val) return;
+      if (l && {}.toString.call(l) === '[object Function]') {
+        try {
+          l(val);
+        } catch (error) {
+          console.warn('Error in connection listener : ' + error);
+        }
+      }
     });
   }
 
@@ -60,13 +75,13 @@ class TCPConnector {
   }
 
   _sockSetup(host, port){
-    if(!createConnection) return;
+    if(this._closed || !createConnection) return;
     try{
       this.sock = createConnection({ 'host': host, 'port': port });
       this.sock.setEncoding('utf8');
       this.sock.on('connect', this._onSockOpen.bind(this));
-      this.sock.on('error', this._sockReconnect.bind(this));
-      this.sock.on('close', () => {this._sendConnEvent(false);});
+      this.sock.on('error', error => { if (this.debug) console.log('Connection failed:', error); });
+      this.sock.on('close', this._onSockClose.bind(this));
       this.sock.send = data => {this.sock.write(data);};
     } catch (error) {
       if(this.debug) console.log('Connection failed to ', this.sock.host + ':' + this.sock.port);
@@ -75,23 +90,28 @@ class TCPConnector {
   }
 
   _sockReconnect(){
-    if (this._firstConn || !this._keepAlive || this.sock.readyState == SOCKET_OPENING || this.sock.readyState == SOCKET_OPEN) return;
-    if (this._firstReConn) this._sendConnEvent(false);
-    this._firstReConn = false;
-    setTimeout(() => {
+    if (this._closed || this._reconnectTimer !== null || this._firstConn || !this._keepAlive || this.sock.readyState == SOCKET_OPENING || this.sock.readyState == SOCKET_OPEN) return;
+    this._reconnectTimer = setTimeout(() => {
+      this._reconnectTimer = null;
       this.pendingOnOpen = [];
       this._sockSetup(this.url.hostname, this.url.port);
     }, this._reconnectTime);
   }
 
+  _onSockClose() {
+    if (this._closed) return;
+    this._sendConnEvent(false);
+    this._sockReconnect();
+  }
+
   _onSockOpen() {
-    this._sendConnEvent(true);
+    if (this._closed) return;
     this._firstConn = false;
-    this.sock.on('close', this._sockReconnect.bind(this));
     this.sock.on('data', this._processSockData.bind(this));
+    this._buf = '';
+    this._sendConnEvent(true);
     this.pendingOnOpen.forEach(cb => cb());
     this.pendingOnOpen.length = 0;
-    this._buf = '';
   }
 
   _processSockData(s){
@@ -118,6 +138,7 @@ class TCPConnector {
   * @return {boolean} - true if connect was able to write or queue the string to the underlying socket
   */
   write(s){
+    if (this._closed) return false;
     if (!this.sock || this.sock.readyState == SOCKET_OPENING){
       this.pendingOnOpen.push(() => {
         this.sock.send(s+'\n');
@@ -142,6 +163,15 @@ class TCPConnector {
   */
   setReadCallback(cb){
     if (cb && {}.toString.call(cb) === '[object Function]') this._onSockRx = cb;
+  }
+
+  /**
+  * Set the internal callback for connection state and disconnect cleanup.
+  * @param {function} cb - callback invoked before public connection listeners
+  * @ignore
+  */
+  setConnectionCallback(cb){
+    this._onConnection = cb;
   }
 
   /**
@@ -170,22 +200,22 @@ class TCPConnector {
   * Close the connector
   */
   close(){
-    if (!this.sock) return;
-    if (this.sock.readyState == SOCKET_OPENING) {
-      this.pendingOnOpen.push(() => {
-        this.sock.send('{"alive": false}\n');
-        this.sock.removeAllListeners('connect');
-        this.sock.removeAllListeners('error');
-        this.sock.removeAllListeners('close');
-        this.sock.destroy();
-      });
-    } else if (this.sock.readyState == SOCKET_OPEN) {
-      this.sock.send('{"alive": false}\n');
+    if (this._closed) return;
+    this._closed = true;
+    clearTimeout(this._reconnectTimer);
+    this._reconnectTimer = null;
+    this.pendingOnOpen.length = 0;
+    if (this.sock) {
       this.sock.removeAllListeners('connect');
-      this.sock.removeAllListeners('error');
       this.sock.removeAllListeners('close');
-      this.sock.destroy();
+      this.sock.removeAllListeners('data');
+      // Keep the error listener to handle errors from an aborted connection.
+      if (this.sock.readyState == SOCKET_OPEN) {
+        this.sock.end('{"alive": false}\n');
+        this.sock.destroySoon();
+      } else this.sock.destroy();
     }
+    this._sendConnEvent(false);
   }
 }
 
