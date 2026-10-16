@@ -20,7 +20,6 @@ import com.google.gson.stream.JsonWriter;
 import org.arl.fjage.GenericValue;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
@@ -35,6 +34,8 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
     final Class<T> rawType = (Class<T>)type.getRawType();
     if (!rawType.equals(GenericValue.class)) return null;
     final GenericValueAdapterFactory parent = this;
+    final TypeAdapter<Number> numberDelegate = gson.getAdapter(Number.class);
+    final TypeAdapter<List> listDelegate = gson.getAdapter(List.class);
     return new TypeAdapter<T>() {
 
       @Override
@@ -79,15 +80,7 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
           in.nextNull();
           return null;
         }
-        if (tok == JsonToken.NUMBER) {
-          String s = in.nextString();
-          try {
-            if (s.contains(".")) return (T) new GenericValue(Double.parseDouble(s));
-            else return (T) new GenericValue(Long.parseLong(s));
-          } catch (NumberFormatException ex) {
-            return (T) new GenericValue(null);
-          }
-        }
+        if (tok == JsonToken.NUMBER) return (T) new GenericValue(numberDelegate.read(in));
         if (tok == JsonToken.STRING) return (T) new GenericValue(in.nextString());
         if (tok == JsonToken.BOOLEAN) return (T) new GenericValue(in.nextBoolean());
         if (tok == JsonToken.BEGIN_OBJECT) {
@@ -114,25 +107,14 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
                 in.nextNull();
                 map.put(name, null);
               }
-              else if (tok2 == JsonToken.NUMBER) {
-                String s = in.nextString();
-                try {
-                  if (s.contains(".")) map.put(name, Double.parseDouble(s));
-                  else map.put(name, Long.parseLong(s));
-                } catch (NumberFormatException ex) {
-                  // ignore
-                }
-              }
+              else if (tok2 == JsonToken.NUMBER) map.put(name, numberDelegate.read(in));
               else if (tok2 == JsonToken.STRING) map.put(name, in.nextString());
               else if (tok2 == JsonToken.BOOLEAN) map.put(name, in.nextBoolean());
               else if (tok2 == JsonToken.BEGIN_OBJECT) {
                 TypeAdapter delegate = gson.getAdapter(TypeToken.get(Map.class));
                 map.put(name, delegate.read(in));
               }
-              else if (tok2 == JsonToken.BEGIN_ARRAY) {
-                TypeAdapter delegate = gson.getAdapter(TypeToken.get(List.class));
-                map.put(name, delegate.read(in));
-              }
+              else if (tok2 == JsonToken.BEGIN_ARRAY) map.put(name, listDelegate.read(in));
               else in.skipValue();
             }
           }
@@ -140,25 +122,7 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
           if (rv == null) rv = new GenericValue(map);
           return (T)rv;
         }
-        if (tok == JsonToken.BEGIN_ARRAY) {
-          List<Object> list = new ArrayList<>();
-          in.beginArray();
-          while (in.hasNext()) {
-            JsonToken tok2 = in.peek();
-            String s = in.nextString();
-            if (tok2 != JsonToken.NUMBER) list.add(s);
-            else {
-              try {
-                if (s.contains(".")) list.add(Double.parseDouble(s));
-                else list.add(Long.parseLong(s));
-              } catch (NumberFormatException ex) {
-                list.add(s);
-              }
-            }
-          }
-          in.endArray();
-          return (T) new GenericValue(list);
-        }
+        if (tok == JsonToken.BEGIN_ARRAY) return (T) new GenericValue(listDelegate.read(in));
         return null;
       }
 
