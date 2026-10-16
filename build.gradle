@@ -1,6 +1,16 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 import javax.inject.Inject
 
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    // Make Gradle's injection annotation visible to IntelliJ's build-script resolver.
+    classpath 'javax.inject:javax.inject:1'
+  }
+}
+
 plugins {
   id 'java-library'
   id 'groovy'
