@@ -10,6 +10,7 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.io.Serial;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +24,7 @@ import java.util.logging.Logger;
  */
 public class AgentLocalRandom extends Random {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   //// static stuff

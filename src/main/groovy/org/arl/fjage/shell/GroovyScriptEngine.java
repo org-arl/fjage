@@ -81,13 +81,13 @@ public class GroovyScriptEngine implements ScriptEngine {
   ////// private attributes
 
   private GroovyShell groovy;
-  private Binding binding;
+  private final Binding binding;
   private ImportCustomizer imports;
   private Shell out = null;
   private Thread busy = null;
-  private Documentation doc = new Documentation();
-  private BlockingInput input = new BlockingInput();
-  private Logger log = Logger.getLogger(getClass().getName());
+  private final Documentation doc = new Documentation();
+  private final BlockingInput input = new BlockingInput();
+  private final Logger log = Logger.getLogger(getClass().getName());
 
   ////// constructor
 
@@ -138,7 +138,7 @@ public class GroovyScriptEngine implements ScriptEngine {
 
   @Override
   public boolean isComplete(String cmd) {
-    if (cmd == null || cmd.trim().length() == 0) return true;
+    if (cmd == null || cmd.trim().isEmpty()) return true;
     try {
       groovy.parse(cmd);
       return true;
@@ -146,8 +146,7 @@ public class GroovyScriptEngine implements ScriptEngine {
       String s = ex.getMessage();
       if (s == null) return true;
       if (s.contains("unexpected token")) return false;
-      if (s.contains("expecting")) return false;
-      return true;
+      return !s.contains("expecting");
     } catch (Throwable ex) {
       return true;
     }
@@ -172,9 +171,8 @@ public class GroovyScriptEngine implements ScriptEngine {
           }
           if (binding.hasVariable(cmd)) {
             rv = binding.getVariable(cmd);
-            if (rv instanceof Closure) {
-              Closure<?> cl = (Closure<?>)rv;
-              try {
+            if (rv instanceof Closure<?> cl) {
+                try {
                 binding.setVariable("out", out);
                 rv = cl.call();
               } catch (MissingMethodException ex) {
@@ -270,7 +268,7 @@ public class GroovyScriptEngine implements ScriptEngine {
           binding.setVariable("out", out);
           binding.setVariable("script", script.getName());
           binding.setVariable("args", args);
-          Script gs = (Script)script.newInstance();
+          Script gs = (Script)script.getDeclaredConstructor().newInstance();
           gs.setBinding(binding);
           gs.run();
         } catch (Throwable ex) {

@@ -45,7 +45,7 @@ public class LogFormatter extends Formatter {
     s.append('|');
     s.append(record.getLoggerName());
     s.append('@');
-    s.append(record.getThreadID());
+    s.append(record.getLongThreadID());
     s.append(':');
     s.append(record.getSourceMethodName());
     s.append('|');
@@ -66,7 +66,10 @@ public class LogFormatter extends Formatter {
     for (StackTraceElement st: t.getStackTrace()) {
       boolean disp = true;
       for (String p: ignorePkgList)
-        if (st.getClassName().startsWith(p)) disp = false;
+          if (st.getClassName().startsWith(p)) {
+              disp = false;
+              break;
+          }
       if (disp) {
         s.append("\n   ");
         s.append(st.toString());

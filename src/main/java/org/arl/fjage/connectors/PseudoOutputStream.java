@@ -29,17 +29,17 @@ public class PseudoOutputStream extends OutputStream {
 
   @Override
   public void write(int c) throws IOException {
-    if (!q.write(c)) throw new IOException("Stream is closed");
+    if (!q.write(c)) throw new IOException("Stream is closed or buffer limit exceeded");
   }
 
   @Override
   public void write(byte[] buf) throws IOException {
-    if (!q.write(buf)) throw new IOException("Stream is closed");
+    if (!q.write(buf)) throw new IOException("Stream is closed or buffer limit exceeded");
   }
 
   @Override
   public void write(byte[] buf, int ofs, int len) throws IOException {
-    if (!q.write(buf, ofs, len)) throw new IOException("Stream is closed");
+    if (!q.write(buf, ofs, len)) throw new IOException("Stream is closed or buffer limit exceeded");
   }
 
   /**

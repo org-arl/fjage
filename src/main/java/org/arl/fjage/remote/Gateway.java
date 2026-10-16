@@ -461,12 +461,4 @@ public class Gateway implements Messenger, Closeable {
       t[i] = new AgentID(t[i], this);
     return t;
   }
-
-  ////////////// Private methods
-
-  @Override
-  public void finalize() {
-    close();
-  }
-
 }
