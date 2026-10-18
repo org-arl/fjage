@@ -1174,8 +1174,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
         if (Thread.currentThread().getId() != tid) {
           throw new FjageException("receive() should only be called from agent thread");
         }
-        final Long timeoutMs = (unit != null) ? TimeUnit.MILLISECONDS.convert(timeout, unit) : null;
-        final Long deadline = (timeoutMs != null) ? deadlineAfter(timeoutMs) : null;
+        final Long deadline = (unit != null) ? nanoTime() + unit.toNanos(timeout) : null;
         while ((getState() != AgentState.FINISHING)
             && !done
             && ((deadline == null) || (millisUntil(deadline) > 0))) {

@@ -11,18 +11,22 @@ for full license details.
 package org.arl.fjage.test;
 
 import org.arl.fjage.*;
+import org.arl.fjage.remote.Gateway;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
@@ -155,12 +159,128 @@ public class ClockStepTest {
       @Override
       protected void init() {
         add(new TickerBehavior(100, ticks::incrementAndGet));
-        platform.stepLater(250, -HOUR);
+        add(new WakerBehavior(250, () -> platform.step(-HOUR)));
       }
     });
     platform.start();
     Thread.sleep(1000);
     assertTrue("only " + ticks.get() + " ticks in 1 s", ticks.get() >= 7);
+  }
+
+  @Test
+  public void testRequestTimeoutCallbackIgnoresBackwardStep() throws InterruptedException {
+    CountDownLatch done = new CountDownLatch(1);
+    AtomicLong elapsed = new AtomicLong();
+    container.add("sink", new Agent());
+    container.add("a", new Agent() {
+      @Override
+      protected void init() {
+        add(new OneShotBehavior(() -> {
+          platform.stepLater(100, -HOUR);
+          long t0 = System.nanoTime();
+          prepareRequest(new Message(agent("sink"), Performative.REQUEST))
+              .onTimeout(500, () -> {
+                elapsed.set(msSince(t0));
+                done.countDown();
+              })
+              .send();
+        }));
+      }
+    });
+    platform.start();
+    assertTrue("onTimeout() did not fire", done.await(5, SECONDS));
+    assertTrue("onTimeout() fired after " + elapsed.get() + " ms", elapsed.get() >= 450);
+  }
+
+  @Test
+  public void testBackoffIgnoresBackwardStep() throws InterruptedException {
+    CountDownLatch done = new CountDownLatch(1);
+    AtomicLong elapsed = new AtomicLong();
+    container.add("a", new Agent() {
+      @Override
+      protected void init() {
+        long t0 = System.nanoTime();
+        add(new BackoffBehavior(500, () -> {
+          elapsed.set(msSince(t0));
+          done.countDown();
+        }));
+        add(new WakerBehavior(100, () -> platform.step(-HOUR)));
+      }
+    });
+    platform.start();
+    assertTrue("backoff did not expire", done.await(5, SECONDS));
+    assertTrue("backoff expired after " + elapsed.get() + " ms", elapsed.get() >= 450);
+  }
+
+  @Test
+  public void testPoissonIgnoresForwardStep() throws InterruptedException {
+    AtomicInteger ticks = new AtomicInteger();
+    container.add("a", new Agent() {
+      @Override
+      protected void init() {
+        // mean interval of an hour, so a tick within the test is very unlikely
+        add(new PoissonBehavior(HOUR, ticks::incrementAndGet));
+        // step the wall clock far forward, then wake the agent with an unrelated message
+        add(new WakerBehavior(100, () -> {
+          platform.step(1000 * HOUR);
+          send(new Message(getAgentID()));
+        }));
+      }
+    });
+    platform.start();
+    Thread.sleep(500);
+    assertEquals("Poisson behavior ticked early", 0, ticks.get());
+  }
+
+  @Test(timeout = 5000)
+  public void testGatewayReceiveIgnoresBackwardStep() {
+    Gateway gw = new Gateway(container);
+    try {
+      platform.start();
+      platform.stepLater(100, -HOUR);
+      long t0 = System.nanoTime();
+      assertNull(gw.receive(500));
+      long elapsed = msSince(t0);
+      assertTrue("Gateway.receive() took " + elapsed + " ms", elapsed >= 450);
+    } finally {
+      gw.close();
+    }
+  }
+
+  @Test
+  public void testFutureSubMillisecondTimeout() throws InterruptedException {
+    CountDownLatch done = new CountDownLatch(1);
+    AtomicLong elapsed = new AtomicLong(-1);
+    AtomicBoolean timedOut = new AtomicBoolean();
+    // simulated time is exact, so a sub-millisecond wait shows up as one simulator tick
+    DiscreteEventSimulator sim = new DiscreteEventSimulator();
+    Container c = new Container(sim);
+    c.add("sink", new Agent());
+    c.add("a", new Agent() {
+      @Override
+      protected void init() {
+        add(new OneShotBehavior(() -> {
+          long t0 = currentTimeMillis();
+          try {
+            prepareRequest(new Message(agent("sink"), Performative.REQUEST)).send().get(500, MICROSECONDS);
+          } catch (TimeoutException ex) {
+            timedOut.set(true);
+          } catch (Exception ex) {
+            // leave timedOut unset
+          }
+          elapsed.set(currentTimeMillis() - t0);
+          done.countDown();
+        }));
+      }
+    });
+    sim.start();
+    try {
+      assertTrue("Future.get() did not time out", done.await(5, SECONDS));
+      assertTrue(timedOut.get());
+      assertEquals("Future.get() did not wait", 1, elapsed.get());
+    } finally {
+      sim.shutdown();
+    }
   }
 
   @Test
@@ -224,8 +344,16 @@ public class ClockStepTest {
    */
   private static class SteppedClockPlatform extends Platform {
 
-    private final RealTimePlatform rt = new RealTimePlatform();
+    private final ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1, r -> {
+      Thread t = new Thread(r, "stepped-clock-timer");
+      t.setDaemon(true);
+      return t;
+    });
     private volatile long offset = 0;
+
+    SteppedClockPlatform() {
+      timer.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+    }
 
     /** Steps the wall clock by the given number of milliseconds. */
     void step(long millis) {
@@ -254,7 +382,11 @@ public class ClockStepTest {
 
     @Override
     public void schedule(TimerTask task, long millis) {
-      rt.schedule(task, millis);
+      try {
+        timer.schedule(task, Math.max(0, millis), MILLISECONDS);
+      } catch (RejectedExecutionException ex) {
+        // platform has been shut down
+      }
     }
 
     @Override
@@ -264,7 +396,17 @@ public class ClockStepTest {
 
     @Override
     public void delay(long millis) {
-      rt.delay(millis);
+      try {
+        Thread.sleep(millis);
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    @Override
+    public void shutdown() {
+      super.shutdown();
+      timer.shutdown();
     }
   }
 }
