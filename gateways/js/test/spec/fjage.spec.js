@@ -959,6 +959,75 @@ describe('A JSONMessage', function () {
     expect(jsonMsg.message.__clazz__).toBe('org.example.UnknownMessage');
     expect(jsonMsg.message.value).toBe(1);
   });
+
+  it('should reserialise decoded long arrays without losing precision', function () {
+    const cases = [
+      [[1n], 'AQAAAAAAAAA='],
+      [[1n, -1n], 'AQAAAAAAAAD//////////w=='],
+      [[1n, -1n, 0n], 'AQAAAAAAAAD//////////wAAAAAAAAAA'],
+      [[0n, 1n, -1n, 9007199254740993n, -9007199254740993n, -9223372036854775808n, 9223372036854775807n],
+        'AAAAAAAAAAABAAAAAAAAAP//////////AQAAAAAAIAD////////f/wAAAAAAAACA/////////38=']
+    ];
+    for (const [values, data] of cases) {
+      const encoded = {clazz: '[J', data};
+      const received = new JSONMessage(JSON.stringify({
+        action: 'send', message: {clazz: 'org.arl.fjage.test.TestMessage', data: {data: encoded}}
+      }));
+      const decoded = Object.freeze(received.message.data);
+      expect(decoded).toEqual(values);
+      expect(JSON.parse(received.toJSON()).message.data.data).toEqual(encoded);
+      expect(received.message.data).toBe(decoded);
+
+      const forwarded = new TestMessage();
+      forwarded.data = decoded.slice();
+      const raw = JSONMessage.createSend(forwarded).toJSON();
+      expect(JSON.parse(raw).message.data.data).toEqual(encoded);
+      expect(new JSONMessage(raw).message.data).toEqual(values);
+    }
+  });
+
+  it('should serialise nested BigInt arrays', function () {
+    const msg = new TestMessage();
+    msg.data = {values: [1n], rows: [[-1n]]};
+    const raw = JSONMessage.createSend(msg).toJSON();
+    expect(JSON.parse(raw).message.data.data).toEqual({
+      values: {clazz: '[J', data: 'AQAAAAAAAAA='},
+      rows: [{clazz: '[J', data: '//////////8='}]
+    });
+    expect(new JSONMessage(raw).message.data).toEqual(msg.data);
+  });
+
+  it('should leave empty and ordinary arrays unchanged', function () {
+    for (const data of [[], [1, 2], [1.5, null, 'text']]) {
+      const msg = new TestMessage();
+      msg.data = data;
+      const raw = JSONMessage.createSend(msg).toJSON();
+      expect(JSON.parse(raw).message.data.data).toEqual(data);
+    }
+  });
+
+  it('should reject BigInt values outside dense BigInt arrays', function () {
+    for (const data of [1n, [1n, 2], [1, 2n], [1n, , 2n], new BigInt64Array([1n])]) {
+      const msg = new TestMessage();
+      msg.data = data;
+      expect(() => JSONMessage.createSend(msg).toJSON()).toThrowError(TypeError);
+    }
+  });
+
+  it('should reject BigInt array values outside the signed 64-bit range', function () {
+    for (const value of [-9223372036854775809n, 9223372036854775808n]) {
+      const msg = new TestMessage();
+      msg.data = [value];
+      expect(() => JSONMessage.createSend(msg).toJSON()).toThrowError(RangeError);
+    }
+  });
+
+  it('should serialise large BigInt arrays', function () {
+    const msg = new TestMessage();
+    msg.data = Array.from({length: 32768}, (_, i) => BigInt(i));
+    const raw = JSONMessage.createSend(msg).toJSON();
+    expect(new JSONMessage(raw).message.data).toEqual(msg.data);
+  });
 });
 
 describe('A Message', function () {

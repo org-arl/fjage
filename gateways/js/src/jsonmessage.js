@@ -221,7 +221,7 @@ export class JSONMessage {
     if (this.creds) jsonObj.creds = this.creds;
     if (this.auth) jsonObj.auth = this.auth;
     if (this.name) jsonObj.name = this.name;
-    return JSON.stringify(jsonObj);
+    return JSON.stringify(jsonObj, _encodeBase64);
   }
 
   toString() {
@@ -248,6 +248,29 @@ export const Actions = {
 };
 
 ////// private utilities
+
+function _encodeBase64(_k, d) {
+  if (!Array.isArray(d) || d.length === 0) return d;
+  for (const value of d) {
+    if (typeof value !== 'bigint') return d;
+  }
+  const bytes = new Uint8Array(d.length * 8);
+  const view = new DataView(bytes.buffer);
+  for (let i = 0; i < d.length; i++) {
+    if (BigInt.asIntN(64, d[i]) !== d[i]) {
+      throw new RangeError('BigInt value is outside the signed 64-bit range');
+    }
+    view.setBigInt64(i * 8, d[i], true);
+  }
+  let base64;
+  if (isNode || isJsDom) base64 = Buffer.from(bytes.buffer).toString('base64');
+  else {
+    let binary = '';
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    base64 = btoa(binary);
+  }
+  return {clazz: '[J', data: base64};
+}
 
 
 /**
