@@ -13,6 +13,7 @@ package org.arl.fjage.connectors;
 import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.TimeUnit;
 
 import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortInvalidPortException;
@@ -95,9 +96,9 @@ public class SerialPortConnector implements Connector {
 
   @Override
   public boolean waitOutputCompletion(long timeout) {
-    long t = System.currentTimeMillis() + timeout;
+    long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout);
     while (com.bytesAwaitingWrite() > 0) {
-      if (System.currentTimeMillis() > t) return false;
+      if (System.nanoTime() - deadline > 0) return false;
       try {
         Thread.sleep(100);
       } catch (InterruptedException ex) {

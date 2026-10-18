@@ -3,6 +3,9 @@
 ### 2.7.1
 
 * Fix `WebServer` uploads to save files under their submitted names instead of URL-encoded names; names that are not plain file names (absolute paths, path components, `.` or `..`) are rejected with HTTP 400
+* Change `Platform.nanoTime()` to be a monotonic clock for measuring elapsed time, and fix `DiscreteEventSimulator.nanoTime()` to return nanoseconds (it returned microseconds)
+* Bugfix: Measure delays, timeouts and timed behaviors as elapsed time, so system clock changes no longer make them fire early or late; this covers `Agent.delay()`, `receive()`, `request()`, fluent request timeouts, `WakerBehavior`, `TickerBehavior`, `BackoffBehavior`, `PoissonBehavior`, `Gateway.receive()`, `ConnectionHandler` dead-peer detection and `Observer` rate limiting
+* Bugfix: `Future.get(timeout, unit)` on a fluent request now returns at its timeout when no response arrives, instead of waiting for the next message
 
 ### 2.7.0
 

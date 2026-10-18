@@ -82,10 +82,10 @@ public class ConnectionHandler extends Thread {
     out = new DataOutputStream(c.getOutputStream());
     send(ALIVE);
     if (closeOnDead) {
-      lastRxTime = System.currentTimeMillis();
+      lastRxTime = System.nanoTime();
       try {
         aliveCheckExecutor.scheduleAtFixedRate(() -> {
-          if (System.currentTimeMillis() - lastRxTime > TIMEOUT) {
+          if (System.nanoTime() - lastRxTime > TimeUnit.MILLISECONDS.toNanos(TIMEOUT)) {
             alive = false;
             log.fine("Connection dead");
             close();
@@ -104,7 +104,7 @@ public class ConnectionHandler extends Thread {
       }
       if (s == null) break;
       if (log.isLoggable(Level.FINE)) log.fine(this.getName() +" <<< "+s);
-      lastRxTime = System.currentTimeMillis();
+      lastRxTime = System.nanoTime();
       if (s.equals(SIGN_OFF)) {
         alive = false;
         log.fine("Peer signed off");

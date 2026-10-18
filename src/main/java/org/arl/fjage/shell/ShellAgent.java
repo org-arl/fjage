@@ -61,7 +61,7 @@ public class ShellAgent extends Agent {
     InputStreamCacheEntry(InputStream is, long pos) {
       this.is = is;
       this.pos = pos;
-      this.lastUsed = currentTimeMillis();
+      this.lastUsed = nanoTime();
     }
   }
 
@@ -291,11 +291,11 @@ public class ShellAgent extends Agent {
     add(new TickerBehavior(60000) {
       @Override
       public void onTick() {
-        long t = currentTimeMillis() - 60000;
+        long t = nanoTime() - 60_000_000_000L;
         Iterator<Map.Entry<String,InputStreamCacheEntry>> it = isCache.entrySet().iterator();
         while (it.hasNext()) {
           Map.Entry<String,InputStreamCacheEntry> pair = it.next();
-          if (pair.getValue().lastUsed < t) {
+          if (pair.getValue().lastUsed - t < 0) {
             try {
               pair.getValue().is.close();
             } catch (IOException ex) {
