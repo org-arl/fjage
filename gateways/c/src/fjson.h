@@ -126,8 +126,10 @@ static void jbuf_str(jbuf_t* b, const char* s) {
   jbuf_raw(b, "\"", 1);
 }
 
-/// Append a float using the fewest digits that read back as the same value. NaN and
-/// infinities are written as null and +/-Infinity, as the Java side does.
+/// Append a float using the fewest digits that read back as the same value. The
+/// mantissa always has a decimal point (1.0e-07, not 1e-07), as the Java side reads
+/// numbers without one as longs. NaN and infinities are written as null and
+/// +/-Infinity, as the Java side does.
 ///
 /// @param b              Buffer
 /// @param v              Value
@@ -140,6 +142,13 @@ static void jbuf_float(jbuf_t* b, float v) {
     for (int prec = 6; prec <= 9; prec++) {
       snprintf(s, sizeof(s), "%.*g", prec, v);
       if (strtof(s, NULL) == v) break;
+    }
+    if (strchr(s, '.') == NULL) {
+      char* e = strchr(s, 'e');
+      size_t n = e != NULL ? (size_t)(e-s) : strlen(s);
+      memmove(s+n+2, s+n, strlen(s+n)+1);
+      s[n] = '.';
+      s[n+1] = '0';
     }
     jbuf_puts(b, s);
   }
