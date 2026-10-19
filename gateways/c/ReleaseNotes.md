@@ -9,6 +9,21 @@ The C gateway has no version number of its own and is not published as a separat
 ### Fixed
 
 - Parsing an empty JSON line from the master container no longer reads out of bounds.
+- `fjage_msg_add_long()`, `fjage_msg_add_float()`, `fjage_msg_add_int()` and `fjage_msg_add_bool()` no longer overflow the message buffer for long values such as `LONG_MIN` or `FLT_MAX` ([#522](https://github.com/org-arl/fjage/issues/522)).
+- Keys, string values and envelope fields (class, recipient, service and topic names) are JSON-escaped when sent, and JSON escapes in received strings are decoded, including `\uXXXX` to UTF-8. Strings sent by Java with characters such as `<` or `&` are now returned as written.
+- Floats are sent with enough digits to read back exactly, so small values such as `1e-7` are no longer sent as `0.000000`. NaN is sent as `null` and infinities as `Infinity` / `-Infinity`.
+- Getters find fields that come after a JSON array, and array elements or nested keys are no longer mistaken for message header fields.
+- A malformed line from the master container (a `send` without a message, a response without an `id` or `inResponseTo`, or a long `id`) is ignored instead of crashing the gateway or overflowing a buffer.
+- Received messages that are not for this gateway, or that fail to parse, are freed instead of leaked.
+- Outgoing lines are written in full when the socket accepts only part of a line at a time.
+- `fjage_agent_for_service()` and `fjage_agents_for_service()` return as soon as the response arrives when no agent provides the service, instead of waiting for the timeout.
+
+### Changed
+
+- `fjage_send()` returns an error for a received (read-only) message, or when the message could not be built for lack of memory.
+- `fjage_msg_add_string()` accepts a NULL value, sent as JSON `null`.
+- `fjage_msg_add_int_array_2d()` stops at `vallen` values if the row lengths add up to more.
+- `fjage.c` includes a new header, `src/fjson.h`, with its JSON helpers. Builds that copy the C gateway sources elsewhere must copy it too. There is no new source file to compile.
 
 ## 2026-07-24
 
