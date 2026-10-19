@@ -35,6 +35,7 @@ for full license details.
 
 #include "fjage.h"
 #include "jsmn.h"
+#include "fjson.h"
 #include "b64.h"
 
 // Interruptable poll_data() is implemented using 3 APIs for platform compatibility.
@@ -72,7 +73,6 @@ for full license details.
 //// prototypes
 
 static fjage_msg_t fjage_msg_from_json(const char* json);
-static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg);
 static void fjage_msg_set_sender(fjage_msg_t msg, fjage_aid_t aid);
 static long get_time_ms(void);
 #if defined(__GNUC__) && !defined(_WIN32)
@@ -134,15 +134,6 @@ static void generate_uuid7(char *uuid){
              uuid_bytes[12], uuid_bytes[13], uuid_bytes[14], uuid_bytes[15]);
   }
 
-static int writes(int fd, const char* s) {
-  int n = strlen(s);
-#ifdef _WIN32
-  return send(fd, s, n, 0);
-#else
-  return write(fd, s, n);
-#endif
-}
-
 #ifdef _WIN32
 int gettimeofday(struct timeval * tp, struct timezone * tzp)
 {
@@ -178,6 +169,44 @@ void usleep(__int64 usec)
     CloseHandle(timer);
 }
 #endif
+
+/// Write all n bytes to a (possibly non-blocking) fd, retrying short writes.
+/// @return 0 on success, -1 on error
+static int write_all(int fd, const char* p, size_t n) {
+  while (n > 0) {
+#ifdef _WIN32
+    int rv = send(fd, p, (int)n, 0);
+    if (rv == SOCKET_ERROR) {
+      if (WSAGetLastError() != WSAEWOULDBLOCK) return -1;
+      usleep(10000);
+      continue;
+    }
+#else
+    ssize_t rv = write(fd, p, n);
+    if (rv < 0) {
+      if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) return -1;
+      usleep(10000);
+      continue;
+    }
+#endif
+    p += rv;
+    n -= rv;
+  }
+  return 0;
+}
+
+/// Write the buffer to fd and release it.
+/// @return 0 on success, -1 on error
+static int jbuf_flush(jbuf_t* b, int fd) {
+  int rv = b->err ? -1 : write_all(fd, b->s, b->len);
+  free(b->s);
+  b->s = NULL;
+  b->len = b->cap = 0;
+  b->err = false;
+  return rv;
+}
+
+static bool msg_write_json(jbuf_t* b, fjage_msg_t msg, fjage_aid_t sender);
 
 static long get_time_ms(void) {
   struct timeval tv;
@@ -445,9 +474,16 @@ static bool json_process(fjage_gw_t gw, char* json, const char* id) {
         }
       }
     } else {
-      char s[256];
-      sprintf(s, "{\"id\": \"%s\", \"inResponseTo\": \"%s\", \"answer\": false}\n", json_gets(json, tokens, "id"), action);
-      writes(fgw->sockfd, s);
+      const char* id1 = json_gets(json, tokens, "id");
+      if (id1 != NULL) {
+        jbuf_t b = {0};
+        jbuf_puts(&b, "{\"id\": ");
+        jbuf_str(&b, id1);
+        jbuf_puts(&b, ", \"inResponseTo\": ");
+        jbuf_str(&b, action);
+        jbuf_puts(&b, ", \"answer\": false}\n");
+        jbuf_flush(&b, fgw->sockfd);
+      }
     }
   }
   free(tokens);
@@ -500,28 +536,15 @@ static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
 }
 
 static void update_watch(_fjage_gw_t* fgw) {
-  int i = 0;
-  int n = 0;
-  while (fgw->sublist[i]) {
-    i += strlen(fgw->sublist+i)+1;
-    n++;
+  jbuf_t b = {0};
+  jbuf_puts(&b, "{\"action\": \"wantsMessagesFor\", \"agentIDs\": [");
+  jbuf_str(&b, fgw->aid);
+  for (int i = 0; fgw->sublist[i]; i += strlen(fgw->sublist+i)+1) {
+    jbuf_puts(&b, ", ");
+    jbuf_str(&b, fgw->sublist+i);
   }
-  char* s = (char*)malloc(i+1+2*n+strlen(fgw->aid)+3+47);
-  if (s == NULL) {
-    writes(fgw->sockfd, "{\"action\": \"wantsMessagesFor\", \"agentIDs\": []}\n");
-    return;
-  }
-  sprintf(s, "{\"action\": \"wantsMessagesFor\", \"agentIDs\": [\"%s\"", fgw->aid);
-  i = 0;
-  while (fgw->sublist[i]) {
-    strcat(s, ",\"");
-    strcat(s, fgw->sublist+i);
-    strcat(s, "\"");
-    i += strlen(fgw->sublist+i)+1;
-  }
-  strcat(s, "]}\n");
-  writes(fgw->sockfd, s);
-  free(s);
+  jbuf_puts(&b, "]}\n");
+  jbuf_flush(&b, fgw->sockfd);
 }
 
 bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic) {
@@ -754,16 +777,26 @@ int fjage_unsubscribe(fjage_gw_t gw, const fjage_aid_t topic) {
   return -1;
 }
 
+/// Send a directory query for a service, generating its request ID into uuid.
+/// @return 0 on success, -1 on error
+static int directory_query(_fjage_gw_t* fgw, const char* action, char* uuid, const char* service) {
+  generate_uuid7(uuid);
+  jbuf_t b = {0};
+  jbuf_puts(&b, "{\"action\": ");
+  jbuf_str(&b, action);
+  jbuf_puts(&b, ", \"id\": ");
+  jbuf_str(&b, uuid);
+  jbuf_puts(&b, ", \"service\": ");
+  jbuf_str(&b, service);
+  jbuf_puts(&b, "}\n");
+  return jbuf_flush(&b, fgw->sockfd);
+}
+
 fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
   if (gw == NULL) return NULL;
   _fjage_gw_t* fgw = gw;
   char uuid[UUID_LEN+1];
-  generate_uuid7(uuid);
-  writes(fgw->sockfd, "{\"action\": \"agentForService\", \"id\": \"");
-  writes(fgw->sockfd, uuid);
-  writes(fgw->sockfd, "\", \"service\": \"");
-  writes(fgw->sockfd, service);
-  writes(fgw->sockfd, "\"}\n");
+  if (directory_query(fgw, "agentForService", uuid, service) < 0) return NULL;
   fgw->aid_count = 0;
   fgw->aids = NULL;
   flush_interrupts(fgw);
@@ -776,12 +809,7 @@ int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* ag
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
   char uuid[UUID_LEN+1];
-  generate_uuid7(uuid);
-  writes(fgw->sockfd, "{\"action\": \"agentsForService\", \"id\": \"");
-  writes(fgw->sockfd, uuid);
-  writes(fgw->sockfd, "\", \"service\": \"");
-  writes(fgw->sockfd, service);
-  writes(fgw->sockfd, "\"}\n");
+  if (directory_query(fgw, "agentsForService", uuid, service) < 0) return 0;
   fgw->aid_count = 0;
   fgw->aids = NULL;
   flush_interrupts(fgw);
@@ -801,11 +829,16 @@ int fjage_send(fjage_gw_t gw, const fjage_msg_t msg) {
     return -1;
   }
   _fjage_gw_t* fgw = gw;
-  writes(fgw->sockfd, "{\"action\": \"send\", \"relay\": true, \"message\": ");
-  fjage_msg_write_json(gw, msg);
-  writes(fgw->sockfd, "}\n");
+  jbuf_t b = {0};
+  jbuf_puts(&b, "{\"action\": \"send\", \"relay\": true, \"message\": ");
+  bool ok = msg_write_json(&b, msg, fgw->aid);
+  jbuf_puts(&b, "}\n");
   fjage_msg_destroy(msg);
-  return 0;
+  if (!ok) {
+    free(b.s);
+    return -1;
+  }
+  return jbuf_flush(&b, fgw->sockfd);
 }
 
 fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long timeout) {
@@ -884,8 +917,9 @@ static fjage_aid_t clone_aid(fjage_aid_t aid) {
 //// message API
 
 #define CLAZZ_LEN       128
-#define DATA_BLK_LEN    4096
 
+// A message is write-only when created locally, and read-only (tokens != NULL)
+// when parsed from JSON.
 typedef struct {
   char id[UUID_LEN+1];
   char clazz[CLAZZ_LEN+1];
@@ -893,26 +927,27 @@ typedef struct {
   fjage_aid_t sender;
   fjage_aid_t recipient;
   char in_reply_to[UUID_LEN+1];
-  char* data;
-  int data_len;
+  jbuf_t body;          // fields added so far, each as `, "key": value`
+  char* data;           // parsed JSON text
   jsmntok_t* tokens;
   int ntokens;
 } _fjage_msg_t;
 
-static char* msg_append(fjage_msg_t msg, int n) {
-  if (msg == NULL) return NULL;
+// Performative names, indexed by fjage_perf_t.
+static const char* perf_names[] = {
+  NULL, "REQUEST", "AGREE", "REFUSE", "FAILURE", "INFORM", "CONFIRM", "DISCONFIRM",
+  "QUERY_IF", "NOT_UNDERSTOOD", "CFP", "PROPOSE", "CANCEL"
+};
+
+// Start a new field in a write-only message, returning the buffer to write its value to.
+static jbuf_t* msg_field(fjage_msg_t msg, const char* key) {
+  if (msg == NULL || key == NULL) return NULL;
   _fjage_msg_t* m = msg;
-  if (m->data_len < 0) return NULL;
-  int p = 0;
-  if (m->data != NULL) p = strlen(m->data);
-  if (p+n > m->data_len) {
-    int nn = ((p+n-1)/DATA_BLK_LEN+1)*DATA_BLK_LEN;
-    char* s = realloc(m->data, nn);
-    if (s == NULL) return NULL;
-    m->data = s;
-    m->data_len = nn;
-  }
-  return m->data+p;
+  if (m->tokens != NULL) return NULL;
+  jbuf_puts(&m->body, ", ");
+  jbuf_str(&m->body, key);
+  jbuf_puts(&m->body, ": ");
+  return &m->body;
 }
 
 static void msg_read_json(fjage_msg_t msg, const char* s) {
@@ -934,7 +969,6 @@ static void msg_read_json(fjage_msg_t msg, const char* s) {
   strcpy(m->data, s);
   jsmn_init(&parser);
   m->ntokens = jsmn_parse(&parser, m->data, strlen(m->data), m->tokens, n);
-  m->data_len = -1;
   for (int i = 1; i < m->ntokens; i += 1+m->tokens[i].size) {
     char* t = m->data + m->tokens[i].start;
     t[m->tokens[i].end-m->tokens[i].start] = 0;
@@ -986,64 +1020,33 @@ static void msg_read_json(fjage_msg_t msg, const char* s) {
   }
 }
 
-static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg) {
-  if (msg == NULL || gw == NULL) return;
-  _fjage_gw_t* fgw = gw;
+/// Write a write-only message as JSON, with the given sender.
+/// @return false if the message is read-only or could not be built in full
+static bool msg_write_json(jbuf_t* b, fjage_msg_t msg, fjage_aid_t sender) {
+  if (msg == NULL) return false;
   _fjage_msg_t* m = msg;
-  int fd = fgw->sockfd;
-  writes(fd, "{\"clazz\": \"");
-  writes(fd, m->clazz);
-  writes(fd, "\", \"data\": { \"msgID\": \"");
-  writes(fd, m->id);
-  writes(fd, "\", ");
-  switch (m->perf) {
-    case FJAGE_REQUEST:         writes(fd, "\"perf\": \"REQUEST\", ");         break;
-    case FJAGE_AGREE:           writes(fd, "\"perf\": \"AGREE\", ");           break;
-    case FJAGE_REFUSE:          writes(fd, "\"perf\": \"REFUSE\", ");          break;
-    case FJAGE_FAILURE:         writes(fd, "\"perf\": \"FAILURE\", ");         break;
-    case FJAGE_INFORM:          writes(fd, "\"perf\": \"INFORM\", ");          break;
-    case FJAGE_CONFIRM:         writes(fd, "\"perf\": \"CONFIRM\", ");         break;
-    case FJAGE_DISCONFIRM:      writes(fd, "\"perf\": \"DISCONFIRM\", ");      break;
-    case FJAGE_QUERY_IF:        writes(fd, "\"perf\": \"QUERY_IF\", ");        break;
-    case FJAGE_NOT_UNDERSTOOD:  writes(fd, "\"perf\": \"NOT_UNDERSTOOD\", ");  break;
-    case FJAGE_CFP:             writes(fd, "\"perf\": \"CFP\", ");             break;
-    case FJAGE_PROPOSE:         writes(fd, "\"perf\": \"PROPOSE\", ");         break;
-    case FJAGE_CANCEL:          writes(fd, "\"perf\": \"CANCEL\", ");          break;
-    case FJAGE_NONE:                                                           break;
+  if (m->tokens != NULL || m->body.err) return false;
+  jbuf_puts(b, "{\"clazz\": ");
+  jbuf_str(b, m->clazz);
+  jbuf_puts(b, ", \"data\": {\"msgID\": ");
+  jbuf_str(b, m->id);
+  if (m->perf > FJAGE_NONE && m->perf <= FJAGE_CANCEL) {
+    jbuf_puts(b, ", \"perf\": ");
+    jbuf_str(b, perf_names[m->perf]);
   }
   if (m->recipient != NULL) {
-    writes(fd, "\"recipient\": \"");
-    writes(fd, m->recipient);
-    writes(fd, "\", ");
+    jbuf_puts(b, ", \"recipient\": ");
+    jbuf_str(b, m->recipient);
   }
   if (m->in_reply_to[0]) {
-    writes(fd, "\"inReplyTo\": \"");
-    writes(fd, m->in_reply_to);
-    writes(fd, "\", ");
+    jbuf_puts(b, ", \"inReplyTo\": ");
+    jbuf_str(b, m->in_reply_to);
   }
-  writes(fd, "\"sender\": \"");
-  writes(fd, fgw->aid);
-  writes(fd, "\"");
-  if (m->data != NULL) {
-    writes(fd, ", ");
-    char* p = m->data;
-    int n = strlen(m->data)-2;
-    while (n > 0) {
-#ifdef _WIN32
-      int rv = send(fd, p, n, 0);
-#else
-      int rv = write(fd, p, n);
-#endif
-      if (rv < 0) {
-        if (errno == EAGAIN) usleep(10000);
-        else break;
-      } else {
-        p += rv;
-        n -= rv;
-      }
-    }
-  }
-  writes(fd, "}}");
+  jbuf_puts(b, ", \"sender\": ");
+  jbuf_str(b, sender);
+  if (m->body.len > 0) jbuf_raw(b, m->body.s, m->body.len);
+  jbuf_puts(b, "}}");
+  return !b->err;
 }
 
 fjage_msg_t fjage_msg_create(const char* clazz, fjage_perf_t perf) {
@@ -1056,8 +1059,8 @@ fjage_msg_t fjage_msg_create(const char* clazz, fjage_perf_t perf) {
   m->recipient = NULL;
   m->sender = NULL;
   m->in_reply_to[0] = 0;
+  m->body = (jbuf_t){0};
   m->data = NULL;
-  m->data_len = 0;
   m->tokens = NULL;
   m->ntokens = 0;
   return m;
@@ -1389,73 +1392,71 @@ int fjage_msg_get_float_array(fjage_msg_t msg, const char* key, float* value, in
 }
 
 void fjage_msg_add_string(fjage_msg_t msg, const char* key, const char* value) {
-  char* s = msg_append(msg, strlen(key)+strlen(value)+9);
-  if (s != NULL) sprintf(s, "\"%s\": \"%s\", ", key, value);
+  jbuf_t* b = msg_field(msg, key);
+  if (b != NULL) jbuf_str(b, value);
 }
 
 void fjage_msg_add_int(fjage_msg_t msg, const char* key, int value) {
-  char* s = msg_append(msg, strlen(key)+16);
-  if (s != NULL) sprintf(s, "\"%s\": %d, ", key, value);
+  jbuf_t* b = msg_field(msg, key);
+  if (b != NULL) jbuf_printf(b, "%d", value);
 }
 
 void fjage_msg_add_int_array_2d(fjage_msg_t msg, const char* key, int32_t* values, int vallen, int* lengths, int lenlen) {
-  char* s = msg_append(msg, strlen(key)+vallen*12+lenlen*4+16);
-  if (s != NULL) {
-    char* p = s;
-    p += sprintf(p, "\"%s\": [", key);
-    int vndx = 0;
-    for (int i = 0; i < lenlen; i++) {
-      p += sprintf(p, "[");
-      for (int j = 0; j < lengths[i]; j++) {
-        p += sprintf(p, "%d", values[vndx++]);
-        if (j < lengths[i]-1) p += sprintf(p, ",");
-      }
-      p += sprintf(p, "]");
-      if (i < lenlen-1) p += sprintf(p, ",");
-    }
-    p += sprintf(p, "], ");
+  jbuf_t* b = msg_field(msg, key);
+  if (b == NULL) return;
+  jbuf_puts(b, "[");
+  int vndx = 0;
+  for (int i = 0; i < lenlen; i++) {
+    jbuf_puts(b, i > 0 ? ",[" : "[");
+    for (int j = 0; j < lengths[i] && vndx < vallen; j++)
+      jbuf_printf(b, j > 0 ? ",%d" : "%d", (int)values[vndx++]);
+    jbuf_puts(b, "]");
   }
+  jbuf_puts(b, "]");
 }
 
 void fjage_msg_add_long(fjage_msg_t msg, const char* key, long value) {
-  char* s = msg_append(msg, strlen(key)+16);
-  if (s != NULL) sprintf(s, "\"%s\": %ld, ", key, value);
+  jbuf_t* b = msg_field(msg, key);
+  if (b != NULL) jbuf_printf(b, "%ld", value);
 }
 
 void fjage_msg_add_float(fjage_msg_t msg, const char* key, float value) {
-  char* s = msg_append(msg, strlen(key)+30);
-  if (s != NULL) sprintf(s, "\"%s\": %f, ", key, value);
+  jbuf_t* b = msg_field(msg, key);
+  if (b != NULL) jbuf_float(b, value);
 }
 
 void fjage_msg_add_bool(fjage_msg_t msg, const char* key, bool value) {
-  char* s = msg_append(msg, strlen(key)+11);
-  if (s != NULL) sprintf(s, "\"%s\": %s, ", key, value?"true":"false");
+  jbuf_t* b = msg_field(msg, key);
+  if (b != NULL) jbuf_puts(b, value ? "true" : "false");
 }
 
-static void fjage_msg_add_b64(fjage_msg_t msg, const char* key, const char* value, const char* clazz) {
-  char* s = msg_append(msg, strlen(key)+strlen(clazz)+strlen(value)+32);
-  if (s != NULL) sprintf(s, "\"%s\": {\"clazz\": \"%s\", \"data\": \"%s\"}, ", key, clazz, value);
+// Add an array as {"clazz": clazz, "data": base64}.
+static void fjage_msg_add_b64(fjage_msg_t msg, const char* key, const void* data, size_t len, const char* clazz) {
+  jbuf_t* b = msg_field(msg, key);
+  if (b == NULL) return;
+  char* s = b64_encode((const unsigned char*)data, len);
+  if (s == NULL) {
+    b->err = true;
+    return;
+  }
+  jbuf_puts(b, "{\"clazz\": ");
+  jbuf_str(b, clazz);
+  jbuf_puts(b, ", \"data\": ");
+  jbuf_str(b, s);
+  jbuf_puts(b, "}");
+  free(s);
 }
 
 void fjage_msg_add_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int len) {
-  char* s = b64_encode((unsigned char*)value, len);
-  if (s == NULL) return;
-  fjage_msg_add_b64(msg, key, s, "[B");
-  free(s);
+  fjage_msg_add_b64(msg, key, value, len, "[B");
 }
 
 void fjage_msg_add_int_array(fjage_msg_t msg, const char* key, int32_t* value, int len) {
-  char* s = b64_encode((unsigned char*)value, len*sizeof(int32_t));
-  if (s == NULL) return;
-  fjage_msg_add_b64(msg, key, s, "[I");
-  free(s);
+  fjage_msg_add_b64(msg, key, value, len*sizeof(int32_t), "[I");
 }
 
 void fjage_msg_add_float_array(fjage_msg_t msg, const char* key, float* value, int len) {
-  char* s = b64_encode((unsigned char*)value, len*sizeof(float));
-  if (s == NULL) return;
-  fjage_msg_add_b64(msg, key, s, "[F");
-  free(s);
+  fjage_msg_add_b64(msg, key, value, len*sizeof(float), "[F");
 }
 
 void fjage_msg_destroy(fjage_msg_t msg) {
@@ -1463,6 +1464,7 @@ void fjage_msg_destroy(fjage_msg_t msg) {
   _fjage_msg_t* m = msg;
   free(m->sender);
   free(m->recipient);
+  free(m->body.s);
   free(m->data);
   free(m->tokens);
   free(msg);
