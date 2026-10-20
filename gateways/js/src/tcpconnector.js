@@ -1,6 +1,7 @@
 const SOCKET_OPEN = 'open';
 const SOCKET_OPENING = 'opening';
 const DEFAULT_RECONNECT_TIME = 5000;       // ms, delay between retries to connect to the server.
+const CLOSE_TIMEOUT = 500;                 // ms, time for the server to close its side after we sign off.
 
 var createConnection;
 
@@ -211,8 +212,16 @@ class TCPConnector {
       this.sock.removeAllListeners('data');
       // Keep the error listener to handle errors from an aborted connection.
       if (this.sock.readyState == SOCKET_OPEN) {
-        this.sock.end('{"alive": false}\n');
-        this.sock.destroySoon();
+        const sock = this.sock;
+        // Drain incoming data so the socket sees the server's FIN and closes gracefully.
+        // Destroying it with unread data sends an RST, and on Windows the server then
+        // drops any of our data it has not read yet.
+        sock.resume();
+        sock.end('{"alive": false}\n');
+        // Force the close if the server keeps its side open.
+        const timer = setTimeout(() => sock.destroy(), CLOSE_TIMEOUT);
+        if (timer.unref) timer.unref();
+        sock.once('close', () => clearTimeout(timer));
       } else this.sock.destroy();
     }
     this._sendConnEvent(false);

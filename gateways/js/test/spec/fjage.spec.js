@@ -141,9 +141,9 @@ describe('Gateway lifecycle', function () {
 
   beforeEach(function () {
     jasmine.clock().install();
-    socket = jasmine.createSpyObj('socket', ['send', 'close', 'destroy', 'destroySoon', 'end', 'on', 'removeAllListeners']);
+    socket = jasmine.createSpyObj('socket', ['send', 'close', 'destroy', 'end', 'on', 'once', 'resume', 'removeAllListeners']);
     Object.assign(socket, { CONNECTING: 0, OPEN: 1, CLOSED: 3, readyState: opening });
-    for (const method of ['close', 'destroy', 'destroySoon']) {
+    for (const method of ['close', 'destroy']) {
       socket[method].and.callFake(() => { socket.readyState = closed; });
     }
     spyOn(Connector.prototype, setup).and.callFake(function () {
@@ -238,7 +238,14 @@ describe('Gateway lifecycle', function () {
     gw.close();
     expect(await receive).toBeNull();
     expect((isBrowser ? socket.send : socket.end).calls.allArgs()).toEqual([['{"alive": false}\n']]);
-    expect(isBrowser ? socket.close : socket.destroySoon).toHaveBeenCalledTimes(1);
+    if (isBrowser) expect(socket.close).toHaveBeenCalledTimes(1);
+    else {
+      // TCP waits for the server to close its side before forcing the close
+      expect(socket.resume).toHaveBeenCalledTimes(1);
+      expect(socket.destroy).not.toHaveBeenCalled();
+      jasmine.clock().tick(500);
+      expect(socket.destroy).toHaveBeenCalledTimes(1);
+    }
     expect(gw.connected).toBeFalse();
     expect(listener.calls.allArgs()).toEqual([[true], [false]]);
   });
@@ -447,6 +454,39 @@ if (isNode) {
       expect(gw.connector.sock.destroyed).toBeTrue();
     } finally {
       clearTimeout(timer);
+      if (gw) gw.close();
+      if (peer) peer.destroy();
+      await new Promise(resolve => server.close(resolve));
+    }
+  });
+
+  it('should close TCP without a reset when the server writes after the goodbye', async function () {
+    const { createServer } = await import('net');
+    const { once } = await import('events');
+    let peer, gw;
+    const server = createServer({ allowHalfOpen: true }, socket => {
+      peer = socket;
+      socket.setEncoding('utf8');
+      // Write after the goodbye, as the master container's late replies do, and then close.
+      socket.on('data', data => {
+        if (!data.includes('{"alive": false}')) return;
+        setTimeout(() => socket.write('{"alive": true}\n'), 50);
+        setTimeout(() => socket.end('{"alive": true}\n'), 100);
+      });
+    });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    try {
+      const accepted = once(server, 'connection');
+      gw = new Gateway({ hostname: '127.0.0.1', port: server.address().port, keepAlive: false });
+      await accepted;
+      if (!gw.connected) await new Promise(resolve => gw.addConnListener(state => { if (state) resolve(); }));
+      const errors = [];
+      peer.on('error', err => errors.push(err.code));
+      const peerClosed = once(peer, 'close');
+      gw.close();
+      await peerClosed;
+      expect(errors).toEqual([]);
+    } finally {
       if (gw) gw.close();
       if (peer) peer.destroy();
       await new Promise(resolve => server.close(resolve));
