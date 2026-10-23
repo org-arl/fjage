@@ -34,7 +34,7 @@ for full license details.
 #endif
 
 #include "fjage.h"
-#include "jsmn.h"
+#include "fjson.h"
 #include "b64.h"
 
 // Interruptable poll_data() is implemented using 3 APIs for platform compatibility.
@@ -71,8 +71,7 @@ for full license details.
 
 //// prototypes
 
-static fjage_msg_t fjage_msg_from_json(const char* json);
-static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg);
+static fjage_msg_t msg_from_doc(json_doc_t* doc, int obj);
 static void fjage_msg_set_sender(fjage_msg_t msg, fjage_aid_t aid);
 static long get_time_ms(void);
 #if defined(__GNUC__) && !defined(_WIN32)
@@ -134,15 +133,6 @@ static void generate_uuid7(char *uuid){
              uuid_bytes[12], uuid_bytes[13], uuid_bytes[14], uuid_bytes[15]);
   }
 
-static int writes(int fd, const char* s) {
-  int n = strlen(s);
-#ifdef _WIN32
-  return send(fd, s, n, 0);
-#else
-  return write(fd, s, n);
-#endif
-}
-
 #ifdef _WIN32
 int gettimeofday(struct timeval * tp, struct timezone * tzp)
 {
@@ -178,6 +168,44 @@ void usleep(__int64 usec)
     CloseHandle(timer);
 }
 #endif
+
+/// Write all n bytes to a (possibly non-blocking) fd, retrying short writes.
+/// @return 0 on success, -1 on error
+static int write_all(int fd, const char* p, size_t n) {
+  while (n > 0) {
+#ifdef _WIN32
+    int rv = send(fd, p, (int)n, 0);
+    if (rv == SOCKET_ERROR) {
+      if (WSAGetLastError() != WSAEWOULDBLOCK) return -1;
+      usleep(10000);
+      continue;
+    }
+#else
+    ssize_t rv = write(fd, p, n);
+    if (rv < 0) {
+      if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) return -1;
+      usleep(10000);
+      continue;
+    }
+#endif
+    p += rv;
+    n -= rv;
+  }
+  return 0;
+}
+
+/// Write the buffer to fd and release it.
+/// @return 0 on success, -1 on error
+static int jbuf_flush(jbuf_t* b, int fd) {
+  int rv = b->err ? -1 : write_all(fd, b->s, b->len);
+  free(b->s);
+  b->s = NULL;
+  b->len = b->cap = 0;
+  b->err = false;
+  return rv;
+}
+
+static bool msg_write_json(jbuf_t* b, fjage_msg_t msg, fjage_aid_t sender);
 
 static long get_time_ms(void) {
   struct timeval tv;
@@ -361,96 +389,64 @@ static fjage_msg_t mqueue_get_any(fjage_gw_t gw, const char** clazzes, int clazz
   return msg;
 }
 
-static jsmntok_t* json_parse(const char* json) {
-  jsmn_parser parser;
-  jsmn_init(&parser);
-  int n = jsmn_parse(&parser, json, strlen(json), NULL, 0);
-  if (n <= 0) return NULL;
-  jsmntok_t* tokens = malloc(n*sizeof(jsmntok_t));
-  if (tokens == NULL) return NULL;
-  jsmn_init(&parser);
-  jsmn_parse(&parser, json, strlen(json), tokens, n);
-  return tokens;
-}
-
-static int json_get(char* json, const jsmntok_t* tokens, const char* key) {
-  if (tokens == NULL || key == NULL) return -1;
-  int n = tokens[0].size;
-  int i = 1;
-  while (n > 0) {
-    char* t = json + tokens[i].start;
-    t[tokens[i].end-tokens[i].start] = 0;
-    if (!strcmp(t, key)) return i+1;
-    int skip = tokens[i].size;
-    while (skip > 0)
-      skip += tokens[++i].size - 1;
-    i++;
-    n--;
+// Handle the response to a directory query.
+static bool json_directory_rsp(_fjage_gw_t* fgw, const json_doc_t* d) {
+  const char* rsp = json_str(d, json_find(d, 0, "inResponseTo"));
+  if (rsp == NULL || fgw->aid_count != 0) return true;
+  if (!strcmp(rsp, "agentForService")) {
+    const char* s = json_str(d, json_find(d, 0, "agentID"));
+    if (s != NULL) {
+      fgw->aids = (fjage_aid_t*)fjage_aid_create(s);
+      if (fgw->aids != NULL) fgw->aid_count = 1;
+    }
+  } else if (!strcmp(rsp, "agentsForService")) {
+    int i = json_find(d, 0, "agentIDs");
+    int n = json_type(d, i) == JSMN_ARRAY ? json_size(d, i) : 0;
+    if (n == 0) return true;
+    fgw->aids = malloc(n*sizeof(fjage_aid_t));
+    if (fgw->aids == NULL) return true;
+    int end = json_next(d, i);
+    for (int j = i+1; j < end && fgw->aid_count < n; j = json_next(d, j)) {
+      const char* s = json_str(d, j);
+      if (s != NULL) fgw->aids[fgw->aid_count++] = fjage_aid_create(s);
+    }
+    if (fgw->aid_count == 0) {
+      free(fgw->aids);
+      fgw->aids = NULL;
+    }
   }
-  return -1;
+  return true;
 }
 
-static const char* json_gets(char* json, const jsmntok_t* tokens, const char* key) {
-  int i = json_get(json, tokens, key);
-  if (i < 0) return NULL;
-  char* t = json + tokens[i].start;
-  t[tokens[i].end-tokens[i].start] = 0;
-  return t;
-}
-
-static bool json_process(fjage_gw_t gw, char* json, const char* id) {
+// Handle one line from the master container. Returns true if it was the
+// response to request id, or a queued message when id is NULL.
+static bool json_process(fjage_gw_t gw, const char* line, const char* id) {
   if (gw == NULL) return false;
   _fjage_gw_t* fgw = gw;
-  jsmntok_t* tokens = json_parse(json);
-  if (tokens == NULL) return false;
+  json_doc_t d;
+  if (!json_parse(&d, line)) return false;
   bool rv = false;
-  const char* action = json_gets(json, tokens, "action");
+  const char* action = json_str(&d, json_find(&d, 0, "action"));
+  const char* id1 = json_str(&d, json_find(&d, 0, "id"));
   if (action == NULL) {
-    const char* id1 = json_gets(json, tokens, "id");
-    if (id != NULL && id1 != NULL && !strcmp(id, id1)) {
-      action = json_gets(json, tokens, "inResponseTo");
-      if (!strcmp(action, "agentForService")) {
-        const char* s = json_gets(json, tokens, "agentID");
-        if (s != NULL && fgw->aid_count == 0) {
-          fgw->aid_count = 1;
-          fgw->aids = (fjage_aid_t*)fjage_aid_create(s);
-          rv = true;
-        }
-      } else if (!strcmp(action, "agentsForService")) {
-        int i = json_get(json, tokens, "agentIDs");
-        if (i >= 0) {
-          int n = tokens[i].size;
-          fgw->aids = malloc(n*sizeof(fjage_aid_t));
-          if (fgw->aids != NULL) {
-            fgw->aid_count = n;
-            for (int j = 0; j < n; j++) {
-              char* t = json+tokens[i+j+1].start;
-              t[tokens[i+j+1].end-tokens[i+j+1].start] = 0;
-              fgw->aids[j] = fjage_aid_create(t);
-            }
-            rv = true;
-          }
-        }
-      }
-    }
-  } else {
-    if (!strcmp(action, "send")) {
-      const char* json_msg = json_gets(json, tokens, "message");
-      fjage_msg_t msg = fjage_msg_from_json(json_msg);
-      if (msg != NULL) {
-        fjage_aid_t rcpt = fjage_msg_get_recipient(msg);
-        if (rcpt != NULL && (!strcmp(rcpt, fgw->aid) || fjage_is_subscribed(fgw, rcpt))) {
-          mqueue_put(gw, msg);
-          if (id == NULL) rv = true;
-        }
-      }
-    } else {
-      char s[256];
-      sprintf(s, "{\"id\": \"%s\", \"inResponseTo\": \"%s\", \"answer\": false}\n", json_gets(json, tokens, "id"), action);
-      writes(fgw->sockfd, s);
-    }
+    if (id != NULL && id1 != NULL && !strcmp(id, id1)) rv = json_directory_rsp(fgw, &d);
+  } else if (!strcmp(action, "send")) {
+    fjage_msg_t msg = msg_from_doc(&d, json_find(&d, 0, "message"));
+    fjage_aid_t rcpt = fjage_msg_get_recipient(msg);
+    if (rcpt != NULL && (!strcmp(rcpt, fgw->aid) || fjage_is_subscribed(fgw, rcpt))) {
+      mqueue_put(gw, msg);
+      if (id == NULL) rv = true;
+    } else fjage_msg_destroy(msg);
+  } else if (id1 != NULL) {
+    jbuf_t b = {0};
+    jbuf_puts(&b, "{\"id\": ");
+    jbuf_str(&b, id1);
+    jbuf_puts(&b, ", \"inResponseTo\": ");
+    jbuf_str(&b, action);
+    jbuf_puts(&b, ", \"answer\": false}\n");
+    jbuf_flush(&b, fgw->sockfd);
   }
-  free(tokens);
+  json_free(&d);
   return rv;
 }
 
@@ -500,28 +496,15 @@ static int json_reader(fjage_gw_t gw, const char* id, long timeout) {
 }
 
 static void update_watch(_fjage_gw_t* fgw) {
-  int i = 0;
-  int n = 0;
-  while (fgw->sublist[i]) {
-    i += strlen(fgw->sublist+i)+1;
-    n++;
+  jbuf_t b = {0};
+  jbuf_puts(&b, "{\"action\": \"wantsMessagesFor\", \"agentIDs\": [");
+  jbuf_str(&b, fgw->aid);
+  for (int i = 0; fgw->sublist[i]; i += strlen(fgw->sublist+i)+1) {
+    jbuf_puts(&b, ", ");
+    jbuf_str(&b, fgw->sublist+i);
   }
-  char* s = (char*)malloc(i+1+2*n+strlen(fgw->aid)+3+47);
-  if (s == NULL) {
-    writes(fgw->sockfd, "{\"action\": \"wantsMessagesFor\", \"agentIDs\": []}\n");
-    return;
-  }
-  sprintf(s, "{\"action\": \"wantsMessagesFor\", \"agentIDs\": [\"%s\"", fgw->aid);
-  i = 0;
-  while (fgw->sublist[i]) {
-    strcat(s, ",\"");
-    strcat(s, fgw->sublist+i);
-    strcat(s, "\"");
-    i += strlen(fgw->sublist+i)+1;
-  }
-  strcat(s, "]}\n");
-  writes(fgw->sockfd, s);
-  free(s);
+  jbuf_puts(&b, "]}\n");
+  jbuf_flush(&b, fgw->sockfd);
 }
 
 bool fjage_is_subscribed(fjage_gw_t gw, const fjage_aid_t topic) {
@@ -754,16 +737,26 @@ int fjage_unsubscribe(fjage_gw_t gw, const fjage_aid_t topic) {
   return -1;
 }
 
+/// Send a directory query for a service, generating its request ID into uuid.
+/// @return 0 on success, -1 on error
+static int directory_query(_fjage_gw_t* fgw, const char* action, char* uuid, const char* service) {
+  generate_uuid7(uuid);
+  jbuf_t b = {0};
+  jbuf_puts(&b, "{\"action\": ");
+  jbuf_str(&b, action);
+  jbuf_puts(&b, ", \"id\": ");
+  jbuf_str(&b, uuid);
+  jbuf_puts(&b, ", \"service\": ");
+  jbuf_str(&b, service);
+  jbuf_puts(&b, "}\n");
+  return jbuf_flush(&b, fgw->sockfd);
+}
+
 fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service)  {
   if (gw == NULL) return NULL;
   _fjage_gw_t* fgw = gw;
   char uuid[UUID_LEN+1];
-  generate_uuid7(uuid);
-  writes(fgw->sockfd, "{\"action\": \"agentForService\", \"id\": \"");
-  writes(fgw->sockfd, uuid);
-  writes(fgw->sockfd, "\", \"service\": \"");
-  writes(fgw->sockfd, service);
-  writes(fgw->sockfd, "\"}\n");
+  if (directory_query(fgw, "agentForService", uuid, service) < 0) return NULL;
   fgw->aid_count = 0;
   fgw->aids = NULL;
   flush_interrupts(fgw);
@@ -776,12 +769,7 @@ int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* ag
   if (gw == NULL) return -1;
   _fjage_gw_t* fgw = gw;
   char uuid[UUID_LEN+1];
-  generate_uuid7(uuid);
-  writes(fgw->sockfd, "{\"action\": \"agentsForService\", \"id\": \"");
-  writes(fgw->sockfd, uuid);
-  writes(fgw->sockfd, "\", \"service\": \"");
-  writes(fgw->sockfd, service);
-  writes(fgw->sockfd, "\"}\n");
+  if (directory_query(fgw, "agentsForService", uuid, service) < 0) return 0;
   fgw->aid_count = 0;
   fgw->aids = NULL;
   flush_interrupts(fgw);
@@ -801,11 +789,16 @@ int fjage_send(fjage_gw_t gw, const fjage_msg_t msg) {
     return -1;
   }
   _fjage_gw_t* fgw = gw;
-  writes(fgw->sockfd, "{\"action\": \"send\", \"relay\": true, \"message\": ");
-  fjage_msg_write_json(gw, msg);
-  writes(fgw->sockfd, "}\n");
+  jbuf_t b = {0};
+  jbuf_puts(&b, "{\"action\": \"send\", \"relay\": true, \"message\": ");
+  bool ok = msg_write_json(&b, msg, fgw->aid);
+  jbuf_puts(&b, "}\n");
   fjage_msg_destroy(msg);
-  return 0;
+  if (!ok) {
+    free(b.s);
+    return -1;
+  }
+  return jbuf_flush(&b, fgw->sockfd);
 }
 
 fjage_msg_t fjage_receive(fjage_gw_t gw, const char* clazz, const char* id, long timeout) {
@@ -884,8 +877,9 @@ static fjage_aid_t clone_aid(fjage_aid_t aid) {
 //// message API
 
 #define CLAZZ_LEN       128
-#define DATA_BLK_LEN    4096
 
+// A message is write-only when created locally, and read-only (doc.js != NULL)
+// when parsed from JSON.
 typedef struct {
   char id[UUID_LEN+1];
   char clazz[CLAZZ_LEN+1];
@@ -893,157 +887,55 @@ typedef struct {
   fjage_aid_t sender;
   fjage_aid_t recipient;
   char in_reply_to[UUID_LEN+1];
-  char* data;
-  int data_len;
-  jsmntok_t* tokens;
-  int ntokens;
+  jbuf_t body;          // fields added so far, each as `, "key": value`
+  json_doc_t doc;       // parsed JSON line holding the message
+  int data_tok;         // token of the "data" object in doc
 } _fjage_msg_t;
 
-static char* msg_append(fjage_msg_t msg, int n) {
-  if (msg == NULL) return NULL;
+// Performative names, indexed by fjage_perf_t.
+static const char* perf_names[] = {
+  NULL, "REQUEST", "AGREE", "REFUSE", "FAILURE", "INFORM", "CONFIRM", "DISCONFIRM",
+  "QUERY_IF", "NOT_UNDERSTOOD", "CFP", "PROPOSE", "CANCEL"
+};
+
+// Start a new field in a write-only message, returning the buffer to write its value to.
+static jbuf_t* msg_field(fjage_msg_t msg, const char* key) {
+  if (msg == NULL || key == NULL) return NULL;
   _fjage_msg_t* m = msg;
-  if (m->data_len < 0) return NULL;
-  int p = 0;
-  if (m->data != NULL) p = strlen(m->data);
-  if (p+n > m->data_len) {
-    int nn = ((p+n-1)/DATA_BLK_LEN+1)*DATA_BLK_LEN;
-    char* s = realloc(m->data, nn);
-    if (s == NULL) return NULL;
-    m->data = s;
-    m->data_len = nn;
-  }
-  return m->data+p;
+  if (m->doc.js != NULL) return NULL;
+  jbuf_puts(&m->body, ", ");
+  jbuf_str(&m->body, key);
+  jbuf_puts(&m->body, ": ");
+  return &m->body;
 }
 
-static void msg_read_json(fjage_msg_t msg, const char* s) {
-  if (msg == NULL) return;
+/// Write a write-only message as JSON, with the given sender.
+/// @return false if the message is read-only or could not be built in full
+static bool msg_write_json(jbuf_t* b, fjage_msg_t msg, fjage_aid_t sender) {
+  if (msg == NULL) return false;
   _fjage_msg_t* m = msg;
-  if (m->tokens != NULL || m->data != NULL) return;
-  jsmn_parser parser;
-  jsmn_init(&parser);
-  int n = jsmn_parse(&parser, s, strlen(s), NULL, 0);
-  if (n < 0) return;
-  m->tokens = malloc(n*sizeof(jsmntok_t));
-  if (m->tokens == NULL) return;
-  m->data = malloc(strlen(s)+1);
-  if (m->data == NULL) {
-    free(m->tokens);
-    m->tokens = NULL;
-    return;
-  }
-  strcpy(m->data, s);
-  jsmn_init(&parser);
-  m->ntokens = jsmn_parse(&parser, m->data, strlen(m->data), m->tokens, n);
-  m->data_len = -1;
-  for (int i = 1; i < m->ntokens; i += 1+m->tokens[i].size) {
-    char* t = m->data + m->tokens[i].start;
-    t[m->tokens[i].end-m->tokens[i].start] = 0;
-    if (!strcmp(t, "clazz") && m->clazz[0] == 0) {
-      t = m->data + m->tokens[i+1].start;
-      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
-      strncpy(m->clazz, t, CLAZZ_LEN);
-      m->clazz[CLAZZ_LEN] = 0;
-      m->tokens[i].type = 0;
-    } else if (!strcmp(t, "msgID")) {
-      t = m->data + m->tokens[i+1].start;
-      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
-      strncpy(m->id, t, UUID_LEN);
-      m->id[UUID_LEN] = 0;
-      m->tokens[i].type = 0;
-    } else if (!strcmp(t, "inReplyTo")) {
-      t = m->data + m->tokens[i+1].start;
-      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
-      strncpy(m->in_reply_to, t, UUID_LEN);
-      m->in_reply_to[UUID_LEN] = 0;
-      m->tokens[i].type = 0;
-    } else if (!strcmp(t, "sender")) {
-      t = m->data + m->tokens[i+1].start;
-      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
-      fjage_msg_set_sender(msg, (fjage_aid_t)t);
-      m->tokens[i].type = 0;
-    } else if (!strcmp(t, "recipient")) {
-      t = m->data + m->tokens[i+1].start;
-      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
-      fjage_msg_set_recipient(msg, (fjage_aid_t)t);
-      m->tokens[i].type = 0;
-    } else if (!strcmp(t, "perf")) {
-      t = m->data + m->tokens[i+1].start;
-      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
-      if (!strcmp(t, "REQUEST")) ((_fjage_msg_t*)msg)->perf = FJAGE_REQUEST;
-      else if (!strcmp(t, "AGREE")) ((_fjage_msg_t*)msg)->perf = FJAGE_AGREE;
-      else if (!strcmp(t, "REFUSE")) ((_fjage_msg_t*)msg)->perf = FJAGE_REFUSE;
-      else if (!strcmp(t, "FAILURE")) ((_fjage_msg_t*)msg)->perf = FJAGE_FAILURE;
-      else if (!strcmp(t, "INFORM")) ((_fjage_msg_t*)msg)->perf = FJAGE_INFORM;
-      else if (!strcmp(t, "CONFIRM")) ((_fjage_msg_t*)msg)->perf = FJAGE_CONFIRM;
-      else if (!strcmp(t, "DISCONFIRM")) ((_fjage_msg_t*)msg)->perf = FJAGE_DISCONFIRM;
-      else if (!strcmp(t, "QUERY_IF")) ((_fjage_msg_t*)msg)->perf = FJAGE_QUERY_IF;
-      else if (!strcmp(t, "NOT_UNDERSTOOD")) ((_fjage_msg_t*)msg)->perf = FJAGE_NOT_UNDERSTOOD;
-      else if (!strcmp(t, "CFP")) ((_fjage_msg_t*)msg)->perf = FJAGE_CFP;
-      else if (!strcmp(t, "PROPOSE")) ((_fjage_msg_t*)msg)->perf = FJAGE_PROPOSE;
-      else if (!strcmp(t, "CANCEL")) ((_fjage_msg_t*)msg)->perf = FJAGE_CANCEL;
-      m->tokens[i].type = 0;
-    }
-  }
-}
-
-static void fjage_msg_write_json(fjage_gw_t gw, fjage_msg_t msg) {
-  if (msg == NULL || gw == NULL) return;
-  _fjage_gw_t* fgw = gw;
-  _fjage_msg_t* m = msg;
-  int fd = fgw->sockfd;
-  writes(fd, "{\"clazz\": \"");
-  writes(fd, m->clazz);
-  writes(fd, "\", \"data\": { \"msgID\": \"");
-  writes(fd, m->id);
-  writes(fd, "\", ");
-  switch (m->perf) {
-    case FJAGE_REQUEST:         writes(fd, "\"perf\": \"REQUEST\", ");         break;
-    case FJAGE_AGREE:           writes(fd, "\"perf\": \"AGREE\", ");           break;
-    case FJAGE_REFUSE:          writes(fd, "\"perf\": \"REFUSE\", ");          break;
-    case FJAGE_FAILURE:         writes(fd, "\"perf\": \"FAILURE\", ");         break;
-    case FJAGE_INFORM:          writes(fd, "\"perf\": \"INFORM\", ");          break;
-    case FJAGE_CONFIRM:         writes(fd, "\"perf\": \"CONFIRM\", ");         break;
-    case FJAGE_DISCONFIRM:      writes(fd, "\"perf\": \"DISCONFIRM\", ");      break;
-    case FJAGE_QUERY_IF:        writes(fd, "\"perf\": \"QUERY_IF\", ");        break;
-    case FJAGE_NOT_UNDERSTOOD:  writes(fd, "\"perf\": \"NOT_UNDERSTOOD\", ");  break;
-    case FJAGE_CFP:             writes(fd, "\"perf\": \"CFP\", ");             break;
-    case FJAGE_PROPOSE:         writes(fd, "\"perf\": \"PROPOSE\", ");         break;
-    case FJAGE_CANCEL:          writes(fd, "\"perf\": \"CANCEL\", ");          break;
-    case FJAGE_NONE:                                                           break;
+  if (m->doc.js != NULL || m->body.err) return false;
+  jbuf_puts(b, "{\"clazz\": ");
+  jbuf_str(b, m->clazz);
+  jbuf_puts(b, ", \"data\": {\"msgID\": ");
+  jbuf_str(b, m->id);
+  if (m->perf > FJAGE_NONE && m->perf <= FJAGE_CANCEL) {
+    jbuf_puts(b, ", \"perf\": ");
+    jbuf_str(b, perf_names[m->perf]);
   }
   if (m->recipient != NULL) {
-    writes(fd, "\"recipient\": \"");
-    writes(fd, m->recipient);
-    writes(fd, "\", ");
+    jbuf_puts(b, ", \"recipient\": ");
+    jbuf_str(b, m->recipient);
   }
   if (m->in_reply_to[0]) {
-    writes(fd, "\"inReplyTo\": \"");
-    writes(fd, m->in_reply_to);
-    writes(fd, "\", ");
+    jbuf_puts(b, ", \"inReplyTo\": ");
+    jbuf_str(b, m->in_reply_to);
   }
-  writes(fd, "\"sender\": \"");
-  writes(fd, fgw->aid);
-  writes(fd, "\"");
-  if (m->data != NULL) {
-    writes(fd, ", ");
-    char* p = m->data;
-    int n = strlen(m->data)-2;
-    while (n > 0) {
-#ifdef _WIN32
-      int rv = send(fd, p, n, 0);
-#else
-      int rv = write(fd, p, n);
-#endif
-      if (rv < 0) {
-        if (errno == EAGAIN) usleep(10000);
-        else break;
-      } else {
-        p += rv;
-        n -= rv;
-      }
-    }
-  }
-  writes(fd, "}}");
+  jbuf_puts(b, ", \"sender\": ");
+  jbuf_str(b, sender);
+  if (m->body.len > 0) jbuf_raw(b, m->body.s, m->body.len);
+  jbuf_puts(b, "}}");
+  return !b->err;
 }
 
 fjage_msg_t fjage_msg_create(const char* clazz, fjage_perf_t perf) {
@@ -1056,18 +948,39 @@ fjage_msg_t fjage_msg_create(const char* clazz, fjage_perf_t perf) {
   m->recipient = NULL;
   m->sender = NULL;
   m->in_reply_to[0] = 0;
-  m->data = NULL;
-  m->data_len = 0;
-  m->tokens = NULL;
-  m->ntokens = 0;
+  m->body = (jbuf_t){0};
+  m->doc = (json_doc_t){0};
+  m->data_tok = -1;
   return m;
 }
 
-static fjage_msg_t fjage_msg_from_json(const char* json) {
-  fjage_msg_t msg = fjage_msg_create(NULL, FJAGE_NONE);
-  if (msg == NULL) return NULL;
-  msg_read_json(msg, json);
-  return msg;
+// Make a read-only message from object obj of doc, {"clazz": ..., "data": {...}},
+// taking over the doc. Returns NULL if obj is not a message.
+static fjage_msg_t msg_from_doc(json_doc_t* doc, int obj) {
+  _fjage_msg_t* m = fjage_msg_create(NULL, FJAGE_NONE);
+  if (m == NULL) {
+    json_free(doc);
+    return NULL;
+  }
+  m->doc = *doc;
+  *doc = (json_doc_t){0};
+  const json_doc_t* d = &m->doc;
+  int data = json_find(d, obj, "data");
+  if (json_type(d, data) != JSMN_OBJECT) {
+    fjage_msg_destroy(m);
+    return NULL;
+  }
+  m->data_tok = data;
+  const char* s = json_str(d, json_find(d, obj, "clazz"));
+  if (s != NULL) strncpy(m->clazz, s, CLAZZ_LEN);
+  if ((s = json_str(d, json_find(d, data, "msgID"))) != NULL) strncpy(m->id, s, UUID_LEN);
+  fjage_msg_set_in_reply_to(m, json_str(d, json_find(d, data, "inReplyTo")));
+  fjage_msg_set_sender(m, (fjage_aid_t)json_str(d, json_find(d, data, "sender")));
+  fjage_msg_set_recipient(m, (fjage_aid_t)json_str(d, json_find(d, data, "recipient")));
+  if ((s = json_str(d, json_find(d, data, "perf"))) != NULL)
+    for (int p = FJAGE_REQUEST; p <= FJAGE_CANCEL; p++)
+      if (!strcmp(s, perf_names[p])) m->perf = (fjage_perf_t)p;
+  return m;
 }
 
 const char* fjage_msg_get_id(fjage_msg_t msg) {
@@ -1129,123 +1042,57 @@ void fjage_msg_set_in_reply_to(fjage_msg_t msg, const char* id) {
   m->in_reply_to[UUID_LEN] = 0;
 }
 
+// Parsed JSON of a read-only message, or NULL.
+static const json_doc_t* msg_doc(fjage_msg_t msg) {
+  _fjage_msg_t* m = msg;
+  return (m != NULL && m->doc.js != NULL) ? &m->doc : NULL;
+}
+
+// Header fields, which have their own getters.
+static const char* header_keys[] = { "msgID", "perf", "sender", "recipient", "inReplyTo", NULL };
+
+// Token of the value of a field in a read-only message, or -1 if absent or a
+// header field.
+static int msg_find(fjage_msg_t msg, const char* key) {
+  const json_doc_t* d = msg_doc(msg);
+  if (d == NULL || key == NULL) return -1;
+  for (const char** h = header_keys; *h != NULL; h++)
+    if (!strcmp(key, *h)) return -1;
+  return json_find(d, ((_fjage_msg_t*)msg)->data_tok, key);
+}
+
 const char* fjage_msg_get_string(fjage_msg_t msg, const char* key) {
-  if (msg == NULL) return NULL;
-  _fjage_msg_t* m = msg;
-  int skip = -1;
-  for (int i = 1; i < m->ntokens-1; i += 2) {
-    char* t = m->data + m->tokens[i].start;
-    if (skip <= 0 && m->tokens[i].type == JSMN_STRING && (m->tokens[i+1].type == JSMN_STRING || m->tokens[i+1].type == JSMN_PRIMITIVE) && !strcmp(key, t)) {
-      t = m->data + m->tokens[i+1].start;
-      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
-      if (m->tokens[i+1].type == JSMN_PRIMITIVE && !strcmp(t, "null")) t = NULL;
-      return t;
-    }
-    if (skip > 0) skip--;
-    if (m->tokens[i+1].type == JSMN_OBJECT) {
-      if (skip < 0) skip = 0;
-      else skip += m->tokens[i+1].size;
-    }
-  }
-  return NULL;
+  int i = msg_find(msg, key);
+  return i < 0 ? NULL : json_text(msg_doc(msg), i);
 }
 
+// Base64 data of an array field encoded as {"clazz": ..., "data": ...}.
 static const char* fjage_msg_get_data(fjage_msg_t msg, const char* key) {
-  if (msg == NULL) return NULL;
-  _fjage_msg_t* m = msg;
-  int skip = -1;
-  int acq = 0;
-  for (int i = 1; i < m->ntokens-1; i += 2) {
-    char* t = m->data + m->tokens[i].start;
-    if (!acq && skip == 0 && m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_OBJECT && !strcmp(t, key)) acq = 1;
-    else if (acq && m->tokens[i+1].type == JSMN_STRING && !strcmp(t, "data")) {
-      t = m->data + m->tokens[i+1].start;
-      t[m->tokens[i+1].end-m->tokens[i+1].start] = 0;
-      if (m->tokens[i+1].type == JSMN_PRIMITIVE && !strcmp(t, "null")) t = NULL;
-      return t;
-    }
-    if (skip > 0) {
-      skip--;
-      if (skip == 0 && acq) return NULL;
-    }
-    if (m->tokens[i+1].type == JSMN_ARRAY) i += m->tokens[i+1].size;
-    else if (m->tokens[i+1].type == JSMN_OBJECT) {
-      if (skip < 0) skip = 0;
-      else skip += m->tokens[i+1].size;
-    }
-  }
-  return NULL;
+  const json_doc_t* d = msg_doc(msg);
+  int i = msg_find(msg, key);
+  return i < 0 ? NULL : json_str(d, json_find(d, i, "data"));
 }
 
-static const int fjage_msg_get_array(fjage_msg_t msg, const char* key, const char* format, void* value, int sz, int maxlen) {
-  if (msg == NULL) return -1;
-  _fjage_msg_t* m = msg;
-  int skip = -1;
-  for (int i = 1; i < m->ntokens-1; i += 2) {
-    char* t = m->data + m->tokens[i].start;
-    if (skip == 0 && m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_ARRAY && !strcmp(t, key)) {
-      for (int j = 0; j < m->tokens[i+1].size && j < maxlen; j++) {
-        char* tt = m->data + m->tokens[i+2+j].start;
-        if (sz > 1) sscanf(tt, format, value);
-        else {
-          int x;
-          sscanf(tt, "%d", &x);
-          *((uint8_t*)value) = (uint8_t)(x & 0xff);
-        }
-#ifdef _WIN32
-        ((uint8_t*)value) += sz;
-#else
-        value += sz;
-#endif
-      }
-      return m->tokens[i+1].size;
-    }
-    if (skip > 0) skip--;
-    if (m->tokens[i+1].type == JSMN_ARRAY) i += m->tokens[i+1].size;
-    else if (m->tokens[i+1].type == JSMN_OBJECT) {
-      if (skip < 0) skip = 0;
-      else skip += m->tokens[i+1].size;
+// Read an array field encoded as a JSON list into value, sz bytes per element.
+static int fjage_msg_get_array(fjage_msg_t msg, const char* key, const char* format, void* value, int sz, int maxlen) {
+  const json_doc_t* d = msg_doc(msg);
+  int i = msg_find(msg, key);
+  if (i < 0 || json_type(d, i) != JSMN_ARRAY) return -1;
+  uint8_t* p = value;
+  int n = 0;
+  int end = json_next(d, i);
+  for (int j = i+1; j < end; j = json_next(d, j), n++) {
+    if (p == NULL || n >= maxlen) continue;
+    const char* t = json_text(d, j);
+    if (t == NULL) t = "";
+    if (sz > 1) sscanf(t, format, p+n*sz);
+    else {
+      int x = 0;
+      sscanf(t, "%d", &x);
+      p[n] = (uint8_t)(x & 0xff);
     }
   }
-  return -1;
-}
-
-static int token_span(const jsmntok_t* tokens, int index) {
-  int count = 1;
-  if (tokens[index].type == JSMN_ARRAY) {
-    int child = index + 1;
-    for (int i = 0; i < tokens[index].size; i++) {
-      int span = token_span(tokens, child);
-      count += span;
-      child += span;
-    }
-  } else if (tokens[index].type == JSMN_OBJECT) {
-    int child = index + 1;
-    for (int i = 0; i < tokens[index].size; i++) {
-      int key_span = token_span(tokens, child);
-      child += key_span;
-      count += key_span;
-      int value_span = token_span(tokens, child);
-      child += value_span;
-      count += value_span;
-    }
-  }
-  return count;
-}
-
-static int json_object_get_value_token(_fjage_msg_t* m, int object_token, const char* key) {
-  if (m == NULL || key == NULL) return -1;
-  if (m->tokens[object_token].type != JSMN_OBJECT) return -1;
-  int child = object_token + 1;
-  int limit = object_token + token_span(m->tokens, object_token);
-  while (child + 1 < limit) {
-    if (m->tokens[child].type != JSMN_STRING) return -1;
-    char* t = m->data + m->tokens[child].start;
-    t[m->tokens[child].end-m->tokens[child].start] = 0;
-    if (!strcmp(t, key)) return child + 1;
-    child += 1 + token_span(m->tokens, child + 1);
-  }
-  return -1;
+  return n;
 }
 
 int fjage_msg_get_int(fjage_msg_t msg, const char* key, int defval) {
@@ -1309,68 +1156,45 @@ int fjage_msg_get_int_array(fjage_msg_t msg, const char* key, int32_t* value, in
 }
 
 int fjage_msg_get_int_array_2d(fjage_msg_t msg, const char* key, int32_t* value, int maxlen, int* lengths, int maxrows) {
-  if (msg == NULL) return -1;
-  _fjage_msg_t* m = msg;
-  int skip = -1;
-  for (int i = 1; i < m->ntokens-1; i += 2) {
-    char* t = m->data + m->tokens[i].start;
-    if (skip == 0 && m->tokens[i].type == JSMN_STRING && m->tokens[i+1].type == JSMN_ARRAY && !strcmp(t, key)) {
-      int total = 0;
-      int row = 0;
-      int token = i + 2;
-      for (int j = 0; j < m->tokens[i+1].size; j++) {
-        if (token >= m->ntokens) return -1;
-        if (m->tokens[token].type == JSMN_ARRAY) {
-          int rowlen = m->tokens[token].size;
-          if (lengths != NULL && row < maxrows) lengths[row] = rowlen;
-          row++;
-          int element = token + 1;
-          for (int k = 0; k < rowlen; k++) {
-            if (element >= m->ntokens) return -1;
-            if (value != NULL && total < maxlen) {
-              int32_t x = 0;
-              sscanf(m->data + m->tokens[element].start, "%d", &x);
-              value[total] = x;
-            }
-            total++;
-            element += token_span(m->tokens, element);
-          }
-        } else if (m->tokens[token].type == JSMN_OBJECT) {
-          int data_token = json_object_get_value_token(m, token, "data");
-          if (data_token < 0 || m->tokens[data_token].type != JSMN_STRING) return -1;
-          char* s = m->data + m->tokens[data_token].start;
-          s[m->tokens[data_token].end-m->tokens[data_token].start] = 0;
-          size_t buflen;
-          void* buf = b64_decode_ex(s, strlen(s), &buflen);
-          if (buf == NULL || buflen % sizeof(int32_t) != 0) {
-            free(buf);
-            return -1;
-          }
-          int rowlen = buflen/sizeof(int32_t);
-          if (lengths != NULL && row < maxrows) lengths[row] = rowlen;
-          row++;
-          if (value != NULL && total < maxlen) {
-            int copylen = rowlen;
-            if (total + copylen > maxlen) copylen = maxlen - total;
-            memcpy(value + total, buf, copylen*sizeof(int32_t));
-          }
-          total += rowlen;
-          free(buf);
-        } else {
-          return -1;
+  const json_doc_t* d = msg_doc(msg);
+  int i = msg_find(msg, key);
+  if (i < 0 || json_type(d, i) != JSMN_ARRAY) return -1;
+  int total = 0;
+  int row = 0;
+  int end = json_next(d, i);
+  for (int r = i+1; r < end; r = json_next(d, r), row++) {
+    int rowlen = 0;
+    if (json_type(d, r) == JSMN_ARRAY) {
+      int rend = json_next(d, r);
+      for (int e = r+1; e < rend; e = json_next(d, e), rowlen++) {
+        const char* t = json_text(d, e);
+        if (value != NULL && total+rowlen < maxlen) {
+          int x = 0;
+          if (t != NULL) sscanf(t, "%d", &x);
+          value[total+rowlen] = x;
         }
-        token += token_span(m->tokens, token);
       }
-      return total;
-    }
-    if (skip > 0) skip--;
-    if (m->tokens[i+1].type == JSMN_ARRAY) i += m->tokens[i+1].size;
-    else if (m->tokens[i+1].type == JSMN_OBJECT) {
-      if (skip < 0) skip = 0;
-      else skip += m->tokens[i+1].size;
-    }
+    } else if (json_type(d, r) == JSMN_OBJECT) {
+      const char* s = json_str(d, json_find(d, r, "data"));
+      if (s == NULL) return -1;
+      size_t buflen;
+      void* buf = b64_decode_ex(s, strlen(s), &buflen);
+      if (buf == NULL || buflen % sizeof(int32_t) != 0) {
+        free(buf);
+        return -1;
+      }
+      rowlen = buflen/sizeof(int32_t);
+      if (value != NULL && total < maxlen) {
+        int copylen = rowlen;
+        if (total+copylen > maxlen) copylen = maxlen-total;
+        memcpy(value+total, buf, copylen*sizeof(int32_t));
+      }
+      free(buf);
+    } else return -1;
+    if (lengths != NULL && row < maxrows) lengths[row] = rowlen;
+    total += rowlen;
   }
-  return -1;
+  return total;
 }
 
 
@@ -1389,73 +1213,71 @@ int fjage_msg_get_float_array(fjage_msg_t msg, const char* key, float* value, in
 }
 
 void fjage_msg_add_string(fjage_msg_t msg, const char* key, const char* value) {
-  char* s = msg_append(msg, strlen(key)+strlen(value)+9);
-  if (s != NULL) sprintf(s, "\"%s\": \"%s\", ", key, value);
+  jbuf_t* b = msg_field(msg, key);
+  if (b != NULL) jbuf_str(b, value);
 }
 
 void fjage_msg_add_int(fjage_msg_t msg, const char* key, int value) {
-  char* s = msg_append(msg, strlen(key)+16);
-  if (s != NULL) sprintf(s, "\"%s\": %d, ", key, value);
+  jbuf_t* b = msg_field(msg, key);
+  if (b != NULL) jbuf_printf(b, "%d", value);
 }
 
 void fjage_msg_add_int_array_2d(fjage_msg_t msg, const char* key, int32_t* values, int vallen, int* lengths, int lenlen) {
-  char* s = msg_append(msg, strlen(key)+vallen*12+lenlen*4+16);
-  if (s != NULL) {
-    char* p = s;
-    p += sprintf(p, "\"%s\": [", key);
-    int vndx = 0;
-    for (int i = 0; i < lenlen; i++) {
-      p += sprintf(p, "[");
-      for (int j = 0; j < lengths[i]; j++) {
-        p += sprintf(p, "%d", values[vndx++]);
-        if (j < lengths[i]-1) p += sprintf(p, ",");
-      }
-      p += sprintf(p, "]");
-      if (i < lenlen-1) p += sprintf(p, ",");
-    }
-    p += sprintf(p, "], ");
+  jbuf_t* b = msg_field(msg, key);
+  if (b == NULL) return;
+  jbuf_puts(b, "[");
+  int vndx = 0;
+  for (int i = 0; i < lenlen; i++) {
+    jbuf_puts(b, i > 0 ? ",[" : "[");
+    for (int j = 0; j < lengths[i] && vndx < vallen; j++)
+      jbuf_printf(b, j > 0 ? ",%d" : "%d", (int)values[vndx++]);
+    jbuf_puts(b, "]");
   }
+  jbuf_puts(b, "]");
 }
 
 void fjage_msg_add_long(fjage_msg_t msg, const char* key, long value) {
-  char* s = msg_append(msg, strlen(key)+16);
-  if (s != NULL) sprintf(s, "\"%s\": %ld, ", key, value);
+  jbuf_t* b = msg_field(msg, key);
+  if (b != NULL) jbuf_printf(b, "%ld", value);
 }
 
 void fjage_msg_add_float(fjage_msg_t msg, const char* key, float value) {
-  char* s = msg_append(msg, strlen(key)+30);
-  if (s != NULL) sprintf(s, "\"%s\": %f, ", key, value);
+  jbuf_t* b = msg_field(msg, key);
+  if (b != NULL) jbuf_float(b, value);
 }
 
 void fjage_msg_add_bool(fjage_msg_t msg, const char* key, bool value) {
-  char* s = msg_append(msg, strlen(key)+11);
-  if (s != NULL) sprintf(s, "\"%s\": %s, ", key, value?"true":"false");
+  jbuf_t* b = msg_field(msg, key);
+  if (b != NULL) jbuf_puts(b, value ? "true" : "false");
 }
 
-static void fjage_msg_add_b64(fjage_msg_t msg, const char* key, const char* value, const char* clazz) {
-  char* s = msg_append(msg, strlen(key)+strlen(clazz)+strlen(value)+32);
-  if (s != NULL) sprintf(s, "\"%s\": {\"clazz\": \"%s\", \"data\": \"%s\"}, ", key, clazz, value);
+// Add an array as {"clazz": clazz, "data": base64}.
+static void fjage_msg_add_b64(fjage_msg_t msg, const char* key, const void* data, size_t len, const char* clazz) {
+  jbuf_t* b = msg_field(msg, key);
+  if (b == NULL) return;
+  char* s = b64_encode((const unsigned char*)data, len);
+  if (s == NULL) {
+    b->err = true;
+    return;
+  }
+  jbuf_puts(b, "{\"clazz\": ");
+  jbuf_str(b, clazz);
+  jbuf_puts(b, ", \"data\": ");
+  jbuf_str(b, s);
+  jbuf_puts(b, "}");
+  free(s);
 }
 
 void fjage_msg_add_byte_array(fjage_msg_t msg, const char* key, uint8_t* value, int len) {
-  char* s = b64_encode((unsigned char*)value, len);
-  if (s == NULL) return;
-  fjage_msg_add_b64(msg, key, s, "[B");
-  free(s);
+  fjage_msg_add_b64(msg, key, value, len, "[B");
 }
 
 void fjage_msg_add_int_array(fjage_msg_t msg, const char* key, int32_t* value, int len) {
-  char* s = b64_encode((unsigned char*)value, len*sizeof(int32_t));
-  if (s == NULL) return;
-  fjage_msg_add_b64(msg, key, s, "[I");
-  free(s);
+  fjage_msg_add_b64(msg, key, value, len*sizeof(int32_t), "[I");
 }
 
 void fjage_msg_add_float_array(fjage_msg_t msg, const char* key, float* value, int len) {
-  char* s = b64_encode((unsigned char*)value, len*sizeof(float));
-  if (s == NULL) return;
-  fjage_msg_add_b64(msg, key, s, "[F");
-  free(s);
+  fjage_msg_add_b64(msg, key, value, len*sizeof(float), "[F");
 }
 
 void fjage_msg_destroy(fjage_msg_t msg) {
@@ -1463,8 +1285,8 @@ void fjage_msg_destroy(fjage_msg_t msg) {
   _fjage_msg_t* m = msg;
   free(m->sender);
   free(m->recipient);
-  free(m->data);
-  free(m->tokens);
+  free(m->body.s);
+  json_free(&m->doc);
   free(msg);
 }
 
