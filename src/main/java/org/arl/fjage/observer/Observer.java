@@ -134,9 +134,9 @@ public class Observer extends Agent implements MessageListener {
   protected final AtomicLong count = new AtomicLong();
   protected final AtomicLong dropped = new AtomicLong();
   protected long seq = 0;
-  protected long windowStart = 0;
+  protected long windowStart = monotonicMillis() - 1000;
   protected int windowCount = 0;
-  protected long lastStats = 0;
+  protected long lastStats = monotonicMillis() - STATS_INTERVAL;
   protected long lastStatsCount = -1;
   protected long lastStatsDropped = -1;
 
@@ -258,7 +258,7 @@ public class Observer extends Agent implements MessageListener {
       if (f != null && !f.matches(msg)) return false;
       long t = System.currentTimeMillis();
       synchronized (wlock) {
-        if (!allow(t)) {
+        if (!allow(monotonicMillis())) {
           dropped.incrementAndGet();
           return false;
         }
@@ -336,7 +336,7 @@ public class Observer extends Agent implements MessageListener {
     return sb.toString();
   }
 
-  /** Rate limiter, called with wlock held. */
+  /** Rate limiter, called with wlock held, with t in monotonic milliseconds. */
   protected boolean allow(long t) {
     if (maxRate <= 0) return true;
     if (t - windowStart >= 1000) {
@@ -404,8 +404,17 @@ public class Observer extends Agent implements MessageListener {
     publishSafely(sb.toString());
   }
 
+  /**
+   * Gets a monotonic time in milliseconds for rate limiting. Unlike the wall
+   * clock, it is not affected by system clock changes. Only differences between
+   * values are meaningful.
+   */
+  private static long monotonicMillis() {
+    return System.nanoTime() / 1_000_000;
+  }
+
   protected void publishStats() {
-    long t = System.currentTimeMillis();
+    long t = monotonicMillis();
     if (t - lastStats < STATS_INTERVAL) return;     // virtual time may run fast
     lastStats = t;
     long n = count.get();

@@ -232,17 +232,42 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
    * Blocks the agent for a specified period. This method should be used
    * in preference to {@link java.lang.Thread#sleep} as this method provides
    * measures correct delay time for the hosting platform, be it a real-time
-   * or a simulated discrete-time platform.
+   * or a simulated discrete-time platform. The period is measured as elapsed
+   * time, and is not affected by changes to the wall clock.
    *
    * @param millis period to delay in milliseconds.
    */
   protected void delay(long millis) {
-    long t = currentTimeMillis() + millis;
+    long deadline = deadlineAfter(millis);
     long dt = millis;
     while (dt > 0) {
       block(dt);
-      dt = t - currentTimeMillis();
+      dt = millisUntil(deadline);
     }
+  }
+
+  /**
+   * Gets a deadline the specified number of milliseconds from now. The deadline
+   * is in {@link #nanoTime()} units, so that it measures elapsed time and is not
+   * affected by changes to the wall clock.
+   *
+   * @param millis time from now in milliseconds.
+   * @return deadline in nanoseconds of platform time.
+   */
+  long deadlineAfter(long millis) {
+    return nanoTime() + TimeUnit.MILLISECONDS.toNanos(millis);
+  }
+
+  /**
+   * Gets the time remaining until a deadline from {@link #deadlineAfter(long)},
+   * rounded up to whole milliseconds.
+   *
+   * @param deadline deadline in nanoseconds of platform time.
+   * @return milliseconds until the deadline, or 0 if it has passed.
+   */
+  long millisUntil(long deadline) {
+    long dt = deadline - nanoTime();
+    return dt <= 0 ? 0 : (dt - 1) / 1_000_000 + 1;
   }
 
   /**
@@ -325,9 +350,10 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
 
   /**
    * Gets the current platform time in nanoseconds. This method should be used by the
-   * agent to get the current time in preference to {@link java.lang.System#nanoTime()}
+   * agent to measure elapsed time in preference to {@link java.lang.System#nanoTime()}
    * as this method returns the real time or the simulated discrete time depending on
-   * the platform that the agent is running on.
+   * the platform that the agent is running on. On real-time platforms, the time has
+   * an arbitrary origin, and only differences between two values are meaningful.
    *
    * @return current platform time in nanoseconds.
    */
@@ -477,21 +503,20 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
     if (timeout != NON_BLOCKING) queue.commit(exclusions);
     Message m = queue.get(filter);
     if (m == null && timeout != NON_BLOCKING) {
-      if (timeout != BLOCKING) deadline = currentTimeMillis() + timeout;
+      if (timeout != BLOCKING) deadline = deadlineAfter(timeout);
       do {
         exclusions.push(filter == null ? ANY_MESSAGE : filter);
         if (timeout == BLOCKING) {
           if (!yieldDuringReceive || !executeBehavior()) block();
         } else if (!yieldDuringReceive || !executeBehavior()) {
-          long t = deadline - currentTimeMillis();
-          block(t);
+          block(millisUntil(deadline));
         }
         exclusions.pop();
         if (Thread.interrupted()) return null;
         if (state == AgentState.FINISHING) return null;
         queue.commit(exclusions);
         m = queue.get(filter);
-      } while (m == null && (timeout == BLOCKING || currentTimeMillis() < deadline));
+      } while (m == null && (timeout == BLOCKING || millisUntil(deadline) > 0));
     }
     return m;
   }
@@ -1149,17 +1174,20 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
         if (Thread.currentThread().getId() != tid) {
           throw new FjageException("receive() should only be called from agent thread");
         }
-        final Long timeoutMs = (unit != null) ? TimeUnit.MILLISECONDS.convert(timeout, unit) : null;
-        final Long deadline = (timeoutMs != null) ? currentTimeMillis() + timeoutMs : null;
+        final Long deadline = (unit != null) ? nanoTime() + unit.toNanos(timeout) : null;
         while ((getState() != AgentState.FINISHING)
             && !done
-            && ((deadline == null) || (currentTimeMillis() < deadline))) {
+            && ((deadline == null) || (millisUntil(deadline) > 0))) {
           if (!executeBehavior()) {
-            block();
+            if (deadline == null) {
+              block();
+            } else {
+              block(millisUntil(deadline));
+            }
           }
           Thread.interrupted(); // interrupts used for disrupting timeouts only
         }
-        if ((deadline != null) && (currentTimeMillis() >= deadline)) {
+        if (!done && (deadline != null) && (millisUntil(deadline) == 0)) {
           throw new TimeoutException();
         }
         return message;
@@ -1180,7 +1208,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
       }
 
       private void extend() {
-        deadline = currentTimeMillis() + timeout;
+        deadline = deadlineAfter(timeout);
       }
 
       private void stop() {
@@ -1199,7 +1227,7 @@ public class Agent implements Runnable, TimestampProvider, Messenger {
         if (quit) {
           return;
         }
-        final long remaining = deadline - currentTimeMillis();
+        final long remaining = millisUntil(deadline);
         if (remaining > 0) {
           block(remaining);
           return;

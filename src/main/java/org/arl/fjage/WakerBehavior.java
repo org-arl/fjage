@@ -21,7 +21,8 @@ public class WakerBehavior extends Behavior {
   ///////////// Private attributes
 
   private final long timeout;
-  private long wakeupTime;
+  private long deadline;              // in nanoTime() units
+  private boolean started;
   private volatile boolean quit;
 
   ///////////// Public interface
@@ -52,13 +53,16 @@ public class WakerBehavior extends Behavior {
   /**
    * Returns the wakeup time for this behavior. On a real-time platform, the
    * time is the epoch time, while a discrete event simulator gives the wakeup
-   * time in simulated time.
+   * time in simulated time. The delay itself is measured as elapsed time, so the
+   * wakeup time moves with any change to the wall clock.
    *
-   * @return the wakeup time in milliseconds.
+   * @return the wakeup time in milliseconds, or 0 if the behavior has not started.
    * @see Platform#currentTimeMillis()
    */
   public final long getWakeupTime() {
-    return wakeupTime;
+    Agent a = agent;
+    if (a == null || !started) return 0;
+    return a.currentTimeMillis() + Math.floorDiv(deadline - a.nanoTime(), 1_000_000L);
   }
 
   /**
@@ -87,7 +91,8 @@ public class WakerBehavior extends Behavior {
    */
   @Override
   public final void onStart() {
-    wakeupTime = agent.currentTimeMillis() + timeout;
+    deadline = agent.deadlineAfter(timeout);
+    started = true;
     block(timeout);
   }
 
@@ -100,7 +105,7 @@ public class WakerBehavior extends Behavior {
   @Override
   public final void action() {
     if (quit) return;
-    long dt = wakeupTime - agent.currentTimeMillis();
+    long dt = agent.millisUntil(deadline);
     if (dt > 0) block(dt);
     else {
       onWake();
@@ -128,6 +133,7 @@ public class WakerBehavior extends Behavior {
   @Override
   public void reset() {
     super.reset();
+    started = false;
     quit = false;
   }
 

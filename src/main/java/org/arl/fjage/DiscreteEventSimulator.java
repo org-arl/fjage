@@ -71,7 +71,7 @@ public final class DiscreteEventSimulator extends Platform implements Runnable {
 
   @Override
   public long nanoTime() {
-    return time*1000;
+    return time * 1_000_000;
   }
 
   @Override

@@ -13,6 +13,7 @@ package org.arl.fjage.connectors;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -111,9 +112,9 @@ public class TcpHubConnector extends Thread implements Connector {
 
   @Override
   public boolean waitOutputCompletion(long timeout) {
-    long t = System.currentTimeMillis() + timeout;
+    long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout);
     while (pout != null && pout.available() > 0) {
-      if (System.currentTimeMillis() > t) return false;
+      if (System.nanoTime() - deadline > 0) return false;
       try {
         sleep(10);
       } catch (InterruptedException ex) {

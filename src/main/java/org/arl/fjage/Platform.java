@@ -40,6 +40,10 @@ public abstract class Platform implements TimestampProvider {
    * Gets the current platform time in milliseconds. For real-time platforms,
    * this time is epoch time. For simulation platforms, this time is simulation
    * time.
+   * <p>
+   * On real-time platforms, this clock may be stepped forwards or backwards when
+   * the system clock is adjusted. Use it for timestamps, and use {@link #nanoTime()}
+   * to measure elapsed time or to compute deadlines.
    *
    * @return time in milliseconds.
    */
@@ -47,9 +51,15 @@ public abstract class Platform implements TimestampProvider {
   public abstract long currentTimeMillis();
 
   /**
-   * Gets the current platform time in nanoseconds. For real-time platforms,
-   * this time is epoch time. For simulation platforms, this time is simulation
-   * time. This time is nanosecond precision, but not necessarily nanosecond accuracy.
+   * Gets the current platform time in nanoseconds, for measuring elapsed time.
+   * For real-time platforms, this time is monotonic and has an arbitrary origin,
+   * so only differences between two values are meaningful. For simulation
+   * platforms, this time is simulation time. The time is nanosecond precision
+   * but not necessarily nanosecond accuracy.
+   * <p>
+   * Timeouts and timed behaviors measure elapsed time using this clock, so it must
+   * advance at the same rate as delays given to {@link Platform#schedule}. Compare
+   * values by subtraction (e.g. {@code t1 - t0 > 0}), as they may overflow.
    *
    * @return time in nanoseconds.
    */

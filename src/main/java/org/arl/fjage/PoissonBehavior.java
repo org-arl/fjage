@@ -23,7 +23,7 @@ public class PoissonBehavior extends Behavior {
 
   private int ticks;
   private final long expDelay;
-  private long wakeupTime;
+  private long deadline;              // in nanoTime() units
   private volatile boolean quit;
 
   //////////// Interface methods
@@ -93,7 +93,7 @@ public class PoissonBehavior extends Behavior {
   @Override
   public void onStart() {
     long delayToNext = Math.round(AgentLocalRandom.current().nextExp()*expDelay);
-    wakeupTime = agent.currentTimeMillis() + delayToNext;
+    deadline = agent.deadlineAfter(delayToNext);
     block(delayToNext);
   }
 
@@ -105,13 +105,13 @@ public class PoissonBehavior extends Behavior {
   @Override
   public final void action() {
     if (quit) return;
-    long dt = wakeupTime - agent.currentTimeMillis();
+    long dt = agent.millisUntil(deadline);
     if (dt > 0) block(dt);
     else {
       ticks++;
       onTick();
       long delayToNext = Math.round(AgentLocalRandom.current().nextExp()*expDelay);
-      wakeupTime = agent.currentTimeMillis() + delayToNext;
+      deadline = agent.deadlineAfter(delayToNext);
     }
   }
 
