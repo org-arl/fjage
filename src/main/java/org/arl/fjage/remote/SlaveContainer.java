@@ -158,8 +158,8 @@ public class SlaveContainer extends RemoteContainer {
   @Override
   public boolean send(Message m, boolean relay) {
     if (!running) return false;
-    if (master == null) return false;
     ConnectionHandler localMaster = master;
+    if (localMaster == null) return false;
     AgentID aid = m.getRecipient();
     if (aid == null) return false;
     if (aid.isTopic()) {
@@ -185,8 +185,8 @@ public class SlaveContainer extends RemoteContainer {
 
   @Override
   public AgentID[] getAgents() {
-    if (master == null) return null;
     ConnectionHandler localMaster = master;
+    if (localMaster == null) return null;
     JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS);
     JsonMessage rsp = localMaster.request(rq, DIRECTORY_QUERY_TIMEOUT);
     if (rsp == null) return null;
@@ -196,8 +196,8 @@ public class SlaveContainer extends RemoteContainer {
 
   @Override
   public String[] getServices() {
-    if (master == null) return null;
     ConnectionHandler localMaster = master;
+    if (localMaster == null) return null;
     JsonMessage rq = JsonMessage.createActionRequest(Action.SERVICES);
     JsonMessage rsp = localMaster.request(rq, DIRECTORY_QUERY_TIMEOUT);
     if (rsp == null) return null;
@@ -207,8 +207,8 @@ public class SlaveContainer extends RemoteContainer {
 
   @Override
   public AgentID agentForService(String service) {
-    if (master == null) return null;
     ConnectionHandler localMaster = master;
+    if (localMaster == null) return null;
     JsonMessage rq = JsonMessage.createActionRequest(Action.AGENT_FOR_SERVICE);
     rq.service = service;
     JsonMessage rsp = localMaster.request(rq, DIRECTORY_QUERY_TIMEOUT);
@@ -219,8 +219,8 @@ public class SlaveContainer extends RemoteContainer {
 
   @Override
   public AgentID[] agentsForService(String service) {
-    if (master == null) return null;
     ConnectionHandler localMaster = master;
+    if (localMaster == null) return null;
     JsonMessage rq = JsonMessage.createActionRequest(Action.AGENTS_FOR_SERVICE);
     rq.service = service;
     JsonMessage rsp = localMaster.request(rq, DIRECTORY_QUERY_TIMEOUT);
