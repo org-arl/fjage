@@ -8,7 +8,7 @@ When used in the [Discrete event simulation](https://en.wikipedia.org/wiki/Discr
 
 In order to use the discrete event simulation mode, a few conditions have to be met. The first two of these conditions are related to timing functions and were introduced in the [Introduction](introduction.qmd) chapter. The last condition is related to agents deployed in slave containers.
 
-1.  Agents must not use any system timing functions directly. Rather than use `System.currentTimeMillis()` or `System.nanoTime()`, the agents should use `Agent.currentTimeMillis()` and `Agent.nanoTime()`.
+1.  Agents must not use any system timing functions directly. Rather than use `System.currentTimeMillis()` or `System.nanoTime()`, the agents should use `Agent.currentTimeMillis()` and `Agent.nanoTime()`. Use `currentTimeMillis()` for timestamps and `nanoTime()` to measure elapsed time, as the system clock behind `currentTimeMillis()` may be adjusted while the agents are running.
 2.  Agents must not use any system scheduling functions directly. Rather than use `Thread.sleep()`, the agent should use `Agent.delay()`.
 3.  All agents must be deployed in a single container for testing. Distributed containers (master or slave) are currently not supported by the discrete event simulator.
 

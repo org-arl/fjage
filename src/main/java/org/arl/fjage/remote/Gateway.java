@@ -12,6 +12,7 @@ package org.arl.fjage.remote;
 
 import java.io.*;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import org.arl.fjage.*;
 
 /**
@@ -148,14 +149,16 @@ public class Gateway implements Messenger, Closeable {
               }
             });
             // the notify above is the normal wake-up, and stop() notifies if the agent dies;
-            // the deadline is a backstop for when the behavior cannot complete in time
-            long deadline = timeout == BLOCKING ? -1 : currentTimeMillis() + timeout + RECEIVE_TIMEOUT_SLACK;
+            // the deadline is a backstop for when the behavior cannot complete in time,
+            // measured with nanoTime() and with the slack added without overflow
+            long wait = Math.min(timeout, Long.MAX_VALUE - RECEIVE_TIMEOUT_SLACK) + RECEIVE_TIMEOUT_SLACK;
+            long deadline = nanoTime() + TimeUnit.MILLISECONDS.toNanos(wait);
             while (!done[0] && getState() != AgentState.FINISHING && getState() != AgentState.FINISHED) {
-              if (deadline < 0) sync.wait();
+              if (timeout == BLOCKING) sync.wait();
               else {
-                long remaining = deadline - currentTimeMillis();
+                long remaining = deadline - nanoTime();
                 if (remaining <= 0) break;
-                sync.wait(remaining);
+                sync.wait((remaining - 1) / 1_000_000 + 1);
               }
             }
           } catch (InterruptedException ex) {

@@ -10,6 +10,8 @@ for full license details.
 
 package org.arl.fjage;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * A behavior that is executed every specified period. The {@link #onTick()}
  * method of this behavior is called at intervals defined by the period.
@@ -22,7 +24,7 @@ public class TickerBehavior extends Behavior {
 
   private int ticks;
   private final long period;
-  private long wakeupTime;
+  private long deadline;              // in nanoTime() units
   private volatile boolean quit;
 
   ////////// Interface methods
@@ -87,7 +89,7 @@ public class TickerBehavior extends Behavior {
    */
   @Override
   public void onStart() {
-    wakeupTime = agent.currentTimeMillis() + period;
+    deadline = agent.deadlineAfter(period);
     block(period);
   }
 
@@ -99,14 +101,15 @@ public class TickerBehavior extends Behavior {
   @Override
   public final void action() {
     if (quit) return;
-    long t = agent.currentTimeMillis();
-    long dt = wakeupTime - t;
+    long t = agent.nanoTime();
+    long dt = agent.millisUntil(deadline);
     if (dt > 0) block(dt);
     else {
       ticks++;
       onTick();
-      wakeupTime += period;
-      if (wakeupTime < t) wakeupTime = t + period;
+      long p = TimeUnit.MILLISECONDS.toNanos(period);
+      deadline += p;
+      if (deadline - t < 0) deadline = t + p;
     }
   }
 
