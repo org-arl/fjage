@@ -76,7 +76,7 @@ export class JSONMessage {
         if (parsed.agentIDs) parsed.agentIDs = parsed.agentIDs.map(id => AgentID.fromJSON(id, owner));
         Object.assign(this, parsed);
       } catch (e) {
-        throw new Error('Invalid JSON string: ' + e.message);
+        throw new Error('Invalid JSON string: ' + e.message, { cause: e });
       }
     };
   }
