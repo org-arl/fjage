@@ -88,8 +88,7 @@ export class UUID7 {
      * @returns {number} The Unix timestamp in milliseconds.
      */
     getTimestamp() {
-        let timestamp = 0;
-        timestamp = this.bytes[0] * 2 ** 40;
+        let timestamp = this.bytes[0] * 2 ** 40;
         timestamp += this.bytes[1] * 2 ** 32;
         timestamp += this.bytes[2] * 2 ** 24;
         timestamp += this.bytes[3] * 2 ** 16;
