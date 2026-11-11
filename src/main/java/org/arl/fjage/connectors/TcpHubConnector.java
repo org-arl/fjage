@@ -244,8 +244,9 @@ public class TcpHubConnector extends Thread implements Connector {
           int c = in.read();
           if (skip > 0) skip--;
           else if (iac) {
-            if (c >= 251) skip = 1;
-            if (c != 255) iac = false;
+            iac = false;
+            if (c == 255) pin.write(c);
+            else if (c >= 251) skip = 1;
           }
           else if (telnet && c == 255) iac = true;
           else if (c < 0 || (telnet && c == 4)) break;
