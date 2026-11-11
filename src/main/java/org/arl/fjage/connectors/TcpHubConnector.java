@@ -249,7 +249,7 @@ public class TcpHubConnector extends Thread implements Connector {
           }
           else if (telnet && c == 255) iac = true;
           else if (c < 0 || (telnet && c == 4)) break;
-          else if (c > 0) pin.write(c);
+          else if (!telnet || c != 0) pin.write(c);
         }
       } catch (Exception ex) {
         // do nothing
