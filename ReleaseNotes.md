@@ -3,6 +3,7 @@
 ### 2.7.1
 
 * Fix `WebServer` uploads to save files under their submitted names instead of URL-encoded names; names that are not plain file names (absolute paths, path components, `.` or `..`) are rejected with HTTP 400
+* Bugfix: `TcpHubConnector` no longer discards incoming zero bytes when Telnet mode is disabled
 
 ### 2.7.0
 
