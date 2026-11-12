@@ -22,7 +22,6 @@ import org.arl.fjage.*;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 /**
  * Message adapter for custom JSON representation.
@@ -34,18 +33,7 @@ import java.util.logging.Logger;
 @SuppressWarnings({"unchecked", "rawtypes"})
 class MessageAdapterFactory implements TypeAdapterFactory {
 
-  private static ClassLoader classloader = null;
-
-  static {
-    try {
-      Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
-      classloader = (ClassLoader)cls.getDeclaredConstructor().newInstance();
-      Logger log = Logger.getLogger(MessageAdapterFactory.class.getName());
-      log.info("Groovy detected, using GroovyClassLoader");
-    } catch (Exception ex) {
-      // do nothing
-    }
-  }
+  private static final JsonClassResolver resolver = new JsonClassResolver(JsonClassResolver.scriptLoader, Message.class);
 
   @SuppressWarnings("unchecked")
   public <T> TypeAdapter<T> create(final Gson gson, TypeToken<T> type) {
@@ -108,12 +96,7 @@ class MessageAdapterFactory implements TypeAdapterFactory {
         while (in.hasNext()) {
           String name = in.nextName();
           if (name.equals("clazz")) {
-            String className = in.nextString();
-            try {
-              cls = classloader != null ? Class.forName(className, true, classloader) : Class.forName(className);
-            } catch (Exception ex) {
-              // do nothing
-            }
+            cls = resolver.resolve(in.nextString());
           } else if (name.equals("data")) {
             if (cls == null) rv = delegate.read(in);
             else if (cls.equals(GenericMessage.class)) {
