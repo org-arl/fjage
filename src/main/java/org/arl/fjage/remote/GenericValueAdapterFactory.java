@@ -11,6 +11,9 @@ for full license details.
 package org.arl.fjage.remote;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
@@ -20,7 +23,8 @@ import com.google.gson.stream.JsonWriter;
 import org.arl.fjage.GenericValue;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.List;
 
@@ -37,7 +41,7 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
     if (!rawType.equals(GenericValue.class)) return null;
     final GenericValueAdapterFactory parent = this;
     final TypeAdapter<Number> numberDelegate = gson.getAdapter(Number.class);
-    final TypeAdapter<List> listDelegate = gson.getAdapter(List.class);
+    final TypeAdapter<JsonElement> treeDelegate = gson.getAdapter(JsonElement.class);
     return new TypeAdapter<T>() {
 
       @Override
@@ -77,51 +81,84 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
 
       @Override
       public T read(JsonReader in) throws IOException {
-        JsonToken tok = in.peek();
-        if (tok == JsonToken.NULL) {
+        if (in.peek() == JsonToken.NULL) {
           in.nextNull();
           return null;
         }
-        if (tok == JsonToken.NUMBER) return (T) new GenericValue(numberDelegate.read(in));
-        if (tok == JsonToken.STRING) return (T) new GenericValue(in.nextString());
-        if (tok == JsonToken.BOOLEAN) return (T) new GenericValue(in.nextBoolean());
-        if (tok == JsonToken.BEGIN_OBJECT) {
-          TypeToken tt = null;
-          GenericValue rv = null;
-          Map<String,Object> map = new HashMap<>();
-          in.beginObject();
-          while (in.hasNext()) {
-            String name = in.nextName();
-            if (name.equals("clazz")) {
-              Class<?> cls = resolver.resolve(in.nextString());
-              if (cls != null) tt = TypeToken.get(cls);
-            } else if (name.equals("data") && tt != null) {
-              TypeAdapter delegate = gson.getAdapter(tt);
-              rv = new GenericValue(delegate.read(in));
-            }
-            else {
-              JsonToken tok2 = in.peek();
-              if (tok2 == JsonToken.NULL) {
-                in.nextNull();
-                map.put(name, null);
-              }
-              else if (tok2 == JsonToken.NUMBER) map.put(name, numberDelegate.read(in));
-              else if (tok2 == JsonToken.STRING) map.put(name, in.nextString());
-              else if (tok2 == JsonToken.BOOLEAN) map.put(name, in.nextBoolean());
-              else if (tok2 == JsonToken.BEGIN_OBJECT) {
-                TypeAdapter delegate = gson.getAdapter(TypeToken.get(Map.class));
-                map.put(name, delegate.read(in));
-              }
-              else if (tok2 == JsonToken.BEGIN_ARRAY) map.put(name, listDelegate.read(in));
-              else in.skipValue();
-            }
-          }
-          in.endObject();
-          if (rv == null) rv = new GenericValue(map);
-          return (T)rv;
+        return (T) new GenericValue(value(in));
+      }
+
+      private Object value(JsonReader in) throws IOException {
+        switch (in.peek()) {
+          case NUMBER: return numberDelegate.read(in);
+          case STRING: return in.nextString();
+          case BOOLEAN: return in.nextBoolean();
+          case BEGIN_ARRAY:
+            List<Object> list = new ArrayList<>();
+            in.beginArray();
+            while (in.hasNext()) list.add(value(in));
+            in.endArray();
+            return list;
+          case BEGIN_OBJECT: return object(in);
+          default:
+            in.skipValue();
+            return null;
         }
-        if (tok == JsonToken.BEGIN_ARRAY) return (T) new GenericValue(listDelegate.read(in));
-        return null;
+      }
+
+      // {"clazz":<resolvable name>,"data":<value>} is a typed value; any other object is a map
+      private Object object(JsonReader in) throws IOException {
+        Map<String,Object> map = new LinkedHashMap<>();
+        Class<?> cls = null;
+        JsonElement early = null;
+        in.beginObject();
+        while (in.hasNext()) {
+          String name = in.nextName();
+          if (name.equals("clazz") && in.peek() == JsonToken.STRING) {
+            String s = in.nextString();
+            map.put(name, s);
+            cls = resolver.resolve(s);
+          } else if (name.equals("data") && cls != null) {
+            Object v = gson.getAdapter(cls).read(in);
+            while (in.hasNext()) {
+              in.nextName();
+              in.skipValue();
+            }
+            in.endObject();
+            return v;
+          } else if (name.equals("data") && !map.containsKey("clazz")) {
+            early = treeDelegate.read(in);
+            map.put(name, null);
+          } else map.put(name, value(in));
+        }
+        in.endObject();
+        if (early == null) return map;
+        if (cls != null) return gson.fromJson(early, cls);
+        map.put("data", value(early));
+        return map;
+      }
+
+      // same as value(JsonReader), for data buffered before its clazz
+      private Object value(JsonElement e) {
+        if (e.isJsonNull()) return null;
+        if (e.isJsonArray()) {
+          List<Object> list = new ArrayList<>();
+          for (JsonElement x: e.getAsJsonArray()) list.add(value(x));
+          return list;
+        }
+        if (e.isJsonObject()) {
+          JsonObject obj = e.getAsJsonObject();
+          JsonElement clazz = obj.get("clazz");
+          Class<?> cls = clazz != null && clazz.isJsonPrimitive() && clazz.getAsJsonPrimitive().isString() ? resolver.resolve(clazz.getAsString()) : null;
+          if (cls != null && obj.has("data")) return gson.fromJson(obj.get("data"), cls);
+          Map<String,Object> map = new LinkedHashMap<>();
+          for (Map.Entry<String,JsonElement> x: obj.entrySet()) map.put(x.getKey(), value(x.getValue()));
+          return map;
+        }
+        JsonPrimitive p = e.getAsJsonPrimitive();
+        if (p.isBoolean()) return p.getAsBoolean();
+        if (p.isNumber()) return gson.fromJson(p, Number.class);
+        return p.getAsString();
       }
 
     };
