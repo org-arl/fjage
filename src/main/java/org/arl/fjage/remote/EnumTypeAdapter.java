@@ -21,19 +21,8 @@ import com.google.gson.stream.*;
  */
 public class EnumTypeAdapter extends TypeAdapter<Object> {
 
-  private static ClassLoader classloader = null;
-  private static final Logger log;
-
-  static {
-    log = Logger.getLogger(EnumTypeAdapter.class.getName());
-    try {
-      Class<?> cls = Class.forName("groovy.lang.GroovyClassLoader");
-      classloader = (ClassLoader)cls.getDeclaredConstructor().newInstance();
-      log.info("Groovy detected, using GroovyClassLoader");
-    } catch (Exception ex) {
-      // do nothing
-    }
-  }
+  private static final Logger log = Logger.getLogger(EnumTypeAdapter.class.getName());
+  private static final JsonClassResolver resolver = new JsonClassResolver(JsonClassResolver.scriptLoader, Enum.class);
 
   /**
    * Registers additional class that requires special handling for JSON serialization.
@@ -45,24 +34,10 @@ public class EnumTypeAdapter extends TypeAdapter<Object> {
   @SuppressWarnings({"rawtypes", "unchecked"})
   private static Class<? extends Enum> enumClass(String clsname) {
     try {
-      if (classloader != null) return (Class<? extends Enum>)Class.forName(clsname, true, classloader);
-      else return (Class<? extends Enum>)Class.forName(clsname);
-    } catch (ClassNotFoundException ex) {
-      // ignore this, and try next method
-    }
-    // if inner class, have to load main class first
-    try {
-      int pos = clsname.lastIndexOf('.');
-      if (pos >= 0) {
-        String clsname1 = clsname.substring(0,pos);
-        if (classloader != null) Class.forName(clsname1, true, classloader);
-        else Class.forName(clsname1);
-        clsname1 = clsname1 + '$' + clsname.substring(pos+1);
-        if (classloader != null) return (Class<? extends Enum>)Class.forName(clsname1, true, classloader);
-        else return (Class<? extends Enum>)Class.forName(clsname1);
-      }
-    } catch (ClassNotFoundException ex) {
-      // ignore this, as we'll return an error below
+      Class<? extends Enum> cls = (Class<? extends Enum>)resolver.resolveNested(clsname);
+      if (cls != null) return cls;
+    } catch (JsonSyntaxException ex) {
+      // not an enum, so treat it as a named parameter
     }
     log.fine("Class "+clsname+" could not be loaded");
     return null;

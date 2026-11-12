@@ -30,6 +30,8 @@ import java.util.List;
 @SuppressWarnings({"unchecked", "rawtypes"})
 class GenericValueAdapterFactory implements TypeAdapterFactory {
 
+  private static final JsonClassResolver resolver = new JsonClassResolver(GenericValueAdapterFactory.class.getClassLoader(), Object.class);
+
   public <T> TypeAdapter<T> create(final Gson gson, TypeToken<T> type) {
     final Class<T> rawType = (Class<T>)type.getRawType();
     if (!rawType.equals(GenericValue.class)) return null;
@@ -91,12 +93,8 @@ class GenericValueAdapterFactory implements TypeAdapterFactory {
           while (in.hasNext()) {
             String name = in.nextName();
             if (name.equals("clazz")) {
-              try {
-                Class<?> cls = Class.forName(in.nextString());
-                tt = TypeToken.get(cls);
-              } catch (Exception ex) {
-                // do nothing
-              }
+              Class<?> cls = resolver.resolve(in.nextString());
+              if (cls != null) tt = TypeToken.get(cls);
             } else if (name.equals("data") && tt != null) {
               TypeAdapter delegate = gson.getAdapter(tt);
               rv = new GenericValue(delegate.read(in));
