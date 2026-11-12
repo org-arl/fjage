@@ -62,10 +62,12 @@ class MessageAdapterFactory implements TypeAdapterFactory {
 
       @Override
       public void write(JsonWriter out, T value) throws IOException {
+        // nulls are written inside a message, and the writer's own setting is restored after it
+        boolean nulls = out.getSerializeNulls();
         try {
-          out.setSerializeNulls(true);
           if (value == null) out.nullValue();
           else {
+            out.setSerializeNulls(true);
             out.beginObject();
             out.name("clazz").value(value.getClass().getName());
             out.name("data");
@@ -92,7 +94,7 @@ class MessageAdapterFactory implements TypeAdapterFactory {
             out.endObject();
           }
         } finally {
-          out.setSerializeNulls(false);
+          out.setSerializeNulls(nulls);
         }
       }
 
