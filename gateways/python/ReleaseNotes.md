@@ -9,6 +9,7 @@ This file covers the fjåge Python gateway, published on PyPI as `fjagepy`.
 - `DeleteFileReq` message class.
 - `Gateway.register_message(class_name, message_class)` to register a `Message` subclass under a fully qualified wire class name.
 - `serial` optional dependency, so `pip install fjagepy[serial]` installs pyserial for `SerialConnector`.
+- `Connector.set_connection_callback()` to be notified when a connector connects, reconnects or loses its connection. Custom connectors call `self._notify_connection(state)` to support it.
 
 ### Changed
 
@@ -24,6 +25,8 @@ This file covers the fjåge Python gateway, published on PyPI as `fjagepy`.
 
 - Messages of unregistered classes keep their original wire class name and fields when inflated.
 - Registered classes serialize with the name they were registered under.
+- The gateway resends its watch list (`wantsMessagesFor`) after every reconnect. Previously, after a background reconnect, subscriptions and replies to requests silently stopped arriving ([#551](https://github.com/org-arl/fjage/issues/551)).
+- `Gateway.close()` and `disconnect()` stop a pending reconnection, so a gateway closed while the connection was down no longer reconnects later.
 
 ## [3.0.0] - 2026-08-07
 

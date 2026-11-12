@@ -1,9 +1,15 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Optional
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 class Connector(ABC):
     """Abstract base class for fjåge transport connectors."""
+
+    _conn_callback: Optional[Callable[[bool], None]] = None
 
     def __init__(self, **kwargs: Any) -> None:
         """ Initialize the connector with any necessary parameters. Subclasses can define their own parameters as needed. """
@@ -48,3 +54,25 @@ class Connector(ABC):
     def __details__(self) -> str:
         """Return a string with details about the connector (e.g., host and port)."""
         pass
+
+    def set_connection_callback(self, callback: Optional[Callable[[bool], None]]) -> None:
+        """
+        Set a callback function to be notified when the connection is established or lost.
+
+        Args:
+            callback: Function that receives True after every successful connect (including
+                reconnects) and False when the connection is lost, or None to clear it.
+        """
+        if callback is not None and not callable(callback):
+            raise ValueError("callback must be callable")
+        self._conn_callback = callback
+
+    def _notify_connection(self, state: bool) -> None:
+        """Notify the connection callback. Subclasses must call this without holding any lock that send() takes."""
+        callback = self._conn_callback
+        if callback is None:
+            return
+        try:
+            callback(state)
+        except Exception as e:
+            logger.warning(f"Connection callback error: {e}")

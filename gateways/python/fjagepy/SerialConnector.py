@@ -63,34 +63,16 @@ class SerialConnector(Connector):
 
     def connect(self) -> None:
         """Open the serial port."""
-        with self._lock:
-            if self._connected:
-                return
-
-            try:
-                # serial_for_url() accepts device names as well as URLs (eg. loop://)
-                self._port = self._serial.serial_for_url(self.devname, baudrate=self.baud, timeout=0.1)
-                self._connected = True
-                logger.debug(f"Connected to {self.devname}@{self.baud}")
-
-                # Start read thread if callback is set
-                if self._callback:
-                    self._stop_event.clear()
-                    self._read_thread = threading.Thread(target=self._read_loop, daemon=True)
-                    self._read_thread.start()
-
-            except Exception as e:
-                self._connected = False
-                self._cleanup_port()
-                raise ConnectionError(f"Failed to connect to {self.devname}@{self.baud}: {e}")
+        self._stop_event.clear()
+        self._open()
 
     def disconnect(self) -> None:
-        """Close the serial port."""
+        """Close the serial port and stop any pending reconnection."""
         with self._lock:
+            self._stop_event.set()
             if not self._connected:
                 return
 
-            self._stop_event.set()
             self._connected = False
             self._cleanup_port()
 
@@ -99,6 +81,7 @@ class SerialConnector(Connector):
                 self._read_thread.join(timeout=2.0)
 
             logger.debug("Disconnected")
+        self._notify_connection(False)
 
     def is_connected(self) -> bool:
         """Check if connected."""
@@ -123,6 +106,30 @@ class SerialConnector(Connector):
         return f"SerialConnector(devname={self.devname}, baud={self.baud}, connected={self.is_connected()})"
 
     # Internal methods
+
+    def _open(self) -> None:
+        """Open the port unless already connected or stopped, then notify the connection callback."""
+        with self._lock:
+            if self._connected or self._stop_event.is_set():
+                return
+
+            try:
+                # serial_for_url() accepts device names as well as URLs (eg. loop://)
+                self._port = self._serial.serial_for_url(self.devname, baudrate=self.baud, timeout=0.1)
+                self._connected = True
+                logger.debug(f"Connected to {self.devname}@{self.baud}")
+
+                # Start read thread if callback is set
+                if self._callback:
+                    self._read_thread = threading.Thread(target=self._read_loop, daemon=True)
+                    self._read_thread.start()
+
+            except Exception as e:
+                self._connected = False
+                self._cleanup_port()
+                raise ConnectionError(f"Failed to connect to {self.devname}@{self.baud}: {e}")
+        # outside the lock, since the callback may send()
+        self._notify_connection(True)
 
     def _cleanup_port(self) -> None:
         """Clean up serial port resources."""
@@ -169,21 +176,20 @@ class SerialConnector(Connector):
         except Exception as e:
             logger.warning(f"Read loop error: {e}")
         finally:
-            # Auto-reconnect if configured and not stopping
-            if not self._stop_event.is_set() and self.reconnect_delay >= 0:
-                self._attempt_reconnect()
+            # Connection lost (not a disconnect()): notify, then auto-reconnect if configured
+            if not self._stop_event.is_set():
+                self._notify_connection(False)
+                if self.reconnect_delay >= 0:
+                    self._attempt_reconnect()
 
     def _attempt_reconnect(self) -> None:
-        """Attempt to reopen the port with delay."""
-        while not self._stop_event.is_set() and self.reconnect_delay >= 0:
+        """Attempt to reopen the port with delay, until connected or disconnect() is called."""
+        while True:
+            logger.debug(f"Attempting to reconnect in {self.reconnect_delay}s...")
+            if self._stop_event.wait(timeout=self.reconnect_delay):
+                break
             try:
-                logger.debug(f"Attempting to reconnect in {self.reconnect_delay}s...")
-                if self._stop_event.wait(timeout=self.reconnect_delay):
-                    break
-
-                self.connect()
-                return  # Successfully reconnected
-
+                self._open()
+                return  # Successfully reconnected, or stopped
             except Exception as e:
                 logger.warning(f"Reconnection failed: {e}")
-                continue
