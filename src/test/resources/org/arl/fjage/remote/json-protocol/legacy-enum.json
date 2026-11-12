@@ -1,0 +1,1 @@
+{"id":"envelope-id","action":"send","message":{"clazz":"org.arl.fjage.GenericMessage","data":{"msgID":"legacy-enum-id","inReplyTo":"request-id","perf":"INFORM","recipient":"receiver","sender":"sender","parameter":"org.arl.fjage.remote.JsonProtocolFixtures.DisplayParam.1.display.name"}},"relay":false}
