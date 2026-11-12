@@ -11,6 +11,9 @@ for full license details.
 package org.arl.fjage.remote;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
@@ -20,7 +23,11 @@ import com.google.gson.stream.JsonWriter;
 import org.arl.fjage.*;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -33,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressWarnings({"unchecked", "rawtypes"})
 class MessageAdapterFactory implements TypeAdapterFactory {
 
+  private static final Set<String> HEADERS = new HashSet<>(Arrays.asList("msgID", "inReplyTo", "perf", "recipient", "sender", "sentAt"));
   private static final JsonClassResolver resolver = new JsonClassResolver(JsonClassResolver.scriptLoader, Message.class);
 
   @SuppressWarnings("unchecked")
@@ -43,6 +51,7 @@ class MessageAdapterFactory implements TypeAdapterFactory {
     final TypeAdapter<Performative> perfDelegate = gson.getAdapter(TypeToken.get(Performative.class));
     final TypeAdapter<AgentID> aidDelegate = gson.getAdapter(TypeToken.get(AgentID.class));
     final TypeAdapter<GenericValue> gvDelegate = gson.getAdapter(TypeToken.get(GenericValue.class));
+    final TypeAdapter<JsonElement> treeDelegate = gson.getAdapter(JsonElement.class);
     final MessageAdapterFactory parent = this;
     // Gson does not cache delegate adapters
     final Map<Class<?>, TypeAdapter<?>> delegates = new ConcurrentHashMap<>();
@@ -71,6 +80,10 @@ class MessageAdapterFactory implements TypeAdapterFactory {
               for (Object k: msg.keySet()) {
                 out.name(k.toString());
                 Object v = msg.get(k);
+                if (v == null) {
+                  out.nullValue();
+                  continue;
+                }
                 TypeAdapter delegate = gson.getAdapter(TypeToken.get(v.getClass()));
                 delegate.write(out, v);
               }
@@ -91,58 +104,87 @@ class MessageAdapterFactory implements TypeAdapterFactory {
           return null;
         }
         T rv = null;
+        String clazz = null;
         Class<?> cls = null;
+        JsonElement early = null;
         in.beginObject();
         while (in.hasNext()) {
           String name = in.nextName();
           if (name.equals("clazz")) {
-            cls = resolver.resolve(in.nextString());
+            clazz = in.nextString();
+            cls = resolver.resolve(clazz);
           } else if (name.equals("data")) {
-            if (cls == null) rv = delegate.read(in);
-            else if (cls.equals(GenericMessage.class)) {
-              GenericMessage msg = new GenericMessage();
-              in.beginObject();
-              while (in.hasNext()) {
-                String fname = in.nextName();
-                if (in.peek() == JsonToken.NULL) {
-                  in.nextNull();
-                  continue;
-                }
-                switch (fname) {
-                  case "msgID":
-                    msg.setMessageID(in.nextString());
-                    break;
-                  case "inReplyTo":
-                    msg.setInReplyTo(in.nextString());
-                    break;
-                  case "perf":
-                    msg.setPerformative(perfDelegate.read(in));
-                    break;
-                  case "recipient":
-                    msg.setRecipient(aidDelegate.read(in));
-                    break;
-                  case "sender":
-                    msg.setSender(aidDelegate.read(in));
-                    break;
-                  default:
-                    GenericValue v = gvDelegate.read(in);
-                    msg.put(fname, v.getValue());
-                    break;
-                }
-              }
-              in.endObject();
-              rv = (T) msg;
-            } else {
-              TypeAdapter<?> delegate1 = delegates.computeIfAbsent(cls, c -> gson.getDelegateAdapter(parent, TypeToken.get(c)));
-              rv = (T)delegate1.read(in);
-            }
+            if (clazz != null) rv = decode(cls, in);
+            else early = treeDelegate.read(in);
           } else in.skipValue();
         }
         in.endObject();
-        return rv;
+        if (early == null) return rv;
+        // data arrived before clazz, so decode it again in the usual order
+        JsonObject wrapper = new JsonObject();
+        wrapper.addProperty("clazz", clazz == null ? "" : clazz);
+        wrapper.add("data", early);
+        return gson.fromJson(wrapper, type);
+      }
+
+      // unknown classes fall back to the declared type
+      private T decode(Class<?> cls, JsonReader in) throws IOException {
+        if (cls == null) return delegate.read(in);
+        if (GenericMessage.class.isAssignableFrom(cls)) return (T)readGeneric(cls, in);
+        TypeAdapter<?> d = delegates.computeIfAbsent(cls, c -> gson.getDelegateAdapter(parent, TypeToken.get(c)));
+        return (T)d.read(in);
+      }
+
+      private GenericMessage readGeneric(Class<?> cls, JsonReader in) throws IOException {
+        GenericMessage msg = newGeneric(cls);
+        in.beginObject();
+        while (in.hasNext()) {
+          String fname = in.nextName();
+          if (in.peek() == JsonToken.NULL) {
+            in.nextNull();
+            if (!HEADERS.contains(fname)) msg.put(fname, null);
+            continue;
+          }
+          switch (fname) {
+            case "msgID":
+              msg.setMessageID(in.nextString());
+              break;
+            case "inReplyTo":
+              msg.setInReplyTo(in.nextString());
+              break;
+            case "perf":
+              msg.setPerformative(perfDelegate.read(in));
+              break;
+            case "recipient":
+              msg.setRecipient(aidDelegate.read(in));
+              break;
+            case "sender":
+              msg.setSender(aidDelegate.read(in));
+              break;
+            case "sentAt":
+              msg.setSentAt(in.nextLong());
+              break;
+            default:
+              msg.put(fname, gvDelegate.read(in).getValue());
+              break;
+          }
+        }
+        in.endObject();
+        return msg;
       }
 
     };
+  }
+
+  private static GenericMessage newGeneric(Class<?> cls) {
+    if (cls == GenericMessage.class) return new GenericMessage();
+    try {
+      Constructor<?> c = cls.getDeclaredConstructor();
+      c.setAccessible(true);
+      return (GenericMessage)c.newInstance();
+    } catch (ReflectiveOperationException | RuntimeException ex) {
+      throw new JsonSyntaxException("Cannot create " + cls.getName() + " without a no-arg constructor", ex);
+    }
   }
 
 }

@@ -94,6 +94,10 @@ public final class JsonCodecBenchmark {
     return "{\"message\":{\"clazz\":\"" + type.getName() + "\",\"data\":" + data + "}}";
   }
 
+  private static String reordered(Class<? extends Message> type, String data) {
+    return "{\"message\":{\"data\":" + data + ",\"clazz\":\"" + type.getName() + "\"}}";
+  }
+
   private static void decode(List<Case> cases, String name, int iterations, String json) {
     cases.add(new Case(name + "-decode", iterations, () -> JsonMessage.fromJson(json)));
   }
@@ -123,6 +127,7 @@ public final class JsonCodecBenchmark {
     if (checked.count != 7 || !"hello".equals(checked.text)) throw new AssertionError("Small-message corpus");
     encode(cases, "small", 10000, small);
     decode(cases, "small", 10000, smallInput);
+    decode(cases, "small-reordered", 10000, reordered(SmallMessage.class, smallData));
 
     GenericMessage generic = headers(new GenericMessage());
     generic.put("text", "hello");
@@ -150,6 +155,7 @@ public final class JsonCodecBenchmark {
       throw new AssertionError("Binary corpus");
     encode(cases, "bytes64KiB", 100, binary);
     decode(cases, "bytes64KiB", 100, binaryInput);
+    decode(cases, "bytes64KiB-reordered", 100, reordered(ArrayMessage.class, binaryData));
 
     NumericListMessage numeric = headers(new NumericListMessage());
     numeric.numbers = new ArrayList<>();
@@ -165,6 +171,7 @@ public final class JsonCodecBenchmark {
       throw new AssertionError("Numeric-array corpus");
     encode(cases, "json-numeric4096", 100, numeric);
     decode(cases, "json-numeric4096", 100, numberInput);
+    decode(cases, "json-numeric4096-reordered", 100, reordered(ArrayMessage.class, numberData));
 
     GenericMessage nested = headers(new GenericMessage());
     Map<String, Object> tree = new LinkedHashMap<>();
