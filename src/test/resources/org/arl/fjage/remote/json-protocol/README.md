@@ -9,13 +9,13 @@ These files record what master's encoder sends, captured on Java 8. `JsonProtoco
 
 The non-finite fixtures contain bare `NaN` and `Infinity` tokens. These are not standard JSON, but they are what master sends, and Gson's lenient parser reads them. Don't reformat these files with a strict JSON tool.
 
-Some fixtures record known bugs as they are today. For example, `nested-message` and `nested-pojo` drop the null fields that follow a nested message, and the two envelope fixtures send `"message":null`.
+Some baselines record bugs that later changes fix. The fixed output is under `corrected/`, as listed below.
 
 ## Approved differences
 
 Never regenerate the baseline files with a changed encoder. When a change is approved to alter the output, add the expected output under `corrected/`, using the baseline's file name. The test uses the `corrected/` file in place of the baseline. List each approved difference below.
 
-None yet.
+- Null fields inside a message are always written, and the envelope never writes them. `nested-message` and `nested-pojo` gain the null fields that followed the nested message (`after`, and `a` inside `pojo`). `contains-agent-request` and `agent-for-service-response` lose `"message":null`.
 
 ## Running
 
