@@ -1,0 +1,1 @@
+{"id":"envelope-id","action":"send","message":{"clazz":"org.arl.fjage.param.ParameterRsp","data":{"index":-1,"values":{"infinity":-Infinity},"param":"nan","value":NaN,"readonly":[],"msgID":"parameter-nonfinite-id","perf":"INFORM","recipient":"receiver","sender":"sender","inReplyTo":"request-id","sentAt":1700000000456}},"relay":false}

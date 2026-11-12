@@ -1,0 +1,1 @@
+{"id":"envelope-id","action":"send","message":{"clazz":"org.arl.fjage.remote.JsonProtocolFixtures$NonFiniteMessage","data":{"nan":null,"infinity":Infinity,"negativeInfinity":-Infinity,"negativeZero":-0.0,"msgID":"nonfinite-id","perf":"INFORM","recipient":"receiver","sender":"sender","inReplyTo":"request-id","sentAt":1700000000456}},"relay":false}
