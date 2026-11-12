@@ -10,12 +10,16 @@ for full license details.
 
 package org.arl.fjage.remote;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.arl.fjage.GenericMessage;
 import org.arl.fjage.param.NamedParameter;
 import org.arl.fjage.param.ParameterRsp;
@@ -112,7 +116,45 @@ public class GenericValueAdapterFactoryTest {
 
   @Test
   public void typedValues() {
-    assertEquals(new Date(1234), readValue("{\"clazz\":\"java.util.Date\",\"data\":1234}"));
+    assertValueInContexts(new Date(1234), "{\"clazz\":\"java.util.Date\",\"data\":1234}");
+    assertValueInContexts(new Date(1234), "{\"data\":1234,\"clazz\":\"java.util.Date\"}");
+    assertValueInContexts(new Date(1234), "{\"x\":1,\"data\":1234,\"clazz\":\"java.util.Date\",\"y\":2}");
+  }
+
+  @Test
+  public void typedArraysAtAnyDepth() {
+    List<?> list = (List<?>)readValue("[{\"clazz\":\"[D\",\"data\":\"AAAAAAAA+D8=\"},{\"data\":[1.5,NaN],\"clazz\":\"[D\"}]");
+    assertArrayEquals(new double[] {1.5}, (double[])list.get(0), 0);
+    assertArrayEquals(new double[] {1.5, Double.NaN}, (double[])list.get(1), 0);
+  }
+
+  @Test
+  public void ordinaryClazzKeysStayInTheMap() {
+    assertValueInContexts(map("clazz", "missing.Type", "x", 1L), "{\"clazz\":\"missing.Type\",\"x\":1}");
+    assertValueInContexts(map("clazz", "missing.Type", "data", 1L), "{\"clazz\":\"missing.Type\",\"data\":1}");
+    assertValueInContexts(map("data", 1L, "clazz", "missing.Type"), "{\"data\":1,\"clazz\":\"missing.Type\"}");
+    assertValueInContexts(map("clazz", 1L), "{\"clazz\":1}");
+    assertValueInContexts(map("clazz", map("a", true)), "{\"clazz\":{\"a\":true}}");
+    assertValueInContexts(map("clazz", "java.util.Date", "x", 1L), "{\"clazz\":\"java.util.Date\",\"x\":1}");
+  }
+
+  @Test
+  public void ordinaryDataKeysKeepTheirValues() {
+    assertValueInContexts(map("data", map("data", Arrays.asList(1L, "NaN", null))), "{\"data\":{\"data\":[1,NaN,null]}}");
+  }
+
+  @Test
+  public void mapsKeepKeyOrder() {
+    Map<?,?> m = (Map<?,?>)readValue("{\"z\":1,\"data\":{\"y\":1,\"b\":2},\"clazz\":\"missing.Type\",\"a\":{\"q\":1,\"c\":2}}");
+    assertEquals(Arrays.asList("z", "data", "clazz", "a"), new ArrayList<>(m.keySet()));
+    assertEquals(Arrays.asList("y", "b"), new ArrayList<>(((Map<?,?>)m.get("data")).keySet()));
+    assertEquals(Arrays.asList("q", "c"), new ArrayList<>(((Map<?,?>)m.get("a")).keySet()));
+  }
+
+  private static Map<String,Object> map(Object... kv) {
+    Map<String,Object> m = new LinkedHashMap<>();
+    for (int i = 0; i < kv.length; i += 2) m.put((String)kv[i], kv[i+1]);
+    return m;
   }
 
   @Test
