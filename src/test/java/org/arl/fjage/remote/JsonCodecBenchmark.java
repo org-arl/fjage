@@ -12,6 +12,8 @@ package org.arl.fjage.remote;
 
 import com.sun.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -42,6 +44,11 @@ public final class JsonCodecBenchmark {
     private static final long serialVersionUID = 1L;
     public byte[] bytes;
     public int[] numbers;
+  }
+
+  public static class DoubleArrayMessage extends Message {
+    private static final long serialVersionUID = 1L;
+    public double[] doubles;
   }
 
   public static class NumericListMessage extends Message {
@@ -165,6 +172,18 @@ public final class JsonCodecBenchmark {
       throw new AssertionError("Numeric-array corpus");
     encode(cases, "json-numeric4096", 100, numeric);
     decode(cases, "json-numeric4096", 100, numberInput);
+
+    DoubleArrayMessage doubles = headers(new DoubleArrayMessage());
+    doubles.doubles = new double[1 << 20];
+    for (int i = 0; i < doubles.doubles.length; i++) doubles.doubles[i] = i * 0.001;
+    encode(cases, "doubles1M", 10, doubles);
+    ByteBuffer packed = ByteBuffer.allocate(8 * doubles.doubles.length).order(ByteOrder.LITTLE_ENDIAN);
+    packed.asDoubleBuffer().put(doubles.doubles);
+    decode(cases, "doubles1M", 10, input(DoubleArrayMessage.class, "{\"msgID\":\"benchmark-message\",\"doubles\":{\"clazz\":\"[D\",\"data\":\""
+      + Base64.getEncoder().encodeToString(packed.array()) + "\"}}"));
+    StringBuilder plain = new StringBuilder("{\"msgID\":\"benchmark-message\",\"doubles\":[");
+    for (int i = 0; i < 4096; i++) plain.append(i > 0 ? "," : "").append(i * 0.5);
+    decode(cases, "json-doubles4096", 100, input(DoubleArrayMessage.class, plain.append("]}").toString()));
 
     GenericMessage nested = headers(new GenericMessage());
     Map<String, Object> tree = new LinkedHashMap<>();

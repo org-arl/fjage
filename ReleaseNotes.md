@@ -3,6 +3,9 @@
 ### 2.7.1
 
 * Fix `WebServer` uploads to save files under their submitted names instead of URL-encoded names; names that are not plain file names (absolute paths, path components, `.` or `..`) are rejected with HTTP 400
+* Change JSON decoding to reject a Base64 primitive array whose length is not a whole number of elements, or whose `clazz` names a different primitive array type than the field; such a message is now dropped with a warning, where before it was delivered with a truncated or reinterpreted array
+* Bugfix: `null` elements in plain JSON arrays of `float[]` and `double[]` now decode as NaN, as fjage.js sends them, instead of failing the message
+* Bugfix: Primitive arrays can now be encoded with Gson's `toJsonTree`
 * Bugfix: `TcpHubConnector` no longer discards incoming zero bytes when Telnet mode is disabled
 * Bugfix: `TcpHubConnector` in Telnet mode now decodes an escaped `0xFF` byte (`IAC IAC`) as data instead of discarding it and the byte that follows
 
