@@ -10,10 +10,13 @@ for full license details.
 
 package org.arl.fjage.remote;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+import java.util.Collections;
 import org.arl.fjage.GenericMessage;
 import org.arl.fjage.Message;
 import org.junit.Test;
@@ -116,6 +119,46 @@ public class ArrayAdapterFactoryTest {
       assertArrayEquals(a.i, ((ArrayMsg)roundTrip(a)).i);
       assertEquals(t.tag, ((TagMsg)roundTrip(t)).tag);
     }
+  }
+
+  private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new ArrayAdapterFactory()).create();
+
+  @Test
+  public void base64OfPartialElementsIsRejected() {
+    // 7 bytes, 3 bytes and 1 byte
+    assertThrows(JsonSyntaxException.class, () -> gson.fromJson("\"AAAAAAAAAA==\"", double[].class));
+    assertThrows(JsonSyntaxException.class, () -> gson.fromJson("\"AAAA\"", int[].class));
+    assertThrows(JsonSyntaxException.class, () -> gson.fromJson("{\"clazz\":\"[S\",\"data\":\"AA==\"}", short[].class));
+    assertArrayEquals(new byte[] {0}, gson.fromJson("\"AA==\"", byte[].class));
+  }
+
+  @Test
+  public void wrapperOfAnotherArrayTypeIsRejected() {
+    assertThrows(JsonSyntaxException.class, () -> gson.fromJson("{\"clazz\":\"[F\",\"data\":\"AAAAAAAA+D8=\"}", double[].class));
+    assertThrows(JsonSyntaxException.class, () -> gson.fromJson("{\"data\":\"AAAAAAAA+D8=\",\"clazz\":\"[J\"}", double[].class));
+    assertThrows(JsonSyntaxException.class, () -> JsonMessage.fromJson(
+      "{\"message\":{\"clazz\":\"" + ArrayMsg.class.getName() + "\",\"data\":{\"d\":{\"clazz\":\"[I\",\"data\":\"AAAAAAAA+D8=\"}}}}"));
+    for (String clazz : new String[] {null, "\"[D\"", "\"double[]\"", "1"}) {
+      String json = "{" + (clazz == null ? "" : "\"clazz\":" + clazz + ",") + "\"data\":\"AAAAAAAA+D8=\"}";
+      assertArrayEquals(json, new double[] {1.5}, gson.fromJson(json, double[].class), 0);
+    }
+  }
+
+  @Test
+  public void nullElementsOfFloatingArraysAreNaN() {
+    assertArrayEquals(new double[] {1.5, Double.NaN, 2}, gson.fromJson("[1.5,null,2]", double[].class), 0);
+    assertArrayEquals(new float[] {Float.NaN, 0.25f}, gson.fromJson("[null,0.25]", float[].class), 0);
+    double[] many = gson.fromJson("[" + String.join(",", Collections.nCopies(40, "NaN")) + "]", double[].class);
+    assertEquals(40, many.length);
+    assertTrue(Double.isNaN(many[39]));
+  }
+
+  @Test
+  public void arraysEncodeToTrees() {
+    assertEquals(JsonParser.parseString("{\"clazz\":\"[D\",\"data\":\"AAAAAAAA+D8=\"}"), gson.toJsonTree(new double[] {1.5}));
+    Gson bare = new GsonBuilder().registerTypeAdapterFactory(new ArrayAdapterFactory(true, 0)).create();
+    assertEquals(JsonParser.parseString("\"AACAPw==\""), bare.toJsonTree(new float[] {1}));
+    assertArrayEquals(new double[] {1.5}, gson.fromJson(gson.toJsonTree(new double[] {1.5}), double[].class), 0);
   }
 
 }
