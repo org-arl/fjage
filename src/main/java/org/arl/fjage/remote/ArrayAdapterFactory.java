@@ -11,8 +11,10 @@ for full license details.
 package org.arl.fjage.remote;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import com.google.gson.*;
 import com.google.gson.stream.*;
@@ -49,53 +51,114 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
     return new String(q, StandardCharsets.ISO_8859_1);
   }
 
+  // writers that cannot take raw JSON, such as Gson's tree writer, get a plain string
+  private static void writeBase64(JsonWriter out, byte[] data) throws IOException {
+    try {
+      out.jsonValue(quoted(data));
+    } catch (UnsupportedOperationException ex) {
+      out.value(Base64.getEncoder().encodeToString(data));
+    }
+  }
+
+  // plain JSON arrays of floats and doubles, where null stands for NaN
+  private static double[] doubles(JsonReader in) throws IOException {
+    double[] a = new double[16];
+    int n = 0;
+    in.beginArray();
+    while (in.hasNext()) {
+      if (n == a.length) a = Arrays.copyOf(a, 2*n);
+      if (in.peek() == JsonToken.NULL) {
+        in.nextNull();
+        a[n++] = Double.NaN;
+      } else a[n++] = in.nextDouble();
+    }
+    in.endArray();
+    return Arrays.copyOf(a, n);
+  }
+
+  /** Little-endian packing, and plain JSON array reading, for each primitive array type. */
+  private enum Codec {
+    BYTE(byte[].class, 1) {
+      byte[] pack(Object a) { return (byte[])a; }
+      Object unpack(ByteBuffer b) { return b.array(); }
+    },
+    SHORT(short[].class, 2) {
+      byte[] pack(Object a) { ByteBuffer b = buffer(a); b.asShortBuffer().put((short[])a); return b.array(); }
+      Object unpack(ByteBuffer b) { ShortBuffer v = b.asShortBuffer(); short[] a = new short[v.limit()]; v.get(a); return a; }
+    },
+    INT(int[].class, 4) {
+      byte[] pack(Object a) { ByteBuffer b = buffer(a); b.asIntBuffer().put((int[])a); return b.array(); }
+      Object unpack(ByteBuffer b) { IntBuffer v = b.asIntBuffer(); int[] a = new int[v.limit()]; v.get(a); return a; }
+    },
+    LONG(long[].class, 8) {
+      byte[] pack(Object a) { ByteBuffer b = buffer(a); b.asLongBuffer().put((long[])a); return b.array(); }
+      Object unpack(ByteBuffer b) { LongBuffer v = b.asLongBuffer(); long[] a = new long[v.limit()]; v.get(a); return a; }
+    },
+    FLOAT(float[].class, 4) {
+      byte[] pack(Object a) { ByteBuffer b = buffer(a); b.asFloatBuffer().put((float[])a); return b.array(); }
+      Object unpack(ByteBuffer b) { FloatBuffer v = b.asFloatBuffer(); float[] a = new float[v.limit()]; v.get(a); return a; }
+      Object read(JsonReader in, TypeAdapter<?> delegate) throws IOException {
+        double[] d = doubles(in);
+        float[] a = new float[d.length];
+        for (int i = 0; i < d.length; i++) a[i] = (float)d[i];
+        return a;
+      }
+    },
+    DOUBLE(double[].class, 8) {
+      byte[] pack(Object a) { ByteBuffer b = buffer(a); b.asDoubleBuffer().put((double[])a); return b.array(); }
+      Object unpack(ByteBuffer b) { DoubleBuffer v = b.asDoubleBuffer(); double[] a = new double[v.limit()]; v.get(a); return a; }
+      Object read(JsonReader in, TypeAdapter<?> delegate) throws IOException { return doubles(in); }
+    };
+
+    final Class<?> type;
+    final int size;
+
+    Codec(Class<?> type, int size) {
+      this.type = type;
+      this.size = size;
+    }
+
+    static Codec of(String name) {
+      for (Codec c: values())
+        if (c.type.getName().equals(name)) return c;
+      return null;
+    }
+
+    ByteBuffer buffer(Object a) {
+      return ByteBuffer.allocate(size*Array.getLength(a)).order(ByteOrder.LITTLE_ENDIAN);
+    }
+
+    abstract byte[] pack(Object a);
+    abstract Object unpack(ByteBuffer b);
+
+    Object read(JsonReader in, TypeAdapter<?> delegate) throws IOException {
+      return delegate.read(in);
+    }
+  }
+
   @SuppressWarnings("unchecked")
   public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
     final Class<T> rawType = (Class<T>)type.getRawType();
-    if (!rawType.isArray()) return null;
-    final Class<?> compType = rawType.getComponentType();
-    if (compType == null) return null;
-    if (!compType.isPrimitive()) return null;
-    if (!compType.equals(byte.class) && !compType.equals(int.class) &&
-        !compType.equals(short.class) && !compType.equals(long.class) &&
-        !compType.equals(float.class) && !compType.equals(double.class)) return null;
+    final Codec codec = Codec.of(rawType.getName());
+    if (codec == null) return null;
     final TypeAdapter<T> delegate = gson.getDelegateAdapter(this, type);
     return new TypeAdapter<T>() {
 
       @Override
       public void write(JsonWriter out, T value) throws IOException {
         if (value == null) out.nullValue();
-        else if (len(value) < threshold) outval(out, value);
+        else if (Array.getLength(value) < threshold) {
+          out.beginArray();
+          for (int i = 0, n = Array.getLength(value); i < n; i++) out.value((Number)Array.get(value, i));
+          out.endArray();
+        }
+        else if (bare) writeBase64(out, codec.pack(value));
         else {
-          byte[] data;
-          if (compType.equals(byte.class)) data = (byte[])value;
-          else {
-            ByteBuffer buf = null;
-            if (compType.equals(int.class)) {
-              buf = ByteBuffer.allocate(Integer.SIZE/Byte.SIZE*((int[])value).length).order(ByteOrder.LITTLE_ENDIAN);
-              buf.asIntBuffer().put((int[])value);
-            } else if (compType.equals(short.class)) {
-              buf = ByteBuffer.allocate(Short.SIZE/Byte.SIZE*((short[])value).length).order(ByteOrder.LITTLE_ENDIAN);
-              buf.asShortBuffer().put((short[])value);
-            } else if (compType.equals(long.class)) {
-              buf = ByteBuffer.allocate(Long.SIZE/Byte.SIZE*((long[])value).length).order(ByteOrder.LITTLE_ENDIAN);
-              buf.asLongBuffer().put((long[])value);
-            } else if (compType.equals(float.class)) {
-              buf = ByteBuffer.allocate(Float.SIZE/Byte.SIZE*((float[])value).length).order(ByteOrder.LITTLE_ENDIAN);
-              buf.asFloatBuffer().put((float[])value);
-            } else if (compType.equals(double.class)) {
-              buf = ByteBuffer.allocate(Double.SIZE/Byte.SIZE*((double[])value).length).order(ByteOrder.LITTLE_ENDIAN);
-              buf.asDoubleBuffer().put((double[])value);
-            }
-            data = buf.array();
-          }
-          if (bare) out.jsonValue(quoted(data));
-          else {
-            out.beginObject();
-            out.name("clazz").value(rawType.getName());
-            out.name("data").jsonValue(quoted(data));
-            out.endObject();
-          }
+          out.beginObject();
+          out.name("clazz").value(rawType.getName());
+          out.name("data");
+          writeBase64(out, codec.pack(value));
+          out.endObject();
         }
       }
 
@@ -106,110 +169,30 @@ class ArrayAdapterFactory implements TypeAdapterFactory {
           in.nextNull();
           return null;
         }
-        if (tok == JsonToken.STRING) return decodeString(in.nextString());
-        if (tok == JsonToken.BEGIN_ARRAY) return delegate.read(in);
+        if (tok == JsonToken.STRING) return decode(in.nextString());
+        if (tok == JsonToken.BEGIN_ARRAY) return (T)codec.read(in, delegate);
         if (tok != JsonToken.BEGIN_OBJECT) return null;
         T rv = null;
         in.beginObject();
         while (in.hasNext()) {
           String name = in.nextName();
-          if (name.equals("data")) rv = decodeString(in.nextString());
+          if (name.equals("data")) rv = decode(in.nextString());
+          else if (name.equals("clazz") && in.peek() == JsonToken.STRING) {
+            String clazz = in.nextString();
+            Codec c = Codec.of(clazz);
+            if (c != null && c != codec) throw new JsonSyntaxException("Expected " + rawType.getName() + " but received " + clazz);
+          }
           else in.skipValue();
         }
         in.endObject();
         return rv;
       }
 
-      private T decodeString(String s) {
+      private T decode(String s) {
         byte[] data = Base64.getDecoder().decode(s);
-        if (compType.equals(byte.class)) return (T)data;
-        ByteBuffer buf = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
-        if (compType.equals(int.class)) {
-          IntBuffer buf2 = buf.asIntBuffer();
-          int[] array = new int[buf2.limit()];
-          buf2.get(array);
-          return (T)array;
-        }
-        if (compType.equals(short.class)) {
-          ShortBuffer buf2 = buf.asShortBuffer();
-          short[] array = new short[buf2.limit()];
-          buf2.get(array);
-          return (T)array;
-        }
-        if (compType.equals(long.class)) {
-          LongBuffer buf2 = buf.asLongBuffer();
-          long[] array = new long[buf2.limit()];
-          buf2.get(array);
-          return (T)array;
-        }
-        if (compType.equals(float.class)) {
-          FloatBuffer buf2 = buf.asFloatBuffer();
-          float[] array = new float[buf2.limit()];
-          buf2.get(array);
-          return (T)array;
-        }
-        if (compType.equals(double.class)) {
-          DoubleBuffer buf2 = buf.asDoubleBuffer();
-          double[] array = new double[buf2.limit()];
-          buf2.get(array);
-          return (T)array;
-        }
-        return null;
-      }
-
-      private int len(T value) {
-        if (compType.equals(byte.class)) return ((byte[])value).length;
-        else if (compType.equals(int.class)) return ((int[])value).length;
-        else if (compType.equals(short.class)) return ((short[])value).length;
-        else if (compType.equals(long.class)) return ((long[])value).length;
-        else if (compType.equals(float.class)) return ((float[])value).length;
-        else if (compType.equals(double.class)) return ((double[])value).length;
-        return 0;
-      }
-
-      private void outval(JsonWriter out, T value) throws IOException {
-        if (compType.equals(byte.class)) writeArray(out, (byte[])value);
-        else if (compType.equals(int.class)) writeArray(out, (int[])value);
-        else if (compType.equals(short.class)) writeArray(out, (short[])value);
-        else if (compType.equals(long.class)) writeArray(out, (long[])value);
-        else if (compType.equals(float.class)) writeArray(out, (float[])value);
-        else if (compType.equals(double.class)) writeArray(out, (double[])value);
-      }
-
-      private void writeArray(JsonWriter out, byte[] arr) throws IOException {
-        out.beginArray();
-        for (byte b : arr) out.value(b);
-        out.endArray();
-      }
-
-      private void writeArray(JsonWriter out, int[] arr) throws IOException {
-        out.beginArray();
-        for (int j : arr) out.value(j);
-        out.endArray();
-      }
-
-      private void writeArray(JsonWriter out, short[] arr) throws IOException {
-        out.beginArray();
-        for (short value : arr) out.value(value);
-        out.endArray();
-      }
-
-      private void writeArray(JsonWriter out, long[] arr) throws IOException {
-        out.beginArray();
-        for (long l : arr) out.value(l);
-        out.endArray();
-      }
-
-      private void writeArray(JsonWriter out, float[] arr) throws IOException {
-        out.beginArray();
-        for (float v : arr) out.value(v);
-        out.endArray();
-      }
-
-      private void writeArray(JsonWriter out, double[] arr) throws IOException {
-        out.beginArray();
-        for (double v : arr) out.value(v);
-        out.endArray();
+        if (data.length % codec.size != 0)
+          throw new JsonSyntaxException("Base64 data for " + rawType.getName() + " has " + data.length + " bytes, not a multiple of " + codec.size);
+        return (T)codec.unpack(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN));
       }
 
     };
