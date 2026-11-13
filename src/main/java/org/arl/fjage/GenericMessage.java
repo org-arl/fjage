@@ -14,6 +14,10 @@ import java.util.*;
 
 /**
  * A message class that can convey generic messages represented by key-value pairs.
+ * <p>
+ * The keys {@code msgID}, {@code inReplyTo}, {@code perf}, {@code recipient},
+ * {@code sender} and {@code sentAt} are reserved for message headers. A message
+ * that uses one of them as a key cannot be sent to a remote container.
  *
  * @author  Mandar Chitre
  */

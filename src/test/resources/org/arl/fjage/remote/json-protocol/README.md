@@ -16,6 +16,7 @@ Some baselines record bugs that later changes fix. The fixed output is under `co
 Never regenerate the baseline files with a changed encoder. When a change is approved to alter the output, add the expected output under `corrected/`, using the baseline's file name. The test uses the `corrected/` file in place of the baseline. List each approved difference below.
 
 - Null fields inside a message are always written, and the envelope never writes them. `nested-message` and `nested-pojo` gain the null fields that followed the nested message (`after`, and `a` inside `pojo`). `contains-agent-request` and `agent-for-service-response` lose `"message":null`.
+- `GenericMessage` writes `sentAt` after `sender`, as typed messages do. `generic-message`, `generic-nonfinite` and `legacy-enum` gain `"sentAt":1700000000456`.
 
 ## Running
 

@@ -79,8 +79,11 @@ class MessageAdapterFactory implements TypeAdapterFactory {
               aidDelegate.write(out, msg.getRecipient());
               out.name("sender");
               aidDelegate.write(out, msg.getSender());
+              out.name("sentAt").value(msg.getSentAt());
               for (Object k: msg.keySet()) {
-                out.name(k.toString());
+                String name = k.toString();
+                if (HEADERS.contains(name)) throw new IllegalArgumentException("GenericMessage key '" + name + "' is a reserved header name");
+                out.name(name);
                 Object v = msg.get(k);
                 if (v == null) {
                   out.nullValue();

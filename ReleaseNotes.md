@@ -6,6 +6,8 @@
 * Bugfix: Typed values such as arrays and dates now decode at any depth inside `GenericMessage` and parameter values, in either key order; other objects decode to maps that keep their key order and any `clazz` key
 * Bugfix: JSON messages now decode when `data` comes before `clazz` (#38)
 * Bugfix: `GenericMessage` subclasses now decode, `GenericMessage` payload values can be `null` when sending and receiving, and a received `sentAt` is read into the message header instead of the payload
+* Bugfix: `GenericMessage` now sends its `sentAt` header to remote containers and gateways
+* Change `GenericMessage` to reject keys named after message headers (`msgID`, `inReplyTo`, `perf`, `recipient`, `sender`, `sentAt`) when sending to a remote container; the message is not relayed, a warning is logged, and `send` returns `false` unless the message was delivered locally
 * Bugfix: `TcpHubConnector` no longer discards incoming zero bytes when Telnet mode is disabled
 * Bugfix: JSON messages now keep null fields that follow a nested message, and requests and responses without a message no longer send `"message":null`
 * Bugfix: `TcpHubConnector` in Telnet mode now decodes an escaped `0xFF` byte (`IAC IAC`) as data instead of discarding it and the byte that follows
