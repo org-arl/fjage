@@ -13,8 +13,11 @@ package org.arl.fjage.remote;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.util.List;
 import org.arl.fjage.Agent;
 import org.arl.fjage.Container;
@@ -37,6 +40,34 @@ public class EnumTypeAdapterTest {
 
   public enum TestParam implements Parameter {
     alpha, beta
+  }
+
+  public enum Display implements Parameter {
+    first, second;
+    @Override public String toString() { return this == first ? "First" : "Second"; }
+  }
+
+  public enum Body implements Parameter {
+    plain { @Override public int size() { return 1; } },
+    shown { @Override public String toString() { return "Shown"; } };
+    public int size() { return 0; }
+  }
+
+  public enum Ambiguous implements Parameter {
+    first, second;
+    @Override public String toString() { return "same"; }
+  }
+
+  public static class Outer {
+    public static class Inner {
+      public enum Value implements Parameter { alpha { }, beta }
+    }
+  }
+
+  private static final Gson gson = new GsonBuilder().registerTypeHierarchyAdapter(Parameter.class, new EnumTypeAdapter()).create();
+
+  private static Object roundTrip(Parameter p) {
+    return gson.fromJson(gson.toJson(p, Parameter.class), Parameter.class);
   }
 
   private static final String BETA = TestParam.class.getName().replace('$','.')+".beta";
@@ -70,6 +101,19 @@ public class EnumTypeAdapterTest {
     List<ParameterReq.Entry> requests = ((ParameterReq)rx.message).requests();
     assertEquals(1, requests.size());
     assertEquals(TestParam.alpha, requests.get(0).param);
+  }
+
+  @Test
+  public void constantsWithBodiesAndDisplayNamesRoundTrip() {
+    for (Parameter p: new Parameter[] { Display.first, Display.second, Body.plain, Body.shown, Outer.Inner.Value.alpha, Outer.Inner.Value.beta })
+      assertSame(p, roundTrip(p));
+  }
+
+  @Test
+  public void ambiguousDisplayNameFallsBackToNamedParameter() {
+    Object p = roundTrip(Ambiguous.first);
+    assertTrue(p instanceof NamedParameter);
+    assertEquals(Ambiguous.class.getName().replace('$','.')+".same", p.toString());
   }
 
   @Test
