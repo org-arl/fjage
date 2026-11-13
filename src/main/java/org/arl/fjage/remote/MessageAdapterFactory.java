@@ -59,10 +59,12 @@ class MessageAdapterFactory implements TypeAdapterFactory {
 
       @Override
       public void write(JsonWriter out, T value) throws IOException {
+        // nulls are written inside a message, and the writer's own setting is restored after it
+        boolean nulls = out.getSerializeNulls();
         try {
-          out.setSerializeNulls(true);
           if (value == null) out.nullValue();
           else {
+            out.setSerializeNulls(true);
             out.beginObject();
             out.name("clazz").value(value.getClass().getName());
             out.name("data");
@@ -77,8 +79,11 @@ class MessageAdapterFactory implements TypeAdapterFactory {
               aidDelegate.write(out, msg.getRecipient());
               out.name("sender");
               aidDelegate.write(out, msg.getSender());
+              out.name("sentAt").value(msg.getSentAt());
               for (Object k: msg.keySet()) {
-                out.name(k.toString());
+                String name = k.toString();
+                if (HEADERS.contains(name)) throw new IllegalArgumentException("GenericMessage key '" + name + "' is a reserved header name");
+                out.name(name);
                 Object v = msg.get(k);
                 if (v == null) {
                   out.nullValue();
@@ -93,7 +98,7 @@ class MessageAdapterFactory implements TypeAdapterFactory {
             out.endObject();
           }
         } finally {
-          out.setSerializeNulls(false);
+          out.setSerializeNulls(nulls);
         }
       }
 

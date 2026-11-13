@@ -19,6 +19,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import org.arl.fjage.GenericMessage;
@@ -99,6 +100,31 @@ public class MessageAdapterFactoryTest {
     JsonSyntaxException ex = assertThrows(JsonSyntaxException.class,
       () -> generic(NoDefaultConstructor.class.getName(), "{\"msgID\":\"g\"}"));
     assertTrue(ex.getMessage(), ex.getMessage().contains(NoDefaultConstructor.class.getName()));
+  }
+
+  @Test
+  public void genericMessageSentAtRoundTrips() {
+    GenericMessage msg = new GenericMessage();
+    msg.setSentAt(1234);
+    JsonMessage env = new JsonMessage();
+    env.message = msg;
+    String json = env.toJson();
+    assertTrue(json, json.contains("\"sender\":null,\"sentAt\":1234}"));
+    GenericMessage back = (GenericMessage)JsonMessage.fromJson(json).message;
+    assertEquals(Long.valueOf(1234), back.getSentAt());
+    assertTrue(back.isEmpty());
+  }
+
+  @Test
+  public void genericMessageReservedKeysFailTheEncode() {
+    for (String key : Arrays.asList("msgID", "inReplyTo", "perf", "recipient", "sender", "sentAt")) {
+      GenericMessage msg = new GenericMessage();
+      msg.putAll(Collections.singletonMap(key, 1));
+      JsonMessage env = new JsonMessage();
+      env.message = msg;
+      IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, env::toJson);
+      assertTrue(ex.getMessage(), ex.getMessage().contains("'" + key + "'"));
+    }
   }
 
   @Test
