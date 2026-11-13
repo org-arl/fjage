@@ -3,6 +3,7 @@
 ### 2.7.1
 
 * Fix `WebServer` uploads to save files under their submitted names instead of URL-encoded names; names that are not plain file names (absolute paths, path components, `.` or `..`) are rejected with HTTP 400
+* Bugfix: Parameter enum constants with a body, or with an overridden `toString()`, now decode as the constant instead of a `NamedParameter`; a `toString()` shared by several constants, or one that contains a dot, still decodes as a `NamedParameter`
 * Bugfix: `TcpHubConnector` no longer discards incoming zero bytes when Telnet mode is disabled
 * Bugfix: `TcpHubConnector` in Telnet mode now decodes an escaped `0xFF` byte (`IAC IAC`) as data instead of discarding it and the byte that follows
 

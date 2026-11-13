@@ -34,13 +34,27 @@ public class EnumTypeAdapter extends TypeAdapter<Object> {
   @SuppressWarnings({"rawtypes", "unchecked"})
   private static Class<? extends Enum> enumClass(String clsname) {
     try {
-      Class<? extends Enum> cls = (Class<? extends Enum>)resolver.resolveNested(clsname);
-      if (cls != null) return cls;
+      Class<?> cls = resolver.resolveNested(clsname);
+      // a constant with a body is an anonymous subclass of its enum
+      if (cls != null && !cls.isEnum()) cls = cls.getSuperclass();
+      if (cls != null && cls.isEnum()) return (Class<? extends Enum>)cls;
     } catch (JsonSyntaxException ex) {
       // not an enum, so treat it as a named parameter
     }
     log.fine("Class "+clsname+" could not be loaded");
     return null;
+  }
+
+  // the constant whose toString() is the given string, if exactly one is
+  @SuppressWarnings("rawtypes")
+  private static Enum<?> displayed(Class<? extends Enum> cls, String value) {
+    Enum<?> match = null;
+    for (Enum<?> c: cls.getEnumConstants()) {
+      if (!value.equals(c.toString())) continue;
+      if (match != null) return null;
+      match = c;
+    }
+    return match;
   }
 
   @Override public void write(JsonWriter out, Object value) throws IOException {
@@ -64,6 +78,8 @@ public class EnumTypeAdapter extends TypeAdapter<Object> {
       try {
         return Enum.valueOf(cls, value);
       } catch (IllegalArgumentException ex) {
+        Enum<?> e = displayed(cls, value);
+        if (e != null) return e;
         // the constant is unknown, perhaps because it was removed in a newer version;
         // fall back to a named parameter, so that the rest of the message survives
         log.fine("No enum constant "+s+", treating as named parameter");
