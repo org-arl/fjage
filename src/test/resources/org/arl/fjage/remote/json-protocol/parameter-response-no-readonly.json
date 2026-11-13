@@ -1,0 +1,1 @@
+{"id":"envelope-id","action":"send","message":{"clazz":"org.arl.fjage.param.ParameterRsp","data":{"msgID":"python-response-id","perf":"INFORM","sender":"sender","recipient":"receiver","inReplyTo":"request-id","sentAt":null,"index":-1,"values":{},"param":"org.arl.fjage.remote.JsonProtocolFixtures.Param.alpha","value":42}},"relay":false}

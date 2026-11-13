@@ -4,6 +4,7 @@ These files record what master's encoder sends, captured on Java 8. `JsonProtoco
 
 - The first 11 files were captured from master `d16f8455`.
 - `nested-pojo`, `contains-agent-request` and `agent-for-service-response` were captured from master `d3f91d6b`. Nothing in the codec changed between the two commits, and the first 11 files are byte-identical on both.
+- `parameter-response-no-readonly` is an input, not encoder output. It is what fjagepy sends for a `ParameterRsp`, which has no `readonly` field.
 
 `JsonProtocolCompatibilityTest` compares the encoder's output with these files. It checks member order exactly for typed messages, and sorts object members where map iteration order isn't part of the contract. The sorted comparison keeps numbers as they are spelled. Separate checks cover escaped strings, Base64 data, `clazz` before `data` in every wrapper, and signed zero. Decoding checks cover headers, typed values, every primitive array type, and parameter requests and responses.
 

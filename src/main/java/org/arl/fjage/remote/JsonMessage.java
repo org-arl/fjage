@@ -64,14 +64,14 @@ public class JsonMessage {
     .serializeSpecialFloatingPointValues()
     .enableComplexMapKeySerialization();
 
-  private static Gson gson = gsonBuilder.create();
+  private static volatile Gson gson = gsonBuilder.create();
 
-  public static void addTypeHierarchyAdapter(Class<?> cls, Object adapter) {
+  public static synchronized void addTypeHierarchyAdapter(Class<?> cls, Object adapter) {
     gsonBuilder.registerTypeHierarchyAdapter(cls, adapter);
     gson = gsonBuilder.create();
   }
 
-  public static void addTypeAdapterFactory(TypeAdapterFactory factory) {
+  public static synchronized void addTypeAdapterFactory(TypeAdapterFactory factory) {
     gsonBuilder.registerTypeAdapterFactory(factory);
     gson = gsonBuilder.create();
   }
