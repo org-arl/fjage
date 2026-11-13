@@ -191,7 +191,13 @@ public class Tunnel extends Agent implements ConnectionListener, MessageListener
         String line;
         while ((line = in.readLine()) != null) {
           log.finer(id+" >> "+line);
-          JsonMessage jmsg = JsonMessage.fromJson(line);
+          JsonMessage jmsg;
+          try {
+            jmsg = JsonMessage.fromJson(line);
+          } catch (RuntimeException ex) {
+            log.warning("Invalid message from "+cname+": "+ex.getMessage());
+            continue;
+          }
           if (jmsg == null || jmsg.message == null) continue;
           AgentID sender = jmsg.message.getSender();
           if (sender == null) continue;
