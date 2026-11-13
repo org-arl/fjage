@@ -11,6 +11,7 @@
 * Change JSON decoding to reject a Base64 primitive array whose length is not a whole number of elements, or whose `clazz` names a different primitive array type than the field; such a message is now dropped with a warning, where before it was delivered with a truncated or reinterpreted array
 * Bugfix: `null` elements in plain JSON arrays of `float[]` and `double[]` now decode as NaN, as fjage.js sends them, instead of failing the message
 * Bugfix: Primitive arrays can now be encoded with Gson's `toJsonTree`
+* Bugfix: Parameter enum constants with a body, or with an overridden `toString()`, now decode as the constant instead of a `NamedParameter`; a `toString()` shared by several constants, or one that contains a dot, still decodes as a `NamedParameter`
 * Bugfix: `TcpHubConnector` no longer discards incoming zero bytes when Telnet mode is disabled
 * Bugfix: JSON messages now keep null fields that follow a nested message, and requests and responses without a message no longer send `"message":null`
 * Bugfix: `TcpHubConnector` in Telnet mode now decodes an escaped `0xFF` byte (`IAC IAC`) as data instead of discarding it and the byte that follows
