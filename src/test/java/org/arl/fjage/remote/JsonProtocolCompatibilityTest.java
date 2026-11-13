@@ -163,6 +163,9 @@ public class JsonProtocolCompatibilityTest {
     ParameterRsp response = (ParameterRsp)JsonMessage.fromJson(fixture("parameter-response")).message;
     assertEquals(new Date(1700000000123L), response.get(JsonProtocolFixtures.Param.alpha));
     assertTrue(response.isReadonly(JsonProtocolFixtures.Param.alpha));
+    ParameterRsp peerResponse = (ParameterRsp)JsonMessage.fromJson(fixture("parameter-response-no-readonly")).message;
+    assertEquals(42L, peerResponse.get(JsonProtocolFixtures.Param.alpha));
+    assertFalse(peerResponse.isReadonly(JsonProtocolFixtures.Param.alpha));
     ParameterReq request = (ParameterReq)JsonMessage.fromJson(fixture("parameter-request")).message;
     assertEquals(2, request.getIndex());
     assertEquals(3, request.requests().size());

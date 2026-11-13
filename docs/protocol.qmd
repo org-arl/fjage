@@ -55,7 +55,7 @@ A JsonMessage class is defined in fjåge which support a list of attributes. The
 - `name` : **String** - Optionally included in objects with `"action" : "auth"` to provide a friendly name for the connecting client, used by the target container for logging and connection identification.
 - `auth` : **Boolean** - This attribute is populated in objects which are responses to objects with `"action" : "auth"`, and indicates whether the authentication succeeded. It is also populated (with a value of `false`) in responses to requests that were denied because the connection lacks the necessary authentication.
 - `relay` : **Boolean** - This attribute defines if the target container should relay (forward) the message to other containers it is connected to or not.
-- `message` : **Object** - This holds two main attributes and is responsible for carrying the main payload. The first field is `clazz` and the second `data`. Note that the ordering of `clazz` and `data` fields is crucial. The developer must make sure that the `clazz` field comes ahead of `data` field. The structure and format of this object is discussed here:
+- `message` : **Object** - This holds two main attributes and is responsible for carrying the main payload. The first field is `clazz` and the second `data`. Java accepts the two fields in either order, but senders should still put `clazz` first, since older versions of fjåge need it. The structure and format of this object is discussed here:
   - `clazz` : **String** - A string identifier that identifies the type of the message. This is usually a fully qualified Java class name of the class of that type of message.
   - `data` : **Object** - The main payload containing data and message attributes. This holds the contents of the payload in objects with `"action" : "send"`. The structure and format of this object is discussed here:
     - `data` : **Object** - The main payload containing the data and type of data. **NOTE**: While sending a JSON message, the developer can choose to either follow this format as converting the data to Base64 and specifying the equivalent `clazz` or the data can be directly inserted as an array of numbers without specifying the `clazz` or `data` fields as explained later in the examples section.
@@ -82,7 +82,16 @@ A JsonMessage class is defined in fjåge which support a list of attributes. The
 
 An AgentID, wherever it appears in a JSON message (e.g. `agentID`, `agentIDs`, `recipient`, `sender` attributes), is encoded as a plain string containing the name of the agent. If the AgentID refers to a topic, the name is prefixed with a `#` (agent names therefore should not begin with a `#`).
 
+Some message fields can hold a value of any type, such as the parameter values in `ParameterReq` and `ParameterRsp`. Numbers, strings, booleans, lists, maps and primitive arrays are sent as they are. Any other value is wrapped as an object whose `clazz` is the Java class name and whose `data` is the value, so that the receiver can rebuild it. The common ones are:
+
+- `java.util.Date`, as milliseconds since epoch: `{"clazz": "java.util.Date", "data": 1700000000123}`
+- `org.arl.fjage.AgentID`, as the agent name: `{"clazz": "org.arl.fjage.AgentID", "data": "#events"}`
+- an enum, as the constant: `{"clazz": "org.arl.fjage.Performative", "data": "AGREE"}`. A parameter enum constant is written as its qualified name, such as `"org.arl.unet.phy.Physical.MTU"`.
+- `String[]`, as an array of strings: `{"clazz": "[Ljava.lang.String;", "data": ["one", "two"]}`
+
 Note that not all the above attributes need to be populated in a JSON message. The attributes depend on the task that needs to be executed by the agent running in the target container. Also, the message attribute may have additional attributes depending on the exact message that is being constructed.
+
+Java leaves out the attributes of a JSON message object that are null. Inside the message `data`, it sends null fields as `null`. Receivers should treat a missing attribute and a `null` one the same way.
 
 Next, we describe some of the basic examples in order to let the developer understand what JSON messages to send and how to construct them for different use cases.
 
@@ -146,7 +155,7 @@ Now, let us try to send a string `Hello World!` as a bytestring. This demonstrat
     "data": {
       "data": {
         "clazz": "[B",
-        "data": "aGVsbG8gd29ybGQh"
+        "data": "SGVsbG8gV29ybGQh"
       },
       "msgID": "8152310b-155d-4303-9621-c610e036b373",
       "perf": "REQUEST",
@@ -274,7 +283,7 @@ Equivalent JSON message with base64 encoded signal:
     "data": {
       "signal": {
         "clazz": "[F",
-        "data": "P4AAAD+AAAA/gAAA"
+        "data": "AACAPwAAgD8AAIA/"
       },
       "preamble": 1,
       "msgID": "7774ae54-cb34-44c5-b5d0-4de12e2afcba",

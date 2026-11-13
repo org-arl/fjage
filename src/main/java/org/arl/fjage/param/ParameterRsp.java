@@ -29,6 +29,12 @@ public class ParameterRsp extends Message {
   protected GenericValue value;
   protected Set<Parameter> readonly = new HashSet<>();
 
+  // used by JSON decoding, so field defaults apply but headers absent on the wire stay null
+  private ParameterRsp() {
+    msgID = null;
+    perf = null;
+  }
+
   /**
    * Constructs a response message.
    *
@@ -80,7 +86,10 @@ public class ParameterRsp extends Message {
       if (values == null) values = new HashMap<>();
       values.put(param, new GenericValue(value));
     }
-    if (readonly) this.readonly.add(param);
+    if (readonly) {
+      if (this.readonly == null) this.readonly = new HashSet<>();
+      this.readonly.add(param);
+    }
   }
 
   /**
@@ -115,7 +124,7 @@ public class ParameterRsp extends Message {
   public boolean isReadonly(Parameter param) {
     if (param == null) return false;
     param = resolve(param);
-    return readonly.contains(param);
+    return readonly != null && readonly.contains(param);
   }
 
   /**

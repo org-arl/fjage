@@ -218,7 +218,10 @@ public class Message implements Serializable {
    * Gets the Cached JSON String (if any)
    *
    * @return Cached JSON String representation of the message
+   * @deprecated fjåge no longer uses this cache. A cached string goes stale when the
+   * message is changed, so it is not safe to send in place of the message.
    */
+  @Deprecated
   public String getJsonCache() {
     return _jsoncache;
   }
@@ -227,7 +230,10 @@ public class Message implements Serializable {
    * Sets the Cached JSON String
    *
    * @param _jsoncache JSON String representation of the message
+   * @deprecated fjåge no longer uses this cache. A cached string goes stale when the
+   * message is changed, so it is not safe to send in place of the message.
    */
+  @Deprecated
   public void setJsonCache(String _jsoncache) {
     this._jsoncache = _jsoncache;
   }
