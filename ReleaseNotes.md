@@ -16,6 +16,7 @@
 * Bugfix: A `ParameterRsp` received without `readonly`, as fjagepy sends it, no longer throws a `NullPointerException` from `isReadonly()` and `set()`, and a missing `index` now decodes as -1 instead of 0
 * Bugfix: `Tunnel` now logs and skips a line it can't decode, instead of closing the connection
 * Bugfix: `JsonMessage.addTypeHierarchyAdapter()` and `addTypeAdapterFactory()` are now safe to call while other threads encode or decode messages
+* Change JSON encoding to write `<`, `>`, `&`, `=` and `'` in strings as themselves instead of `\u003c`, `\u003e`, `\u0026`, `\u003d` and `\u0027`; Java, JavaScript, Python and Julia peers decode both forms the same, but C gateway apps now receive these characters unescaped, where before they saw the `\u` escapes
 * Bugfix: `TcpHubConnector` no longer discards incoming zero bytes when Telnet mode is disabled
 * Bugfix: JSON messages now keep null fields that follow a nested message, and requests and responses without a message no longer send `"message":null`
 * Bugfix: `TcpHubConnector` in Telnet mode now decodes an escaped `0xFF` byte (`IAC IAC`) as data instead of discarding it and the byte that follows
