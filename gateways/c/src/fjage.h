@@ -15,6 +15,10 @@ for full license details.
 //  NOTE: This API is NOT thread-safe   //
 //////////////////////////////////////////
 
+// Strings are UTF-8. Numbers are formatted and parsed with the C library, so
+// the LC_NUMERIC locale must use '.' as the decimal point (the default "C"
+// locale does).
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -137,7 +141,8 @@ fjage_aid_t fjage_agent_for_service(fjage_gw_t gw, const char* service);
 int fjage_agents_for_service(fjage_gw_t gw, const char* service, fjage_aid_t* agents, int max);
 
 /// Send a message. The message object passed in is considered consumed after this call,
-/// and should not be used or freed by the caller.
+/// and should not be used or freed by the caller. Sending fails if the message is a
+/// received (read-only) message, or if it could not be built for lack of memory.
 ///
 /// @param gw             Gateway
 /// @param msg            Message to send
@@ -259,11 +264,12 @@ void fjage_msg_set_recipient(fjage_msg_t msg, fjage_aid_t aid);
 
 void fjage_msg_set_in_reply_to(fjage_msg_t msg, const char* id);
 
-/// Add a string value to a message.
+/// Add a string value to a message. The key and value may contain any UTF-8 text,
+/// and are escaped as needed.
 ///
 /// @param msg            Message in write-only mode
 /// @param key            Key
-/// @param value          Value
+/// @param value          Value, or NULL for a JSON null
 
 void fjage_msg_add_string(fjage_msg_t msg, const char* key, const char* value);
 
@@ -283,7 +289,8 @@ void fjage_msg_add_int(fjage_msg_t msg, const char* key, int value);
 
 void fjage_msg_add_long(fjage_msg_t msg, const char* key, long value);
 
-/// Add a floating point value to a message.
+/// Add a floating point value to a message. The value is sent with enough digits to
+/// read back exactly. NaN is sent as null, and infinities as +/-Infinity.
 ///
 /// @param msg            Message in write-only mode
 /// @param key            Key
@@ -389,11 +396,13 @@ const char* fjage_msg_get_in_reply_to(fjage_msg_t msg);
 
 /// Get a string value. The string returned by this function should not
 /// be freed by the caller. However, it will be invalid after the message
-/// is destroyed.
+/// is destroyed. JSON escapes are decoded, so the string is UTF-8 text. A
+/// \u0000 escape ends the string early. Numbers and booleans are returned
+/// as their JSON text.
 ///
 /// @param msg            Message in read-only mode
 /// @param key            Key
-/// @return               String value
+/// @return               String value, or NULL if absent or null
 
 const char* fjage_msg_get_string(fjage_msg_t msg, const char* key);
 

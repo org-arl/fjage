@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(SOURCE_FILES fjage.c jsmn.c encode.c decode.c fjage.h jsmn.h)
+set(SOURCE_FILES fjage.c jsmn.c encode.c decode.c fjage.h fjson.h jsmn.h)
 
 add_library(fjage STATIC ${SOURCE_FILES})
 add_library(fjageShared SHARED ${SOURCE_FILES})

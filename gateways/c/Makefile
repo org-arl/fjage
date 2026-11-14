@@ -12,9 +12,10 @@ test:
 	cmake --build build
 
 runtest:
+	./test_codec
 	./test_fjage $(DEVICE)
 
 clean:
-	rm -fr libfjage.a libfjage.dylib libfjage.so test_fjage build
+	rm -fr libfjage.a libfjage.dylib libfjage.so test_fjage test_codec build
 
 .PHONY: all clean
