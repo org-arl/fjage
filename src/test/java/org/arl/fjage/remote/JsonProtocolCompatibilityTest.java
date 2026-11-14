@@ -116,7 +116,8 @@ public class JsonProtocolCompatibilityTest {
   public void stringsAndBinaryKeepTheirExactEscaping() throws IOException {
     for (String name : new String[] {"typed-message", "generic-message"}) {
       String json = JsonProtocolFixtures.samples().get(name).toJson();
-      assertTrue(name, json.contains("\\u003c\\u003e\\u0026\\u003d\\u0027\\\"\\\\\\n caf\u00e9 \ud83d\ude80"));
+      // HTML characters are written as themselves; quotes, backslashes and control characters are escaped
+      assertTrue(name, json.contains("<>&='\\\"\\\\\\n caf\u00e9 \ud83d\ude80"));
       assertTrue(name, json.contains("9007199254740993"));
     }
     JsonProtocolFixtures.ArrayMessage arrays = (JsonProtocolFixtures.ArrayMessage)

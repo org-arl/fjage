@@ -3,6 +3,7 @@
 ### 2.7.1
 
 * Fix `WebServer` uploads to save files under their submitted names instead of URL-encoded names; names that are not plain file names (absolute paths, path components, `.` or `..`) are rejected with HTTP 400
+* Change JSON encoding to write `<`, `>`, `&`, `=` and `'` in strings as themselves instead of `\u003c`, `\u003e`, `\u0026`, `\u003d` and `\u0027`; Java, JavaScript, Python and Julia peers decode both forms the same, but C gateway apps now receive these characters unescaped, where before they saw the `\u` escapes
 * Bugfix: `TcpHubConnector` no longer discards incoming zero bytes when Telnet mode is disabled
 * Bugfix: `TcpHubConnector` in Telnet mode now decodes an escaped `0xFF` byte (`IAC IAC`) as data instead of discarding it and the byte that follows
 
