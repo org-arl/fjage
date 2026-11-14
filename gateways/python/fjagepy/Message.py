@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import logging
 import keyword
 import warnings
@@ -70,6 +71,15 @@ def _message_clazz(class_: type["Message"]) -> str:
         return "org.arl.fjage.Message"
     return class_.__name__
 
+def _field_defaults(class_: type) -> Dict[str, Any]:
+    """Class-level defaults for annotated fields, collected along the MRO."""
+    defaults: Dict[str, Any] = {}
+    for klass in reversed(class_.__mro__):
+        for name in getattr(klass, '__annotations__', {}):
+            if not name.startswith('_') and name in klass.__dict__:
+                defaults[name] = klass.__dict__[name]
+    return defaults
+
 def _instantiate_message(class_: type["Message"]) -> "Message":
     try:
         return class_()
@@ -90,10 +100,13 @@ class Message:
     __clazz__: str
 
     def __init__(self, in_reply_to_msg: Optional["Message"] = None,
-                 perf: Performative = Performative.INFORM, **kwargs):
+                 perf: Optional[Performative] = None, **kwargs):
         self.__clazz__ = _message_clazz(type(self))
+        # Fields declared with a class-level default are copied onto the instance
+        for name, value in _field_defaults(type(self)).items():
+            setattr(self, name, copy.copy(value))
         self.msgID = str(UUID7.generate())
-        self.perf = perf
+        self.perf = perf or getattr(type(self), 'perf', None) or Performative.INFORM
         self.sender: Optional[AgentID] = None
         self.recipient: Optional[AgentID] = in_reply_to_msg.sender if in_reply_to_msg else None
         self.inReplyTo: Optional[str] = in_reply_to_msg.msgID if in_reply_to_msg else None
@@ -303,20 +316,10 @@ class _GenericObject:
 
 @message('org.arl.fjage.param.ParameterReq')
 class ParameterReq(Message):
-    index: int
-    requests: list[dict]
-    perf: Performative
-    param: Optional[str]
-    value: Optional[Any]
-
-    def __init__(self, index=-1, **kwargs):
-        super().__init__()
-        self.index = index
-        self.requests = []
-        self.perf = Performative.REQUEST
-        self.param = None
-        self.value = None
-        _update_attributes(self, kwargs)
+    index: int = -1
+    requests: list[dict] = []
+    param: Optional[str] = None
+    value: Optional[Any] = None
 
     def get(self, param: str):
         """ Request a parameter by name.
@@ -359,18 +362,10 @@ class ParameterReq(Message):
 
 @message("org.arl.fjage.param.ParameterRsp")
 class ParameterRsp(Message):
-    index: int
-    values: Optional[dict]
-    perf: Performative
-    param: Optional[str]
-    value: Optional[Any]
-
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.index = -1
-        self.values = dict()
-        self.perf = Performative.INFORM
-        _update_attributes(self, kwargs)
+    index: int = -1
+    values: Optional[dict] = {}
+    param: Optional[str] = None
+    value: Optional[Any] = None
 
     def get(self, param:str):# -> Any | AgentID | _GenericObject | dict | Any | None:
         """Get the value of a parameter by name from the response.
@@ -424,71 +419,34 @@ class ParameterRsp(Message):
 
 @message('org.arl.fjage.shell.PutFileReq')
 class PutFileReq(Message):
-    filename: Optional[str]
-    contents: Optional[list[int]]
-    offset: int
-
-    def __init__(self, filename: Optional[str] = None, contents: Optional[list[int]] = None,
-                 offset: int = 0, **kwargs):
-        super().__init__(perf=Performative.REQUEST)
-        self.filename: Optional[str] = filename
-        self.contents: Optional[list[int]] = contents
-        self.offset: int = offset
-        _update_attributes(self, kwargs)
+    filename: Optional[str] = None
+    contents: Optional[list[int]] = None
+    offset: int = 0
 
 
 @message('org.arl.fjage.shell.DeleteFileReq')
 class DeleteFileReq(Message):
-    filename: Optional[str]
-
-    def __init__(self, filename: Optional[str] = None, **kwargs):
-        super().__init__(perf=Performative.REQUEST)
-        self.filename: Optional[str] = filename
-        _update_attributes(self, kwargs)
+    filename: Optional[str] = None
 
 
 @message('org.arl.fjage.shell.GetFileReq')
 class GetFileReq(Message):
-    filename: Optional[str]
-    offset: int
-    length: int
-
-    def __init__(self, filename: Optional[str] = None, offset: int = 0,
-                 length: int = 0, **kwargs):
-        super().__init__(perf=Performative.REQUEST)
-        self.filename: Optional[str] = filename
-        self.offset: int = offset
-        self.length: int = length
-        _update_attributes(self, kwargs)
+    filename: Optional[str] = None
+    offset: int = 0
+    length: int = 0
 
 
 @message('org.arl.fjage.shell.ShellExecReq')
 class ShellExecReq(Message):
-    command: Optional[str]
-    script: Optional[str]
-    scriptArgs: Optional[list[str]]
-    ans: bool
-
-    def __init__(self, command: Optional[str] = None, script: Optional[str] = None,
-                 scriptArgs: Optional[list[str]] = None, ans: bool = False, **kwargs):
-        super().__init__(perf=Performative.REQUEST)
-        self._command: Optional[str] = None
-        self._script: Optional[str] = None
-        self.command = command
-        self.script = script
-        self.scriptArgs: Optional[list[str]] = scriptArgs
-        self.ans: bool = ans
-        _update_attributes(self, kwargs)
+    command: Optional[str] = None
+    script: Optional[str] = None
+    scriptArgs: Optional[list[str]] = None
+    ans: bool = False
 
 
 @message('org.arl.fjage.shell.GetFileRsp')
 class GetFileRsp(Message):
-
-    def __init__(self, filename: Optional[str] = None, offset: int = 0,
-                 contents: Optional[list[int]] = None, directory: bool = False, **kwargs):
-        super().__init__(perf=Performative.INFORM)
-        self.filename: Optional[str] = filename
-        self.offset: int = offset
-        self.contents: Optional[list[int]] = contents
-        self.directory: bool = directory
-        _update_attributes(self, kwargs)
+    filename: Optional[str] = None
+    offset: int = 0
+    contents: Optional[list[int]] = None
+    directory: bool = False
