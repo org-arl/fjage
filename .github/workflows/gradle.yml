@@ -17,7 +17,8 @@ jobs:
       matrix:
         python-version: [3.9]
         node-version: [24.x]
-        os: [ubuntu-latest, windows-latest]
+        # Ubuntu 26.04 (ubuntu-latest) has no Python 3.9 build
+        os: [ubuntu-24.04, windows-latest]
     steps:
     - uses: actions/checkout@v7
       with:
