@@ -31,6 +31,8 @@ for full license details.
 #include <fcntl.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
+#include <limits.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -110,6 +112,42 @@ static void* intr_thread(void* p) {
   usleep(500000);
   fjage_interrupt(gw);
   return NULL;
+}
+
+// Send values that need escaping or full precision to ourselves through the master
+// container, which parses them into a GenericMessage and re-serializes them with Gson.
+static void test_codec_roundtrip(fjage_gw_t gw, fjage_aid_t myaid) {
+  const char* text = "quote\" backslash\\ newline\n tab\t lt< amp& lambda\xce\xbb";
+  fjage_msg_t msg = fjage_msg_create("org.arl.fjage.GenericMessage", FJAGE_INFORM);
+  fjage_msg_set_recipient(msg, myaid);
+  fjage_msg_add_string(msg, "text", text);
+  fjage_msg_add_string(msg, "key\"quote", "v");
+  fjage_msg_add_int(msg, "imin", INT_MIN);
+  fjage_msg_add_long(msg, "lmin", LONG_MIN);
+  fjage_msg_add_long(msg, "lmax", LONG_MAX);
+  fjage_msg_add_float(msg, "fmax", FLT_MAX);
+  fjage_msg_add_float(msg, "fsmall", 1e-7f);
+  fjage_msg_add_float(msg, "f27", 2.7f);
+  fjage_msg_add_float(msg, "finf", -INFINITY);
+  fjage_msg_add_float(msg, "fnan", NAN);
+  test_assert("send (codec)", fjage_send(gw, msg) == 0);
+  msg = fjage_receive(gw, NULL, NULL, 1000);
+  test_assert("receive (codec)", msg != NULL);
+  const char* s = fjage_msg_get_string(msg, "text");
+  test_assert("msg_get_string (escaped)", s != NULL && !strcmp(s, text));
+  s = fjage_msg_get_string(msg, "key\"quote");
+  test_assert("msg_get_string (escaped key)", s != NULL && !strcmp(s, "v"));
+  test_assert("msg_get_int (INT_MIN)", fjage_msg_get_int(msg, "imin", 0) == INT_MIN);
+  test_assert("msg_get_long (LONG_MIN/MAX)", fjage_msg_get_long(msg, "lmin", 0) == LONG_MIN && fjage_msg_get_long(msg, "lmax", 0) == LONG_MAX);
+  test_assert("msg_get_float (FLT_MAX)", fjage_msg_get_float(msg, "fmax", 0) == FLT_MAX);
+  test_assert("msg_get_float (exact)", fjage_msg_get_float(msg, "fsmall", 0) == 1e-7f && fjage_msg_get_float(msg, "f27", 0) == 2.7f);
+  test_assert("msg_get_float (-Infinity)", fjage_msg_get_float(msg, "finf", 0) == -INFINITY);
+  test_assert("msg_get_float (NaN)", fjage_msg_get_float(msg, "fnan", 5) == 5);
+  fjage_msg_destroy(msg);
+  test_assert("agent_for_service (escaped)", fjage_agent_for_service(gw, "bad\"service") == NULL);
+  fjage_aid_t aid = fjage_agent_for_service(gw, "org.arl.fjage.shell.Services.SHELL");
+  test_assert("agent_for_service (after escaped)", aid != NULL && !strcmp(aid, "shell"));
+  fjage_aid_destroy(aid);
 }
 
 int main(int argc, char* argv[]) {
@@ -236,6 +274,7 @@ int main(int argc, char* argv[]) {
   test_assert("msg_get_int_array (long)", ok2);
   test_assert("msg_get_float_array (long)", ok3);
   fjage_msg_destroy(msg);
+  test_codec_roundtrip(gw, myaid);
   double t0 = current_time();
   msg = fjage_receive(gw, NULL, NULL, 1000);
   test_assert("receive (timeout 1)", msg == NULL && current_time()-t0 > 0.9);
