@@ -164,22 +164,22 @@ public class SlaveContainer extends RemoteContainer {
     if (aid == null) return false;
     if (aid.isTopic()) {
       if (!relay) return super.send(m, false);
-      JsonMessage rq = JsonMessage.createActionRequest(Action.SEND);
-      rq.id = m.getMessageID();
-      rq.message = m;
-      rq.relay = true;
-      String json = rq.toJson();
-      localMaster.send(json);
     } else {
       if (super.send(m, false)) return true;
       if (!relay) return false;
-      JsonMessage rq = JsonMessage.createActionRequest(Action.SEND);
-      rq.id = m.getMessageID();
-      rq.message = m;
-      rq.relay = true;
-      String json = rq.toJson();
-      localMaster.send(json);
     }
+    JsonMessage rq = JsonMessage.createActionRequest(Action.SEND);
+    rq.id = m.getMessageID();
+    rq.message = m;
+    rq.relay = true;
+    String json;
+    try {
+      json = rq.toJson();
+    } catch (IllegalArgumentException ex) {
+      log.warning("Message " + m.getMessageID() + " not relayed: " + ex.getMessage());
+      return false;
+    }
+    localMaster.send(json);
     return true;
   }
 

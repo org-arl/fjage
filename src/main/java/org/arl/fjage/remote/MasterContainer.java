@@ -237,7 +237,13 @@ public class MasterContainer extends RemoteContainer implements ConnectionListen
     JsonMessage rq = JsonMessage.createActionRequest(Action.SEND);
     rq.message = m;
     rq.relay = false;
-    String json = rq.toJson();
+    String json;
+    try {
+      json = rq.toJson();
+    } catch (IllegalArgumentException ex) {
+      log.warning("Message " + m.getMessageID() + " not relayed: " + ex.getMessage());
+      return sent;
+    }
     for (ConnectionHandler slave: slaves) {
       if (slave.wantsMessagesFor(aid)) slave.sendAsync(json);
     }
