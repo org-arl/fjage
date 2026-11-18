@@ -62,6 +62,7 @@ public class JsonMessage {
     .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
     .setNumberToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
     .serializeSpecialFloatingPointValues()
+    .disableHtmlEscaping()
     .enableComplexMapKeySerialization();
 
   private static volatile Gson gson = gsonBuilder.create();

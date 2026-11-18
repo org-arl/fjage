@@ -6,7 +6,7 @@ These files record what master's encoder sends, captured on Java 8. `JsonProtoco
 - `nested-pojo`, `contains-agent-request` and `agent-for-service-response` were captured from master `d3f91d6b`. Nothing in the codec changed between the two commits, and the first 11 files are byte-identical on both.
 - `parameter-response-no-readonly` is an input, not encoder output. It is what fjagepy sends for a `ParameterRsp`, which has no `readonly` field.
 
-`JsonProtocolCompatibilityTest` compares the encoder's output with these files. It checks member order exactly for typed messages, and sorts object members where map iteration order isn't part of the contract. The sorted comparison keeps numbers as they are spelled. Separate checks cover escaped strings, Base64 data, `clazz` before `data` in every wrapper, and signed zero. Decoding checks cover headers, typed values, every primitive array type, and parameter requests and responses.
+`JsonProtocolCompatibilityTest` compares the encoder's output with these files. It checks member order exactly for typed messages, and sorts object members where map iteration order isn't part of the contract. The sorted comparison keeps numbers as they are spelled. Separate checks cover escaped strings (HTML characters such as `<` and `=` are written as themselves; quotes, backslashes and control characters are escaped), Base64 data, `clazz` before `data` in every wrapper, and signed zero. Decoding checks cover headers, typed values, every primitive array type, and parameter requests and responses.
 
 The non-finite fixtures contain bare `NaN` and `Infinity` tokens. These are not standard JSON, but they are what master sends, and Gson's lenient parser reads them. Don't reformat these files with a strict JSON tool.
 
@@ -18,6 +18,7 @@ Never regenerate the baseline files with a changed encoder. When a change is app
 
 - Null fields inside a message are always written, and the envelope never writes them. `nested-message` and `nested-pojo` gain the null fields that followed the nested message (`after`, and `a` inside `pojo`). `contains-agent-request` and `agent-for-service-response` lose `"message":null`.
 - `GenericMessage` writes `sentAt` after `sender`, as typed messages do. `generic-message`, `generic-nonfinite` and `legacy-enum` gain `"sentAt":1700000000456`.
+- `typed-message` and `generic-message`: `<`, `>`, `&`, `=` and `'` are written as themselves instead of `\u003c`, `\u003e`, `\u0026`, `\u003d` and `\u0027`, since HTML escaping is turned off.
 
 ## Running
 
