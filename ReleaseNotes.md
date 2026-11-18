@@ -8,6 +8,9 @@
 * Bugfix: `GenericMessage` subclasses now decode, `GenericMessage` payload values can be `null` when sending and receiving, and a received `sentAt` is read into the message header instead of the payload
 * Bugfix: `GenericMessage` now sends its `sentAt` header to remote containers and gateways
 * Change `GenericMessage` to reject keys named after message headers (`msgID`, `inReplyTo`, `perf`, `recipient`, `sender`, `sentAt`) when sending to a remote container; the message is not relayed, a warning is logged, and `send` returns `false` unless the message was delivered locally
+* Change JSON decoding to reject a Base64 primitive array whose length is not a whole number of elements, or whose `clazz` names a different primitive array type than the field; such a message is now dropped with a warning, where before it was delivered with a truncated or reinterpreted array
+* Bugfix: `null` elements in plain JSON arrays of `float[]` and `double[]` now decode as NaN, as fjage.js sends them, instead of failing the message
+* Bugfix: Primitive arrays can now be encoded with Gson's `toJsonTree`
 * Bugfix: `TcpHubConnector` no longer discards incoming zero bytes when Telnet mode is disabled
 * Bugfix: JSON messages now keep null fields that follow a nested message, and requests and responses without a message no longer send `"message":null`
 * Bugfix: `TcpHubConnector` in Telnet mode now decodes an escaped `0xFF` byte (`IAC IAC`) as data instead of discarding it and the byte that follows
