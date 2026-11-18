@@ -220,6 +220,20 @@ def test_gateway_subscribe(gateway):
     pub.tick = False
     gateway.close()
 
+def test_gateway_resubscribes_after_reconnect(gateway):
+    """Requests and subscriptions should work after a reconnect, since the gateway replays its watch list."""
+    pub = gateway.agent('pub')
+    topic = gateway.topic('test-topic')
+    gateway.subscribe(topic)
+    gateway.connector.disconnect()
+    gateway.connector.connect()
+    pub.tick = True  # a request, so needs replies to the gateway's own AgentID
+    try:
+        ntf = gateway.receive(lambda m: m.sender == pub and m.recipient == topic, timeout=2000)
+        assert ntf is not None
+    finally:
+        pub.tick = False
+
 def test_gateway_cancel_requests_on_disconnect():
     pass
 

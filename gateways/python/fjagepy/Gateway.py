@@ -85,6 +85,7 @@ class Gateway:
         self._pending_requests = ThreadSafeDict()
         self._queue = ThreadSafeDeque(maxlen=DEFAULT_MAX_QUEUE_SIZE)
         self._subscriptions:dict[AgentID, bool] = dict()
+        self._watch_lock = threading.Lock()
         self._timeout = timeout
         self._directory_timeout = directory_timeout
         self.aid = AgentID("gateway-" + str(uuid.uuid4()), owner=self)
@@ -96,6 +97,8 @@ class Gateway:
             logger.error(f"Failed to connect to {self.connector.__details__()}: {e}")
             raise e
         self._update_watch()
+        # restore the watch list on every later (re)connect, since the container starts each connection afresh
+        self.connector.set_connection_callback(self._on_connection)
 
     def send(self, msg: Message) -> None:
         """Sends a message to the fjage container.
@@ -292,8 +295,11 @@ class Gateway:
     def close(self):
         """Closes the gateway and disconnects from the fjage container."""
         if self.is_connected():
-            self.connector.send('{"alive": false}')  # signal to container that we're disconnecting
-            self.connector.disconnect()
+            try:
+                self.connector.send('{"alive": false}')  # signal to container that we're disconnecting
+            except ConnectionError:
+                pass
+        self.connector.disconnect()  # also stops any pending reconnection
 
     @staticmethod
     def match_filter(filter: Union[Callable, Type[Message], Message, None], msg: Message) -> bool:
@@ -412,10 +418,16 @@ class Gateway:
         return msg
 
     def _update_watch(self):
-        watch = [aid for aid, subscribed in self._subscriptions.items() if subscribed]
-        watch.append(self.aid)
-        json_msg = JSONMessage.createWantsMessagesFor(agentIDs=watch)
-        self._msg_tx(json_msg)
+        # serialized, since a reconnect may replay the watch list while subscribe() updates it
+        with self._watch_lock:
+            watch = [aid for aid, subscribed in list(self._subscriptions.items()) if subscribed]
+            watch.append(self.aid)
+            json_msg = JSONMessage.createWantsMessagesFor(agentIDs=watch)
+            self._msg_tx(json_msg)
+
+    def _on_connection(self, connected: bool) -> None:
+        if connected:
+            self._update_watch()
 
     def isConnected(self) -> bool:
         """ Java style method name for is_connected()

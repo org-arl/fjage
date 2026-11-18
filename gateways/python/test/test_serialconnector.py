@@ -72,6 +72,17 @@ def test_serialconnector_reassembles_split_lines(connector):
     assert len(lines) == 1  # incomplete line not delivered
 
 
+def test_serialconnector_connection_callback(connector):
+    """The connection callback should fire on connect and disconnect."""
+    states = []
+    collect(connector)
+    connector.set_connection_callback(states.append)
+    connector.connect()
+    connector.connect()  # already connected, so no second notification
+    connector.disconnect()
+    assert states == [True, False]
+
+
 def test_serialconnector_disconnect(connector):
     """Disconnect should close the port and stop the read thread."""
     collect(connector)
